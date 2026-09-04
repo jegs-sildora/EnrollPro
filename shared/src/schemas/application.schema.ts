@@ -86,6 +86,7 @@ export const previousSchoolSchema = z.object({
     .string()
     .min(1, "School year last attended is required"),
   lastSchoolAddress: z.string().optional().nullable(),
+  transferCertificateNo: z.string().optional().nullable(),
   lastSchoolType: LastSchoolTypeEnum,
   generalAverage: optionalGeneralAverageSchema,
 });
@@ -155,6 +156,7 @@ export const applicationSubmitSchema = z
       .string()
       .min(1, "School year last attended is required"),
     lastSchoolAddress: z.string().optional().nullable(),
+    transferCertificateNo: z.string().optional().nullable(),
     lastSchoolType: LastSchoolTypeEnum,
 
     generalAverage: optionalGeneralAverageSchema,

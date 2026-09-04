@@ -1494,7 +1494,7 @@ export function SectioningWorkspace() {
                     <CardDescription className="text-foreground text-sm">
                       {draftPlacement
                         ? "Please review the temporary assignments before creating the official lists"
-                        : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
+                        : `Select section to assign ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
                     </CardDescription>
                   </div>
                 </div>
@@ -1617,12 +1617,12 @@ export function SectioningWorkspace() {
                                 <div>
                                   <h4
                                     className={cn(
-                                      "font-bold text-xl uppercase transition-colors flex items-center gap-2",
+                                      "font-extrabold text-xl uppercase transition-colors flex items-center gap-2",
                                       isSelected ? "text-primary" : "text-foreground",
                                     )}>
                                     {s.name}
                                   </h4>
-                                  <span className="text-sm uppercase text-foreground">
+                                  <span className="text-sm uppercase text-foreground font-bold">
                                     Adviser: {s.adviser || "No Adviser Assigned"}
                                   </span>
                                 </div>
@@ -1666,7 +1666,7 @@ export function SectioningWorkspace() {
                                 </div>
                               </div>
                               <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center justify-between text-sm font-bold">
                                   <span className="text-foreground uppercase">
                                     Capacity Fill
                                   </span>

@@ -96,13 +96,13 @@ export function DashboardSummaryRibbon({
             <CardContent className="flex min-h-24 items-center gap-4 p-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-bold uppercase tracking-wider leading-tight text-white/90 mb-2">
+                  <p className="text-sm font-bold uppercase tracking-wider leading-tight text-primary-foreground mb-2">
                     {item.label}
                   </p>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="mt-0.5 text-white/70 hover:text-white outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                        <button type="button" className="mt-0.5 text-primary-foreground/70 hover:text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
                           <HelpCircle className="size-4" />
                           <span className="sr-only">Help</span>
                         </button>
@@ -113,7 +113,7 @@ export function DashboardSummaryRibbon({
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="mt-1 text-3xl font-black leading-none text-white">
+                <p className="mt-1 text-3xl font-black leading-none text-primary-foreground">
                   <AnimatedNumber value={summary[item.key]} />
                 </p>
               </div>
@@ -635,7 +635,7 @@ export function Sf1CompliancePanel({
               <span className="font-bold text-foreground">{label}</span>
               <span
                 className={cn(
-                  "font-bold text-2xl",
+                  "font-black text-2xl",
                   value > 0 ? "text-destructive" : "text-primary",
                 )}
               >
@@ -661,8 +661,8 @@ export function ActiveTallyPanel({
   tally: DashboardStats["activeTally"]
 }) {
   const formula = [
-    ["Verified BOSY Enrollment", tally.verifiedBosyBaseline, "+"],
-    ["Late Enrollees Added to SF1", tally.lateAdmissions, "+"],
+    ["Verified Enrollees", tally.verifiedBosyBaseline, "+"],
+    ["Late Enrollees Added", tally.lateAdmissions, "+"],
     ["Officially Dropped Learners", tally.officiallyDropped, "-"],
   ] as const
 
@@ -696,13 +696,13 @@ export function ActiveTallyPanel({
                 </span>
               )}
               <p className="text-base font-bold text-foreground">{label}</p>
-              <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
+              <p className="mt-2 text-3xl font-black text-foreground">{value}</p>
             </div>
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between rounded-md bg-primary px-5 py-4 text-primary-foreground">
           <span className="font-bold">Current Active Learner Tally</span>
-          <span className="text-3xl font-bold">{tally.activeTotal}</span>
+          <span className="text-3xl font-black">{tally.activeTotal}</span>
         </div>
       </CardContent>
     </Card>

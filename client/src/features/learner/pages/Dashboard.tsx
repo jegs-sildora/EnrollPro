@@ -474,7 +474,7 @@ export default function LearnerDashboard() {
                   </TabsTrigger>
                 </TabsList>
 
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
                   {activeTab === "sf9" && (
                     <motion.div
                       key="sf9"

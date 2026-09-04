@@ -216,7 +216,6 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
 
   return (
     <UnsavedChangesProvider>
-      <ScrollRestoration />
       {children ? <>{children}</> : <Outlet />}
     </UnsavedChangesProvider>
   );

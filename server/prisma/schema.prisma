@@ -373,14 +373,15 @@ model EnrollmentApplication {
 
 /// Previous school record linked to enrollment application
 model EnrollmentPreviousSchool {
-  id             Int                   @id @default(autoincrement())
-  applicationId  Int                   @unique(map: "uq_enrollment_prev_school_app_id") @map("application_id")
-  schoolName     String?               @map("school_name")
-  schoolId       String?               @map("school_id")
-  schoolAddress  String?               @map("school_address")
-  schoolType     String?               @map("school_type")
-  generalAverage Float?                @map("general_average")
-  application    EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id                    Int                   @id @default(autoincrement())
+  applicationId         Int                   @unique(map: "uq_enrollment_prev_school_app_id") @map("application_id")
+  schoolName            String?               @map("school_name")
+  schoolId              String?               @map("school_id")
+  schoolAddress         String?               @map("school_address")
+  schoolType            String?               @map("school_type")
+  generalAverage        Float?                @map("general_average")
+  transferCertificateNo String?               @map("transfer_certificate_no")
+  application           EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("enrollment_previous_schools")
 }

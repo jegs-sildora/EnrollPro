@@ -85,7 +85,7 @@ export default function Settings() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
           {activeTab === "profile" && (
             <motion.div
               key="profile"

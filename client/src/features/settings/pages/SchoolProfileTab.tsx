@@ -452,7 +452,7 @@ export default function SchoolProfileTab() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-bold">STE</FormLabel>
+                            <FormLabel className="text-xl cursor-help font-extrabold">STE</FormLabel>
                           </TooltipTrigger>
                           <TooltipContent side="top">
                             <p className="text-sm font-bold">Science, Technology, and Engineering</p>
@@ -472,7 +472,7 @@ export default function SchoolProfileTab() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-bold">SPA</FormLabel>
+                            <FormLabel className="text-xl cursor-help font-extrabold">SPA</FormLabel>
                           </TooltipTrigger>
                           <TooltipContent side="top">
                             <p className="text-sm font-bold">Special Program in the Arts</p>
@@ -492,7 +492,7 @@ export default function SchoolProfileTab() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-bold">SPS</FormLabel>
+                            <FormLabel className="text-xl cursor-help font-extrabold">SPS</FormLabel>
                           </TooltipTrigger>
                           <TooltipContent side="top">
                             <p className="text-sm font-bold">Special Program in Sports</p>
@@ -591,7 +591,7 @@ export default function SchoolProfileTab() {
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                   {/* Logo preview & upload */}
                   <div className="space-y-3">
-                    <h4 className="text-base leading-tight font-bold">Official School Logo</h4>
+                    <h4 className="text-base leading-tight font-extrabold">Official School Logo</h4>
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                       <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border bg">
                         {logoPreview ? (
@@ -648,9 +648,9 @@ export default function SchoolProfileTab() {
 
                   {/* Extracted Palette */}
                   {palette.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-base leading-tight font-bold">Official School Color</h4>
-                      <p className="text-base leading-tight">
+                    <div className="space-y-2">
+                      <h4 className="text-base leading-tight font-extrabold">Official School Color</h4>
+                      <p className="text-sm leading-tight">
                         Select a color from your uploaded logo to apply to the system's buttons and menus.
                       </p>
                       <div className="flex flex-row flex-wrap items-start gap-6">

@@ -46,7 +46,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           zeroLabel="No Late Enrollment Records Pending"
           actionLabel="Process Late Walk-In Records"
           onAction={() => navigate("/learner-enrollment?tab=incoming")}
-          icon={<UserPlus className="size-5 text-primary" />}
         />
         <OperationalQueueCard
           title="Unsectioned Learners"
@@ -55,7 +54,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Enrolled Learners Have Sections"
           actionLabel="Review Class Placement"
           onAction={() => navigate("/section-assignment")}
-          icon={<School className="size-5 text-primary" />}
         />
         <OperationalQueueCard
           title="Missing School Requirements"
@@ -64,7 +62,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Required Documents Recorded"
           actionLabel="Review Missing Requirements"
           onAction={() => navigate("/learner-enrollment?tab=incoming")}
-          icon={<ComplianceWarningIcon active={overdueDocuments > 0} />}
           warning
         />
       </section>

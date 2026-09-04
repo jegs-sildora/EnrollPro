@@ -8,7 +8,7 @@ export default function PublicLayout({ children }: { children?: ReactNode }) {
   const routeKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
       <PageTransition key={routeKey}>
         {children ? children : <Outlet />}
       </PageTransition>

@@ -1142,7 +1142,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         <PhaseBanner />
 
         {/* Page content */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
           <PageTransition
             key={routeTransitionKey}
             className="flex-1 flex flex-col min-w-0 py-3 px-4 sm:px-6">

@@ -356,6 +356,8 @@ export async function submitApplication(req: Request, res: Response) {
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,
+            // @ts-ignore Prisma client needs regeneration to recognize this new field
+            transferCertificateNo: data.transferCertificateNo || null,
           },
         },
       },
@@ -530,6 +532,8 @@ export async function updateExistingApplication(req: Request, res: Response) {
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,
+            // @ts-ignore Prisma client needs regeneration to recognize this new field
+            transferCertificateNo: data.transferCertificateNo || null,
           },
         },
       },

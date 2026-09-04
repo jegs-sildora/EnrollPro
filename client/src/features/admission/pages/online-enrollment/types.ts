@@ -193,6 +193,7 @@ export const EnrollmentFormSchema = z
       .string({ message: "Please provide a valid school year." })
       .min(1, "School year of last attendance is required."),
     lastSchoolAddress: z.string().optional(),
+    transferCertificateNo: z.string().optional(),
     lastSchoolType: z.enum(["Public", "Private", "International", "ALS"], { message: "Please select a valid school type." }),
     generalAverage: optionalSf9GeneralAverage,
     hasSf9Deficiency: z.boolean().default(false),

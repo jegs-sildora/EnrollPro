@@ -637,31 +637,33 @@ export function VerificationWorkspace() {
           <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
             {selectedApp ? (
               <>
-                <div className="flex-1 overflow-y-auto p-6 md:p-12 relative w-full overflow-x-hidden">
-                  <div className="mb-6 flex flex-wrap justify-between items-center gap-4 w-full border-b border-border pb-4">
-                    <div className="flex items-center gap-3">
-                      <UserPhoto
-                        photo={selectedApp.learner.studentPhoto}
-                        containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-primary/20"
-                        className="w-full h-full object-cover"
-                        alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
-                      />
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-xl font-bold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
-                            {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
-                          </h2>
-                          {selectedApp.learner.sex === "MALE" ? (
-                            <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">MALE</Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-xs px-2 py-0">FEMALE</Badge>
-                          )}
-                        </div>
-                        <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
+                {/* STICKY HEADER */}
+                <div className="shrink-0 px-6 md:px-12 pt-6 md:pt-12 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
+                  <div className="flex items-center gap-3">
+                    <UserPhoto
+                      photo={selectedApp.learner.studentPhoto}
+                      containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-primary/20"
+                      className="w-full h-full object-cover"
+                      alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
+                    />
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
+                          {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
+                        </h2>
+                        {selectedApp.learner.sex === "MALE" ? (
+                          <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">MALE</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-xs px-2 py-0">FEMALE</Badge>
+                        )}
                       </div>
+                      <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                     </div>
                   </div>
+                </div>
 
+                {/* SCROLLABLE CONTENT */}
+                <div className="flex-1 overflow-y-auto px-6 md:px-12 pb-6 pt-6 relative w-full overflow-x-hidden">
                   {duplicateInfo && (
                     <div className="mb-8 p-4 rounded-xl border border-rose-200 bg-rose-50 text-left flex items-start gap-3">
                       <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
@@ -677,7 +679,7 @@ export function VerificationWorkspace() {
                   )}
 
                   {selectedApp.status === "WITHDRAWN" ? (
-                    <div className="space-y-4 mb-8">
+                    <div className="space-y-4 mb-4">
                       <h3 className="text-base font-bold text-primary uppercase flex items-center gap-2">
                         Application Summary
                       </h3>
@@ -737,7 +739,7 @@ export function VerificationWorkspace() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full bg-white border border-border/50 rounded-sm overflow-hidden shadow-sm mb-8 flex flex-col">
+                    <div className="w-full bg-white border border-border/50 rounded-sm overflow-hidden shadow-sm mb-2 flex flex-col">
                       {/* Section 1: Contact Information */}
                       {(() => {
                         const primaryContact = selectedApp.familyMembers?.find(

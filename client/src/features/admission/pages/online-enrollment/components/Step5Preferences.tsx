@@ -272,46 +272,43 @@ export default function Step5Enrollment() {
         )}
       </div>
 
-      <div className="space-y-6">
-        <Label className="text-base leading-tight font-bold uppercase  text-primary">
-          Grade Level to Apply for <span className="text-destructive">*</span>
-        </Label>
-        <div
-          id="gradeLevel"
-          className={cn(
-            "grid gap-3",
-            learnerType === "NEW_ENROLLEE"
-              ? "grid-cols-1"
-              : "grid-cols-2 md:grid-cols-4",
-          )}>
-          {visibleGradeOptions.map((gradeOption) => (
-            <button
-              key={gradeOption.value}
-              type="button"
-              onClick={() =>
-                setValue("gradeLevel", gradeOption.value, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                })
-              }
-              className={cn(
-                "relative flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all h-14 uppercase",
-                gradeLevel === gradeOption.value
-                  ? "border-primary bg-primary text-white shadow-sm ring-1 ring-primary"
-                  : "border-border bg-muted hover:border-primary/50 hover:bg-primary/5",
-              )}>
-              <span className="text-base font-bold leading-tight">
-                {gradeOption.label}
-              </span>
-            </button>
-          ))}
+      {learnerType !== "NEW_ENROLLEE" && (
+        <div className="space-y-6">
+          <Label className="text-base leading-tight font-bold uppercase  text-primary">
+            Grade Level to Apply for <span className="text-destructive">*</span>
+          </Label>
+          <div
+            id="gradeLevel"
+            className="grid gap-3 grid-cols-2 md:grid-cols-4">
+            {visibleGradeOptions.map((gradeOption) => (
+              <button
+                key={gradeOption.value}
+                type="button"
+                onClick={() =>
+                  setValue("gradeLevel", gradeOption.value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                className={cn(
+                  "relative flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all h-14 uppercase",
+                  gradeLevel === gradeOption.value
+                    ? "border-primary bg-primary text-white shadow-sm ring-1 ring-primary"
+                    : "border-border bg-muted hover:border-primary/50 hover:bg-primary/5",
+                )}>
+                <span className="text-base font-bold leading-tight">
+                  {gradeOption.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          {errors.gradeLevel?.message && (
+            <p className="text-base text-destructive font-bold flex items-center gap-1 mt-2">
+              <AlertCircle className="w-3 h-3" /> {errors.gradeLevel.message}
+            </p>
+          )}
         </div>
-        {errors.gradeLevel?.message && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-2">
-            <AlertCircle className="w-3 h-3" /> {errors.gradeLevel.message}
-          </p>
-        )}
-      </div>
+      )}
 
       <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
         <Label
@@ -385,50 +382,43 @@ export default function Step5Enrollment() {
         )}
       </div>
 
-      <div className="space-y-8 pb-8">
-        <div className="p-6 border bg-primary/5 border-primary/20 rounded-2xl space-y-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shadow-sm">
-              <BookOpen className="w-5 h-5 text-primary" />
+      {isScpEligible && (
+        <div className="space-y-8 pb-8">
+          <div className="p-6 border bg-primary/5 border-primary/20 rounded-2xl space-y-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shadow-sm">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <Label className="text-base font-bold text-primary">
+                Preferred Curricular Program <span className="text-destructive">*</span>
+              </Label>
             </div>
-            <Label className="text-base font-bold text-primary">
-              Preferred Curricular Program <span className="text-destructive">*</span>
-            </Label>
-          </div>
 
-          <Select
-            disabled={!isScpEligible}
-            value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
-            onValueChange={(val) => {
-              if (val === "REGULAR") {
-                setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
-                setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
-                setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
-              } else {
-                setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
-                setValue("scpType", val as ScpTypeValue, { shouldValidate: true, shouldDirty: true });
-              }
-            }}
-          >
-            <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase">
-              <SelectValue placeholder="Select Preferred Curricular Program" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="REGULAR">Regular Basic Education Curriculum (BEC)</SelectItem>
-              {availableScpPrograms.map((program) => (
-                <SelectItem key={program.id} value={program.id}>
-                  {program.label} ({SCP_ACRONYMS[program.id]})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {!isScpEligible && (
-            <p className="font-bold text-base italic flex items-center gap-1 text-foreground">
-              <Info className="w-4 h-4" />
-              SCP is available only for New Enrollees applying for Grade 7.
-            </p>
-          )}
+            <Select
+              value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
+              onValueChange={(val) => {
+                if (val === "REGULAR") {
+                  setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
+                  setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
+                  setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+                } else {
+                  setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
+                  setValue("scpType", val as ScpTypeValue, { shouldValidate: true, shouldDirty: true });
+                }
+              }}
+            >
+              <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase">
+                <SelectValue placeholder="Select Preferred Curricular Program" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="REGULAR">Regular Basic Education Curriculum (BEC)</SelectItem>
+                {availableScpPrograms.map((program) => (
+                  <SelectItem key={program.id} value={program.id}>
+                    {program.label} ({SCP_ACRONYMS[program.id]})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
           <AnimatePresence>
             {isScpApplication && scpType && (
@@ -533,6 +523,7 @@ export default function Step5Enrollment() {
           </AnimatePresence>
         </div>
       </div>
+      )}
     </div>
   );
 }

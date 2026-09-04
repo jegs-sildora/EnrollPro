@@ -874,7 +874,7 @@ export default function SchoolYearTab() {
                       <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                         <CalendarIcon className="h-5 w-5" />
                       </div>
-                      <div className="break-words min-w-0">
+                      <div className="break-words min-w-0 font-extrabold">
                         School Year Management
                       </div>
                     </CardTitle>
@@ -890,7 +890,7 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
+                          <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
                             SCHOOL YEAR PHASE STATUS
                           </h4>
                         </div>
@@ -922,7 +922,7 @@ export default function SchoolYearTab() {
                           >
                             <div className="flex h-full flex-col">
                               <div>
-                                <span className="block text-lg font-bold leading-snug uppercase break-words">
+                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
                                   {opt.title}
                                 </span>
                               </div>
@@ -943,7 +943,7 @@ export default function SchoolYearTab() {
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
+                      <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
                         DepEd Grading Period Configuration
                       </h4>
                     </div>
@@ -970,7 +970,7 @@ export default function SchoolYearTab() {
                           >
                             <div className="flex h-full flex-col justify-center">
                               <div>
-                                <span className="block text-lg font-bold leading-snug uppercase break-words">
+                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
                                   {opt.title}
                                 </span>
                               </div>
@@ -984,7 +984,7 @@ export default function SchoolYearTab() {
                   {/* Term Date rows */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
+                      <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide">
                         Term Dates
                       </h4>
                     </div>
@@ -998,7 +998,7 @@ export default function SchoolYearTab() {
                       const isActiveTerm = localCalendarState.activeTerm === `T${term.num}`;
                       return (
                         <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
-                          <div className="w-24 shrink-0 font-bold text-primary flex flex-col gap-1 uppercase">
+                          <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase text-lg">
                             {term.label}
                             {isActiveTerm && (
                               <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
@@ -1024,7 +1024,7 @@ export default function SchoolYearTab() {
                                       readOnly
                                       value={term.start ? new Date(term.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
                                       placeholder="MM/DD/YYYY"
-                                      className="border-none shadow-none p-0 h-auto font-bold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                      className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
                                     />
                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
                                       <CalendarIcon className="h-4 w-4" />
@@ -1039,7 +1039,7 @@ export default function SchoolYearTab() {
                                       readOnly
                                       value={term.end ? new Date(term.end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
                                       placeholder="MM/DD/YYYY"
-                                      className="border-none shadow-none p-0 h-auto font-bold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                      className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
                                     />
                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
                                       <CalendarIcon className="h-4 w-4" />
@@ -1053,7 +1053,7 @@ export default function SchoolYearTab() {
                             <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
                               <Button
                                 variant="outline"
-                                className="h-full px-6 border-primary/40  text-primary hover:text-primary shadow-sm font-bold uppercase tracking-wide transition-all"
+                                className="h-full px-6 border-primary/40 text-primary hover:text-primary shadow-sm font-extrabold uppercase tracking-wide transition-all"
                                 onClick={() => {
                                   setLocalCalendarState(prev => ({
                                     ...prev,
@@ -1076,7 +1076,7 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
+                          <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
                             Official Enrollment Period (BOSY)
                           </h4>
                           <TooltipProvider>
@@ -1163,7 +1163,7 @@ export default function SchoolYearTab() {
           {/* Automated Sectioning Rules */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
+              <CardTitle className="flex items-center gap-2 text-xl font-extrabold">
                 <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                   <Workflow className="h-5 w-5" />
                 </div>
@@ -1175,7 +1175,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-lg font-bold">Enable Top BEC Sections</Label>
+                      <Label className="text-lg font-extrabold">Enable Top BEC Sections</Label>
                       <p className="text-sm text-foreground">Group top-performing learners into dedicated sections based on their previous general average.</p>
                     </div>
                     <Switch
@@ -1216,7 +1216,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm md:col-span-2">
                   <div className="flex items-start gap-3">
                     <div className="space-y-1">
-                      <Label className="text-lg font-bold">Regular BEC Sections</Label>
+                      <Label className="text-lg font-extrabold">Regular BEC Sections</Label>
                       <p className="text-sm text-foreground leading-relaxed">
                         All remaining learners will be evenly distributed across regular BEC sections to balance overall academic performance.
                       </p>
@@ -1413,7 +1413,7 @@ export default function SchoolYearTab() {
             {selectedPhase === "OFFICIAL_ENROLLMENT" && (
               <>
                 <p>You are about to open the official enrollment portal for School Year {activeYear?.yearLabel || "2026–2027"}.</p>
-                <p>Confirming this activates encoding for incoming Grade 7, Transferees, and Balik-Aral learners. The system will begin staging learner profiles for Beginning of School Year (BOSY) LIS tagging.</p>
+                <p>Confirming this activates encoding for incoming Grade 7, Transferees, and Balik-Aral learners.</p>
               </>
             )}
             {selectedPhase === "CLASSES_ONGOING" && (

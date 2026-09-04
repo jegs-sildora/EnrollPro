@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: { children?: ReactNode }) {
 				theme={toastTheme}
 				options={accentHsl ? { fill: `hsl(${accentHsl})` } : undefined}
 			/>
-			<AnimatePresence mode='wait'>
+			<AnimatePresence mode='wait' onExitComplete={() => window.scrollTo(0, 0)}>
 				<PageTransition key={routeKey}>
 					{children || <Outlet />}
 				</PageTransition>

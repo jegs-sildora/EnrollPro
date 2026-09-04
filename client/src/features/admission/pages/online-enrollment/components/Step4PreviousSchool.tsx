@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { cn, getManilaNow } from "@/shared/lib/utils";
+import { useSettingsStore } from "@/store/settings.slice";
 
 export default function Step4PreviousSchool() {
   const {
@@ -21,10 +22,16 @@ export default function Step4PreviousSchool() {
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
 
-  // Generate last 10 school years, excluding the current/upcoming one
-  const currentYear = getManilaNow().getFullYear();
+  const { activeSchoolYearLabel } = useSettingsStore();
+  
+  // Extract the start year of the active school year if available, fallback to current calendar year.
+  const activeStartYear = activeSchoolYearLabel 
+    ? parseInt(activeSchoolYearLabel.split("-")[0], 10) 
+    : getManilaNow().getFullYear();
+
+  // Generate last 10 school years, starting from the previous school year
   const schoolYears = Array.from({ length: 10 }, (_, i) => {
-    const start = currentYear - 1 - i;
+    const start = activeStartYear - 1 - i;
     return `${start}-${start + 1}`;
   });
   const lastSchoolType = watch("lastSchoolType");
@@ -89,7 +96,7 @@ export default function Step4PreviousSchool() {
             <Label
               htmlFor="lastSchoolName"
               className="text-base leading-tight font-bold text-foreground">
-              Last School Name <span className="text-destructive">*</span>
+              {learnerType === "TRANSFEREE" ? "Transferred From (Previous School)" : "Last School Name"} <span className="text-destructive">*</span>
             </Label>
             <Input
               autoComplete="off"
@@ -245,6 +252,38 @@ export default function Step4PreviousSchool() {
           </div>
         </div>
 
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          {learnerType === "TRANSFEREE" && (
+            <div className="space-y-2">
+              <Label
+                htmlFor="transferCertificateNo"
+                className="text-base leading-tight font-bold text-foreground">
+                Transfer Certificate No.
+              </Label>
+              <Input
+                autoComplete="off"
+                id="transferCertificateNo"
+                {...register("transferCertificateNo")}
+                placeholder="e.g. 123456"
+                className="h-11 font-bold uppercase"
+              />
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label
+              htmlFor="lastSchoolAddress"
+              className="text-base leading-tight font-bold text-foreground">
+              School Address / Division (Optional)
+            </Label>
+            <Input
+              autoComplete="off"
+              id="lastSchoolAddress"
+              {...register("lastSchoolAddress")}
+              placeholder="City/Municipality, Province"
+              className="h-11 font-bold uppercase"
+            />
+          </div>
+        </div>
         <div className="space-y-3">
           <Label className="text-base leading-tight font-bold text-foreground">
             School Type <span className="text-destructive">*</span>
@@ -269,20 +308,7 @@ export default function Step4PreviousSchool() {
           </div>
         </div>
 
-        <div className="space-y-2 pt-2">
-          <Label
-            htmlFor="lastSchoolAddress"
-            className="text-base leading-tight font-bold text-foreground">
-            School Address / Division (Optional)
-          </Label>
-          <Input
-            autoComplete="off"
-            id="lastSchoolAddress"
-            {...register("lastSchoolAddress")}
-            placeholder="City/Municipality, Province"
-            className="h-11 font-bold uppercase"
-          />
-        </div>
+        
       </div>
 
 
