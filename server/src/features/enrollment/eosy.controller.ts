@@ -22,6 +22,8 @@ import {
   readSmartOutcomeEnvelope,
   readSmartSyncIssue,
 } from "../integration/smart-outcome-envelope.js";
+import { fetchSmartSf10ByLrn } from "../integration/smart-sf10.service.js";
+import { checkSmartRemedialRolloverBlock } from "../integration/smart-remedial.service.js";
 
 function hasFinalizedEosyOutcome(record: {
   schoolYearId: number;
@@ -336,7 +338,7 @@ async function loadEosyGradeRecords(
 ): Promise<EosyRecordPayload[]> {
   const schoolYear = await prisma.schoolYear.findUnique({
     where: { id: schoolYearId },
-    select: { status: true },
+    select: { status: true, yearLabel: true },
   });
 
   if (schoolYear?.status === "ARCHIVED") {
@@ -437,6 +439,7 @@ async function loadEosyGradeRecords(
           trackingNumber: true,
           applicantType: true,
           reportedGrades: true,
+          isRemedialRequired: true,
           learner: {
             select: {
               id: true,
@@ -464,6 +467,33 @@ async function loadEosyGradeRecords(
       },
     ],
   });
+
+  let remedialBlockedLrns = new Set<string>();
+  if (schoolYear?.yearLabel) {
+    const remedialBlock = await checkSmartRemedialRolloverBlock(schoolYear.yearLabel).catch(() => null);
+    if (remedialBlock?.students) {
+      remedialBlockedLrns = new Set(remedialBlock.students.map(s => s.lrn));
+    }
+  }
+
+  const remedialPendingMap = new Map<string, boolean>();
+  const remedialRequiredLrns = records
+    .filter(r => r.enrollmentApplication.isRemedialRequired && r.enrollmentApplication.learner.lrn)
+    .map(r => r.enrollmentApplication.learner.lrn as string);
+
+  if (remedialRequiredLrns.length > 0) {
+    await Promise.all(remedialRequiredLrns.map(async (lrn) => {
+      try {
+        const sf10Records = await fetchSmartSf10ByLrn(lrn);
+        const hasPendingRemedial = sf10Records.some((r) => 
+          r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
+        );
+        remedialPendingMap.set(lrn, hasPendingRemedial);
+      } catch (e) {
+        remedialPendingMap.set(lrn, true); // Safely block if API fails
+      }
+    }));
+  }
 
   return records.map((record) => {
     const finalAverage =
@@ -493,6 +523,9 @@ async function loadEosyGradeRecords(
       smartOutcome,
     );
 
+    const lrn = record.enrollmentApplication.learner.lrn;
+    const isBlockedByRemedial = lrn ? (remedialBlockedLrns.has(lrn) || remedialPendingMap.get(lrn) === true) : false;
+
     return {
       id: record.id,
       eosyStatus: record.eosyStatus,
@@ -509,13 +542,19 @@ async function loadEosyGradeRecords(
       },
       smartSyncStatus: isLocalDeparture
         ? null
-        : hasMatchingSmartOutcome
-          ? "FINALIZED_SMART_GRADES_RECEIVED"
-          : smartIssue?.status ?? "WAITING_FOR_SMART_FINALIZATION",
-      smartSyncReason: isLocalDeparture || hasMatchingSmartOutcome
+        : isBlockedByRemedial
+          ? "WAITING_FOR_SMART_FINALIZATION"
+          : hasMatchingSmartOutcome
+            ? "FINALIZED_SMART_GRADES_RECEIVED"
+            : smartIssue?.status ?? "WAITING_FOR_SMART_FINALIZATION",
+      smartSyncReason: isLocalDeparture 
         ? null
-        : smartIssue?.reason
-          ?? "Waiting for SMART to publish complete finalized grades.",
+        : isBlockedByRemedial
+          ? "Learner has pending remedial classes."
+          : hasMatchingSmartOutcome
+            ? null
+            : smartIssue?.reason
+              ?? "Waiting for SMART to publish complete finalized grades.",
       smartSynchronizedAt: hasMatchingSmartOutcome
         ? smartOutcome?.synchronizedAt ?? null
         : smartIssue?.synchronizedAt ?? null,
@@ -779,7 +818,7 @@ export async function finalizeSection(
       where: { sectionId },
       include: {
         learner: true,
-        enrollmentApplication: { select: { reportedGrades: true } },
+        enrollmentApplication: { select: { reportedGrades: true, isRemedialRequired: true } },
       },
     });
 
@@ -798,6 +837,32 @@ export async function finalizeSection(
       throw new AppError(
         422,
         `Cannot finalize. ${unfinalized.length} learners are missing an EOSY status.`,
+      );
+    }
+
+    const irregularLearners = records.filter((r) => r.enrollmentApplication?.isRemedialRequired);
+    if (irregularLearners.length > 0) {
+      await Promise.all(
+        irregularLearners.map(async (record) => {
+          if (!record.learner.lrn) return;
+          const sf10Records = await fetchSmartSf10ByLrn(record.learner.lrn).catch(() => []);
+          const hasRemedialTable = sf10Records.some((r) => r.remedialClasses && r.remedialClasses.length > 0);
+          if (!hasRemedialTable) {
+            throw new AppError(
+              400,
+              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has back subjects but does not have a remedial class grades table yet.`
+            );
+          }
+          const hasPendingRemedial = sf10Records.some((r) => 
+            r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
+          );
+          if (hasPendingRemedial) {
+            throw new AppError(
+              400,
+              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has pending remedial classes.`
+            );
+          }
+        })
       );
     }
 
@@ -1503,7 +1568,7 @@ export async function finalizeGradeLevel(
       },
       include: {
         learner: true,
-        enrollmentApplication: { select: { reportedGrades: true } },
+        enrollmentApplication: { select: { reportedGrades: true, isRemedialRequired: true } },
       },
     });
 
@@ -1523,6 +1588,32 @@ export async function finalizeGradeLevel(
       throw new AppError(
         422,
         `Cannot finalize. ${unfinalized.length} learners are missing an EOSY status.`,
+      );
+    }
+
+    const irregularLearners = records.filter((r) => r.enrollmentApplication?.isRemedialRequired);
+    if (irregularLearners.length > 0) {
+      await Promise.all(
+        irregularLearners.map(async (record) => {
+          if (!record.learner.lrn) return;
+          const sf10Records = await fetchSmartSf10ByLrn(record.learner.lrn).catch(() => []);
+          const hasRemedialTable = sf10Records.some((r) => r.remedialClasses && r.remedialClasses.length > 0);
+          if (!hasRemedialTable) {
+            throw new AppError(
+              400,
+              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has back subjects but does not have a remedial class grades table yet.`
+            );
+          }
+          const hasPendingRemedial = sf10Records.some((r) => 
+            r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
+          );
+          if (hasPendingRemedial) {
+            throw new AppError(
+              400,
+              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has pending remedial classes.`
+            );
+          }
+        })
       );
     }
 

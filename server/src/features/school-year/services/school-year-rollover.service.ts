@@ -10,6 +10,7 @@ import {
   matchesStoredSmartOutcome,
   readSmartOutcomeEnvelope,
 } from "../../integration/smart-outcome-envelope.js";
+import { checkSmartRemedialRolloverBlock } from "../../integration/smart-remedial.service.js";
 import { resolveRolloverDestination } from "./school-year-transition.service.js";
 
 type DatabaseClient = Pick<
@@ -56,7 +57,8 @@ export interface RolloverGlobalBlocker {
     | "TARGET_YEAR_NOT_PREPARED"
     | "TARGET_CALENDAR_INCOMPLETE"
     | "ANOTHER_ACTIVE_YEAR_EXISTS"
-    | "ENROLLMENT_HISTORY_CONFLICT";
+    | "ENROLLMENT_HISTORY_CONFLICT"
+    | "SMART_REMEDIAL_UNRESOLVED";
   message: string;
 }
 
@@ -323,6 +325,23 @@ async function getReadiness(
     });
   }
 
+  try {
+    const remedialCheck = await checkSmartRemedialRolloverBlock(sourceYear.yearLabel);
+    if (remedialCheck.blocked) {
+      const names = remedialCheck.students?.map((s) => s.name).join(", ") || "";
+      const countMsg = remedialCheck.count ? ` (${remedialCheck.count} learners)` : "";
+      globalBlockers.push({
+        code: "SMART_REMEDIAL_UNRESOLVED",
+        message: `Rollover blocked due to pending remedial classes${countMsg}. Affected: ${names}`,
+      });
+    }
+  } catch (error: unknown) {
+    globalBlockers.push({
+      code: "SMART_REMEDIAL_UNRESOLVED",
+      message: error instanceof Error ? error.message : "Failed to verify remedial classes with SMART.",
+    });
+  }
+
   let currentSf5Count = 0;
   const blockers: RolloverClassBlocker[] = [];
   for (const section of sourceYear.sections) {
@@ -369,90 +388,46 @@ async function getReadiness(
       section.id,
       client,
     );
-    if (sf5Status.current) {
-      currentSf5Count += 1;
+    if (!section.isEosyFinalized && section.enrollmentRecords.length > 0) {
+      reasons.push(sf5Status.recorded ? "SF5_STALE" : "SF5_NOT_RECORDED");
     } else {
-      // Bypass SF5 check if the section is finalized or if it has no learners
-      if (!section.isEosyFinalized && section.enrollmentRecords.length > 0) {
-        reasons.push(sf5Status.recorded ? "SF5_STALE" : "SF5_NOT_RECORDED");
-      } else {
-        // Automatically count as valid to satisfy `currentSf5Count === totalSections` logic if needed elsewhere
-        currentSf5Count += 1;
-      }
+      currentSf5Count += 1;
     }
-
+    
     if (reasons.length > 0) {
-      blockers.push({
-        sectionId: section.id,
-        gradeLevel: section.gradeLevel.name,
-        sectionName: section.name,
-        unfinishedLearnerCount: recordsWithoutResult,
-        reasons,
+      blockers.push({ sectionId: section.id, sectionName: section.name, gradeLevel: section.gradeLevel.name, unfinishedLearnerCount: recordsWithoutResult, reasons });
+    }
+  }
+
+  const allSectionsFinalized = sourceYear.sections.every(s => s.isEosyFinalized);
+  const sf6Status = await getSchoolFormArtifactStatus("SF6", schoolYearId, null, client);
+
+  if (allSectionsFinalized && !sf6Status.recorded) {
+    globalBlockers.push({ code: "SF6_NOT_RECORDED", message: "School Form 6 has not been generated and finalized." });
+  } else if (sf6Status.recorded && !sf6Status.current) {
+    globalBlockers.push({ code: "SF6_STALE", message: "School Form 6 is stale and needs to be regenerated." });
+  }
+
+  if (sourceYear.yearLabel) {
+    try {
+      const smartCheck = await checkSmartRemedialRolloverBlock(sourceYear.yearLabel);
+      if (smartCheck.blocked) {
+        globalBlockers.push({
+          code: "SMART_REMEDIAL_UNRESOLVED",
+          message: `Rollover is blocked because ${smartCheck.count ?? "some"} conditionally promoted learner(s) have unresolved remedial grades in SMART.`
+        });
+      }
+    } catch (error) {
+      globalBlockers.push({
+        code: "SMART_REMEDIAL_UNRESOLVED",
+        message: "Failed to verify remedial grades with SMART API. Ensure SMART is accessible before proceeding."
       });
     }
   }
 
-  const sf6Status = await getSchoolFormArtifactStatus(
-    "SF6",
-    schoolYearId,
-    null,
-    client,
-  );
-  // SF6 requirement removed by request
-
-  if (expectedTargetLabel) {
-    const target = await getTargetOperationalCount(
-      client,
-      expectedTargetLabel,
-    );
-    if (
-      target
-      && (target.status === "ACTIVE"
-        || (target.clonedFromId !== null
-          && target.clonedFromId !== sourceYear.id))
-    ) {
-      globalBlockers.push({
-        code: "TARGET_YEAR_HAS_RECORDS",
-        message:
-          "The incoming school year is not an unused prepared calendar shell.",
-      });
-    } else if (target && target.id !== sourceYear.id && target.count > 0) {
-      globalBlockers.push({
-        code: "TARGET_YEAR_HAS_RECORDS",
-        message:
-          "The incoming school year already contains operational records. Rollover will not delete them.",
-      });
-    }
-  }
-
-  const activeYears = await client.schoolYear.findMany({
-    where: { status: "ACTIVE" },
-    select: { id: true },
-  });
-  if (
-    activeYears.length !== 1
-    || activeYears[0]?.id !== sourceYear.id
-  ) {
-    globalBlockers.push({
-      code: "ANOTHER_ACTIVE_YEAR_EXISTS",
-      message:
-        "The active school year records conflict with the selected operational school year.",
-    });
-  }
-
-  const historyCount = await client.enrollmentHistory.count({
-    where: { schoolYearId },
-  });
-  if (historyCount > 0) {
-    globalBlockers.push({
-      code: "ENROLLMENT_HISTORY_CONFLICT",
-      message:
-        "Enrollment history already exists for this school year. Resolve the conflict before rollover.",
-    });
-  }
-
+  const ready = globalBlockers.length === 0 && blockers.length === 0 && allSectionsFinalized && sf6Status.current;
   return {
-    ready: blockers.length === 0 && globalBlockers.length === 0,
+    ready,
     schoolYearFinalized: sourceYear.isEosyFinalized,
     blockers,
     globalBlockers,
@@ -465,21 +440,17 @@ async function getReadiness(
   };
 }
 
-export async function getSchoolYearRolloverReadiness(
-  schoolYearId: number,
-): Promise<RolloverReadiness> {
-  return getReadiness(prisma, schoolYearId);
-}
-
 export function getHistoricalProfileSnapshot(record: {
-  academicDeficiencyNote?: string | null;
+  learnerId: number;
+  eosyStatus: string | null;
+  academicDeficiencyNote: string | null;
   learner: {
     lrn: string | null;
     firstName: string;
     middleName: string | null;
     lastName: string;
     extensionName: string | null;
-    sex: string;
+    sex: string | null;
     birthdate: Date;
   };
   enrollmentApplication: {
@@ -626,6 +597,12 @@ async function cloneSectionStructure(input: {
       },
     });
   }
+}
+
+export async function getSchoolYearRolloverReadiness(
+  schoolYearId: number,
+): Promise<RolloverReadiness> {
+  return getReadiness(prisma, schoolYearId);
 }
 
 export async function executeSchoolYearRollover({

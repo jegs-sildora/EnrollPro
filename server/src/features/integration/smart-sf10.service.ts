@@ -38,6 +38,15 @@ export interface SmartSf10Record {
   generalAverage: number | null;
   honors: string | null;
   promotionStatus: string | null;
+  remedialClasses?: Array<{
+    learningAreas: string;
+    finalRating: number | string;
+    remedialClassMark?: number | string;
+    conductedFrom?: string;
+    conductedTo?: string;
+    status: string;
+    outcome?: string;
+  }>;
 }
 
 export interface SmartSf10Response {

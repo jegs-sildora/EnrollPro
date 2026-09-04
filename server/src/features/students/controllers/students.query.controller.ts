@@ -512,7 +512,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           grade_level: h.gradeLevel.name,
           section_name: h.section?.name || null,
           school_year: h.schoolYear.yearLabel,
-          status: "Completed",
+          status: h.eosyStatus || "Completed",
           term_format: h.schoolYear.termFormat ?? "TRIMESTER",
           grades: rawGrades,
           general_average: rawGrades ? h.genAve : null,
@@ -548,10 +548,11 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           grade_level: record.gradeLevel ? record.gradeLevel.replace("GRADE_", "Grade ") : "Unknown",
           section_name: record.section || null,
           school_year: record.schoolYear,
-          status: "Completed",
+          status: record.promotionStatus || "Completed",
           term_format: "TRIMESTER",
           grades: Object.keys(rawGrades).length > 0 ? rawGrades : null,
           general_average: record.generalAverage,
+          remedialClasses: record.remedialClasses || null,
         };
       });
 

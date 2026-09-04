@@ -458,6 +458,20 @@ async function syncFinalSmartSectionOutcomesInternal(
     } else if (typeof error === "string") {
       reason = error;
     }
+    
+    if (axios.isAxiosError(error) && error.response?.status === 429) {
+      return {
+        schoolYearId: section.schoolYearId,
+        sectionId,
+        sectionName: section.name,
+        syncedCount: 0,
+        unmatchedSmartLrns: [],
+        missingSmartLrns: [],
+        unresolvedOutcomes: [],
+        learnerIds: [],
+      };
+    }
+
     throw new AppError(
       503,
       `SMART final-result synchronization failed: ${reason}`,

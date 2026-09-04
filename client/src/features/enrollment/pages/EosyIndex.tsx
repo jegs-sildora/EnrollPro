@@ -70,6 +70,7 @@ import {
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { TableCellsTransitionLoader } from "@/shared/components/TableCellsTransitionLoader";
 import { EosySf9GradeTable } from "@/features/enrollment/components/EosySf9GradeTable";
+import { RemedialClassesTable } from "@/features/enrollment/components/RemedialClassesTable";
 import { TableCell, TableRow } from "@/shared/ui/table";
 
 const getInitials = (firstName?: string | null, lastName?: string | null): string => {
@@ -1023,14 +1024,15 @@ export default function EosyUpdating() {
 
   const suppressEmptyState = loadingRecords && !showSkeleton && filteredRecords.length === 0;
 
-  const pendingCount = useMemo(() => {
+  const pendingLearners = useMemo(() => {
     return filteredRecords.filter(r => {
       if (r.eosyStatus === "TRANSFERRED_OUT" || r.eosyStatus === "DROPPED_OUT") {
         return false;
       }
       return r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
-    }).length;
+    });
   }, [filteredRecords]);
+  const pendingCount = pendingLearners.length;
 
   const latestSmartSyncAt = useMemo(() => {
     const timestamps = records
@@ -1071,8 +1073,17 @@ export default function EosyUpdating() {
       return r.eosyStatus !== "DROPPED_OUT"
         && r.eosyStatus !== "TRANSFERRED_OUT"
         && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED"
-        && r.smartSyncStatus !== "INCOMPLETE_SUBJECT_GRADES";
+        && r.smartSyncStatus !== "INCOMPLETE_SUBJECT_GRADES"
+        && r.smartSyncReason !== "Learner has pending remedial classes.";
     }).length;
+  }, [filteredRecords]);
+
+  const pendingRemedialLearners = useMemo(() => {
+    return filteredRecords.filter((r) => {
+      return r.eosyStatus !== "DROPPED_OUT"
+        && r.eosyStatus !== "TRANSFERRED_OUT"
+        && r.smartSyncReason === "Learner has pending remedial classes.";
+    });
   }, [filteredRecords]);
 
   const incompleteSubjectGradesCount = useMemo(() => {
@@ -1089,7 +1100,9 @@ export default function EosyUpdating() {
   const hasIrregularBlockers = scopedIrregularBlockerCount > 0;
   const scopedIncompleteGradesCount = incompleteSubjectGradesCount;
   const hasIncompleteGrades = scopedIncompleteGradesCount > 0;
-  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0) + (hasIncompleteGrades ? 1 : 0) + (pendingCount > 0 ? 1 : 0);
+  const scopedRemedialBlockerCount = pendingRemedialLearners.length;
+  const hasRemedialBlockers = scopedRemedialBlockerCount > 0;
+  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0) + (hasIncompleteGrades ? 1 : 0) + (pendingCount > 0 ? 1 : 0) + (hasRemedialBlockers ? 1 : 0);
 
   const targetScopeName = sectionFilter === "ALL" ? `All ${activeGradeName}` : `Section: ${sectionFilter}`;
   const descriptionTarget = sectionFilter === "ALL"
@@ -1295,9 +1308,15 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const ave = r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-            ? r.finalAverage
+          const root = (r.enrollmentApplication.reportedGrades as Record<string, unknown>) ?? {};
+          const envelope = (typeof root.__smartOutcome === 'object' && root.__smartOutcome !== null && !Array.isArray(root.__smartOutcome)) 
+            ? (root.__smartOutcome as Record<string, unknown>)
             : null;
+          const envelopeAve = typeof envelope?.finalGeneralAverage === "number" && Number.isFinite(envelope.finalGeneralAverage) 
+            ? envelope.finalGeneralAverage 
+            : null;
+            
+          const ave = envelopeAve ?? r.finalAverage;
 
           if (ave === null || ave === undefined) {
             return (
@@ -1746,9 +1765,27 @@ export default function EosyUpdating() {
                           {/* Status Indicators */}
                           <div className="flex items-center gap-3">
                             {pendingCount > 0 && !isScopeFinalized && (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-bold shadow-sm border border-border">
-                                {pendingCount} Waiting for Finalization
-                              </div>
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-bold shadow-sm border border-border cursor-help transition-colors hover:bg-secondary/80">
+                                      {pendingCount} Waiting for Finalization
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border-border p-4 shadow-xl rounded-lg text-sm max-w-[400px] max-h-[300px] overflow-y-auto">
+                                    <p className="font-bold mb-3 border-b pb-2">Learners Waiting for Finalization</p>
+                                    <ul className="list-disc pl-5 space-y-1.5">
+                                      {pendingLearners.map(learner => (
+                                        <li key={learner.id} className="text-foreground">
+                                          <span className="font-bold text-foreground">{learner.enrollmentApplication.learner.lastName}, {learner.enrollmentApplication.learner.firstName}</span>
+                                          <br />
+                                          <span className="text-sm">LRN: {learner.enrollmentApplication.learner.lrn || "N/A"}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
 
                             {!isScopeFinalized && blockersCount > 0 && (
@@ -1760,14 +1797,53 @@ export default function EosyUpdating() {
                                       {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
-                                    <p className="font-bold mb-2 flex items-center gap-2">
+                                  <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border-border p-4 shadow-xl rounded-lg text-sm max-w-[400px] max-h-[400px] overflow-y-auto">
+                                    <p className="font-bold mb-3 border-b pb-2 text-destructive">
                                       Pending Requirements
                                     </p>
-                                    <div className="space-y-1.5 text-destructive-foreground/90">
-                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} section(s) still have learners waiting for finalized SMART grades.</p>}
-                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learner(s) have incomplete or unverified SMART outcomes.</p>}
-                                      {hasIncompleteGrades && <p>• {scopedIncompleteGradesCount ?? 0} learner(s) have INCOMPLETE SUBJECT GRADES fetched from SMART API.</p>}
+                                    <div className="space-y-4 text-foreground">
+                                      {hasUnlockedClasses && (
+                                        <div>
+                                          <p className="font-bold text-sm mb-1">{scopedUnlockedClassesCount} section(s) waiting for finalized EOSY grades:</p>
+                                          <ul className="list-disc pl-5 space-y-0.5">
+                                            {pendingClassesList.map(section => (
+                                              <li key={section} className="text-foreground">
+                                                <span className="font-bold text-foreground">{section}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      
+                                      {hasRemedialBlockers && (
+                                        <div>
+                                          <p className="font-bold text-sm mb-1">{scopedRemedialBlockerCount} learner(s) with pending remedial class grades:</p>
+                                          <ul className="list-disc pl-5 space-y-1.5">
+                                            {pendingRemedialLearners.map(learner => (
+                                              <li key={learner.id} className="text-foreground">
+                                                <span className="font-bold text-foreground">{learner.enrollmentApplication.learner.lastName}, {learner.enrollmentApplication.learner.firstName}</span>
+                                                <br />
+                                                <span className="text-sm">LRN: {learner.enrollmentApplication.learner.lrn || "N/A"}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+
+                                      {hasIrregularBlockers && (
+                                        <div>
+                                          <p className="font-semibold text-sm">
+                                            • {scopedIrregularBlockerCount ?? 0} learner(s) have incomplete or unverified SMART outcomes.
+                                          </p>
+                                        </div>
+                                      )}
+                                      {hasIncompleteGrades && (
+                                        <div>
+                                          <p className="font-semibold text-sm">
+                                            • {scopedIncompleteGradesCount ?? 0} learner(s) have INCOMPLETE SUBJECT GRADES fetched from SMART API.
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1856,6 +1932,10 @@ export default function EosyUpdating() {
                                         reportedGrades={row.enrollmentApplication.reportedGrades}
                                         finalAverage={row.finalAverage}
                                         schoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
+                                      />
+                                      <RemedialClassesTable 
+                                        learnerId={row.enrollmentApplication.learner.id} 
+                                        activeSchoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
                                       />
                                     </motion.div>
                                   )}

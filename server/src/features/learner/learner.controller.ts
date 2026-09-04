@@ -531,7 +531,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
         grade_level: history.gradeLevel.name,
         section_name: history.section?.name || null,
         school_year: history.schoolYear.yearLabel,
-        status: "Completed",
+        status: history.eosyStatus || "Completed",
         term_format: history.schoolYear.termFormat ?? "TRIMESTER",
         grades: rawGrades,
         general_average: rawGrades ? history.genAve : null,
@@ -566,10 +566,11 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       grade_level: record.gradeLevel ? record.gradeLevel.replace("GRADE_", "Grade ") : "Unknown",
       section_name: record.section || null,
       school_year: record.schoolYear,
-      status: "Completed",
+      status: record.promotionStatus || "Completed",
       term_format: "TRIMESTER",
       grades: Object.keys(rawGrades).length > 0 ? rawGrades : null,
       general_average: record.generalAverage,
+      remedialClasses: record.remedialClasses || null,
     };
   });
 
