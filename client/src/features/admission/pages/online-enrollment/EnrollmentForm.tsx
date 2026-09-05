@@ -781,8 +781,7 @@ export default function EnrollmentForm({
               <div className="pt-8 border-t border-border/60 space-y-6">
                 <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
                   <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
-                    <h3 className="text-base leading-tight font-bold uppercase  text-primary">
+                    <h3 className="text-lg leading-tight font-extrabold uppercase text-primary">
                       Accuracy Certification
                     </h3>
                   </div>

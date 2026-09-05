@@ -258,7 +258,7 @@ export default function Step4PreviousSchool() {
               <Label
                 htmlFor="transferCertificateNo"
                 className="text-base leading-tight font-bold text-foreground">
-                Transfer Certificate No.
+                Transfer Certificate No. (Optional)
               </Label>
               <Input
                 autoComplete="off"
