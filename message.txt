@@ -1,0 +1,33 @@
+Ask Prompt for EP — Prove & Document Behavior (SSO / Forgot Password / Profile Pictures / School Config Iframe)
+
+Context: AIMS (the LMS) integrates with EnrollPro via /api/integration/v1 and auth endpoints (POST /api/auth/login, POST /api/learner/auth). We need documented, live-verified behavior for four features. For each one, produce an MD (e.g. docs/new api/EP-SSO-FORGOT-PHOTO.md) that states the behavior, and prove every claim with curl transcripts against the dev instance (mask secrets).
+
+1. Single Sign-On (SSO)
+
+Does EP support SSO (OIDC/OAuth2 authorization-code, SAML, shared session cookie, JWT exchange, or a token-introspection endpoint AIMS can call)?
+List exact endpoints (authorize/token/introspect or equivalent), auth method, and the trust model between EP and AIMS (shared secret, signing, clock skew).
+Define the flow for staff and learner: how does AIMS obtain a validated identity (roles, employeeId/LRN, school) and how are tokens/sessions shared or exchanged?
+Proof: full curl sequence (redirect → code → token → /me) with real responses.
+2. Forgot Password
+
+Is there a self-service forgot-password flow (request reset → email/SMS/OTP → set new password), or is reset admin-only?
+Exact endpoints (e.g. /api/auth/forgot-password, /api/learner/forgot-password), request/response shapes, error codes (400/401/404/429), rate limits, token TTL, and which roles are covered.
+Is the reset UI EP-hosted (AIMS redirects) or does AIMS own the UI and call EP?
+Proof: live curl for request + completion with a test account, plus one negative case (bad OTP/expired token). If self-service does NOT exist yet, say so explicitly — don't guess.
+3. Profile Picture (Student & Teacher)
+
+Do learner/faculty/staff profiles have avatar/photo fields? Storage format (URL vs /uploads/* path vs base64), size/type limits, and versioning/cache behavior.
+Endpoints to read (e.g. /api/students/:id, /api/teachers/:id, /api/learner/me) and write/upload (method, multipart fields).
+Is the photo exposed in partner feeds (/integration/v1/learners, /default/faculty, /default/aims/context)? If not, which endpoint should AIMS call to display it?
+Proof: GET profile before/after a sample-image upload; verify the public URL actually renders.
+4. School Profile & Appearance Admin — iframe access for AIMS
+
+Context: AIMS admin settings wants to embed EP's System Configuration → School Profile page (https://dev-jegs.buru-degree.ts.net/settings — School Identity, SCP toggles, communication/branding, logo upload/remove, accent color) inside an iframe, instead of duplicating school config in AIMS's DB.
+Document + prove:
+a. Page + APIs: the exact admin page URL and the SYSTEM_ADMIN endpoints it drives (PUT /api/settings/identity, POST/DELETE /api/settings/logo, PUT /api/settings/accent, PATCH /api/settings/programs) — request/response shapes, role requirement, and which fields map to which form controls.
+b. Frame policy (currently blocking): every EP response (HTML + API) sends X-Frame-Options: SAMEORIGIN + Content-Security-Policy: frame-ancestors 'self', which makes the browser refuse to render EP inside an iframe from https://tfrog.buru-degree.ts.net. Ask EP to allow iframing from that origin (e.g. frame-ancestors https://tfrog.buru-degree.ts.net, drop/override XFO) and prove the change with a before/after curl header transcript + an iframe render test.
+c. Session model (currently blocking): EP's SPA keeps the staff JWT in memory only — localStorage auth-storage stores just user, no token, no cookies — so a fresh iframe lands on /personnel/login. Document how an embedded SPA session is established, ideally one of:
+Option A: EP SPA accepts a one-time code/token via URL query (?code= or ?token=) on /settings, mirroring EP's existing POST /api/auth/companion-sso/{system}/launch → {launchUrl, expiresAt} one-time-code pattern (launchUrl currently points to https://tfrog.buru-degree.ts.net/auth/sso/callback?code=...).
+Option B: EP exposes an inbound AIMS-initiated launch endpoint (reverse of the companion-sso launch) that returns a launchUrl + expiresAt for AIMS to iframe/open.
+d. Proof: curl showing current frame/auth headers; curl of the new launch/token endpoint with real response; the exact URL AIMS should iframe.
+Deliverables: the MD doc + curl transcripts + any env/config the contract needs. For anything unsupported, document the current state explicitly (e.g. "no self-service reset yet", "iframe blocked until header change") instead of implying it exists.
