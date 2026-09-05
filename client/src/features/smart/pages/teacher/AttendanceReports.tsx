@@ -78,7 +78,7 @@ export default function AttendanceReports() {
         const sectionsMap = new Map<string, Section>();
 
         if (Array.isArray(classResponse.data)) {
-          classResponse.data.forEach((assignment: any) => {
+          classResponse.data.forEach((assignment: unknown) => {
             if (assignment.section && !sectionsMap.has(assignment.section.id)) {
               sectionsMap.set(assignment.section.id, {
                 id: assignment.section.id,

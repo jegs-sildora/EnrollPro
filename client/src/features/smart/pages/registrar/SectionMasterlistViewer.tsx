@@ -16,7 +16,7 @@ import { useTheme } from "@/features/smart/contexts/ThemeContext";
 
 export default function SectionMasterlistViewer() {
   const { colors } = useTheme();
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<unknown[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   const [sectionsError, setSectionsError] = useState<string | null>(null);
 
@@ -25,17 +25,17 @@ export default function SectionMasterlistViewer() {
   const [selectedEnrollProId, setSelectedEnrollProId] = useState<number | null>(null);
   const [masterlistLoading, setMasterlistLoading] = useState(false);
   const [masterlistError, setMasterlistError] = useState<string | null>(null);
-  const [masterlist, setMasterlist] = useState<{ section: any; learners: any[]; total: number } | null>(null);
+  const [masterlist, setMasterlist] = useState<{ section: unknown; learners: unknown[]; total: number } | null>(null);
 
   const loadSections = async () => {
     setSectionsLoading(true);
     setSectionsError(null);
     try {
       const res = await registrarApi.getSections();
-      const payload = res.data as any;
-      const raw: any[] = payload.sections ?? payload.data ?? payload ?? [];
-      setSections(raw.filter((s: any) => s.id && s.name));
-    } catch (err: any) {
+      const payload = res.data as unknown;
+      const raw: unknown[] = payload.sections ?? payload.data ?? payload ?? [];
+      setSections(raw.filter((s: unknown) => s.id && s.name));
+    } catch (_err: unknown) {
       setSectionsError("Failed to load sections.");
     } finally {
       setSectionsLoading(false);
@@ -48,11 +48,11 @@ export default function SectionMasterlistViewer() {
     setMasterlist(null);
     try {
       const res = await registrarApi.getSectionMasterlist(enrollProId);
-      const payload = res.data as any;
+      const payload = res.data as unknown;
       // Normalise the learner fields from integration v1 shape:
       // data.learners[].learner.{lrn, firstName, lastName, middleName, sex}
-      const rawLearners: any[] = payload.learners ?? [];
-      const learners = rawLearners.map((row: any) => {
+      const rawLearners: unknown[] = payload.learners ?? [];
+      const learners = rawLearners.map((row: unknown) => {
         const l = row.learner ?? row;
         return {
           enrollmentRecordId: row.enrollmentRecordId,
@@ -65,7 +65,7 @@ export default function SectionMasterlistViewer() {
         };
       });
       setMasterlist({ section: payload.section, learners, total: payload.total ?? learners.length });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMasterlistError(err?.response?.data?.message ?? "Failed to load masterlist from EnrollPro.");
     } finally {
       setMasterlistLoading(false);
@@ -81,7 +81,7 @@ export default function SectionMasterlistViewer() {
     setSelectedSectionId(smartId);
     setMasterlist(null);
     setMasterlistError(null);
-    const sec = sections.find((s: any) => String(s.id) === smartId);
+    const sec = sections.find((s: unknown) => String(s.id) === smartId);
     const epId: number | null = sec?.enrollProId ?? null;
     setSelectedEnrollProId(epId);
     if (epId) void loadMasterlist(epId);
@@ -202,7 +202,7 @@ export default function SectionMasterlistViewer() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      masterlist.learners.map((l: any, i: number) => (
+                      masterlist.learners.map((l: unknown, i: number) => (
                         <TableRow key={l.lrn ?? l.enrollmentRecordId ?? i}>
                           <TableCell className="text-gray-500 text-sm">{i + 1}</TableCell>
                           <TableCell className="font-mono text-sm text-gray-600">{l.lrn ?? "—"}</TableCell>

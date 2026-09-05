@@ -442,7 +442,7 @@ export default function EosyUpdating() {
     enabled: Boolean(ayId && activeTab),
   });
 
-  const smartConnectionQuery = useQuery({
+  const _smartConnectionQuery = useQuery({
     queryKey: ["integration", "smart-status"],
     queryFn: async () => {
       const response = await api.get<SmartConnectionStatus>("/integration/smart/status");
@@ -1034,7 +1034,7 @@ export default function EosyUpdating() {
   }, [filteredRecords]);
   const pendingCount = pendingLearners.length;
 
-  const latestSmartSyncAt = useMemo(() => {
+  const _latestSmartSyncAt = useMemo(() => {
     const timestamps = records
       .map((record) => record.smartSynchronizedAt)
       .filter((value): value is string => Boolean(value))

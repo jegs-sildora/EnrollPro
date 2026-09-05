@@ -116,15 +116,15 @@ export async function executeScoreUpdate({
               perfTaskScores: [],
               quarterlyAssessScore: 0,
               quarterlyAssessMax: 100,
-            } as any);
+            } as unknown);
 
       if (category === "WW") {
-        const scores = [...((targetGrade.writtenWorkScores as any[]) || [])];
+        const scores = [...((targetGrade.writtenWorkScores as unknown[]) || [])];
         while (scores.length <= index) scores.push({ name: `WW ${scores.length + 1}`, score: 0, maxScore: 10 });
         scores[index] = { ...scores[index], score: newValue };
         targetGrade.writtenWorkScores = applyMetaToScores(scores as ScoreItem[], "WW", index + 1);
       } else if (category === "PT") {
-        const scores = [...((targetGrade.perfTaskScores as any[]) || [])];
+        const scores = [...((targetGrade.perfTaskScores as unknown[]) || [])];
         while (scores.length <= index) scores.push({ name: `PT ${scores.length + 1}`, score: 0, maxScore: 10 });
         scores[index] = { ...scores[index], score: newValue };
         targetGrade.perfTaskScores = applyMetaToScores(scores as ScoreItem[], "PT", index + 1);
@@ -171,7 +171,7 @@ export async function executeScoreUpdate({
     });
 
     await fetchClassRecord(true);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Failed to update score:", err);
     setError(err?.response?.data?.message || "Failed to save grade. Please retry.");
     await fetchClassRecord(true);
@@ -209,15 +209,15 @@ export async function executeHpsUpdate({
               perfTaskScores: [],
               quarterlyAssessScore: 0,
               quarterlyAssessMax: 100,
-            } as any);
+            } as unknown);
 
       if (category === "WW") {
-        const scores = [...((targetGrade.writtenWorkScores as any[]) || [])];
+        const scores = [...((targetGrade.writtenWorkScores as unknown[]) || [])];
         while (scores.length <= index) scores.push({ name: `WW ${scores.length + 1}`, score: 0, maxScore: newMax });
         scores[index] = { ...scores[index], maxScore: newMax };
         targetGrade.writtenWorkScores = applyMetaToScores(scores as ScoreItem[], "WW", index + 1);
       } else if (category === "PT") {
-        const scores = [...((targetGrade.perfTaskScores as any[]) || [])];
+        const scores = [...((targetGrade.perfTaskScores as unknown[]) || [])];
         while (scores.length <= index) scores.push({ name: `PT ${scores.length + 1}`, score: 0, maxScore: newMax });
         scores[index] = { ...scores[index], maxScore: newMax };
         targetGrade.perfTaskScores = applyMetaToScores(scores as ScoreItem[], "PT", index + 1);
@@ -264,7 +264,7 @@ export async function executeHpsUpdate({
 
     await Promise.all(updatePromises);
     await fetchClassRecord(true);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Failed to update HPS:", err);
     setError(err?.response?.data?.message || "Failed to save HPS changes.");
     await fetchClassRecord(true);
@@ -304,7 +304,7 @@ export async function executeRemoveTask({
       const gradeIdx = newRecord.grades.findIndex((g) => g.term === selectedTerm);
       if (gradeIdx === -1) return newRecord;
 
-      const targetGrade = { ...newRecord.grades[gradeIdx] } as any;
+      const targetGrade = { ...newRecord.grades[gradeIdx] } as unknown;
       if (category === "WW") {
         const scores = [...((targetGrade.writtenWorkScores || []) as ScoreItem[])];
         targetGrade.writtenWorkScores = scores.slice(0, Math.max(0, scores.length - 1));
@@ -347,7 +347,7 @@ export async function executeRemoveTask({
     await Promise.all(updatePromises);
     await fetchClassRecord(true);
     setSuccess(`${category} activity removed`);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(`Failed to remove ${category} task:`, err);
     await fetchClassRecord(true);
     setError(err?.response?.data?.message || `Failed to remove ${category} activity`);

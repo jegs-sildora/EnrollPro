@@ -23,8 +23,8 @@ export default function BOSYQueue() {
   const [tab, setTab] = useState<QueueTab>("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [meta, setMeta] = useState<any>(null);
+  const [items, setItems] = useState<unknown[]>([]);
+  const [meta, setMeta] = useState<unknown>(null);
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -34,7 +34,7 @@ export default function BOSYQueue() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      let res: any;
+      let res: unknown;
       const params = {
         page: p,
         limit: l,
@@ -46,17 +46,17 @@ export default function BOSYQueue() {
       } else {
         res = await registrarApi.getBosyExpectedQueue(params);
       }
-      const payload = res.data as any;
-      const rawItems: any[] = payload.items ?? payload.learners ?? payload.data ?? [];
+      const payload = res.data as unknown;
+      const rawItems: unknown[] = payload.items ?? payload.learners ?? payload.data ?? [];
 
       // Normalize: map the actual flat OR nested API field names from EnrollPro BOSY queue
-      const normalized = rawItems.map((item: any) => {
+      const normalized = rawItems.map((item: unknown) => {
         const l = item.learner ?? item;
         const rawSex = (l.sex ?? item.sex ?? "").toString().trim().toUpperCase();
         const sex = rawSex === "MALE" || rawSex === "M" ? "Male" : rawSex === "FEMALE" || rawSex === "F" ? "Female" : "";
 
         // Helper to extract nested names robustly
-        const getName = (obj: any, flatKey: string) => {
+        const getName = (obj: unknown, flatKey: string) => {
           if (typeof obj === "string") return obj;
           if (obj && typeof obj === "object" && obj.name) return obj.name;
           return item[flatKey] ?? "";
@@ -86,7 +86,7 @@ export default function BOSYQueue() {
         limit: l,
         totalPages: payload.totalPages ?? Math.ceil((payload.total ?? normalized.length) / l)
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err?.response?.data?.message ?? "Failed to load BOSY data from EnrollPro.");
       setItems([]);
       setMeta(null);

@@ -32,7 +32,7 @@ export function HistoricalCorrectionModal({
           "Historical correction mode is active for 10 minutes. All changes will be permanently logged.",
       });
       onOpenChange(false);
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       sileo.error({
         title: "Authorization Failed",
         description: "Could not authorize historical correction. Please try again.",

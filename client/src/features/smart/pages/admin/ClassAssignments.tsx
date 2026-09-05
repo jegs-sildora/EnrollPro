@@ -63,7 +63,7 @@ const SCHOOL_YEARS = ["2026-2027", "2025-2026"];
 
 export default function ClassAssignments() {
   const [schoolYear, setSchoolYear] = useState("2026-2027");
-  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<unknown[]>([]);
   const [workloadSummary, setWorkloadSummary] = useState<Array<{
     teacherId: string;
     teacherName: string;
@@ -75,7 +75,7 @@ export default function ClassAssignments() {
     otherSubjectMinutes: number;
     totalMinutes: number;
   }>>([]);
-  const [options, setOptions] = useState<{ teachers: any[]; subjects: any[]; sections: any[] }>({
+  const [options, setOptions] = useState<{ teachers: unknown[]; subjects: unknown[]; sections: unknown[] }>({
     teachers: [],
     subjects: [],
     sections: [],
@@ -87,9 +87,9 @@ export default function ClassAssignments() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [selectedTeacherProfile, setSelectedTeacherProfile] = useState<any>(null);
+  const [selectedTeacherProfile, setSelectedTeacherProfile] = useState<unknown>(null);
   const [isWarningOpen, setIsWarningOpen] = useState(false);
-  const [warningData, setWarningData] = useState<any>(null);
+  const [warningData, setWarningData] = useState<unknown>(null);
 
   useEffect(() => {
     if (form.teacherId) {
@@ -112,7 +112,7 @@ export default function ClassAssignments() {
       setAssignments(assignRes.data?.assignments ?? []);
       setWorkloadSummary(assignRes.data?.workloadSummary ?? []);
       setOptions(optRes.data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message ?? "Failed to load class assignments");
     } finally {
       setLoading(false);
@@ -164,7 +164,7 @@ export default function ClassAssignments() {
       setSuccess("Assignment created successfully");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.response?.data?.message ?? e.message ?? "Failed to create assignment");
     } finally {
       setCreating(false);
@@ -178,7 +178,7 @@ export default function ClassAssignments() {
       setSuccess("Assignment deleted");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.response?.data?.message ?? "Failed to delete");
     }
   };

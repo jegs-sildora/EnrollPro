@@ -155,10 +155,10 @@ export interface StudentDetail {
   isBalikAral?: boolean;
   motherTongue?: string | null;
   religion?: string | null;
-  academicHistory?: any[];
+  academicHistory?: unknown[];
   isRemedialRequired?: boolean;
-  academicDeficiencies?: any[];
-  remedialClasses?: any[];
+  academicDeficiencies?: unknown[];
+  remedialClasses?: unknown[];
   portalStatus?: string;
   historicalGrades?: {
     gradeLevel: string;
@@ -176,7 +176,7 @@ interface Props {
   onTransferOut?: (payload: StudentTransferOutPayload) => void;
   onDropout?: (payload: StudentDropoutPayload) => void;
   onExpand?: (identifier?: string | number) => void;
-  onStudentLoaded?: (student: any) => void;
+  onStudentLoaded?: (student: unknown) => void;
   canEditProfile?: boolean;
   showHeader?: boolean;
 }
@@ -241,7 +241,7 @@ export function StudentDetailPanel({
       setReactivateReason("");
       onRefreshData?.();
       await fetchStudent();
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       sileo.error({
         title: "Reactivation Failed",
         description: "An error occurred while reactivating the learner.",
@@ -312,7 +312,7 @@ export function StudentDetailPanel({
         description: `Student portal has been ${active ? "activated" : "locked"}.`,
       });
       if (onRefreshData) onRefreshData();
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       sileo.error({
         title: "Failed to Update Portal Access",
         description: "An error occurred while updating portal status.",
@@ -343,7 +343,7 @@ export function StudentDetailPanel({
         title: "Password Reset Success",
         description: "Student portal password has been reset.",
       });
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       sileo.error({
         title: "Failed to Reset Password",
         description: "An error occurred while resetting password.",

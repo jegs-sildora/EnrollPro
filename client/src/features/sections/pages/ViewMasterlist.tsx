@@ -180,7 +180,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
 
   const [section, setSection] = useState<SectionDetails | null>(null);
   const [masterlist, setMasterlist] = useState<LearnerRecord[]>([]);
-  const [teachers, setTeachers] = useState<SectionTeacherOption[]>([]);
+  const [_teachers, setTeachers] = useState<SectionTeacherOption[]>([]);
   const retainedStudentId = useRetainedSheetValue(selectedStudentId);
 
   const fetchMasterlistData = useCallback(async () => {
@@ -387,7 +387,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
     [masterlist]
   );
 
-  const formatDate = (d: string) => {
+  const _formatDate = (d: string) => {
     if (!d) return "—";
     return new Date(d).toLocaleDateString("en-US", {
       timeZone: 'Asia/Manila',
@@ -444,7 +444,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                 </TableRow>
               ) : (
                 data.map((learner, idx) => {
-                  const age = calculateAgeAsOfJuneFirst(learner.birthdate);
+                  const _age = calculateAgeAsOfJuneFirst(learner.birthdate);
                   return (
                     <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
                       <TableCell className="text-center font-bold text-sm text-foreground py-3">

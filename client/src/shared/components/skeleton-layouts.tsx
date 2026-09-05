@@ -348,8 +348,7 @@ function renderVariant(variant: SkeletonPageVariant) {
       );
     case "detail":
       return <DetailPanelSkeleton />;
-    case "form":
-      return <FormSkeleton />;
+
     case "enrollmentForm":
       return <EnrollmentFormSkeleton />;
     case "learnerProfile":

@@ -30,7 +30,7 @@ interface RemedialClassesTableProps {
   activeSchoolYearLabel: string
 }
 
-export function RemedialClassesTable({ learnerId, activeSchoolYearLabel }: RemedialClassesTableProps) {
+export function RemedialClassesTable({ learnerId, activeSchoolYearLabel: _activeSchoolYearLabel }: RemedialClassesTableProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["student-detail-remedial", learnerId],
     queryFn: async () => {

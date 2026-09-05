@@ -186,7 +186,7 @@ export default function AuditLogs() {
     try {
       setExporting(true);
       const response = await adminApi.exportLogs();
-      const blob = new Blob([response.data as any], { type: "text/csv" });
+      const blob = new Blob([response.data as unknown], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

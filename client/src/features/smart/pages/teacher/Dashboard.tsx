@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader } from "@/features/smart/components/ui/ca
 import { Badge } from "@/features/smart/components/ui/badge";
 import { Button } from "@/features/smart/components/ui/button";
 import { Avatar, AvatarFallback } from "@/features/smart/components/ui/avatar";
-import { ScrollArea, ScrollBar } from "@/features/smart/components/ui/scroll-area";
+import { ScrollArea } from "@/features/smart/components/ui/scroll-area";
 import { gradesApi, type ClassAssignment, type GradeDeadlineInfo } from "@/features/smart/lib/api";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
 import { GradeDeadlineBanner } from "@/features/smart/components/GradeDeadlineBanner";

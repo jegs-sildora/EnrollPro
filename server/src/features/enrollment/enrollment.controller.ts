@@ -408,7 +408,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
       lrn, firstName, lastName, middleName, birthdate, sex,
       gradeLevelId, assignedProgram,
       previousSchoolName, previousGenAve, originatingSchoolId,
-      guardianName, guardianContact,
+      guardianName, guardianRelationship, guardianContact,
       hasSf9, hasPsa, sf9EligibilityStatus
     } = payload;
 
@@ -483,7 +483,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           // create family member
           familyMembers: {
             create: {
-              relationship: "GUARDIAN",
+              relationship: guardianRelationship || "GUARDIAN",
               firstName: guardianName,
               lastName: "", // Assuming single field from frontend form for simplicity
               contactNumber: guardianContact,

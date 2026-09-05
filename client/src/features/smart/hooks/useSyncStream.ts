@@ -127,7 +127,7 @@ export function useSyncStream(options?: UseSyncStreamOptions): UseSyncStreamRetu
             }
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // AbortError = intentional disconnect (component unmount / token change).
         if (err.name === 'AbortError') return;
         console.warn('[useSyncStream] Connection lost:', err.message);

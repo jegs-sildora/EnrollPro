@@ -23,35 +23,35 @@ export default function EOSYFinalization() {
   const { colors } = useTheme();
 
   const [schoolYearsLoading, setSchoolYearsLoading] = useState(true);
-  const [schoolYears, setSchoolYears] = useState<any[]>([]);
+  const [schoolYears, setSchoolYears] = useState<unknown[]>([]);
   const [selectedSchoolYearId, setSelectedSchoolYearId] = useState<string>("");
 
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [sectionsError, setSectionsError] = useState<string | null>(null);
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<unknown[]>([]);
 
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState<string | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
-  const [sectionMeta, setSectionMeta] = useState<any>(null);
+  const [records, setRecords] = useState<unknown[]>([]);
+  const [sectionMeta, setSectionMeta] = useState<unknown>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const loadSchoolYears = async () => {
     setSchoolYearsLoading(true);
     try {
       const res = await registrarApi.getEosySchoolYears();
-      const years = (res.data as any) || [];
+      const years = (res.data as unknown) || [];
       setSchoolYears(years);
 
       // Select the active one by default if available
-      const active = years.find((y: any) => y.status === "ACTIVE");
+      const active = years.find((y: unknown) => y.status === "ACTIVE");
       if (active) {
         setSelectedSchoolYearId(String(active.id));
       } else if (years.length > 0) {
         setSelectedSchoolYearId(String(years[0].id));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load school years", err);
     } finally {
       setSchoolYearsLoading(false);
@@ -68,9 +68,9 @@ export default function EOSYFinalization() {
     setRecords([]);
     try {
       const res = await registrarApi.getEosySections(parseInt(targetSyId, 10));
-      const payload = res.data as any;
+      const payload = res.data as unknown;
       setSections(payload.sections ?? payload.data ?? payload ?? []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSectionsError(err?.response?.data?.message ?? "Failed to load EOSY sections from EnrollPro.");
     } finally {
       setSectionsLoading(false);
@@ -84,11 +84,11 @@ export default function EOSYFinalization() {
     setSectionMeta(null);
     try {
       const res = await registrarApi.getEosySectionRecords(parseInt(sectionId, 10));
-      const payload = res.data as any;
-      const rawRecords: any[] = payload.records ?? payload.learners ?? payload.data ?? [];
+      const payload = res.data as unknown;
+      const rawRecords: unknown[] = payload.records ?? payload.learners ?? payload.data ?? [];
 
       // Normalize: EnrollPro EOSY records nest learner under rec.enrollmentApplication.learner
-      const normalized = rawRecords.map((rec: any) => {
+      const normalized = rawRecords.map((rec: unknown) => {
         const l = rec.enrollmentApplication?.learner ?? rec.learner ?? rec;
         const rawSex = (l.sex ?? rec.sex ?? "").toString().trim().toUpperCase();
         const sex = rawSex === "MALE" || rawSex === "M" ? "Male" : rawSex === "FEMALE" || rawSex === "F" ? "Female" : "";
@@ -116,7 +116,7 @@ export default function EOSYFinalization() {
 
       setRecords(normalized);
       setSectionMeta(payload.section ?? payload.meta ?? null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setRecordsError(err?.response?.data?.message ?? "Failed to load EOSY records from EnrollPro.");
     } finally {
       setRecordsLoading(false);
@@ -320,7 +320,7 @@ export default function EOSYFinalization() {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          filteredRecords.map((rec: any, i: number) => {
+                          filteredRecords.map((rec: unknown, i: number) => {
                             const isPromoted = rec.promoted || rec.finalStatus === "PROMOTED";
                             return (
                               <TableRow key={rec.enrollmentRecordId ?? rec.learnerId ?? i} className="hover:bg-slate-50/50 transition-colors">

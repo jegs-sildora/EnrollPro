@@ -99,7 +99,7 @@ const formatDate = (dateString?: string) => {
 };
 
 // Helper component for Form Status
-const FormStatusCard = ({ label, title, status, description }: {
+const FormStatusCard = ({ label, title, status, _description }: {
   label: string;
   title: string;
   status: 'completed' | 'pending' | 'missing' | 'dev';
@@ -147,8 +147,8 @@ export default function StudentRecords() {
   // Student detail modal
   const [selectedStudent, setSelectedStudent] = useState<StudentWithEnrollment | null>(null);
   const [studentDetailOpen, setStudentDetailOpen] = useState(false);
-  const [sf9Data, setSf9Data] = useState<any>(null);
-  const [sf10Data, setSf10Data] = useState<any>(null);
+  const [sf9Data, setSf9Data] = useState<unknown>(null);
+  const [sf10Data, setSf10Data] = useState<unknown>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Pagination
@@ -213,7 +213,7 @@ export default function StudentRecords() {
         const studentsData = studentsRes.data.students || studentsRes.data;
         setStudents(Array.isArray(studentsData) ? studentsData : []);
         setSections(sectionsRes.data || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error loading data:", error);
         if (error.response?.status === 403) {
           setError("Access denied. Please log in as Registrar.");
@@ -590,7 +590,7 @@ export default function StudentRecords() {
                                   size="sm"
                                   onClick={() => handleViewStudent(student)}
                                   className="h-9 px-4 rounded-xl  transition-all hover:bg-muted hover:shadow-sm border border-transparent hover:border-slate-100"
-                                  style={{ ['--hover-text' as any]: colors.primary }}
+                                  style={{ ['--hover-text' as unknown]: colors.primary }}
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
                                   View
@@ -853,7 +853,7 @@ export default function StudentRecords() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {sf9Data.subjectGrades.map((sg: any) => (
+                            {sf9Data.subjectGrades.map((sg: unknown) => (
                               <TableRow key={sg.subjectCode} className="border-b border-gray-200">
                                 <TableCell className=" text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.subjectName}</TableCell>
                                 <TableCell className="text-center text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.T1 ?? "-"}</TableCell>
@@ -880,7 +880,7 @@ export default function StudentRecords() {
                         <h3 className="font-bold text-gray-900 text-lg sm:text-xl">Academic History (SF10)</h3>
                       </div>
                       <div className="space-y-4 sm:space-y-5">
-                        {sf10Data.schoolRecords.map((record: any) => (
+                        {sf10Data.schoolRecords.map((record: unknown) => (
                           <div key={record.schoolYear} className="border-2 rounded-xl p-4 sm:p-6 shadow-sm" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}30` }}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-3">
                               <h4 className="font-bold text-gray-900 text-base sm:text-lg">S.Y. {record.schoolYear} - Grade {record.gradeLevel.replace('GRADE_', '')}</h4>

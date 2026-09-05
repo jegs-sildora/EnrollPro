@@ -55,7 +55,7 @@ function HistoricalSummary({ stats }: { stats: DashboardStats }) {
 
 export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
   const navigate = useNavigate()
-  const { ayLabel, viewingStatus } = useSchoolYearContext()
+  const { viewingStatus } = useSchoolYearContext()
   const isArchived = stats.isArchived || viewingStatus === "ARCHIVED"
   const pendingTotal = stats.kpiHeader.pendingTotal
   const unassignedTotal = stats.kpiHeader.unassignedTotal

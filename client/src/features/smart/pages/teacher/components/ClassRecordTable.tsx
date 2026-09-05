@@ -498,8 +498,8 @@ export function ClassRecordTable({
   showAssessmentDetails,
   onToggleAssessmentDetails,
   topNavHeight,
-  ledgerHeaderHeight,
-  stickyOffset,
+  _ledgerHeaderHeight,
+  _stickyOffset,
   wwCount,
   ptCount,
   hpsData,
@@ -551,8 +551,8 @@ export function ClassRecordTable({
   // ── Measure header rows for nested sticky within the scroll container ────
   const groupRowRef = useRef<HTMLTableRowElement | null>(null);
   const subRowRef = useRef<HTMLTableRowElement | null>(null);
-  const [groupRowH, setGroupRowH] = useState(36);
-  const [subRowH, setSubRowH] = useState(36);
+  const [_groupRowH, setGroupRowH] = useState(36);
+  const [_subRowH, setSubRowH] = useState(36);
 
   useEffect(() => {
     const nodes = [groupRowRef.current, subRowRef.current];

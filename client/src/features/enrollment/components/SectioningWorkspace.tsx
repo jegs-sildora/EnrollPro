@@ -283,7 +283,7 @@ const sortLearnersByAverage = (first: PoolLearner, second: PoolLearner) => {
   );
 };
 
-const interleaveBySex = (learners: PoolLearner[]) => {
+const _interleaveBySex = (learners: PoolLearner[]) => {
   const males = learners
     .filter((learner) => learner.sex === "MALE")
     .sort(sortLearnersByAverage);
@@ -673,7 +673,7 @@ export function SectioningWorkspace() {
   }, [gradeLevels, activeGradeLevelId, setActiveGradeLevelId]);
 
   const isDraftActive = draftPlacement !== null;
-  const isLockedIn = selectedAppIds.length > 0 || isDraftActive;
+  const _isLockedIn = selectedAppIds.length > 0 || isDraftActive;
 
   const currentGradeSections = useMemo(() => {
     if (!activeGradeLevelId) return [];
@@ -946,7 +946,7 @@ export function SectioningWorkspace() {
       void queryClient.invalidateQueries({
         queryKey: ["section-masterlist", destinationSectionId],
       });
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
       sileo.error({
         title: "Move Failed",
         description: "An error occurred while moving the learner. Please try again.",

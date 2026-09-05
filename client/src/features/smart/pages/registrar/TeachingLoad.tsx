@@ -16,11 +16,11 @@ export default function TeachingLoad() {
   const { colors } = useTheme();
   const [loadLoading, setLoadLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [faculty, setFaculty] = useState<any[]>([]);
+  const [faculty, setFaculty] = useState<unknown[]>([]);
 
   const [coverageLoading, setCoverageLoading] = useState(true);
   const [coverageError, setCoverageError] = useState<string | null>(null);
-  const [coverage, setCoverage] = useState<any>(null);
+  const [coverage, setCoverage] = useState<unknown>(null);
 
   const [search, setSearch] = useState("");
   const [isLocalDbFallback, setIsLocalDbFallback] = useState(false);
@@ -34,10 +34,10 @@ export default function TeachingLoad() {
     void (async () => {
       try {
         const res = await registrarApi.getAtlasTeachingLoads();
-        const payload = res.data as any;
+        const payload = res.data as unknown;
         setFaculty(payload.faculty ?? payload.teachers ?? payload.data ?? []);
         if (payload.source === "smart-local-db") setIsLocalDbFallback(true);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const detail = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "";
         setLoadError(`Failed to load teaching loads: ${detail}`);
         setFaculty([]);
@@ -50,7 +50,7 @@ export default function TeachingLoad() {
       try {
         const res = await registrarApi.getAtlasSubjectCoverage();
         setCoverage(res.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const detail = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "";
         setCoverageError(`Failed to load subject coverage: ${detail}`);
         setCoverage(null);
@@ -200,7 +200,7 @@ export default function TeachingLoad() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((f: any, i: number) => {
+                    filtered.map((f: unknown, i: number) => {
                       // Pure teaching load percentage = ((Total Subject Hours - Advisory Equivalent) / Max Hours) * 100
                       const rawSubjectHours = f.subjectHours ?? f.weeklyHours ?? 0;
                       const advHours = f.isClassAdviser ? (f.advisoryEquivalentHours ?? 0) : 0;
@@ -259,9 +259,9 @@ export default function TeachingLoad() {
                           </TableCell>
                           <TableCell className="text-sm text-gray-600 max-w-xs">
                             {Array.isArray(f.assignments)
-                              ? f.assignments.map((a: any) => a.subject?.name ?? a.subject?.code ?? a.subjectCode ?? "").filter(Boolean).join(", ") || "—"
+                              ? f.assignments.map((a: unknown) => a.subject?.name ?? a.subject?.code ?? a.subjectCode ?? "").filter(Boolean).join(", ") || "—"
                               : Array.isArray(f.assignedSubjects)
-                                ? f.assignedSubjects.map((s: any) => s.name ?? s.code ?? s).join(", ")
+                                ? f.assignedSubjects.map((s: unknown) => s.name ?? s.code ?? s).join(", ")
                                 : f.subjects ?? "—"}
                           </TableCell>
                         </TableRow>
@@ -291,7 +291,7 @@ export default function TeachingLoad() {
           </CardHeader>
           <CardContent className="pt-4">
             <div className="flex flex-wrap gap-2">
-              {coverage.unassigned.map((s: any) => (
+              {coverage.unassigned.map((s: unknown) => (
                 <Badge key={s.id} variant="outline" className="border-amber-300 text-amber-700 bg-amber-100">
                   {s.code ? `${s.code} — ` : ""}{s.name}
                 </Badge>

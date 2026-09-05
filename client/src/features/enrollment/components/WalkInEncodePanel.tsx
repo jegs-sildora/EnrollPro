@@ -117,17 +117,18 @@ export function WalkInEncodePanel() {
       lastName: "",
       middleName: "",
       birthdate: "",
-      sex: "" as any,
+      sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
       gradeLevelId: 0,
-      assignedProgram: "" as any,
+      assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
       previousSchoolName: "",
       previousGenAve: undefined,
       guardianName: "",
+      guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
       guardianContact: "",
       hasSf9: false,
       hasPsa: false,
       originatingSchoolId: "",
-      sf9EligibilityStatus: "" as any,
+      sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
@@ -593,14 +594,17 @@ export function WalkInEncodePanel() {
                           name="previousSchoolName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold">School Name <span className="text-destructive">*</span></FormLabel>
+                              <FormLabel className="font-bold">
+                                {form.watch('learnerType') === "TRANSFEREE" ? "Transferred From (Previous School)" : "School Name"}
+                                <span className="text-destructive"> *</span>
+                              </FormLabel>
                               <FormControl><Input placeholder="e.g. RIZAL ELEMENTARY SCHOOL" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                             </FormItem>
                           )}
                         />
                       </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1">
+                      <div className={form.watch('learnerType') === "TRANSFEREE" ? "grid grid-cols-3 gap-4" : "flex gap-4"}>
+                        <div className={form.watch('learnerType') === "TRANSFEREE" ? "" : "flex-1"}>
                           <FormField
                             control={form.control}
                             name="originatingSchoolId"
@@ -625,7 +629,28 @@ export function WalkInEncodePanel() {
                             )}
                           />
                         </div>
-                        <div className="flex-1">
+                        {form.watch('learnerType') === "TRANSFEREE" && (
+                          <div>
+                            <FormField
+                              control={form.control}
+                              name="transferCertificateNo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="font-bold">Transfer Certificate No.</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="e.g. 98765"
+                                      className="font-bold"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
+                        <div className={form.watch('learnerType') === "TRANSFEREE" ? "" : "flex-1"}>
                           <FormField
                             control={form.control}
                             name="previousGenAve"
@@ -709,6 +734,28 @@ export function WalkInEncodePanel() {
                             <FormItem>
                               <FormLabel className="font-bold">Parent/Guardian Name <span className="text-destructive">*</span></FormLabel>
                               <FormControl><Input placeholder="e.g. MARIA DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="guardianRelationship"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-bold">Relationship to Learner <span className="text-destructive">*</span></FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                                <FormControl>
+                                  <SelectTrigger className="font-bold uppercase">
+                                    <SelectValue placeholder="SELECT RELATIONSHIP" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="MOTHER" className="font-bold uppercase">Mother</SelectItem>
+                                  <SelectItem value="FATHER" className="font-bold uppercase">Father</SelectItem>
+                                  <SelectItem value="GUARDIAN" className="font-bold uppercase">Guardian</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

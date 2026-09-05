@@ -45,20 +45,35 @@ export function useActiveTerm() {
           return now >= new Date(start) && now <= new Date(end);
         };
 
-        const termFormat = (year as any).termFormat || "TRIMESTER";
+        interface SchoolYear {
+          id: number;
+          termFormat?: string;
+          activeTerm?: string;
+          term1Start?: string | null;
+          term1End?: string | null;
+          term2Start?: string | null;
+          term2End?: string | null;
+          term3Start?: string | null;
+          term3End?: string | null;
+          term4Start?: string | null;
+          term4End?: string | null;
+        }
+
+        const sy = year as SchoolYear;
+        const termFormat = sy.termFormat || "TRIMESTER";
         const prefix = termFormat === "QUARTERS" ? "QUARTER" : "TERM";
 
         let activeTermCode = "T1";
         
-        if ((year as any).activeTerm) {
-          activeTermCode = (year as any).activeTerm;
-        } else if (checkTerm(year.term1Start, year.term1End)) {
+        if (sy.activeTerm) {
+          activeTermCode = sy.activeTerm;
+        } else if (checkTerm(sy.term1Start, sy.term1End)) {
           activeTermCode = "T1";
-        } else if (checkTerm(year.term2Start, year.term2End)) {
+        } else if (checkTerm(sy.term2Start, sy.term2End)) {
           activeTermCode = "T2";
-        } else if (checkTerm(year.term3Start, year.term3End)) {
+        } else if (checkTerm(sy.term3Start, sy.term3End)) {
           activeTermCode = "T3";
-        } else if (checkTerm(year.term4Start, year.term4End)) {
+        } else if (checkTerm(sy.term4Start, sy.term4End)) {
           activeTermCode = "T4";
         }
 

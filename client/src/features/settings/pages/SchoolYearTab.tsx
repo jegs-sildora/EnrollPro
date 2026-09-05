@@ -285,7 +285,6 @@ export default function SchoolYearTab() {
     systemPhase,
     enableHomogeneousSections,
     homogeneousSectionCount,
-    heterogeneousRoundRobin,
     viewingSchoolYearStatus,
     systemStatus,
     viewingSchoolYearId,
@@ -315,7 +314,7 @@ export default function SchoolYearTab() {
 
   // Activation & Legal state
 
-  const [, setIsUpdatingTimeline] = useState(false);
+  const [, _setIsUpdatingTimeline] = useState(false);
 
   const currentManilaYear = useMemo(
     () => getDatePartsInTimeZone(new Date()).year,

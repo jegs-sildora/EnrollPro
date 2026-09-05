@@ -46,7 +46,7 @@ interface LearnerFamilyMember {
   relationship: string;
 }
 
-interface SubjectGrades {
+interface _SubjectGrades {
   Q1?: number | null;
   Q2?: number | null;
   Q3?: number | null;

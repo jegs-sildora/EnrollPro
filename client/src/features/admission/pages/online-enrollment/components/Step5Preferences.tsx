@@ -79,7 +79,7 @@ export default function Step5Enrollment() {
 
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
 
-  const isBalikAral = watch("isBalikAral");
+  const _isBalikAral = watch("isBalikAral");
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
   const isScpApplication = watch("isScpApplication");

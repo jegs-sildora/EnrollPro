@@ -1,4 +1,4 @@
-// @ts-nocheck
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import axios from "axios";
 
@@ -141,14 +141,18 @@ function loadCachedTheme(): { colors: ThemeColors; logoUrl: string | null; schoo
   try {
     const cached = localStorage.getItem(THEME_CACHE_KEY);
     if (cached) return JSON.parse(cached);
-  } catch {}
+  } catch {
+    // ignore
+  }
   return null;
 }
 
 function saveThemeCache(data: { colors: ThemeColors; logoUrl: string | null; schoolName: string; schoolAddress: string; schoolDivision: string; schoolRegion: string; schoolId: string }) {
   try {
     localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(data));
-  } catch {}
+  } catch {
+    // ignore
+  }
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {

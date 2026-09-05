@@ -24,6 +24,18 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+
+interface AddressPayload {
+  houseNo?: string;
+  street?: string;
+  barangay?: string;
+  cityMunicipality?: string;
+  province?: string;
+  region?: string;
+  zipCode?: string;
+  country?: string;
+}
 
 const DRAFT_KEY = "enrollpro_enrollment_draft";
 
@@ -416,7 +428,16 @@ export default function EnrollmentForm({
         : String(data.lrn ?? "").trim() || null;
 
 
-      const mapAddress = (addr: any) => {
+      interface AddressPayload {
+        houseNo?: string;
+        street?: string;
+        barangay?: string;
+        cityMunicipality?: string;
+        province?: string;
+        region?: string;
+      }
+
+      const mapAddress = (addr: AddressPayload | null | undefined) => {
         if (!addr) return null;
         return {
           houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,
@@ -618,7 +639,7 @@ export default function EnrollmentForm({
 
                       const hasGuardianData = guardian !== null && [guardian.firstName, guardian.lastName, guardian.middleName, guardian.contactNumber, guardian.relationship].some((value) => String(value ?? "").trim().length > 0);
 
-                      const mapAddress = (addr: any) => {
+                      const mapAddress = (addr: AddressPayload | null | undefined) => {
                         if (!addr) return null;
                         return {
                           houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,

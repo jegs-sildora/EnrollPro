@@ -171,7 +171,7 @@ export default function UserManagement() {
       setIsCreateOpen(false);
       setFormData(initialFormData);
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err.response?.data?.message || "Failed to create user");
     } finally {
       setSaving(false);
@@ -196,7 +196,7 @@ export default function UserManagement() {
       setSelectedUser(null);
       setFormData(initialFormData);
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err.response?.data?.message || "Failed to update user");
     } finally {
       setSaving(false);
@@ -211,14 +211,14 @@ export default function UserManagement() {
       setIsDeleteOpen(false);
       setSelectedUser(null);
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err.response?.data?.message || "Failed to delete user");
     } finally {
       setSaving(false);
     }
   };
 
-  const openEditDialog = (user: AdminUser) => {
+  const _openEditDialog = (user: AdminUser) => {
     setSelectedUser(user);
     setFormData({
       username: user.username,
@@ -238,7 +238,7 @@ export default function UserManagement() {
     setIsViewOpen(true);
   };
 
-  const openDeleteDialog = (user: AdminUser) => {
+  const _openDeleteDialog = (user: AdminUser) => {
     setSelectedUser(user);
     setIsDeleteOpen(true);
   };

@@ -179,7 +179,7 @@ function Calendar({
             />
           );
         },
-        Dropdown: ({ value, onChange, options, className }) => {
+        Dropdown: ({ value, onChange, options, className: _className }) => {
           const firstOptionValue = options?.[0]?.value;
           const parsedFirstValue = Number(firstOptionValue);
           const isYear =

@@ -36,7 +36,7 @@ interface BorderStyle {
 interface ParsedCell {
   row: number;
   col: number;
-  value: any;
+  value: unknown;
   formula?: string;
   type: 'string' | 'number' | 'boolean' | 'date' | 'formula' | 'empty';
   style: CellStyle;

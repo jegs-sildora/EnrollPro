@@ -96,7 +96,7 @@ export default function ClassRecordView() {
     let max = 1;
     classRecord.forEach(r => {
       const grade = r.grades.find(g => g.term === selectedTerm);
-      if (grade?.writtenWorkScores) max = Math.max(max, (grade.writtenWorkScores as any[]).length);
+      if (grade?.writtenWorkScores) max = Math.max(max, (grade.writtenWorkScores as unknown[]).length);
     });
     return max;
   }, [classRecord, selectedTerm]);
@@ -105,7 +105,7 @@ export default function ClassRecordView() {
     let max = 1;
     classRecord.forEach(r => {
       const grade = r.grades.find(g => g.term === selectedTerm);
-      if (grade?.perfTaskScores) max = Math.max(max, (grade.perfTaskScores as any[]).length);
+      if (grade?.perfTaskScores) max = Math.max(max, (grade.perfTaskScores as unknown[]).length);
     });
     return max;
   }, [classRecord, selectedTerm]);
@@ -156,7 +156,7 @@ export default function ClassRecordView() {
   useEffect(() => {
     const gradeSamples = classRecord
       .map((record) => record.grades.find((g) => g.term === selectedTerm))
-      .filter(Boolean) as Array<any>;
+      .filter(Boolean) as Array<unknown>;
 
     const wwSample = gradeSamples.find((g) => Array.isArray(g.writtenWorkScores) && g.writtenWorkScores.length > 0);
     const ptSample = gradeSamples.find((g) => Array.isArray(g.perfTaskScores) && g.perfTaskScores.length > 0);
@@ -296,7 +296,7 @@ export default function ClassRecordView() {
       setSuccess('Assessment metadata applied to the selected column');
       fetchClassRecord(true);
       setSelectedColumn(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save column metadata:', err);
       setError(err?.response?.data?.message || 'Failed to save assessment metadata');
       fetchClassRecord(true);
@@ -362,7 +362,7 @@ export default function ClassRecordView() {
       await Promise.all(updatePromises);
       setSuccess('Assessment metadata synced for the class');
       fetchClassRecord(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to sync mobile column metadata:', err);
       setError(err?.response?.data?.message || 'Failed to sync assessment metadata');
       fetchClassRecord(true);
@@ -536,7 +536,7 @@ export default function ClassRecordView() {
       const response = await gradesApi.importEcr(classAssignmentId, file);
       setSuccess(`Successfully imported ${response.data.importedGrades} grades from ECR.`);
       fetchClassRecord();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to import ECR:", err);
       setError(err.response?.data?.message || "Failed to import ECR grades");
     }
@@ -599,7 +599,7 @@ export default function ClassRecordView() {
       });
       setSuccess('Descriptor saved');
       fetchClassRecord(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err?.response?.data?.message || 'Failed to save descriptor');
     } finally {
       setSavingDescriptorStudentId(null);
@@ -673,7 +673,7 @@ export default function ClassRecordView() {
       await Promise.all(updatePromises);
       setSuccess('Assessment details saved');
       fetchClassRecord(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save assessment details:', err);
       setError(err?.response?.data?.message || 'Failed to save assessment details');
     }
@@ -686,7 +686,7 @@ export default function ClassRecordView() {
       await gradesApi.clearScores(classAssignmentId, selectedTerm);
       setSuccess("Successfully cleared all scores for the current term.");
       await fetchClassRecord();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to clear scores:", err);
       setError(err?.response?.data?.message || "Failed to clear scores");
       await fetchClassRecord();
@@ -826,7 +826,7 @@ export default function ClassRecordView() {
       setEcrPercentage(100);
       setEcrProgress('Download started!');
       setTimeout(() => setShowEcrGenerationDialog(false), 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message);
       setShowEcrGenerationDialog(false);
     }

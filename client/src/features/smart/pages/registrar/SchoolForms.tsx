@@ -15,8 +15,7 @@ import {
   FileCheck,
   Loader2,
   AlertCircle,
-  MoreVertical,
-  PrinterIcon
+  MoreVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/smart/components/ui/card";
 import { Badge } from "@/features/smart/components/ui/badge";
@@ -174,7 +173,7 @@ type ViewMode = "list" | "sf8" | "sf9" | "sf10" | "bulk_sf9" | "bulk_sf10";
 
 export default function SchoolForms() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [schoolYear, setSchoolYear] = useState("2026-2027");
   const [schoolYears, setSchoolYears] = useState<string[]>(["2026-2027"]);
@@ -204,9 +203,9 @@ export default function SchoolForms() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   // Form data states
-  const [sf8Data, setSf8Data] = useState<any>(null);
-  const [sf9Data, setSf9Data] = useState<any>(null);
-  const [sf10Data, setSf10Data] = useState<any>(null);
+  const [sf8Data, setSf8Data] = useState<unknown>(null);
+  const [sf9Data, setSf9Data] = useState<unknown>(null);
+  const [sf10Data, setSf10Data] = useState<unknown>(null);
   const [bulkSf9Data, setBulkSf9Data] = useState<SF9Data[]>([]);
   const [bulkSf10Data, setBulkSf10Data] = useState<SF10Data[]>([]);
   const sf9PrintRef = useRef<HTMLDivElement | null>(null);
@@ -236,7 +235,7 @@ export default function SchoolForms() {
       try {
         const response = await registrarApi.getSections({ schoolYear });
         setSections(response.data || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error loading sections:", error);
         if (error.response?.status === 403) {
           setError("Access denied. Please log in as Registrar.");
@@ -502,7 +501,7 @@ export default function SchoolForms() {
             </tr>
           </thead>
           <tbody>
-            {data.subjectGrades.map((sg: any, index: number) => (
+            {data.subjectGrades.map((sg: unknown, index: number) => (
               <tr key={index} className="border-b border-gray-600">
                 <td className="border-r border-gray-600 p-2  text-gray-900">{sg.subjectName}</td>
                 <td className={`border-r border-gray-600 p-2 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -736,7 +735,7 @@ export default function SchoolForms() {
       </div>
 
       {/* Academic Records */}
-      {data.schoolRecords.map((record: any, recordIndex: number) => (
+      {data.schoolRecords.map((record: unknown, recordIndex: number) => (
         <div key={recordIndex} className="mb-4 border-2 border-gray-600 page-break-inside-avoid">
           {/* School Year Header */}
           <div className="p-2 border-b-2 border-gray-600 bg-gray-100">
@@ -778,7 +777,7 @@ export default function SchoolForms() {
               </tr>
             </thead>
             <tbody>
-              {record.subjectGrades.map((sg: any, idx: number) => (
+              {record.subjectGrades.map((sg: unknown, idx: number) => (
                 <tr key={idx} className="border-b border-gray-600">
                   <td className="border-r border-gray-600 p-1.5 text-gray-900">{sg.subjectName}</td>
                   <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -1001,7 +1000,7 @@ export default function SchoolForms() {
 
         {/* Forms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {schoolForms.map((form, formIndex) => {
+          {schoolForms.map((form, _formIndex) => {
             const isDev = form.status === "dev";
 
             return (
@@ -1437,7 +1436,7 @@ export default function SchoolForms() {
                 </tr>
               </thead>
               <tbody>
-                {sf9Data.subjectGrades.map((sg: any, index: number) => (
+                {sf9Data.subjectGrades.map((sg: unknown, index: number) => (
                   <tr key={index} className="border-b border-gray-600">
                     <td className="border-r border-gray-600 p-2  text-gray-900">{sg.subjectName}</td>
                     <td className={`border-r border-gray-600 p-2 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -1692,7 +1691,7 @@ export default function SchoolForms() {
           </div>
 
           {/* Academic Records */}
-          {sf10Data.schoolRecords.map((record: any, recordIndex: number) => (
+          {sf10Data.schoolRecords.map((record: unknown, recordIndex: number) => (
             <div key={recordIndex} className="mb-4 border-2 border-gray-600 page-break-inside-avoid">
               {/* School Year Header */}
               <div className="p-2 border-b-2 border-gray-600 bg-gray-100">
@@ -1734,7 +1733,7 @@ export default function SchoolForms() {
                   </tr>
                 </thead>
                 <tbody>
-                  {record.subjectGrades.map((sg: any, idx: number) => (
+                  {record.subjectGrades.map((sg: unknown, idx: number) => (
                     <tr key={idx} className="border-b border-gray-600">
                       <td className="border-r border-gray-600 p-1.5 text-gray-900">{sg.subjectName}</td>
                       <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>

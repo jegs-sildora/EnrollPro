@@ -400,7 +400,7 @@ export const EnrollmentFormSchema = z
           const hasSpecialHealth = types.includes("Special Health Problem/Chronic Disease");
           const hasVisualImpairment = types.includes("Visual Impairment");
           
-          let mainSelections = types.filter(
+          const mainSelections = types.filter(
             t => !SPECIAL_HEALTH_SUB_OPTIONS.includes(t) && !VISUAL_IMPAIRMENT_SUB_OPTIONS.includes(t)
           );
 

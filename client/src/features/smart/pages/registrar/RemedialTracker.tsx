@@ -16,8 +16,8 @@ export default function RemedialTracker() {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [meta, setMeta] = useState<any>(null);
+  const [items, setItems] = useState<unknown[]>([]);
+  const [meta, setMeta] = useState<unknown>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -26,10 +26,10 @@ export default function RemedialTracker() {
     setError(null);
     try {
       const res = await registrarApi.getRemedialPending({ page: p, limit: 20 });
-      const payload = res.data as any;
+      const payload = res.data as unknown;
       setItems(payload.items ?? payload.data ?? payload.learners ?? []);
       setMeta(payload.meta ?? { total: payload.total ?? 0, totalPages: Math.ceil((payload.total ?? 0) / 20) });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err?.response?.data?.message ?? "Failed to load remedial data from EnrollPro.");
       setItems([]);
     } finally {
@@ -132,7 +132,7 @@ export default function RemedialTracker() {
                         <TableCell>{item.gradeLevel?.name ?? "—"} / {item.section?.name ?? "—"}</TableCell>
                         <TableCell>
                           {Array.isArray(item.subjects)
-                            ? item.subjects.map((s: any) => s.name ?? s).join(", ")
+                            ? item.subjects.map((s: unknown) => s.name ?? s).join(", ")
                             : item.subjectName ?? "—"}
                         </TableCell>
                         <TableCell>

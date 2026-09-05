@@ -23,14 +23,14 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-700",
 };
 
-const GRADE_LABELS: Record<string, string> = {
+const _GRADE_LABELS: Record<string, string> = {
   GRADE_7: "Grade 7",
   GRADE_8: "Grade 8",
   GRADE_9: "Grade 9",
   GRADE_10: "Grade 10",
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const _STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   VERIFIED: "Verified",
   ENROLLED: "Enrolled",
@@ -41,8 +41,8 @@ export default function ApplicationTracker() {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [applications, setApplications] = useState<any[]>([]);
-  const [meta, setMeta] = useState<any>(null);
+  const [applications, setApplications] = useState<unknown[]>([]);
+  const [meta, setMeta] = useState<unknown>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -67,7 +67,7 @@ export default function ApplicationTracker() {
         limit: l,
         search: s.trim() || undefined,
       });
-      const payload = res.data as any;
+      const payload = res.data as unknown;
       console.log("[ApplicationTracker] payload received:", payload);
       const apps = payload.applications ?? payload.data ?? payload.items ?? [];
       setApplications(apps);
@@ -79,7 +79,7 @@ export default function ApplicationTracker() {
         limit: l,
         totalPages: payload.totalPages ?? Math.ceil((payload.total ?? apps.length) / l)
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err?.response?.data?.message ?? "Failed to load applications from EnrollPro.");
       setApplications([]);
       setMeta(null);

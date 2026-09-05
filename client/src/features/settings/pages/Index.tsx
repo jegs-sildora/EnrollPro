@@ -38,7 +38,7 @@ export default function Settings() {
       if (!activeSchoolYearId) return;
       try {
         await api.get("/school-years");
-      } catch (err) {
+      } catch (_err) {
         // silent
       }
     }

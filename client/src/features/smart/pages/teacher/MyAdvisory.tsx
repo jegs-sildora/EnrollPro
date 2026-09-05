@@ -53,7 +53,7 @@ export default function MyAdvisory() {
     setSyncMessage(null);
     try {
       const res = await advisoryApi.syncFromEnrollPro();
-      const { studentsFound, advisorySection: foundSection } = (res.data as any);
+      const { studentsFound, advisorySection: foundSection } = (res.data as unknown);
       if (!foundSection) {
         setSyncMessage("Sync complete — no advisory section found. If you are assigned an advisory class, please contact the admin.");
       } else {
@@ -340,7 +340,7 @@ export default function MyAdvisory() {
               className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-slate-100 text-slate-400 group-focus-within:text-white transition-all"
               style={{
                 // We'll handle background color via style for focus-within if possible, or just use a custom class
-              } as any}
+              } as unknown}
             >
               <Search className="w-3.5 h-3.5" />
               <style dangerouslySetInnerHTML={{
@@ -359,7 +359,7 @@ export default function MyAdvisory() {
               style={{
                 // focus ring color
                 outlineColor: `${colors.primary}20`
-              } as any}
+              } as unknown}
             />
           </div>
         </CardHeader>
@@ -378,7 +378,7 @@ export default function MyAdvisory() {
               </TableHeader>
               <TableBody>
                 {(() => {
-                  const renderRow = (student: any, idx: number) => (
+                  const renderRow = (student: unknown, idx: number) => (
                     <TableRow key={student.id} className="hover:bg-slate-50/50 transition-all border-slate-50 group">
                       <TableCell className="text-center text-slate-300 font-bold text-[10px] px-8">{idx + 1}</TableCell>
                       <TableCell className="font-mono text-xs text-slate-400 font-bold tracking-tighter group-hover:text-slate-900 transition-colors">{student.lrn}</TableCell>

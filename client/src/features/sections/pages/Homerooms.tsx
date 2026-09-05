@@ -158,7 +158,7 @@ function formatSectionLabel(rawSection: string | null | undefined): string {
     .join("");
 }
 
-function buildSectionDisplayName(
+function _buildSectionDisplayName(
   sectionName: string,
   programType: string,
   scpTypeLabels: Record<string, string>,
@@ -717,10 +717,10 @@ export default function Homerooms() {
   } | null>(null);
 
   // Masterlist view state
-  const [masterlist, setMasterlist] = useState<MasterlistLearner[]>([]);
-  const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
+  const [masterlist, _setMasterlist] = useState<MasterlistLearner[]>([]);
+  const [_classOpeningDate, _setClassOpeningDate] = useState<string | null>(null);
 
-  const { maleLearners, femaleLearners } = useMemo(() => {
+  const { _maleLearners, _femaleLearners } = useMemo(() => {
     const males = masterlist
       .filter((l) => l.sex === "MALE")
       .sort(
@@ -755,7 +755,7 @@ export default function Homerooms() {
       // Auto-select first grade tab if none is active or current is invalid
       if (res.data.gradeLevels && res.data.gradeLevels.length > 0) {
         const currentId = useSettingsStore.getState().uiPreferences.homeroomsGradeId;
-        const currentExists = res.data.gradeLevels.some((g: any) => String(g.gradeLevelId) === currentId);
+        const currentExists = res.data.gradeLevels.some((g: unknown) => String(g.gradeLevelId) === currentId);
         if (!currentId || !currentExists) {
           setActiveGradeId(String(res.data.gradeLevels[0].gradeLevelId));
         }

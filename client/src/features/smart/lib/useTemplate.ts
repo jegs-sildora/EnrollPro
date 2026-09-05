@@ -7,10 +7,10 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 interface ParsedCell {
   row: number;
   col: number;
-  value: any;
+  value: unknown;
   formula?: string;
   type: 'string' | 'number' | 'boolean' | 'date' | 'formula' | 'empty';
-  style: any;
+  style: unknown;
   mergeInfo?: {
     rowSpan: number;
     colSpan: number;
@@ -114,7 +114,7 @@ export function useTemplate(
       } else {
         setActiveSheetIndex(0);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load template:', err);
       setError(err.response?.data?.error || err.message || 'Failed to load template');
       setTemplate(null);
@@ -152,7 +152,7 @@ export function useTemplate(
  * Hook to fetch list of available templates
  */
 export function useTemplateList() {
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -171,7 +171,7 @@ export function useTemplateList() {
       });
 
       setTemplates(response.data.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load templates:', err);
       setError(err.response?.data?.error || err.message || 'Failed to load templates');
       setTemplates([]);

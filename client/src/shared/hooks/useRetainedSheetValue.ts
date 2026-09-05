@@ -8,9 +8,15 @@ export function useRetainedSheetValue<T>(
 ): T | null {
   const [retainedValue, setRetainedValue] = useState<T | null>(value);
 
+  const [prevValue, setPrevValue] = useState<T | null>(value);
+
+  if (value !== null && value !== prevValue) {
+    setPrevValue(value);
+    setRetainedValue(value);
+  }
+
   useEffect(() => {
     if (value !== null) {
-      setRetainedValue(value);
       return undefined;
     }
 

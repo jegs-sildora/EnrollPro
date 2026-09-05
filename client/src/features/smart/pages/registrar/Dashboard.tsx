@@ -58,7 +58,7 @@ export default function RegistrarDashboardPage() {
       const response = await registrarApi.getDashboard();
       setDashboard(response.data);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load registrar dashboard:", err);
       setError(err?.response?.data?.message || "Failed to load registrar dashboard");
     } finally {

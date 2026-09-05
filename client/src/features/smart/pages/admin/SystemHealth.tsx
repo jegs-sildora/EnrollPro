@@ -62,7 +62,7 @@ export default function SystemHealth() {
       setHealth(healthRes.data);
       setHistory(historyRes.data.history || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message = err?.response?.data?.message || err?.message || "Failed to fetch diagnostics";
       setError(message);
     } finally {
@@ -91,7 +91,7 @@ export default function SystemHealth() {
     try {
       await adminApi.runSystemSync();
       await fetchAll(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message = err?.response?.data?.message || err?.message || "Failed to trigger sync";
       setError(message);
     } finally {

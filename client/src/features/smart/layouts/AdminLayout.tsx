@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/features/smart/components/ui/avatar";
-import { cn, getAcronym } from "@/features/smart/lib/utils";
+import { cn } from "@/features/smart/lib/utils";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
 import { SERVER_URL } from "@/features/smart/lib/api";
@@ -30,14 +30,14 @@ interface UserData {
   email?: string;
 }
 
-interface NavItem {
+interface _NavItem {
   name: string;
   href?: string;
-  icon: any;
+  icon: unknown;
   isDropdown?: boolean;
   inDevelopment?: boolean;
   disabled?: boolean;
-  children?: Array<{ name: string; href: string; icon: any; inDevelopment?: boolean; disabled?: boolean }>;
+  children?: Array<{ name: string; href: string; icon: unknown; inDevelopment?: boolean; disabled?: boolean }>;
 }
 
 const navigationGroups = [
@@ -94,7 +94,7 @@ export default function AdminLayout() {
     const saved = localStorage.getItem('adminDropdownState');
     return saved ? JSON.parse(saved) : { 'Template Managers': true };
   });
-  const { colors, logoUrl, schoolName } = useTheme();
+  const { _colors, logoUrl, schoolName } = useTheme();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -160,7 +160,7 @@ export default function AdminLayout() {
     );
   }
 
-  const userEmail = user.email || `${user.username}@school.edu.ph`;
+  const _userEmail = user.email || `${user.username}@school.edu.ph`;
   const userDisplayName = user.firstName && user.lastName
     ? `${user.firstName} ${user.lastName}`
     : user.username;

@@ -56,7 +56,7 @@ const gradeLevelLabels: Record<string, string> = {
 };
 
 export default function Attendance() {
-  const { colors } = useTheme();
+  const { _colors } = useTheme();
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
@@ -85,7 +85,7 @@ export default function Attendance() {
 
         // Add sections from class assignments (API returns array directly)
         if (Array.isArray(classResponse.data)) {
-          classResponse.data.forEach((assignment: any) => {
+          classResponse.data.forEach((assignment: unknown) => {
             if (assignment.section && !sectionsMap.has(assignment.section.id)) {
               sectionsMap.set(assignment.section.id, {
                 id: assignment.section.id,
@@ -142,7 +142,7 @@ export default function Attendance() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAttendanceData(response.data.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.response?.data?.message || "Failed to load attendance" });
     } finally {
       setLoading(false);
@@ -203,7 +203,7 @@ export default function Attendance() {
       );
       setMessage({ type: "success", text: "Attendance saved successfully!" });
       setTimeout(() => setMessage(null), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.response?.data?.message || "Failed to save attendance" });
     } finally {
       setSaving(false);
@@ -416,7 +416,7 @@ export default function Attendance() {
                           ].map((option) => (
                             <button
                               key={option.id}
-                              onClick={() => handleStatusChange(student.studentId, option.id as any)}
+                              onClick={() => handleStatusChange(student.studentId, option.id as unknown)}
                               className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${student.status === option.id
                                 ? `bg-${option.color}-500 text-white shadow-lg shadow-${option.color}-200 scale-110`
                                 : `bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600`

@@ -13,7 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/features/smart/components/ui/avatar";
-import { cn, getAcronym } from "@/features/smart/lib/utils";
+import { cn } from "@/features/smart/lib/utils";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { SERVER_URL } from "@/features/smart/lib/api";
@@ -113,7 +113,7 @@ export default function TeacherLayout() {
 
   if (!user) return null;
 
-  const userEmail = user.email || `${user.username}@school.edu.ph`;
+  const _userEmail = user.email || `${user.username}@school.edu.ph`;
   const userDisplayName = user.firstName && user.lastName
     ? `${user.firstName} ${user.lastName}`
     : user.username;

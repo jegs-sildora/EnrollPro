@@ -34,19 +34,24 @@ export function useDebouncedSearch(initialValue = ""): UseDebouncedSearchResult 
     setIsSearching(false);
   }, [clearTimers]);
 
-  useEffect(() => {
-    clearTimers();
+  const [prevInitial, setPrevInitial] = useState(initialValue);
+
+  if (initialValue !== prevInitial) {
+    setPrevInitial(initialValue);
     setInputValue(initialValue);
     setActiveFilter(initialValue.trim());
     setIsSearching(false);
-  }, [clearTimers, initialValue]);
+  }
 
   useEffect(() => {
     clearTimers();
 
     const trimmedValue = inputValue.trim();
     if (trimmedValue === activeFilter) {
-      setIsSearching(false);
+      if (isSearching) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsSearching(false);
+      }
       return;
     }
 

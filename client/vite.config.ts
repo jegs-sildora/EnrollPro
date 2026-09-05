@@ -103,7 +103,7 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: true,
         secure: false,
-        configure: (proxy, _options) => {
+        configure: (proxy) => {
           proxy.on('error', handleProxyError);
         }
       },
@@ -111,7 +111,7 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: true,
         secure: false,
-        configure: (proxy, _options) => {
+        configure: (proxy) => {
           proxy.on('error', handleProxyError);
         }
       },
@@ -120,7 +120,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/smart-api/, ""),
         secure: false,
-        configure: (proxy, _options) => {
+        configure: (proxy) => {
           proxy.on('error', handleProxyError);
         }
       },

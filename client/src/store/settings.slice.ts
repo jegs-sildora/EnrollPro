@@ -220,13 +220,13 @@ export const useSettingsStore = create<SettingsState>()(
       },
       // historicalCorrectionToken is ephemeral — never persist across page loads
       partialize: (state) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         const {
-          historicalCorrectionToken,
-          historicalCorrectionExpiresAt,
-          activeCorrection,
-          isSwitchingSchoolYear,
-          switchingToSchoolYearLabel,
+          historicalCorrectionToken: _historicalCorrectionToken,
+          historicalCorrectionExpiresAt: _historicalCorrectionExpiresAt,
+          activeCorrection: _activeCorrection,
+          isSwitchingSchoolYear: _isSwitchingSchoolYear,
+          switchingToSchoolYearLabel: _switchingToSchoolYearLabel,
           ...rest
         } = state;
         return rest;

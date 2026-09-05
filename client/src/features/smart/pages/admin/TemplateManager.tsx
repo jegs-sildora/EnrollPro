@@ -87,7 +87,7 @@ export default function TemplateManager() {
   const [previewError, setPreviewError] = useState('');
   const [previewData, setPreviewData] = useState<TemplatePreviewData | null>(null);
   const [selectedPreviewSheet, setSelectedPreviewSheet] = useState('');
-  const [styledPreviewData, setStyledPreviewData] = useState<any>(null);
+  const [styledPreviewData, setStyledPreviewData] = useState<unknown>(null);
   const [previewScale, setPreviewScale] = useState(0.7);
   const [viewMode, setViewMode] = useState<'styled' | 'simple'>('styled');
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,7 +137,7 @@ export default function TemplateManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTemplates(response.data.data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch templates:', error);
       const status = error?.response?.status;
       const message = error?.response?.data?.message || error?.response?.data?.error;
@@ -233,7 +233,7 @@ export default function TemplateManager() {
         setUploadSuccess('');
       }, 2000);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
       const errorData = error.response?.data;
       let errorMessage = errorData?.error || 'Failed to upload template';
@@ -257,7 +257,7 @@ export default function TemplateManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to toggle template:', error);
       alert(error.response?.data?.error || 'Failed to toggle template');
     }
@@ -274,7 +274,7 @@ export default function TemplateManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete template:', error);
       alert(error.response?.data?.error || 'Failed to delete template');
     }
@@ -318,7 +318,7 @@ export default function TemplateManager() {
       );
       setSelectedTemplateIds([]);
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete selected templates:', error);
       alert(error.response?.data?.error || 'Failed to delete selected templates');
     } finally {
@@ -346,7 +346,7 @@ export default function TemplateManager() {
       );
       setSelectedTemplateIds([]);
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete all templates:', error);
       alert(error.response?.data?.error || 'Failed to delete all templates');
     } finally {
@@ -372,7 +372,7 @@ export default function TemplateManager() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to download template:', error);
       alert('Failed to download template');
     }
@@ -418,7 +418,7 @@ export default function TemplateManager() {
       if (!styledPreviewData) {
         setSelectedPreviewSheet(loadedData.sheets[0]?.sheetName || '');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load template preview:', error);
       setPreviewError(error.response?.data?.error || 'Failed to load template preview');
     } finally {
@@ -458,7 +458,7 @@ export default function TemplateManager() {
       }
 
       window.setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to open exact workbook:', error);
       setPreviewError(error.response?.data?.error || 'Failed to open workbook file');
     }
@@ -1053,7 +1053,7 @@ export default function TemplateManager() {
                           onChange={(e) => setSelectedPreviewSheet(e.target.value)}
                           className="w-full px-3 py-2 border rounded-md text-sm bg-muted"
                         >
-                          {viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.map((sheet: any) => (
+                          {viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.map((sheet: unknown) => (
                             <option key={sheet.name} value={sheet.name}>
                               {sheet.name}
                               {styledPreviewData.mappedSheetName === sheet.name ? ' (Mapped)' : ''}
@@ -1074,7 +1074,7 @@ export default function TemplateManager() {
                 <Card className="p-0 overflow-hidden">
                   {viewMode === 'styled' && styledPreviewData ? (
                     (() => {
-                      const activeSheet = styledPreviewData.parsedStructure.sheets.find((sheet: any) => sheet.name === selectedPreviewSheet) ||
+                      const activeSheet = styledPreviewData.parsedStructure.sheets.find((sheet: unknown) => sheet.name === selectedPreviewSheet) ||
                         styledPreviewData.parsedStructure.sheets[0];
 
                       if (!activeSheet) {

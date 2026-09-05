@@ -292,7 +292,7 @@ export default function SystemSettings() {
     }
   };
 
-  const handleCancelLogo = () => {
+  const _handleCancelLogo = () => {
     // kept for compatibility — no longer used
   };
 
@@ -378,7 +378,7 @@ export default function SystemSettings() {
             key={section.id}
             href={`#${section.id}`}
             className="p-4 rounded-xl border border-gray-100 transition-all group cursor-pointer"
-            style={{ ['--section-color' as any]: themeColors.primary }}
+            style={{ ['--section-color' as unknown]: themeColors.primary }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${themeColors.primary}40`; e.currentTarget.style.backgroundColor = `${themeColors.primary}08`; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.backgroundColor = ''; }}
           >
@@ -886,7 +886,7 @@ export default function SystemSettings() {
               <Label htmlFor="sessionTimeout" className="text-sm  text-gray-700">
                 Session Timeout (minutes)
               </Label>
-              <Select value={String(settings.sessionTimeout || 30)} onValueChange={(val) => val && handleChange("sessionTimeout", parseInt(val) as any)}>
+              <Select value={String(settings.sessionTimeout || 30)} onValueChange={(val) => val && handleChange("sessionTimeout", parseInt(val) as unknown)}>
                 <SelectTrigger className="rounded-xl border-gray-200">
                   <SelectValue>{settings.sessionTimeout || 30} minutes</SelectValue>
                 </SelectTrigger>
@@ -902,7 +902,7 @@ export default function SystemSettings() {
               <Label htmlFor="maxLoginAttempts" className="text-sm  text-gray-700">
                 Max Login Attempts
               </Label>
-              <Select value={String(settings.maxLoginAttempts || 5)} onValueChange={(val) => val && handleChange("maxLoginAttempts", parseInt(val) as any)}>
+              <Select value={String(settings.maxLoginAttempts || 5)} onValueChange={(val) => val && handleChange("maxLoginAttempts", parseInt(val) as unknown)}>
                 <SelectTrigger className="rounded-xl border-gray-200">
                   <SelectValue>{settings.maxLoginAttempts || 5} attempts</SelectValue>
                 </SelectTrigger>
@@ -917,7 +917,7 @@ export default function SystemSettings() {
               <Label htmlFor="passwordMinLength" className="text-sm  text-gray-700">
                 Min Password Length
               </Label>
-              <Select value={String(settings.passwordMinLength || 8)} onValueChange={(val) => val && handleChange("passwordMinLength", parseInt(val) as any)}>
+              <Select value={String(settings.passwordMinLength || 8)} onValueChange={(val) => val && handleChange("passwordMinLength", parseInt(val) as unknown)}>
                 <SelectTrigger className="rounded-xl border-gray-200">
                   <SelectValue>{settings.passwordMinLength || 8} characters</SelectValue>
                 </SelectTrigger>

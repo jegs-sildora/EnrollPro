@@ -216,7 +216,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { ayId } = useSchoolYearContext();
 
-  const isTeachingStaff = useMemo(() => {
+  const _isTeachingStaff = useMemo(() => {
     return teacher?.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
   }, [teacher]);
 
@@ -276,7 +276,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       lastName: "",
       middleName: "",
       suffix: "",
-      sex: undefined as any,
+      sex: undefined as unknown as FormValues["sex"],
       birthdate: null,
       personnelType: null,
       employeeId: null,
@@ -324,7 +324,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   useEffect(() => {
     if (teacher) {
       const isTeacherOrAdviser = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
-      const isMRF = teacher.userAccount?.roles?.includes("MRF") ?? false;
+      const _isMRF = teacher.userAccount?.roles?.includes("MRF") ?? false;
       const serviceMetadata = teacher as Teacher & {
         serviceEffectiveDate?: string | null;
         serviceRemarks?: string | null;
@@ -347,7 +347,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         postgraduateDegree: teacher.postgraduateDegree || "",
         majorSpecialization: teacher.majorSpecialization || "",
         minorSpecialization: teacher.minorSpecialization || "",
-        indigenousCommunity: (teacher.indigenousCommunity as any) || "NOT APPLICABLE",
+        indigenousCommunity: (teacher.indigenousCommunity as unknown as FormValues['indigenousCommunity']) || "NOT APPLICABLE",
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
         fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
@@ -364,7 +364,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         lastName: "",
         middleName: "",
         suffix: "",
-        sex: undefined as any,
+        sex: undefined as unknown as FormValues["sex"],
         birthdate: null,
         personnelType: null,
         employeeId: null,

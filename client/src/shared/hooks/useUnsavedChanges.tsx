@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -399,6 +400,7 @@ export function useUnsavedChanges(source: UnsavedChangeSource) {
       sourceIdRef.current = source.id;
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     registerSource(source);
   }, [
     registerSource,

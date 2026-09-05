@@ -118,8 +118,8 @@ export default function BOSYPage() {
   const [previousSectionName, setPreviousSectionName] = useState<string>("ALL");
   const [previousSections, setPreviousSections] = useState<string[]>([]);
   const [curricularProgram, setCurricularProgram] = useState<string>("ALL");
-  const [intakeCategory, setIntakeCategory] = useState<string>("ALL");
-  const [verificationStatus, setVerificationStatus] = useState<string>("ALL");
+  const [_intakeCategory, _setIntakeCategory] = useState<string>("ALL");
+  const [_verificationStatus, _setVerificationStatus] = useState<string>("ALL");
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [queuePage, setQueuePage] = useState(1);

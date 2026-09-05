@@ -1011,7 +1011,7 @@ export const adminApi = {
     api.get<{ history: SyncHistoryItem[]; count: number }>("/admin/system/sync-history", { params: { limit } }),
 
   runSystemSync: () =>
-    api.post<{ message: string; result: any }>("/admin/system/sync/run", {}),
+    api.post<{ message: string; result: unknown }>("/admin/system/sync/run", {}),
 
   // Grading Config
   getGradingConfig: () => api.get<{ configs: GradingConfig[] }>("/admin/grading-config"),
@@ -1025,13 +1025,13 @@ export const adminApi = {
 
   // Class Assignments (Teaching Load)
   getClassAssignmentOptions: (schoolYear?: string) =>
-    api.get<{ teachers: any[]; subjects: any[]; sections: any[] }>("/admin/class-assignments/options", {
+    api.get<{ teachers: unknown[]; subjects: unknown[]; sections: unknown[] }>("/admin/class-assignments/options", {
       params: schoolYear ? { schoolYear } : {},
     }),
 
   getClassAssignments: (schoolYear?: string) =>
     api.get<{
-      assignments: any[];
+      assignments: unknown[];
       workloadSummary?: Array<{
         teacherId: string;
         teacherName: string;
@@ -1048,7 +1048,7 @@ export const adminApi = {
     }),
 
   createClassAssignment: (data: { teacherId: string; subjectId: string; sectionId: string; schoolYear: string }) =>
-    api.post<{ message: string; assignment: any }>("/admin/class-assignments", data),
+    api.post<{ message: string; assignment: unknown }>("/admin/class-assignments", data),
 
   deleteClassAssignment: (id: string) =>
     api.delete<{ message: string }>(`/admin/class-assignments/${id}`),

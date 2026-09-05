@@ -20,7 +20,7 @@ interface ECRTemplate {
   filePath: string;
   fileName: string;
   fileSize: number;
-  placeholders: any;
+  placeholders: unknown;
   instructions: string | null;
   isActive: boolean;
   uploadedBy: string;
@@ -129,7 +129,7 @@ export default function ECRTemplateManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTemplates(response.data.data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch ECR templates:', error);
       const status = error?.response?.status;
       const message = error?.response?.data?.message || error?.response?.data?.error;
@@ -196,7 +196,7 @@ export default function ECRTemplateManager() {
         setUploadSuccess('');
       }, 2000);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
       const errorMessage = error.response?.data?.error || 'Failed to upload ECR template';
       setUploadError(errorMessage);
@@ -287,7 +287,7 @@ export default function ECRTemplateManager() {
             prev.map((it, idx) => idx === i ? { ...it, status: 'success' as const } : it)
           );
           successCount++;
-        } catch (error: any) {
+        } catch (error: unknown) {
           // Update status to error
           const errorMessage = error.response?.data?.error || 'Upload failed';
           setBulkUploadItems(prev =>
@@ -316,7 +316,7 @@ export default function ECRTemplateManager() {
         }, 2000);
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Bulk upload failed:', error);
       setUploadError('Bulk upload failed');
     } finally {
@@ -332,7 +332,7 @@ export default function ECRTemplateManager() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to toggle template status:', error);
       alert(error.response?.data?.error || 'Failed to update template status');
     }
@@ -349,7 +349,7 @@ export default function ECRTemplateManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete template:', error);
       alert(error.response?.data?.error || 'Failed to delete template');
     }
@@ -372,7 +372,7 @@ export default function ECRTemplateManager() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to download template:', error);
       alert('Failed to download template');
     }
@@ -461,7 +461,7 @@ export default function ECRTemplateManager() {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => setStatusFilter(e.target.value as unknown)}
             className="px-3 py-2 border rounded-md text-sm bg-muted"
           >
             <option value="ALL">All Status</option>
