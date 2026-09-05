@@ -640,7 +640,7 @@ export function WalkInEncodePanel() {
                                   <FormControl>
                                     <Input
                                       placeholder="e.g. 98765"
-                                      className="font-bold"
+                                      className="font-bold uppercase"
                                       {...field}
                                       value={field.value ?? ""}
                                     />
@@ -738,50 +738,52 @@ export function WalkInEncodePanel() {
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="guardianRelationship"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-bold">Relationship to Learner <span className="text-destructive">*</span></FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="guardianContact"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">Contact Number <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
-                                  <SelectTrigger className="font-bold uppercase">
-                                    <SelectValue placeholder="SELECT RELATIONSHIP" />
-                                  </SelectTrigger>
+                                  <Input
+                                    className="font-bold"
+                                    placeholder="e.g. 09123456789"
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                      field.onChange(val);
+                                    }}
+                                  />
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="MOTHER" className="font-bold uppercase">Mother</SelectItem>
-                                  <SelectItem value="FATHER" className="font-bold uppercase">Father</SelectItem>
-                                  <SelectItem value="GUARDIAN" className="font-bold uppercase">Guardian</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="guardianContact"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-bold">Contact Number <span className="text-destructive">*</span></FormLabel>
-                              <FormControl>
-                                <Input
-                                  className="font-bold"
-                                  placeholder="e.g. 09123456789"
-                                  {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
-                                    field.onChange(val);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="guardianRelationship"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">Relationship to Learner <span className="text-destructive">*</span></FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                                  <FormControl>
+                                    <SelectTrigger className="font-bold uppercase">
+                                      <SelectValue placeholder="SELECT RELATIONSHIP" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="MOTHER" className="font-bold uppercase">Mother</SelectItem>
+                                    <SelectItem value="FATHER" className="font-bold uppercase">Father</SelectItem>
+                                    <SelectItem value="GUARDIAN" className="font-bold uppercase">Guardian</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -842,10 +844,10 @@ export function WalkInEncodePanel() {
                   type="submit"
                   disabled={isSubmitting || !isValid}
                   className={`w-full font-bold uppercase text-base px-6 ${(!isValid || isSubmitting)
-                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                      : isCompleteDocs
-                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer'
-                        : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : isCompleteDocs
+                      ? 'bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
                     }`}
                 >
                   {isSubmitting ? (

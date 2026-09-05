@@ -10,6 +10,7 @@ import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import {
   Search,
   HelpCircle,
+  Users,
 } from "lucide-react";
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -815,35 +816,51 @@ export default function BOSYPage() {
                     title="Enroll Selected Learners"
                     loading={bulkLoading}
                     confirmText="Enroll"
+                    variant="primary"
+                    icon={Users}
                     onConfirm={() => { void handleBulkConfirm(); }}
                     description={
                       <div className="space-y-4">
-                        <p>Are you sure you want to enroll the selected learner{selectedIds.length > 1 ? 's' : ''}?</p>
+                        <p className="text-foreground text-sm">
+                          You are about to officially enroll the following learners for the upcoming school year. Please review the list below.
+                        </p>
                         {selectedIds.length === 1 ? (
                           <div className="rounded-md border bg-muted/40 px-4 py-3 text-left">
                             {(() => {
                               const item = queueItems.find(i => i.applicationId === selectedIds[0]);
                               if (!item) return null;
                               return (
-                                <p className="text-base leading-tight font-bold uppercase text-foreground">
-                                  {item.lastName}, {item.firstName}
-                                  {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
-                                </p>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="text-base leading-tight font-medium text-foreground uppercase">
+                                      {item.lastName}, {item.firstName}
+                                      {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      LRN: {item.lrn || "No LRN"}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn("font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                                    {formatGradeLevel(item.gradeLevelName)}
+                                  </Badge>
+                                </div>
                               );
                             })()}
                           </div>
                         ) : selectedIds.length > 1 ? (
-                          <div className="rounded-md border bg-muted/40 overflow-hidden flex flex-col text-left">
-                            <div className="px-4 py-3 border-b bg-muted flex justify-center items-center">
+                          <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
+                            <div className="px-4 py-3 border-b bg-gray-50 flex justify-center items-center">
                               <p className="text-base leading-tight font-bold text-foreground">
                                 {selectedIds.length} Learners Selected
                               </p>
                             </div>
                             <div className="max-h-[320px] overflow-y-auto">
                               <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 border-b shadow-sm">
+                                <thead className="sticky top-0 bg-gray-50 backdrop-blur-sm z-10 border-b shadow-sm">
                                   <tr>
-                                    <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name</th>
+                                    <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
                                     <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                   </tr>
                                 </thead>
@@ -852,15 +869,20 @@ export default function BOSYPage() {
                                     const item = queueItems.find((i) => i.applicationId === id);
                                     if (!item) return null;
                                     return (
-                                      <tr key={id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                                        <td className="p-3 px-4 font-bold uppercase text-foreground">
-                                          {item.lastName}, {item.firstName}
-                                          {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                      <tr key={id} className="border-b last:border-0 bg-white hover:bg-gray-50/80 transition-colors">
+                                        <td className="p-3 px-4">
+                                          <p className="font-extrabold uppercase text-foreground">
+                                            {item.lastName}, {item.firstName}
+                                            {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                          </p>
+                                          <p className="text-sm text-foreground">
+                                            LRN: {item.lrn || "No LRN"}
+                                          </p>
                                         </td>
-                                        <td className="p-3 px-4 font-bold text-center">
+                                        <td className="p-3 px-4 text-center">
                                           <Badge
                                             variant="outline"
-                                            className={cn(" font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                                            className={cn("font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
                                             {formatGradeLevel(item.gradeLevelName)}
                                           </Badge>
                                         </td>

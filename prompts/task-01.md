@@ -1,43 +1,35 @@
-# Prompt for UI/UX Implementation: Revert Enrollment Workflow
+# Prompt for UI/UX Implementation: Batch Enrollment Confirmation Modal
 
 ## Role & Context
-Act as a Frontend Developer. We are updating the "Learner Enrollment" module for EnrollPro, a DepEd Junior High School management system. 
+Act as a Frontend Developer. We are refactoring the "Batch Enroll Selected Learners" confirmation modal in the Learner Enrollment module of EnrollPro (a DepEd Junior High School system). 
 
-Currently, in the "INCOMING GRADE 7 AND TRANSFEREES" tab, when a learner is successfully moved to the `ENROLLED` queue, the right-hand detail pane becomes read-only with no action buttons. We need to implement a clerical "Undo" workflow that allows registrars to reverse an enrolled student back to the `FOR REVIEW` queue in case of an encoding error.
+Currently, the modal uses destructive/error-state UI patterns (a red warning triangle) for a positive action, and lacks critical verification data (LRN) in the list.
 
 ## The Objective
-Add a secure "Revert to For Review" action in the right-hand panel for learners in the `ENROLLED` state, complete with a confirmation modal and audit logging.
+Redesign the modal to convey a constructive, official administrative action rather than a destructive warning. Improve the data density of the learner list to meet DepEd verification standards.
 
 ## UI Component Requirements
 
-### 1. The Trigger Action (Right Panel)
-*   **Placement:** At the bottom of the right-hand summary table (below the "Required Documents" section), anchor a new action button container.
-*   **Button UI:** Add a secondary/ghost button labeled **`Revert to 'For Review'`** or **`Undo Enrollment`**. 
-*   **Styling:** Use a muted or warning-colored text/border (e.g., a dark orange or standard gray ghost button) to indicate it is a corrective administrative action, avoiding the heavy red of a "Delete" button.
+Please update the modal component with the following specifications:
 
-### 2. The Confirmation Modal
-Clicking the button must trigger a center-screen modal to prevent accidental reversals.
-*   **Header:** `Revert Enrollment Status`
-*   **Warning Copy:** `You are about to reverse the enrollment for [Learner Name]. This will remove them from the 'Enrolled' list and place them back into the 'For Review' queue. They will not be available for Section Assignment.`
-*   **Required Dropdown (Reason):**
-    *   Option 1: *Clerical / Encoding Error*
-    *   Option 2: *Pending Additional Document Verification*
-*   **Actions:** 
-    *   `Cancel` (Ghost button - closes modal)
-    *   `Confirm Reversal` (Primary warning button). Disable until a reason is selected.
+### 1. Header & Iconography (Semantic Correction)
+*   **Remove Error Icon:** Delete the red warning triangle at the top of the modal.
+*   **New Icon:** Replace it with a neutral or positive icon, such as a "Users/Group" icon or a "Clipboard with Checkmark". Use a brand-neutral color (e.g., primary brand maroon or a success green) with a soft background tint.
+*   **Header Copy:** Keep `Enroll Selected Learners`.
+*   **Subtitle Copy:** Change the generic question to: *`You are about to officially enroll the following learners for the upcoming school year. Please review the list below.`*
 
-## State Management & Database Logic
+### 2. The Learner List (Data Density)
+Update the scrollable list to include the Learner Reference Number (LRN) to prevent mistaken identity.
+*   **List Header:** Keep the total count banner (e.g., `19 Learners Selected`), but style it with a subtle background (e.g., `bg-gray-50`) to separate it from the rows.
+*   **Row Layout (Per Learner):**
+    *   **Left Column (Identity):** 
+        *   **Primary Text:** Learner Name (e.g., `RAMOS, CAMILLE JOY R.`) - Dark, medium weight.
+        *   **Secondary Text:** LRN (e.g., `LRN: 100000000037`) - Muted gray, smaller text block positioned directly under the name.
+    *   **Right Column (Grade):** Keep the incoming grade badge (e.g., `G8` in yellow).
 
-### Frontend State (On Confirm):
-*   **Notification:** Show a success Toast: *"[Learner Name] has been reverted to the For Review queue."*
-*   **List Update:** Instantly remove the learner's card from the `ENROLLED` tab list.
-*   **Counter Update:** Decrement the `ENROLLED` tab counter by 1, and increment the `FOR REVIEW` tab counter by 1.
-*   **Pane Reset:** Clear the right-hand viewing pane to an empty state.
+### 3. Action Buttons (Safe Affordance)
+*   **Primary Button (`ENROLL`):** Ensure this button uses a "Safe Primary" color. If the system's primary action color is maroon, use that, but ensure it does not look like a "Delete" button. Alternatively, use a standard Success Green (e.g., `bg-green-600`).
+*   **Secondary Button (`CANCEL`):** Keep this as a standard ghost/outline button to simply close the modal without taking action.
 
-### Backend/Database Logic:
-*   **Status Update:** Change the learner's enrollment status column in the database from `ENROLLED` back to `PENDING_REVIEW`.
-*   **Audit Logging:** Write a new entry to the `Activity Logs` table recording:
-    *   Action: "Enrollment Reverted to Review"
-    *   Target: [Learner Name] / LRN
-    *   Actor: Current User ID
-    *   Reason: The specific option chosen from the modal dropdown.
+## State Management 
+*   **On Confirm:** Close the modal, trigger a success toast (e.g., *"Successfully enrolled 19 learners"*), and update the main dashboard queues (moving them from the pending list to the officially enrolled list).
