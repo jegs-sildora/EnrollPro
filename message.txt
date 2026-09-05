@@ -8,12 +8,14 @@ Does EP support SSO (OIDC/OAuth2 authorization-code, SAML, shared session cookie
 List exact endpoints (authorize/token/introspect or equivalent), auth method, and the trust model between EP and AIMS (shared secret, signing, clock skew).
 Define the flow for staff and learner: how does AIMS obtain a validated identity (roles, employeeId/LRN, school) and how are tokens/sessions shared or exchanged?
 Proof: full curl sequence (redirect → code → token → /me) with real responses.
+
 2. Forgot Password
 
 Is there a self-service forgot-password flow (request reset → email/SMS/OTP → set new password), or is reset admin-only?
 Exact endpoints (e.g. /api/auth/forgot-password, /api/learner/forgot-password), request/response shapes, error codes (400/401/404/429), rate limits, token TTL, and which roles are covered.
 Is the reset UI EP-hosted (AIMS redirects) or does AIMS own the UI and call EP?
 Proof: live curl for request + completion with a test account, plus one negative case (bad OTP/expired token). If self-service does NOT exist yet, say so explicitly — don't guess.
+
 3. Profile Picture (Student & Teacher)
 
 Do learner/faculty/staff profiles have avatar/photo fields? Storage format (URL vs /uploads/* path vs base64), size/type limits, and versioning/cache behavior.
