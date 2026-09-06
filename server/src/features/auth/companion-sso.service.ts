@@ -287,6 +287,33 @@ export async function createCompanionSsoLaunch(input: {
     throw error;
   }
 
+  try {
+    const response = await fetch(configuration.callbackUrl.origin, {
+      method: "HEAD",
+      signal: AbortSignal.timeout(3000),
+    });
+    if (response.status >= 500 && response.status < 600) {
+      throw new Error(`Companion system proxy returned ${response.status}`);
+    }
+  } catch (error: unknown) {
+    await auditLog({
+      userId: user.id,
+      actionType: "COMPANION_SSO_LAUNCH_DENIED",
+      description: `EnrollPro denied the ${input.system} sign-in handoff because the destination system was unreachable.`,
+      subjectType: "CompanionSystem",
+      metadata: {
+        companion: input.system,
+        reason: "UNREACHABLE",
+      },
+      req: input.req,
+    });
+    throw new AppError(
+      503,
+      `The ${input.system} system is currently unreachable. Please try again later.`,
+      "COMPANION_SSO_UNREACHABLE",
+    );
+  }
+
   const code = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + AUTHORIZATION_CODE_TTL_MS);
   await prisma.companionSsoAuthorizationCode.create({

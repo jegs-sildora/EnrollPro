@@ -276,7 +276,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --background: 220 15% 99%;
   --foreground: 222 47% 11%;
   --muted: 220 14% 97%;
-  --muted-foreground: 215 16% 47%;
+  --muted-foreground: 250 25% 45%;
   --border: 220 13% 92%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
