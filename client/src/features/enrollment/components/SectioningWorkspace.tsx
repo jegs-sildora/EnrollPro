@@ -32,7 +32,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn, SCP_LABELS } from "@/shared/lib/utils";
+import { cn, SCP_LABELS, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -2093,28 +2093,121 @@ export function SectioningWorkspace() {
         title="FINALIZE OFFICIAL SECTIONS"
         description={
           <div className="space-y-4">
-            <p>
-              This action will lock the assignments and update the official school records
+            <p className="text-foreground text-sm">
+              This action will lock the assignments and update the official school records.
             </p>
-            <div className="space-y-3 rounded-md border bg-muted p-4 text-left">
-              <p className="text-base text-foreground text-center">
-                {draftLearnerCount} learner(s) will be officially placed in their respective classes
-              </p>
-              {hasDraftOverflow && (
-                <label className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 cursor-pointer">
-                  <Checkbox
-                    checked={allowCapacityOverride}
-                    onCheckedChange={(checked) =>
-                      setAllowCapacityOverride(checked === true)
-                    }
-                    className="mt-1 bg-white"
-                  />
-                  <span className="text-sm font-bold">
-                    Allow capacity override for sections marked over capacity.
-                  </span>
-                </label>
-              )}
-            </div>
+            {draftLearnerCount === 1 ? (
+              <div className="rounded-md border bg-muted/40 px-4 py-3 text-left">
+                {(() => {
+                  const learner = draftPlacement?.rosters[0]?.learners[0];
+                  const section = draftPlacement?.rosters[0]?.section;
+                  if (!learner || !section) return null;
+                  return (
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-base leading-tight font-medium text-foreground uppercase">
+                          {learner.lastName}, {learner.firstName}
+                          {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          LRN: {learner.lrn || "No LRN"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Badge variant="secondary" className="font-bold uppercase">
+                          {SCP_SHORT_LABELS[learner.programType] ?? learner.programType}
+                        </Badge>
+                        <div className="flex flex-col gap-1 items-end">
+                          <Badge
+                            variant="outline"
+                            className={cn("font-bold uppercase", getGradeLevelBadgeStyles(section.gradeLevel))}
+                          >
+                            {formatGradeLevel(section.gradeLevel)}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="font-bold uppercase bg-background text-primary border-primary/30"
+                          >
+                            {section.name}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : draftLearnerCount > 1 ? (
+              <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
+                <div className="px-4 py-3 border-b bg-gray-50 flex justify-center items-center">
+                  <p className="text-base leading-tight font-bold text-foreground">
+                    {draftLearnerCount} Learner(s) Selected
+                  </p>
+                </div>
+                <div className="max-h-[320px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-gray-50 backdrop-blur-sm z-10 border-b shadow-sm">
+                      <tr>
+                        <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                        <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
+                        <th className="h-10 px-4 text-center font-bold text-foreground">Proposed Section</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {draftPlacement?.rosters.flatMap((roster) =>
+                        roster.learners.map((learner) => (
+                          <tr key={learner.applicationId} className="border-b last:border-0 bg-white hover:bg-gray-50/80 transition-colors">
+                            <td className="p-3 px-4">
+                              <p className="font-extrabold uppercase text-foreground">
+                                {learner.lastName}, {learner.firstName}
+                                {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
+                              </p>
+                              <p className="text-sm text-foreground">
+                                LRN: {learner.lrn || "No LRN"}
+                              </p>
+                            </td>
+                            <td className="p-3 px-4 text-center">
+                              <Badge variant="secondary" className="font-bold uppercase">
+                                {SCP_SHORT_LABELS[learner.programType] ?? learner.programType}
+                              </Badge>
+                            </td>
+                            <td className="p-3 px-4 text-center">
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                <Badge
+                                  variant="outline"
+                                  className={cn("font-bold uppercase", getGradeLevelBadgeStyles(roster.section.gradeLevel))}
+                                >
+                                  {formatGradeLevel(roster.section.gradeLevel)}
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="font-bold uppercase bg-background text-primary border-primary/30"
+                                >
+                                  {roster.section.name}
+                                </Badge>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+            {hasDraftOverflow && (
+              <label className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 cursor-pointer">
+                <Checkbox
+                  checked={allowCapacityOverride}
+                  onCheckedChange={(checked) =>
+                    setAllowCapacityOverride(checked === true)
+                  }
+                  className="mt-1 bg-white"
+                />
+                <span className="text-sm font-bold">
+                  Allow capacity override for sections marked over capacity.
+                </span>
+              </label>
+            )}
           </div>
         }
         onConfirm={commitDraftPlacement}

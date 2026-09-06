@@ -291,7 +291,7 @@ export function OperationalQueueCard({
         <div className="mt-5 flex flex-1 flex-col justify-end gap-3 border-t border-slate-100 pt-4">
           <p
             className={cn(
-              "flex min-h-5 items-center gap-2 text-base font-semibold",
+              "flex min-h-5 items-center gap-2 text-base font-bold",
               isClear ? "text-emerald-700" : "text-foreground",
             )}
           >
@@ -417,7 +417,7 @@ export function IntakePipelinePanel({
                 const total = row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners;
                 return (
                   <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                    <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
+                    <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-">
                       <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                         {formatGradeLevel(row.gradeLevelName)}
                       </span>
@@ -517,7 +517,10 @@ export function SectionSaturationPanel({
                 <div
                   key={section.id}
                   onClick={() => navigate(`/sections/view-masterlist/${section.id}`)}
-                  className="rounded-md border border-slate-200 p-3 hover:bg-slate-50 hover:cursor-pointer transition-colors"
+                  className={cn(
+                    "rounded-md border p-3 hover:opacity-80 hover:cursor-pointer transition-opacity",
+                    getGradeLevelBadgeStyles(section.gradeLevelName)
+                  )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -541,14 +544,14 @@ export function SectionSaturationPanel({
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <p className="text-base  text-foreground">
+                      <p className="text-base opacity-80">
                         {section.enrolled} of {section.capacity} learners
                       </p>
                     </div>
                     <span
                       className={cn(
                         "shrink-0 text-base font-bold",
-                        section.isOverCapacity ? "text-red-700" : "text-foreground",
+                        section.isOverCapacity && "text-red-700",
                       )}
                     >
                       {section.utilizationPercent}%
