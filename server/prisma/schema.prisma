@@ -11,111 +11,129 @@ datasource db {
 
 /// System users: registrars and system administrators who manage the enrollment process
 model User {
-  id                                   Int                     @id @default(autoincrement())
-  firstName                            String                  @map("first_name")
-  lastName                             String                  @map("last_name")
-  middleName                           String?                 @map("middle_name")
-  suffix                               String?
-  sex                                  Sex                     @default(FEMALE)
-  employeeId                           String?                 @unique(map: "uq_users_employee_id") @map("employee_id") @db.VarChar(7)
-  designation                          String?
-  mobileNumber                         String?                 @map("mobile_number")
-  email                                String?                 @unique(map: "uq_users_email")
-  password                             String
-  roles                                Role[]
-  isActive                             Boolean                 @default(true) @map("is_active")
-  lastLoginAt                          DateTime?               @map("last_login_at") @db.Timestamptz(6)
-  mustChangePassword                   Boolean                 @default(false) @map("must_change_password")
-  createdById                          Int?                    @map("created_by_id")
-  createdAt                            DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                            DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  accountName                          String?                 @unique(map: "uq_users_account_name") @map("account_name")
-  auditLogs                            AuditLog[]
-  encodedEnrollmentApps                EnrollmentApplication[] @relation("EnrollmentAppEncodedBy")
-  profileLockedEnrollmentApps          EnrollmentApplication[] @relation("EnrollmentProfileLockedBy")
-  enrollmentRecords                    EnrollmentRecord[]
-  recordedHealthRecords                HealthRecord[]          @relation("HealthRecordRecordedBy")
-  learnerProfile                       Learner?                @relation("UserLearnerProfile")
-  recordedSchoolFormArtifacts          SchoolFormArtifact[]    @relation("SchoolFormArtifactRecordedBy")
-  updatedTeacherDesignations           TeacherDesignation[]    @relation("TeacherDesignationUpdatedBy")
-  teacherProfile                       Teacher?                @relation("UserTeacherProfile")
-  createdBy                            User?                   @relation("UserCreatedBy", fields: [createdById], references: [id])
-  createdUsers                         User[]                  @relation("UserCreatedBy")
-  companionSsoAuthorizationCodes      CompanionSsoAuthorizationCode[]
+  id                             Int                             @id @default(autoincrement())
+  firstName                      String                          @map("first_name")
+  lastName                       String                          @map("last_name")
+  middleName                     String?                         @map("middle_name")
+  suffix                         String?
+  sex                            Sex                             @default(FEMALE)
+  employeeId                     String?                         @unique(map: "uq_users_employee_id") @map("employee_id") @db.VarChar(7)
+  designation                    String?
+  mobileNumber                   String?                         @map("mobile_number")
+  email                          String?                         @unique(map: "uq_users_email")
+  password                       String
+  roles                          Role[]
+  isActive                       Boolean                         @default(true) @map("is_active")
+  lastLoginAt                    DateTime?                       @map("last_login_at") @db.Timestamptz(6)
+  mustChangePassword             Boolean                         @default(false) @map("must_change_password")
+  createdById                    Int?                            @map("created_by_id")
+  createdAt                      DateTime                        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime                        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  accountName                    String?                         @unique(map: "uq_users_account_name") @map("account_name")
+  auditLogs                      AuditLog[]
+  encodedEnrollmentApps          EnrollmentApplication[]         @relation("EnrollmentAppEncodedBy")
+  profileLockedEnrollmentApps    EnrollmentApplication[]         @relation("EnrollmentProfileLockedBy")
+  enrollmentRecords              EnrollmentRecord[]
+  recordedHealthRecords          HealthRecord[]                  @relation("HealthRecordRecordedBy")
+  learnerProfile                 Learner?                        @relation("UserLearnerProfile")
+  recordedSchoolFormArtifacts    SchoolFormArtifact[]            @relation("SchoolFormArtifactRecordedBy")
+  updatedTeacherDesignations     TeacherDesignation[]            @relation("TeacherDesignationUpdatedBy")
+  teacherProfile                 Teacher?                        @relation("UserTeacherProfile")
+  createdBy                      User?                           @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers                   User[]                          @relation("UserCreatedBy")
+  companionSsoAuthorizationCodes CompanionSsoAuthorizationCode[]
+  companionIdentityLinks         CompanionIdentityLink[]
 
   @@map("users")
 }
 
 /// Short-lived one-time codes used to establish a companion-system session
 model CompanionSsoAuthorizationCode {
-  id          Int             @id @default(autoincrement())
-  codeHash    String          @unique(map: "uq_companion_sso_codes_hash") @map("code_hash") @db.Char(64)
-  userId      Int             @map("user_id")
-  companion   CompanionSystem
-  expiresAt   DateTime        @map("expires_at") @db.Timestamptz(6)
-  consumedAt  DateTime?       @map("consumed_at") @db.Timestamptz(6)
-  ipAddress   String          @map("ip_address") @db.VarChar(45)
-  userAgent   String?         @map("user_agent")
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int             @id @default(autoincrement())
+  codeHash   String          @unique(map: "uq_companion_sso_codes_hash") @map("code_hash") @db.Char(64)
+  userId     Int             @map("user_id")
+  companion  CompanionSystem
+  expiresAt  DateTime        @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime?       @map("consumed_at") @db.Timestamptz(6)
+  ipAddress  String          @map("ip_address") @db.VarChar(45)
+  userAgent  String?         @map("user_agent")
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt], map: "idx_companion_sso_codes_user_created")
   @@index([expiresAt, consumedAt], map: "idx_companion_sso_codes_expiry")
   @@map("companion_sso_authorization_codes")
 }
 
+/// Stable links used when a trusted companion authenticates a user back into EnrollPro
+model CompanionIdentityLink {
+  id                  Int             @id @default(autoincrement())
+  companion           CompanionSystem
+  externalSubject     String          @map("external_subject") @db.VarChar(191)
+  userId              Int             @map("user_id")
+  lastAuthenticatedAt DateTime?       @map("last_authenticated_at") @db.Timestamptz(6)
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companion, externalSubject], name: "uq_companion_identity_subject")
+  @@unique([companion, userId], name: "uq_companion_identity_user")
+  @@index([userId], map: "idx_companion_identity_links_user")
+  @@map("companion_identity_links")
+}
+
 /// Faculty members who serve as section advisers; not login users
 model Teacher {
-  id                  Int                  @id @default(autoincrement())
-  employeeId          String               @unique(map: "uq_teachers_employee_id") @map("employee_id") @db.VarChar(7)
-  firstName           String               @map("first_name")
-  lastName            String               @map("last_name")
-  middleName          String?              @map("middle_name")
-  suffix              String?
-  email               String?              @unique(map: "uq_teachers_email") @map("email")
-  contactNumber       String?              @map("contact_number")
-  specialization      String?
-  undergraduateDegree String?              @map("undergraduate_degree")
-  postgraduateDegree  String?              @map("postgraduate_degree")
-  majorSpecialization String?              @map("major_specialization")
-  minorSpecialization String?              @map("minor_specialization")
-  indigenousCommunity String?              @map("indigenous_community")
-  natureOfAppointment TeacherNatureOfAppointment @default(REGULAR_PERMANENT) @map("nature_of_appointment")
-  fundingSource       TeacherFundingSource @default(NATIONAL) @map("funding_source")
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  photoPath           String?              @map("photo_path")
-  plantillaPosition   String?              @map("plantilla_position")
-  designation         String?
-  sex                 Sex
-  userId              Int?                 @unique(map: "uq_teachers_user_id") @map("user_id")
-  serviceStatus       String               @default("ACTIVE") @map("service_status")
-  birthdate           DateTime?            @db.Date
-  personnelType       String?              @map("personnel_type")
-  functionalAssignment String?             @map("functional_assignment")
-  ancillaryRoles       String[]            @default([]) @map("ancillary_roles")
-  advisoryHistory     SectionAdviser[]
-  teacherDesignations TeacherDesignation[]
-  schedulePeriods     TeacherSchedulePeriod[]
-  departments         Department[]         @relation("DepartmentTeachers")
-  user                User?                @relation("UserTeacherProfile", fields: [userId], references: [id])
+  id                   Int                        @id @default(autoincrement())
+  employeeId           String                     @unique(map: "uq_teachers_employee_id") @map("employee_id") @db.VarChar(7)
+  firstName            String                     @map("first_name")
+  lastName             String                     @map("last_name")
+  middleName           String?                    @map("middle_name")
+  suffix               String?
+  email                String?                    @unique(map: "uq_teachers_email") @map("email")
+  contactNumber        String?                    @map("contact_number")
+  specialization       String?
+  undergraduateDegree  String?                    @map("undergraduate_degree")
+  postgraduateDegree   String?                    @map("postgraduate_degree")
+  majorSpecialization  String?                    @map("major_specialization")
+  minorSpecialization  String?                    @map("minor_specialization")
+  indigenousCommunity  String?                    @map("indigenous_community")
+  natureOfAppointment  TeacherNatureOfAppointment @default(REGULAR_PERMANENT) @map("nature_of_appointment")
+  fundingSource        TeacherFundingSource       @default(NATIONAL) @map("funding_source")
+  isActive             Boolean                    @default(true) @map("is_active")
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  photoPath            String?                    @map("photo_path")
+  plantillaPosition    String?                    @map("plantilla_position")
+  designation          String?
+  sex                  Sex
+  userId               Int?                       @unique(map: "uq_teachers_user_id") @map("user_id")
+  serviceStatus        String                     @default("ACTIVE") @map("service_status")
+  birthdate            DateTime?                  @db.Date
+  personnelType        String?                    @map("personnel_type")
+  functionalAssignment String?                    @map("functional_assignment")
+  ancillaryRoles       String[]                   @default([]) @map("ancillary_roles")
+  advisoryHistory      SectionAdviser[]
+  teacherDesignations  TeacherDesignation[]
+  schedulePeriods      TeacherSchedulePeriod[]
+  departments          Department[]               @relation("DepartmentTeachers")
+  user                 User?                      @relation("UserTeacherProfile", fields: [userId], references: [id])
   historicalAdvisories EnrollmentHistory[]
 
   @@map("teachers")
 }
 
 model TeacherSchedulePeriod {
-  id           Int       @id @default(autoincrement())
-  teacherId    Int       @map("teacher_id")
-  schoolYearId Int       @map("school_year_id")
-  dayOfWeek    Weekday   @map("day_of_week")
-  startTime    String    @map("start_time") @db.VarChar(5)
-  endTime      String    @map("end_time") @db.VarChar(5)
-  subjectLabel String?   @map("subject_label")
-  sectionLabel String?   @map("section_label")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           Int      @id @default(autoincrement())
+  teacherId    Int      @map("teacher_id")
+  schoolYearId Int      @map("school_year_id")
+  dayOfWeek    Weekday  @map("day_of_week")
+  startTime    String   @map("start_time") @db.VarChar(5)
+  endTime      String   @map("end_time") @db.VarChar(5)
+  subjectLabel String?  @map("subject_label")
+  sectionLabel String?  @map("section_label")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
@@ -127,30 +145,30 @@ model TeacherSchedulePeriod {
 
 /// Singleton config: school identity (name, logo, accent color) and active school year pointer
 model SchoolSetting {
-  id                 Int                 @id @default(autoincrement())
-  schoolName         String              @map("school_name")
-  logoPath           String?             @map("logo_path")
-  logoUrl            String?             @map("logo_url")
-  colorScheme        Json?               @map("color_scheme")
-  selectedAccentHsl  String?             @map("selected_accent_hsl")
-  activeSchoolYearId Int?                @map("active_school_year_id")
-  depedEmail         String?             @map("deped_email")
-  facebookPageUrl    String?             @map("facebook_page_url")
-  schoolWebsite      String?             @map("school_website")
-  depedSchoolId      String?             @map("deped_school_id")
-  division           String?
-  region             String?
-  schoolHeadName     String?             @map("school_head_name")
-  schoolHeadTitle    String?             @map("school_head_title")
-  steEnabled              Boolean             @default(false) @map("ste_enabled")
-  spaEnabled              Boolean             @default(false) @map("spa_enabled")
-  spsEnabled              Boolean             @default(false) @map("sps_enabled")
-  enableHomogeneousSections Boolean           @default(true) @map("enable_homogeneous_sections")
-  homogeneousSectionCount Int                 @default(5) @map("homogeneous_section_count")
-  heterogeneousRoundRobin Boolean             @default(true) @map("heterogeneous_round_robin")
-  systemPhase             SystemAcademicPhase @default(OFFICIAL_ENROLLMENT) @map("system_phase")
-  globalDefaultPassword   String              @default("DepEd2026!") @map("global_default_password")
-  activeSchoolYear   SchoolYear?         @relation(fields: [activeSchoolYearId], references: [id])
+  id                        Int                 @id @default(autoincrement())
+  schoolName                String              @map("school_name")
+  logoPath                  String?             @map("logo_path")
+  logoUrl                   String?             @map("logo_url")
+  colorScheme               Json?               @map("color_scheme")
+  selectedAccentHsl         String?             @map("selected_accent_hsl")
+  activeSchoolYearId        Int?                @map("active_school_year_id")
+  depedEmail                String?             @map("deped_email")
+  facebookPageUrl           String?             @map("facebook_page_url")
+  schoolWebsite             String?             @map("school_website")
+  depedSchoolId             String?             @map("deped_school_id")
+  division                  String?
+  region                    String?
+  schoolHeadName            String?             @map("school_head_name")
+  schoolHeadTitle           String?             @map("school_head_title")
+  steEnabled                Boolean             @default(false) @map("ste_enabled")
+  spaEnabled                Boolean             @default(false) @map("spa_enabled")
+  spsEnabled                Boolean             @default(false) @map("sps_enabled")
+  enableHomogeneousSections Boolean             @default(true) @map("enable_homogeneous_sections")
+  homogeneousSectionCount   Int                 @default(5) @map("homogeneous_section_count")
+  heterogeneousRoundRobin   Boolean             @default(true) @map("heterogeneous_round_robin")
+  systemPhase               SystemAcademicPhase @default(OFFICIAL_ENROLLMENT) @map("system_phase")
+  globalDefaultPassword     String              @default("DepEd2026!") @map("global_default_password")
+  activeSchoolYear          SchoolYear?         @relation(fields: [activeSchoolYearId], references: [id])
 
   @@map("school_settings")
 }
@@ -232,7 +250,6 @@ model Section {
   enrollmentHistories EnrollmentHistory[]
   schoolFormArtifacts SchoolFormArtifact[]
 
-
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
   @@index([schoolYearId], map: "idx_sections_school_year_id")
@@ -306,10 +323,10 @@ model Learner {
   enrollmentHistories          EnrollmentHistory[]
   subjectDeficiencies          SubjectDeficiency[]
   user                         User?                   @relation("UserLearnerProfile", fields: [userId], references: [id])
+  isConditionallyEnrolled      Boolean                 @default(false) @map("is_conditionally_enrolled")
+  missingRequirements          String[]                @map("missing_requirements")
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
-  isConditionallyEnrolled Boolean                 @default(false) @map("is_conditionally_enrolled")
-  missingRequirements     String[]                @map("missing_requirements")
   @@map("learners")
 }
 
@@ -425,42 +442,40 @@ model ApplicationFamilyMember {
 
 /// Final enrollment record linking an approved enrollment application to a section
 model EnrollmentRecord {
-  id                      Int                   @id @default(autoincrement())
-  enrollmentApplicationId Int                   @unique(map: "uq_enroll_record_app_id") @map("enrollment_application_id")
-  sectionId               Int                   @map("section_id")
-  schoolYearId            Int                   @map("school_year_id")
-  isLateEnrollee          Boolean               @default(false) @map("is_late_enrollee")
-  enrolledAt              DateTime              @default(now()) @map("enrolled_at") @db.Timestamptz(6)
-  enrolledById            Int                   @map("enrolled_by_id")
-  dropOutReason           String?               @map("drop_out_reason")
-  eosyStatus              EosyStatus?           @map("eosy_status")
-  transferOutDate         DateTime?             @map("transfer_out_date") @db.Date
-  dropOutDate             DateTime?             @map("drop_out_date") @db.Date
-  dropOutInterventionNotes String?              @map("drop_out_intervention_notes")
-  transferOutSchoolName   String?               @map("transfer_out_school_name")
-  transferOutReason       String?               @map("transfer_out_reason")
-  confirmationConsent     Boolean?              @map("confirmation_consent")
-  contactNumber           String?               @map("contact_number")
-  dateSectioned           DateTime?             @map("date_sectioned") @db.Timestamptz(6)
-  guardianName            String?               @map("guardian_name")
-  sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
-  sf1Remarks              String?               @map("sf1_remarks")
-  finalAverage            Float?                @map("final_average")
-  academicDeficiencyNote  String?               @map("academic_deficiency_note")
-  nextYearCurriculum      ApplicantType?        @map("next_year_curriculum")
-  learnerId               Int                   @map("learner_id")
-  enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
-  enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
-  learner                 Learner               @relation(fields: [learnerId], references: [id])
-  schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
-  section                 Section               @relation("HomeroomSection", fields: [sectionId], references: [id])
+  id                       Int                   @id @default(autoincrement())
+  enrollmentApplicationId  Int                   @unique(map: "uq_enroll_record_app_id") @map("enrollment_application_id")
+  sectionId                Int                   @map("section_id")
+  schoolYearId             Int                   @map("school_year_id")
+  isLateEnrollee           Boolean               @default(false) @map("is_late_enrollee")
+  enrolledAt               DateTime              @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  enrolledById             Int                   @map("enrolled_by_id")
+  dropOutReason            String?               @map("drop_out_reason")
+  eosyStatus               EosyStatus?           @map("eosy_status")
+  transferOutDate          DateTime?             @map("transfer_out_date") @db.Date
+  dropOutDate              DateTime?             @map("drop_out_date") @db.Date
+  dropOutInterventionNotes String?               @map("drop_out_intervention_notes")
+  transferOutSchoolName    String?               @map("transfer_out_school_name")
+  transferOutReason        String?               @map("transfer_out_reason")
+  confirmationConsent      Boolean?              @map("confirmation_consent")
+  contactNumber            String?               @map("contact_number")
+  dateSectioned            DateTime?             @map("date_sectioned") @db.Timestamptz(6)
+  guardianName             String?               @map("guardian_name")
+  sectioningMethod         SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
+  sf1Remarks               String?               @map("sf1_remarks")
+  finalAverage             Float?                @map("final_average")
+  academicDeficiencyNote   String?               @map("academic_deficiency_note")
+  nextYearCurriculum       ApplicantType?        @map("next_year_curriculum")
+  learnerId                Int                   @map("learner_id")
+  enrolledBy               User                  @relation(fields: [enrolledById], references: [id])
+  enrollmentApplication    EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
+  learner                  Learner               @relation(fields: [learnerId], references: [id])
+  schoolYear               SchoolYear            @relation(fields: [schoolYearId], references: [id])
+  section                  Section               @relation("HomeroomSection", fields: [sectionId], references: [id])
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
   @@map("enrollment_records")
 }
-
-
 
 /// Academic department linked to faculty
 model Department {
@@ -679,8 +694,6 @@ enum SchoolFormType {
   @@map("school_form_type")
 }
 
-
-
 enum ApplicantType {
   REGULAR
   SCIENCE_TECHNOLOGY_AND_ENGINEERING
@@ -815,25 +828,25 @@ enum Weekday {
 
 /// Historical ledger of end-of-school-year data
 model EnrollmentHistory {
-  id             Int         @id @default(autoincrement())
-  learnerId      Int         @map("learner_id")
-  schoolYearId   Int         @map("school_year_id")
-  gradeLevelId   Int         @map("grade_level_id")
-  sectionId      Int?        @map("section_id")
-  adviserId      Int?        @map("adviser_id")
-  genAve         Float?      @map("gen_ave")
-  eosyStatus     EosyStatus? @map("eosy_status")
-  academicDeficiencyNote String? @map("academic_deficiency_note")
-  learnerProfileSnapshot Json? @map("learner_profile_snapshot")
-  learnerIdentifier String      @map("learner_identifier")
-  academicOutcomeSnapshot Json? @map("academic_outcome_snapshot")
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                      Int         @id @default(autoincrement())
+  learnerId               Int         @map("learner_id")
+  schoolYearId            Int         @map("school_year_id")
+  gradeLevelId            Int         @map("grade_level_id")
+  sectionId               Int?        @map("section_id")
+  adviserId               Int?        @map("adviser_id")
+  genAve                  Float?      @map("gen_ave")
+  eosyStatus              EosyStatus? @map("eosy_status")
+  academicDeficiencyNote  String?     @map("academic_deficiency_note")
+  learnerProfileSnapshot  Json?       @map("learner_profile_snapshot")
+  learnerIdentifier       String      @map("learner_identifier")
+  academicOutcomeSnapshot Json?       @map("academic_outcome_snapshot")
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  learner        Learner     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  schoolYear     SchoolYear  @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  gradeLevel     GradeLevel  @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  section        Section?    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  adviser        Teacher?    @relation(fields: [adviserId], references: [id], onDelete: Cascade)
+  learner    Learner    @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  gradeLevel GradeLevel @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  section    Section?   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  adviser    Teacher?   @relation(fields: [adviserId], references: [id], onDelete: Cascade)
 
   @@unique([learnerIdentifier, schoolYearId], name: "uq_enrollment_history_identifier_sy")
   @@index([learnerId, schoolYearId], map: "idx_enrollment_history_learner_sy")
@@ -854,9 +867,9 @@ model SchoolFormArtifact {
   recordedById Int            @map("recorded_by_id")
   recordedAt   DateTime       @default(now()) @map("recorded_at") @db.Timestamptz(6)
 
-  schoolYear   SchoolYear     @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  section      Section?       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  recordedBy   User           @relation("SchoolFormArtifactRecordedBy", fields: [recordedById], references: [id])
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  section    Section?   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  recordedBy User       @relation("SchoolFormArtifactRecordedBy", fields: [recordedById], references: [id])
 
   @@unique([schoolYearId, scopeKey, version], name: "uq_school_form_artifact_scope_version")
   @@index([schoolYearId, formType, scopeKey], map: "idx_school_form_artifact_scope")
@@ -873,8 +886,8 @@ model SubjectDeficiency {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  learner      Learner    @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  learner    Learner    @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
 
   @@unique([learnerId, schoolYearId, subjectName], name: "uq_subject_deficiency_learner_sy_subj")
   @@index([learnerId], map: "idx_subject_deficiency_learner_id")

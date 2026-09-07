@@ -9,7 +9,7 @@ import {
   isConfiguredDefaultPassword,
 } from "./default-password.service.js";
 
-type AuthUser = {
+export type AuthUser = {
   id: number;
   firstName: string;
   lastName: string;
@@ -234,6 +234,10 @@ function createAuthToken(user: AuthUser): string {
     jwtSecret,
     { expiresIn: JWT_EXPIRES_IN },
   );
+}
+
+export function issueAuthSession(res: Response, user: AuthUser): void {
+  setSessionCookie(res, createAuthToken(user));
 }
 
 function getJwtSecret(): string {

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
 import {
@@ -56,6 +56,62 @@ type SchoolMetaSettings = SettingsState & {
   schoolDivision?: string | null;
   schoolRegion?: string | null;
 };
+
+function reverseSsoErrorMessage(code: string, source: string | null): string {
+  const system = source ?? "The integrated system";
+  if (code === "COMPANION_REVERSE_SSO_CODE_INVALID") {
+    return `${system} sign-in expired or was already used. Start again from ${system}.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_STATE_INVALID") {
+    return `The ${system} sign-in request could not be verified. Start again.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_SCHOOL_YEAR_MISMATCH") {
+    return `${system} and EnrollPro are not using the same active school year.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_LINK_REQUIRED") {
+    return `Your ${system} identity is not linked to an EnrollPro account.`;
+  }
+  if (code === "PASSWORD_CHANGE_REQUIRED") {
+    return "Change the default password in EnrollPro before using integrated-system sign-in.";
+  }
+  
+  // New specific error mappings
+  if (code === "COMPANION_REVERSE_SSO_UNAVAILABLE") {
+    return `${system} could not complete the sign-in process. The ${system} server might be unreachable.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_ACCESS_DENIED") {
+    return `Your ${system} account is not authorized to sign in to EnrollPro.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_RESPONSE_INVALID") {
+    return `The ${system} server returned an invalid or malformed sign-in response.`;
+  }
+  if (code === "ACTIVE_SCHOOL_YEAR_REQUIRED") {
+    return `An active school year is required in EnrollPro before you can use integrated sign-in.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_IDENTITY_CONFLICT") {
+    return `Your ${system} identity conflicts with an existing EnrollPro account. Please contact your administrator.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_ACCOUNT_UNAVAILABLE") {
+    return `Your linked EnrollPro account is currently deactivated or unavailable.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_COMPLETER_BLOCKED") {
+    return `Junior High School completers cannot open an active EnrollPro staff workspace.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_ROLE_DENIED") {
+    return `Your linked EnrollPro account does not have the required staff roles to log in.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_CALLBACK_INVALID") {
+    return `The ${system} system sent an invalid sign-in response (missing code or state). Please contact your administrator.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_FAILED") {
+    return `An unexpected error occurred while communicating with ${system}.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_NOT_CONFIGURED") {
+    return `Sign-in from ${system} to EnrollPro is not yet fully configured. Please contact the system administrator.`;
+  }
+
+  return `${system} could not sign you in to EnrollPro. Start again or use your EnrollPro credentials.`;
+}
 
 
 
@@ -199,6 +255,8 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const reverseErrorShown = useRef(false);
   const { user, sessionExpired, setAuth, setSessionExpired } =
     useAuthStore();
 
@@ -206,6 +264,17 @@ export default function Login() {
   const schoolName = settings.schoolName || "EnrollPro";
   const acronym = useMemo(() => getAcronym(settings.schoolName), [settings.schoolName]);
   const isBosyEnrollmentOpen = settings.isBosyEnrollmentOpen;
+
+  useEffect(() => {
+    const code = searchParams.get("ssoError");
+    if (!code || reverseErrorShown.current) return;
+    reverseErrorShown.current = true;
+    sileo.error({
+      title: "Integrated Sign-In Failed",
+      description: reverseSsoErrorMessage(code, searchParams.get("source")),
+    });
+    window.history.replaceState({}, "", "/personnel/login");
+  }, [searchParams]);
 
   const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 

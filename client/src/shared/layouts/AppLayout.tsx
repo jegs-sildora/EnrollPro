@@ -154,8 +154,8 @@ function UserNav() {
               {initials}
             </div>
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-bold uppercase">{displayName}</span>
-              <span className="truncate text-sm font-bold text-sidebar-foreground">
+              <span className="truncate font-extrabold uppercase">{displayName}</span>
+              <span className="truncate text-xs font-semibold text-sidebar-foreground">
                 {roleLabel}
               </span>
             </div>

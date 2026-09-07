@@ -63,6 +63,7 @@ Private network transport may use Tailscale or another school-approved network. 
 - Machine integration feeds require an approved service key and contain only the fields needed by their documented consumer.
 - SMART, AIMS, and ATLAS must send their exact login page as `returnTo` and refuse login when EnrollPro credential verification returns `PASSWORD_CHANGE_REQUIRED`. They navigate to the returned absolute EnrollPro password-change URL and create their own session only after EnrollPro redirects back and the user signs in with the replacement password.
 - Authenticated EnrollPro staff may open a configured companion through a 60-second, single-use authorization code. The companion exchanges it from its backend using a dedicated SSO secret, validates the minimized identity and active school year, and creates its own secure session.
+- A configured companion may return an authenticated user to EnrollPro through EnrollPro's reverse start route. EnrollPro binds signed state to an HTTP-only cookie, exchanges the companion-issued single-use code from its backend, validates the mirrored active year and stable external identity link, and creates a new EnrollPro-owned session.
 - Companion SSO is an identity handoff, not cross-domain cookie sharing. EnrollPro never sends its password, JWT, or session cookie to ATLAS, AIMS, SMART, or MRF.
 
 Integration keys, SSO client secrets, user credentials, and session tokens must never appear in logs, responses, or committed documentation. Plaintext SSO authorization codes are returned only to the authenticated launch request and companion callback; only their hashes are stored.
@@ -106,3 +107,4 @@ No downstream system should switch years before EnrollPro completes the atomic r
 - [AIMS EnrollPro SSO](docs/features/integration/AIMS-ENROLLPRO-SSO.md)
 - [SMART EnrollPro SSO](docs/features/integration/SMART-ENROLLPRO-SSO.md)
 - [MRF EnrollPro SSO](docs/features/integration/MRF-ENROLLPRO-SSO.md)
+- [Integrated Systems Sidebar and SSO](docs/features/integration/INTEGRATED-SYSTEMS-SIDEBAR-SSO.md)

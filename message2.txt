@@ -1,0 +1,35 @@
+Here's the updated prompt — includes the incident + our fix and the three-way (AIMS ↔ EP ↔ ATLAS) goal:
+
+---
+
+**Subject: Companion SSO — EP→AIMS flow (now live), our recent fix, and roadmap for AIMS↔EP↔ATLAS**
+
+Hi! We've implemented the AIMS side of the companion-SSO contract per `AIMS-SSO-Integration.md` + the implementation guide, and it's live. Quick context on where we are:
+
+**What we built**
+- Callback `GET /auth/sso/callback?code=...` → forwards the code to our server, which exchanges it at `POST /api/auth/companion-sso/aims/exchange` with the Bearer secret (server-side only — secret never leaves our backend or reaches the browser), validates the payload, maps the identity to an AIMS account, and issues our session tokens.
+- Verified against your dev instance: exchange endpoint + secret accepted (invalid code → HTTP 400 `"Authorization code is invalid"`).
+
+**Recent failure we hit + how we fixed it (for your awareness)**
+- A user's first SSO attempt failed on our side with "The sign-in attempt expired or was already used". Two root causes, both fixed:
+  1. Our dev server had been running stale code (new callback route wasn't loaded) — the browser hit a dead route and surfaced a generic failure. Fixed by restarting the server; route now live (probed: 404 → 502/302 as expected).
+  2. In dev mode our SPA's React StrictMode mounts the callback page twice, and the one-time code was being **sent to the exchange endpoint twice** — the second request hit "code already used" even if the first succeeded. We added a module-level dedupe so the code is exchanged **exactly once**, and our server never re-sends a code it already exchanged (the only retry is on 404/405 route-missing, which cannot have consumed the code). Refresh/replay of a consumed code now always surfaces a clean "start again" state instead of a half-logged-in state.
+- So: a code is single-use end-to-end, and a user who retries gets a fresh code from you — no partial sessions on our side.
+
+**To finish hardening + plan the reverse, could you provide:**
+
+1. **Initiation flow (EP → AIMS):** what exactly happens when a user clicks "Open AIMS" in EnrollPro — is there an initiate endpoint (e.g. `GET /api/auth/companion-sso/AIMS/initiate`), what params (`redirect_uri`?), and where are redirect URIs registered/whitelisted on your side?
+
+2. **Code semantics:** TTL, single-use behavior, and the exact HTTP status/error codes for: invalid code, expired, replayed, wrong-system, inactive account, inactive school year.
+
+3. **Canonical exchange schema:** we've seen two shapes — one with `schoolYear.isActive` / `identity.isActive`, another with `activeSchoolYear: { id, yearLabel }` and no active flags. Which is authoritative? Full request/response JSON (field names, types, casing) + error envelopes, please.
+
+4. **Reverse + three-way direction:** our roadmap is **AIMS ↔ EnrollPro ↔ ATLAS** all able to access each other without re-login. Does your companion-SSO design support EnrollPro as the *consumer* (AIMS issues a code → EP callback/exchange)? What would EP's side look like — an exchange endpoint on AIMS, or an EP callback URL that accepts `?code=`? If not, is there an alternative (EP consuming AIMS-issued JWTs, shared cookie domain)? Also: can ATLAS participate the same way, or is its current bearer-token model the only supported integration?
+
+5. **Roles & subject format:** canonical role list for EP→AIMS (we allow `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `TEACHER`, `CLASS_ADVISER`), expected `subject` format (`ENROLLPRO_USER:1`? `userId` always present?), and what subject/role format you'd expect from AIMS/ATLAS in the reverse flow.
+
+Happy to share our callback implementation, or coordinate a test against your dev instance. Thanks!
+
+---
+
+Note: I left the secret value out (never share it in messages); if you want to mention the failure to EP without the technical detail, the one-line version is: *"We hit a one-time code being consumed twice (dev double-mount) + a stale route; both fixed — codes are now exchanged exactly once, and consumed codes surface a clean retry."*

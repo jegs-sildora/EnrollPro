@@ -53,3 +53,29 @@ EnrollPro will return the user identity payload. Use this to automatically log t
 }
 ```
 Use the `identity.userId` or `identity.employeeId` to map the user to your local MRF database, and create a local session.
+
+## 5. Technical Specification & Implementation Details
+
+To ensure a robust integration, please adhere to the following specifications:
+
+### Initiation Flow (EnrollPro → Companion)
+When a user clicks to open your system within EnrollPro, EnrollPro performs an internal reachability check. If successful, it generates a secure `code` and redirects the user to your registered Callback URL (e.g., `?code=...`). **Redirect URIs are strictly registered and whitelisted via backend environment variables within EnrollPro**. There is no `/initiate` endpoint exposed to external systems.
+
+### Code Semantics & Lifecycle
+- **Time-to-Live (TTL)**: The authorization code strictly expires after **60 seconds**.
+- **Single-Use**: Codes are strictly single-use. Once exchanged successfully, they are instantly consumed.
+- **Error Handling**: If your system attempts to exchange an invalid, expired, or already-consumed code, EnrollPro will return an HTTP **401 Unauthorized** with the exact message: `"The SSO authorization code is invalid, expired, or already used."` Your system must gracefully handle this by instructing the user to start again from EnrollPro. Do not retry the exchange.
+
+### Canonical Exchange Schema
+The JSON response provided in Step 4 is the **authoritative schema**.
+- It uses `activeSchoolYear` (containing `id` and `yearLabel`), **not** `schoolYear`.
+- There are **no** `isActive` flags present in either the `identity` or `activeSchoolYear` objects.
+
+### Roles and Subject Format
+- **Subject**: The `identity.subject` field will always follow the format `ENROLLPRO_USER:<userId>` (e.g., `ENROLLPRO_USER:1`). The `userId` field is strictly numeric and is always present.
+- **Roles**: The `roles` array will only contain roles that your specific companion system is explicitly authorized to access.
+  - For AIMS, SMART, and ATLAS: `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `TEACHER`, `CLASS_ADVISER`.
+  - For MRF: `SYSTEM_ADMIN`, `MRF`.
+
+### Reverse Direction (Companion → EnrollPro)
+EnrollPro implements a signed-state, one-time-code reverse flow. Do not send a reusable JWT or shared browser cookie. Implement the authorization and exchange endpoints defined in [Integrated Systems Sidebar and SSO](../features/integration/INTEGRATED-SYSTEMS-SIDEBAR-SSO.md) before enabling the EnrollPro sidebar item.

@@ -15,6 +15,15 @@ export const companionSsoExchangeSchema = z.object({
     .regex(/^[A-Za-z0-9_-]{43}$/, "Authorization code is invalid"),
 });
 
+export const companionSsoReverseCallbackSchema = companionSsoExchangeSchema.extend({
+  state: z.string().min(32, "SSO state is invalid"),
+});
+
+export const companionSsoReverseTokenRequestSchema = companionSsoExchangeSchema.extend({
+  clientId: z.string().min(1),
+  redirectUri: z.string().url(),
+});
+
 export const companionSsoCatalogItemSchema = z.object({
   system: companionSystemSchema,
   enabled: z.boolean(),
@@ -43,6 +52,25 @@ export const companionSsoExchangeResponseSchema = z.object({
     middleName: z.string().nullable(),
     lastName: z.string(),
     roles: z.array(RoleEnum),
+  }),
+  activeSchoolYear: z.object({
+    id: z.number().int().positive(),
+    yearLabel: z.string(),
+  }),
+  authenticatedAt: z.string().datetime({ offset: true }),
+});
+
+export const companionSsoReverseExchangeResponseSchema = z.object({
+  success: z.literal(true),
+  issuer: companionSystemSchema,
+  identity: z.object({
+    subject: z.string().min(1).max(191),
+    employeeId: z.string().nullable(),
+    lrn: z.string().regex(/^\d{12}$/).nullable(),
+    firstName: z.string().min(1),
+    middleName: z.string().nullable(),
+    lastName: z.string().min(1),
+    roles: z.array(RoleEnum).min(1),
   }),
   activeSchoolYear: z.object({
     id: z.number().int().positive(),

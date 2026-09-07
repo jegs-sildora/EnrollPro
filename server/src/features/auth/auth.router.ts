@@ -19,8 +19,10 @@ import {
 } from "@enrollpro/shared";
 import {
   companionSsoCatalog,
+  completeCompanionReverseSsoCallback,
   exchangeCompanionSso,
   launchCompanionSso,
+  startCompanionReverseSso,
 } from "./companion-sso.controller.js";
 const router: Router = Router();
 
@@ -70,6 +72,16 @@ router.post(
   companionSsoExchangeLimiter,
   validate(companionSsoExchangeSchema),
   exchangeCompanionSso,
+);
+router.get(
+  "/companion-sso/:system/reverse/start",
+  companionSsoLaunchLimiter,
+  startCompanionReverseSso,
+);
+router.get(
+  "/companion-sso/:system/reverse/callback",
+  companionSsoExchangeLimiter,
+  completeCompanionReverseSsoCallback,
 );
 router.patch(
   "/change-password",

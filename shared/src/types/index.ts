@@ -82,6 +82,9 @@ import type {
   companionSsoExchangeSchema,
   companionSsoExchangeResponseSchema,
   companionSsoLaunchResponseSchema,
+  companionSsoReverseCallbackSchema,
+  companionSsoReverseExchangeResponseSchema,
+  companionSsoReverseTokenRequestSchema,
 } from "../schemas/companion-sso.schema.js";
 
 // ─── Auth Types ────────────────────────────────────────
@@ -201,4 +204,13 @@ export type CompanionSsoLaunchResponse = z.infer<
 >;
 export type CompanionSsoExchangeResponse = z.infer<
   typeof companionSsoExchangeResponseSchema
+>;
+export type CompanionSsoReverseCallback = z.infer<
+  typeof companionSsoReverseCallbackSchema
+>;
+export type CompanionSsoReverseTokenRequest = z.infer<
+  typeof companionSsoReverseTokenRequestSchema
+>;
+export type CompanionSsoReverseExchangeResponse = z.infer<
+  typeof companionSsoReverseExchangeResponseSchema
 >;

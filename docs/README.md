@@ -44,6 +44,8 @@ Last reviewed: 2026-09-01
 | [MRF API Guide](features/integration/MRF_API_GUIDE.md) | MRF and EnrollPro Teams | Minimized personnel and learner identity feed |
 | [ATLAS EnrollPro SSO](features/integration/ATLAS-ENROLLPRO-SSO.md) | ATLAS and EnrollPro Teams | One-time identity handoff and ATLAS session creation |
 | [AIMS EnrollPro SSO](features/integration/AIMS-ENROLLPRO-SSO.md) | AIMS and EnrollPro Teams | One-time identity handoff and AIMS session creation |
+| [Response to AIMS SSO Questions](features/integration/ENROLLPRO-RESPONSE-TO-AIMS-SSO.md) | AIMS and EnrollPro Teams | Canonical initiation, exchange, errors, roles, and federation roadmap |
+| [Integrated Systems Sidebar and SSO](features/integration/INTEGRATED-SYSTEMS-SIDEBAR-SSO.md) | All System Teams | Shared sidebar UX, SSO controllers, security, federation phases, and acceptance tests |
 | [SMART EnrollPro SSO](features/integration/SMART-ENROLLPRO-SSO.md) | SMART and EnrollPro Teams | One-time identity handoff and SMART session creation |
 | [MRF EnrollPro SSO](features/integration/MRF-ENROLLPRO-SSO.md) | MRF and EnrollPro Teams | Pending MRF callback configuration and session contract |
 

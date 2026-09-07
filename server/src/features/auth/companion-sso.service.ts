@@ -160,6 +160,13 @@ async function getSsoUser(userId: number): Promise<SsoUser> {
 }
 
 function assertUserCanLaunch(system: CompanionSystem, user: SsoUser): void {
+  if (!user.isActive) {
+    throw new AppError(
+      401,
+      "Your EnrollPro account is unavailable.",
+      "COMPANION_SSO_ACCOUNT_UNAVAILABLE",
+    );
+  }
   if (user.mustChangePassword) {
     throw new AppError(
       428,
