@@ -1213,7 +1213,7 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-bold uppercase flex items-center gap-2 text-foreground">
                       <Users className="h-5 w-5 text-primary" />
                       LEARNERS READY FOR SECTIONING
                     </CardTitle>
@@ -1485,7 +1485,7 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-bold uppercase flex items-center gap-2 text-foreground">
                       <LayoutGrid className="h-5 w-5 text-primary" />
                       {draftPlacement
                         ? "TEMPORARY CLASS LISTS"
@@ -2149,7 +2149,7 @@ export function SectioningWorkspace() {
                       <tr>
                         <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
                         <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
-                        <th className="h-10 px-4 text-center font-bold text-foreground">Proposed Section</th>
+                        <th className="h-10 px-4 text-center font-bold text-foreground">Grade Level & Proposed Section</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2178,12 +2178,9 @@ export function SectioningWorkspace() {
                                 >
                                   {formatGradeLevel(roster.section.gradeLevel)}
                                 </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className="font-bold uppercase bg-background text-primary border-primary/30"
-                                >
+                                <div className="font-bold uppercase">
                                   {roster.section.name}
-                                </Badge>
+                                </div>
                               </div>
                             </td>
                           </tr>

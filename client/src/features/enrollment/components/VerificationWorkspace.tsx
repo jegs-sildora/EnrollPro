@@ -554,7 +554,7 @@ export function VerificationWorkspace() {
                           )}
                           <span className="truncate relative z-20 text-xs">{m.title}</span>
                           <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-sm text-primary-foreground relative z-20">
-                            {m.value}
+                            {m.value > 9 ? "9+" : m.value}
                           </span>
                         </button>
                       );

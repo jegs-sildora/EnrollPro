@@ -513,7 +513,7 @@ export default function BOSYPage() {
                         )}>
                         <div className="flex h-full flex-col">
                           <div>
-                            <span className="flex items-center gap-2 text-lg font-bold leading-snug">
+                            <span className="flex items-center gap-2 text-lg font-extrabold leading-snug">
                               {label}
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
@@ -530,7 +530,7 @@ export default function BOSYPage() {
                           <div className="mt-auto flex flex-col gap-2">
                             <span
                               className={cn(
-                                "text-4xl font-bold leading-none tracking-tight",
+                                "text-4xl font-black leading-none tracking-tight",
                                 isPrimaryMetric && value > 0
                                   ? "text-primary"
                                   : "text-primary",
