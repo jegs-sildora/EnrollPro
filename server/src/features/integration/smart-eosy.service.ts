@@ -3,7 +3,7 @@ import {
   smartEosySectionResponseSchema,
   type SmartEosyLearnerOutcome,
 } from "@enrollpro/shared";
-import { Prisma } from "../../generated/prisma/index.js";
+import { Prisma, type ApplicantType } from "../../generated/prisma/index.js";
 import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
 import {
@@ -663,12 +663,57 @@ async function syncFinalSmartSectionOutcomesInternal(
   await prisma.$transaction(
     async (tx) => {
       for (const { student, record } of matched) {
+        let nextYearCurriculum: ApplicantType | undefined = undefined;
+        const isScp = Boolean(section.programType && section.programType !== "REGULAR");
+        if (isScp) {
+          let hasViolation = false;
+          let fgaRequired = 83;
+          if (section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+            fgaRequired = 85;
+          } else if (section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" || section.programType === "SPECIAL_PROGRAM_IN_SPORTS") {
+            fgaRequired = 83;
+          }
+          
+          if (student.finalGeneralAverage < fgaRequired) {
+            hasViolation = true;
+          } else {
+            for (const area of student.learningAreas) {
+              let isCore = false;
+              let required = 80;
+              const lower = area.name.toLowerCase();
+              if (section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+                isCore = lower.includes("science") || lower.includes("math") || lower.includes("english") || lower.includes("research") || lower.includes("biotech") || lower.includes("environmental");
+                required = isCore ? 85 : 80;
+              } else if (section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
+                isCore = lower.includes("arts") || lower.includes("specialization");
+                required = isCore ? 85 : 80;
+              } else if (section.programType === "SPECIAL_PROGRAM_IN_SPORTS") {
+                isCore = lower.includes("sports") || lower.includes("specialization");
+                required = isCore ? 85 : 80;
+              } else {
+                isCore = lower.includes("science") || lower.includes("math");
+                required = isCore ? 85 : 80;
+              }
+
+              if (area.finalGrade < required) {
+                hasViolation = true;
+                break;
+              }
+            }
+          }
+          
+          if (hasViolation || student.finalOutcome !== "PROMOTED") {
+             nextYearCurriculum = "REGULAR";
+          }
+        }
+
         await tx.enrollmentRecord.update({
           where: { id: record.id },
           data: {
             finalAverage: student.finalGeneralAverage,
             eosyStatus: student.finalOutcome,
             academicDeficiencyNote: buildDeficiencyNote(student),
+            ...(nextYearCurriculum !== undefined ? { nextYearCurriculum } : {}),
           },
         });
         if (Object.keys(student.reportedGradesObj).length > 0) {

@@ -58,6 +58,7 @@ import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
+import { Badge } from "@/shared/ui/badge";
 import { sileo } from "sileo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate } from "react-router";
@@ -976,16 +977,22 @@ export default function EosyUpdating() {
     }
 
     if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase().trim();
+      const q = searchQuery.toLowerCase().replace(/,/g, '').trim();
       list = list.filter(r => {
         const learner = r.enrollmentApplication?.learner;
         if (!learner) return false;
         const { firstName, lastName, lrn } = learner;
+        
+        const fullNameDirect = `${firstName} ${lastName}`.toLowerCase().replace(/,/g, '');
+        const fullNameReverse = `${lastName} ${firstName}`.toLowerCase().replace(/,/g, '');
+
         return (
           (firstName && firstName.toLowerCase().includes(q)) ||
           (lastName && lastName.toLowerCase().includes(q)) ||
           (lrn && lrn.toLowerCase().includes(q)) ||
-          (r.section?.name && r.section.name.toLowerCase().includes(q))
+          (r.section?.name && r.section.name.toLowerCase().includes(q)) ||
+          fullNameDirect.includes(q) ||
+          fullNameReverse.includes(q)
         );
       });
     }
@@ -1282,12 +1289,27 @@ export default function EosyUpdating() {
             );
           }
 
+          const programType = row.original.section?.programType;
+          const hasProgramType = Boolean(programType);
+          const programAbbr = hasProgramType ? (
+            programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
+            programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
+            programType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
+            programType === "REGULAR" ? "BEC" :
+            programType?.replace(/_/g, " ")
+          ) : null;
+
           return (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex justify-center w-full">
-                    <span className="text-base font-bold uppercase cursor-help">{row.original.section?.name || "--"}</span>
+                  <div className="flex flex-col items-center justify-center w-full relative pt-1">
+                    {hasProgramType && programAbbr && (
+                      <Badge variant="outline" className="font-bold px-2.5 py-0.5 rounded-md uppercase mb-1 text-sm text-primary outline-primary/20 outline">
+                        {programAbbr}
+                      </Badge>
+                    )}
+                    <span className="text-base font-bold uppercase cursor-help leading-none">{row.original.section?.name || "--"}</span>
                   </div>
                 </TooltipTrigger>
                 {row.original.section?.advisers?.[0]?.teacher && (
@@ -1669,7 +1691,7 @@ export default function EosyUpdating() {
                             <Input
                               placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                               value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
+                              onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
                               className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-bold"
                             />
                           </div>

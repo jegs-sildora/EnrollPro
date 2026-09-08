@@ -44,6 +44,7 @@ async function main() {
         },
         include: {
           enrollmentApplication: true,
+          section: true,
         },
         orderBy: {
           id: "asc",
@@ -118,27 +119,55 @@ async function main() {
         totalSeeded += 4;
       }
 
+      const scpViolationsSeeded = new Set<number>();
+
       // For the rest of the learners, 95% pass (75-98, PROMOTED)
       const startIndex = records.length >= 4 ? 4 : 0;
       for (let i = startIndex; i < records.length; i++) {
-        // We ensure random grade with 2 decimals
-        const passGrade = Math.round((Math.random() * (98 - 75) + 75) * 100) / 100;
+        const record = records[i] as any;
+        const section = record.section;
+        const isScp = section && section.programType && section.programType !== "REGULAR";
+        
+        let passGrade = Math.round((Math.random() * (98 - 75) + 75) * 100) / 100;
+        let subjects: any = { "Math": { Final: passGrade } };
+        let nextYearCurriculum: any = undefined;
+
+        if (isScp && !scpViolationsSeeded.has(section.id)) {
+           // Provide a violation: FGA is 86 (passes), but a core subject is 79 (fails)
+           passGrade = 86;
+           subjects = { 
+              "Math": { Final: 89 }, 
+              "Science": { Final: 79 } // Violation!
+           };
+           nextYearCurriculum = "REGULAR";
+           scpViolationsSeeded.add(section.id);
+        } else if (isScp) {
+           // Normal SCP passing
+           passGrade = Math.round((Math.random() * (98 - 85) + 85) * 100) / 100;
+           subjects = { "Math": { Final: passGrade }, "Science": { Final: passGrade } };
+        }
+
         const passEnvelope = buildSmartOutcomeEnvelope({
           schoolYearId: activeSchoolYear.id,
-          sectionId: records[i].sectionId,
+          sectionId: record.sectionId,
           finalGeneralAverage: passGrade,
           finalOutcome: "PROMOTED",
           publishedAt: new Date().toISOString(),
           revision: "1",
-          subjects: { "Math": { Final: passGrade } },
+          subjects,
         });
+
         await tx.enrollmentRecord.update({
-          where: { id: records[i].id },
-          data: { finalAverage: passGrade, eosyStatus: "PROMOTED" },
+          where: { id: record.id },
+          data: { 
+             finalAverage: passGrade, 
+             eosyStatus: "PROMOTED",
+             ...(nextYearCurriculum ? { nextYearCurriculum } : {})
+          },
         });
         await tx.enrollmentApplication.update({
-          where: { id: records[i].enrollmentApplicationId! },
-          data: { reportedGrades: mergeSmartOutcomeIntoReportedGrades(records[i].enrollmentApplication?.reportedGrades, passEnvelope) },
+          where: { id: record.enrollmentApplicationId! },
+          data: { reportedGrades: mergeSmartOutcomeIntoReportedGrades(record.enrollmentApplication?.reportedGrades, passEnvelope) },
         });
         totalSeeded++;
       }

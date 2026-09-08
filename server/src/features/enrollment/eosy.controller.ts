@@ -298,28 +298,38 @@ function buildScpMetadata(
   let scpViolations: NonNullable<EosyRecordPayload["scpViolations"]> = [];
 
   if (isScp && smartOutcome?.subjects) {
-    for (const [subject, grades] of Object.entries(smartOutcome.subjects)) {
+    let fgaRequired = 83;
+    if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+      fgaRequired = 85;
+    } else if (programType === "SPECIAL_PROGRAM_IN_THE_ARTS" || programType === "SPECIAL_PROGRAM_IN_SPORTS") {
+      fgaRequired = 83;
+    }
 
+    if (finalAverage !== null && finalAverage < fgaRequired) {
+      scpViolations.push({ subject: "General Average", term: "Final Grade", actualGrade: finalAverage, requiredGrade: fgaRequired, violationType: "Program Minimum FGA" });
+    }
+
+    for (const [subject, grades] of Object.entries(smartOutcome.subjects)) {
       if (grades.Final) {
         let isCore = false;
-        let required = 83;
+        let required = 80;
 
         if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
           const lower = subject.toLowerCase();
           isCore = lower.includes("science") || lower.includes("math") || lower.includes("english") || lower.includes("research") || lower.includes("biotech") || lower.includes("environmental");
-          required = isCore ? 85 : 83;
+          required = isCore ? 85 : 80;
         } else if (programType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
           const lower = subject.toLowerCase();
           isCore = lower.includes("arts") || lower.includes("specialization");
-          required = isCore ? 85 : 83;
+          required = isCore ? 85 : 80;
         } else if (programType === "SPECIAL_PROGRAM_IN_SPORTS") {
           const lower = subject.toLowerCase();
           isCore = lower.includes("sports") || lower.includes("specialization");
-          required = isCore ? 85 : 83;
+          required = isCore ? 85 : 80;
         } else {
           const lower = subject.toLowerCase();
           isCore = lower.includes("science") || lower.includes("math");
-          required = isCore ? 85 : 83;
+          required = isCore ? 85 : 80;
         }
 
         if (grades.Final < required) {
