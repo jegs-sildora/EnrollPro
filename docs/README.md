@@ -42,6 +42,7 @@ Last reviewed: 2026-09-01
 | [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |
 | [AIMS School Year Rollover](features/integration/AIMS-SCHOOL-YEAR-ROLLOVER.md) | AIMS and EnrollPro Teams | Learning-history preservation, class initialization, and membership reconciliation |
 | [MRF API Guide](features/integration/MRF_API_GUIDE.md) | MRF and EnrollPro Teams | Minimized personnel and learner identity feed |
+| [MRF Student Authentication and API Catalog](features/integration/ENROLLPRO-MRF-STUDENT-AUTH-AND-API-CATALOG.md) | MRF/SORTv2 and EnrollPro Teams | Learner login, password lifecycle, integration feeds, errors, limitations, and synchronization contract |
 | [ATLAS EnrollPro SSO](features/integration/ATLAS-ENROLLPRO-SSO.md) | ATLAS and EnrollPro Teams | One-time identity handoff and ATLAS session creation |
 | [AIMS EnrollPro SSO](features/integration/AIMS-ENROLLPRO-SSO.md) | AIMS and EnrollPro Teams | One-time identity handoff and AIMS session creation |
 | [Response to AIMS SSO Questions](features/integration/ENROLLPRO-RESPONSE-TO-AIMS-SSO.md) | AIMS and EnrollPro Teams | Canonical initiation, exchange, errors, roles, and federation roadmap |

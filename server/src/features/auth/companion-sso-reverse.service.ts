@@ -310,6 +310,23 @@ async function exchangeCodeWithCompanion(input: {
   }
 
   if (!response.ok) {
+    // Surface the companion's own error detail — the mapped AppError is
+    // generic on purpose (safe for the browser), but the server log must
+    // show exactly WHY the companion rejected the exchange.
+    let companionErrorDetail = "";
+    try {
+      companionErrorDetail = (await response.text()).slice(0, 500);
+    } catch {
+      companionErrorDetail = "<unreadable body>";
+    }
+    console.error(
+      "[ReverseSSO] %s exchange endpoint %s returned HTTP %s — body: %s",
+      input.system,
+      configuration.exchangeUrl.toString(),
+      response.status,
+      companionErrorDetail,
+    );
+
     if ([400, 401].includes(response.status)) {
       throw new AppError(
         401,
@@ -335,6 +352,11 @@ async function exchangeCodeWithCompanion(input: {
     await readJson(response),
   );
   if (!parsed.success || parsed.data.issuer !== input.system) {
+    console.error(
+      "[ReverseSSO] %s exchange response failed validation: %s",
+      input.system,
+      parsed.success ? `issuer mismatch (${parsed.data.issuer})` : parsed.error.message,
+    );
     throw new AppError(
       502,
       "The companion returned an invalid reverse SSO response.",
@@ -553,6 +575,16 @@ export async function completeCompanionReverseSso(input: {
     });
     return user;
   } catch (error: unknown) {
+    console.error(
+      "[ReverseSSO] Callback failed for %s:",
+      input.system,
+      error instanceof AppError
+        ? `${error.code}: ${error.message}`
+        : error,
+    );
+    if (!(error instanceof AppError) && error instanceof Error && error.stack) {
+      console.error("[ReverseSSO] Stack:", error.stack);
+    }
     await auditLog({
       actionType: "COMPANION_REVERSE_SSO_DENIED",
       description: `${input.system} reverse SSO was denied.`,

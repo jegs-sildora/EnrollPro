@@ -96,6 +96,13 @@ export async function startCompanionReverseSso(
     );
     res.redirect(303, start.authorizeUrl);
   } catch (error: unknown) {
+    console.error(
+      "[ReverseSSO] Start failed for %s:",
+      system ?? req.params.system,
+      error instanceof AppError
+        ? `${error.code}: ${error.message}`
+        : error,
+    );
     const query = new URLSearchParams({
       ssoError: reverseErrorCode(error),
       ...(system ? { source: system } : {}),
@@ -127,6 +134,15 @@ export async function completeCompanionReverseSsoCallback(
     const cookieState = typeof req.cookies?.[cookieName] === "string"
       ? req.cookies[cookieName]
       : null;
+    if (!cookieState) {
+      console.error(
+        "[ReverseSSO] Callback for %s arrived without the state cookie %s. " +
+          "The flow must start at /api/auth/companion-sso/:system/reverse/start " +
+          "on the same host as the callback.",
+        system,
+        cookieName,
+      );
+    }
     const user = await completeCompanionReverseSso({
       system,
       code: parsed.data.code,
@@ -137,8 +153,21 @@ export async function completeCompanionReverseSsoCallback(
 
     res.clearCookie(cookieName, reverseCookieOptions());
     issueAuthSession(res, user);
+    console.log(
+      "[ReverseSSO] Callback succeeded for %s — user %s signed in, landing redirect issued.",
+      system,
+      user.id,
+    );
     res.redirect(303, reverseSsoLandingPath(user.roles));
   } catch (error: unknown) {
+    console.error(
+      "[ReverseSSO] Callback redirect error for %s: %s",
+      system ?? req.params.system,
+      reverseErrorCode(error),
+      error instanceof AppError
+        ? `${error.code}: ${error.message}`
+        : error,
+    );
     if (system) {
       res.clearCookie(reverseStateCookieName(system), reverseCookieOptions());
     }
