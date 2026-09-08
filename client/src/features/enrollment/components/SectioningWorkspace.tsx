@@ -1213,7 +1213,7 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold uppercase flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-extrabold uppercase flex items-center gap-2 text-foreground">
                       <Users className="h-5 w-5 text-primary" />
                       LEARNERS READY FOR SECTIONING
                     </CardTitle>
@@ -1335,16 +1335,35 @@ export function SectioningWorkspace() {
                       </tr>
                     ) : (
                       (() => {
-                        const scpLearners = filteredAndSortedPool.filter(l => l.programType !== "REGULAR").sort((a, b) => {
-                          const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 };
-                          const orderA = order[a.programType as keyof typeof order] || 4;
-                          const orderB = order[b.programType as keyof typeof order] || 4;
-                          return orderA - orderB;
-                        });
                         const becLearners = filteredAndSortedPool.filter(l => l.programType === "REGULAR");
 
+                        const scpGroupsMap = new Map<string, typeof filteredAndSortedPool>();
+                        filteredAndSortedPool.forEach(l => {
+                          if (l.programType !== "REGULAR") {
+                            if (!scpGroupsMap.has(l.programType)) scpGroupsMap.set(l.programType, []);
+                            scpGroupsMap.get(l.programType)!.push(l);
+                          }
+                        });
+
+                        const getProgramTitle = (pt: string) => {
+                          const label = SCP_LABELS[pt];
+                          const acronym = SCP_SHORT_LABELS[pt as keyof typeof SCP_SHORT_LABELS];
+                          if (label && acronym) return `${label} (${acronym})`;
+                          return label || pt;
+                        };
+
+                        const scpGroups = Array.from(scpGroupsMap.entries())
+                          .sort(([a], [b]) => {
+                            const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 } as Record<string, number>;
+                            return (order[a] || 4) - (order[b] || 4);
+                          })
+                          .map(([programType, learners]) => ({
+                            title: getProgramTitle(programType),
+                            learners
+                          }));
+
                         const groups = [
-                          { title: "Special Curricular Programs (SCP)", learners: scpLearners },
+                          ...scpGroups,
                           { title: "Basic Education Curriculum (BEC)", learners: becLearners }
                         ].filter(g => g.learners.length > 0);
 
@@ -1435,15 +1454,13 @@ export function SectioningWorkspace() {
                                           )}>
                                           {l.sex}
                                         </Badge>
-                                        <Badge
-                                          variant="outline"
-                                          className={cn(
-                                            "text-sm uppercase font-bold",
-                                            l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
-                                          )}>
-                                          {SCP_SHORT_LABELS[l.programType] ??
-                                            l.programType}
-                                        </Badge>
+                                        {l.programType === "LATE_ENROLLEE" && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-sm uppercase font-bold bg-amber-100 text-amber-700 border-amber-500 border-2">
+                                            {SCP_SHORT_LABELS[l.programType] ?? l.programType}
+                                          </Badge>
+                                        )}
                                       </div>
                                       {draftPlacement &&
                                         draftSectionByApplicationId.has(
@@ -1485,7 +1502,7 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold uppercase flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-extrabold uppercase flex items-center gap-2 text-foreground">
                       <LayoutGrid className="h-5 w-5 text-primary" />
                       {draftPlacement
                         ? "TEMPORARY CLASS LISTS"
@@ -1524,30 +1541,47 @@ export function SectioningWorkspace() {
                     </span>
                   </div>
                 ) : (
-                  [
-                    {
-                      title: "Special Curricular Programs (SCP)",
-                      rosters: displayedRosters
-                        .filter((r) => r.section.programType !== "REGULAR")
-                        .filter(
-                          (r) =>
-                            draftPlacement ||
-                            selectedProgramTypes.size === 0 ||
-                            selectedProgramTypes.has(r.section.programType)
-                        )
-                        .sort(
-                          (a, b) =>
-                            a.section.programType.localeCompare(
-                              b.section.programType,
-                            ) || a.section.name.localeCompare(b.section.name),
-                        ),
-                    },
-                    {
-                      title: "Basic Education Curriculum (BEC)",
-                      rosters: displayedRosters
-                        .filter((r) => r.section.programType === "REGULAR")
-                        .filter(
-                          (r) =>
+                  (() => {
+                    const scpRosters = displayedRosters
+                      .filter((r) => r.section.programType !== "REGULAR")
+                      .filter(
+                        (r) =>
+                          draftPlacement ||
+                          selectedProgramTypes.size === 0 ||
+                          selectedProgramTypes.has(r.section.programType)
+                      );
+                      
+                    const scpRostersByProgram = new Map<string, typeof scpRosters>();
+                    scpRosters.forEach(r => {
+                      if (!scpRostersByProgram.has(r.section.programType)) scpRostersByProgram.set(r.section.programType, []);
+                      scpRostersByProgram.get(r.section.programType)!.push(r);
+                    });
+
+                    const getProgramTitle = (pt: string) => {
+                      const label = SCP_LABELS[pt];
+                      const acronym = SCP_SHORT_LABELS[pt as keyof typeof SCP_SHORT_LABELS];
+                      if (label && acronym) return `${label} (${acronym})`;
+                      return label || pt;
+                    };
+
+                    const scpGroups = Array.from(scpRostersByProgram.entries())
+                      .sort(([a], [b]) => {
+                        const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 } as Record<string, number>;
+                        return (order[a] || 4) - (order[b] || 4);
+                      })
+                      .map(([programType, rosters]) => ({
+                        title: getProgramTitle(programType),
+                        rosters: rosters.sort((a, b) => a.section.name.localeCompare(b.section.name))
+                      }));
+
+                    return [
+                      ...scpGroups,
+                      {
+                        title: "Basic Education Curriculum (BEC)",
+                        rosters: displayedRosters
+                          .filter((r) => r.section.programType === "REGULAR")
+                          .filter(
+                            (r) =>
                             draftPlacement ||
                             selectedProgramTypes.size === 0 ||
                             selectedProgramTypes.has(r.section.programType)
@@ -1634,35 +1668,7 @@ export function SectioningWorkspace() {
                                       Over Capacity
                                     </Badge>
                                   )}
-                                  {s.programType === "REGULAR" ? (
-                                    <Badge
-                                      variant="outline"
-                                      className={cn(
-                                        "text-sm font-bold uppercase bg-background",
-                                        s.isHomogeneous
-                                          ? "text-amber-600 border-amber-600/30"
-                                          : "text-foreground border-border"
-                                      )}>
-                                      {s.isHomogeneous ? "TOP BEC" : "BEC"}
-                                    </Badge>
-                                  ) : (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <span className="cursor-help inline-block">
-                                            <Badge
-                                              variant="outline"
-                                              className="text-sm font-bold uppercase bg-background text-primary border-primary/30">
-                                              {SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                                            </Badge>
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="bg-primary text-primary-foreground border-primary">
-                                          <p className="text-sm font-bold">{SCP_LABELS[s.programType] || s.programType}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  )}
+
                                 </div>
                               </div>
                               <div className="space-y-2">
@@ -1819,7 +1825,9 @@ export function SectioningWorkspace() {
                         })
                         }
                       </div>
-                    )))}
+                    ));
+                  })()
+                )}
               </div>
               <AnimatePresence>
                 {(draftPlacement || selectedAppIds.length > 0) && (
@@ -2071,7 +2079,7 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary">
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary text-sm">
               Please review the temporary class lists carefully before
               finalizing because finalization creates the official section
               records.

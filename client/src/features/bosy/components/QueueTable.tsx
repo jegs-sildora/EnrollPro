@@ -12,6 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import { CheckCircle2, Loader2, MoreHorizontal } from "lucide-react";
 import type {
   ColumnDef,
@@ -493,9 +499,31 @@ export function QueueTable({
                 </span>
               )}
               {deficiencyText && (
-                <span className="max-w-full truncate text-sm font-bold leading-tight text-amber-800">
-                  {formatDeficiencyText(deficiencyText)}
-                </span>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="max-w-full truncate text-sm font-bold leading-tight text-amber-800 cursor-help underline decoration-amber-800/30 decoration-dashed underline-offset-4">
+                        {formatDeficiencyText(deficiencyText)}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px] text-left font-bold text-sm">
+                      {(() => {
+                        const subjects = deficiencyText.split(",").map((s) => s.trim()).filter(Boolean);
+                        const label = subjects.length > 1 ? "Deficiencies" : "Deficiency";
+                        return (
+                          <div>
+                            <p className="mb-1">{label}:</p>
+                            <ul className="list-disc pl-4 space-y-0.5 font-normal">
+                              {subjects.map((subject, index) => (
+                                <li key={index}>{subject}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })()}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           );
