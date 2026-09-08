@@ -776,7 +776,7 @@ export default function BOSYPage() {
                     onOpenChange={(open) => {
                       if (!open && !revokeBusy) setRevokeTarget(null);
                     }}
-                    title="Unenroll"
+                    title="Unenroll Learner"
                     variant="danger"
                     loading={revokeBusy}
                     confirmText="Unenroll"
@@ -784,24 +784,41 @@ export default function BOSYPage() {
                     description={
                       <>
                         <p className="mb-4">
-                          Return this learner to Pending Enrollment. This removes the learner from the unassigned sectioning pool and from the current official BOSY count.
+                          Return this learner to pending enrollment. This removes the learner from the unassigned sectioning pool and from the current official BOSY count.
                         </p>
                         {revokeTarget && (
-                          <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
-                            <p className="text-base leading-tight font-bold uppercase text-foreground">
-                              {revokeTarget.lastName}, {revokeTarget.firstName}
-                              {revokeTarget.middleName
-                                ? ` ${revokeTarget.middleName.charAt(0)}.`
-                                : ""}
-                            </p>
-                            <p className="text-base text-foreground font-bold break-all">
-                              LRN: {revokeTarget.lrn ?? "No LRN"}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
-                              {formatGradeLevel(revokeTarget.gradeLevelName)}
-                            </Badge>
+                          <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 border-b">
+                                <tr>
+                                  <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                  <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="bg-white hover:bg-gray-50/80 transition-colors">
+                                  <td className="p-3 px-4 border-r border-gray-100">
+                                    <p className="font-extrabold uppercase text-foreground">
+                                      {revokeTarget.lastName}, {revokeTarget.firstName}
+                                      {revokeTarget.middleName
+                                        ? ` ${revokeTarget.middleName.charAt(0)}.`
+                                        : ""}
+                                    </p>
+                                    <p className="text-sm text-foreground">
+                                      LRN: {revokeTarget.lrn ?? "No LRN"}
+                                    </p>
+                                  </td>
+                                  <td className="p-3 px-4 text-center">
+                                    <Badge
+                                      variant="outline"
+                                      className={cn("font-bold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}
+                                    >
+                                      {formatGradeLevel(revokeTarget.gradeLevelName)}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </>

@@ -31,6 +31,7 @@ export interface BOSYQueueItem {
   gradeLevelName: string;
   gradeLevelDisplayOrder: number;
   academicStatus: string | null;
+  isScpDemoted?: boolean;
   isRemedialRequired: boolean;
   isTemporarilyEnrolled: boolean;
   credentialStatus: "COMPLETE" | "PENDING";

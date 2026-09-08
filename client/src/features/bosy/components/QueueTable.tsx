@@ -109,8 +109,10 @@ function statusBadge(item: BOSYQueueItem) {
   );
 }
 
-function formatAcademicStatusLabel(status: string | null): string {
-  if (status === "PROMOTED") return "Promoted";
+function formatAcademicStatusLabel(status: string | null, isScpDemoted?: boolean): string {
+  if (status === "PROMOTED") {
+    return isScpDemoted ? "Promoted (To BEC)" : "Promoted";
+  }
   if (status === "CONDITIONALLY_PROMOTED") return "Conditionally Promoted";
   if (status === "RETAINED") return "Retained";
   return "—";
@@ -330,7 +332,7 @@ function QueueMobileCard({
                           ? "bg-amber-600 hover:bg-amber-600"
                           : "bg-red-600 hover:bg-red-600",
                     )}>
-                    {formatAcademicStatusLabel(item.academicStatus)}
+                    {formatAcademicStatusLabel(item.academicStatus, item.isScpDemoted)}
                   </Badge>
                 ) : (
                   <span className="text-sm font-bold text-foreground">—</span>
@@ -467,7 +469,7 @@ export function QueueTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Last Year's Result"
+            title="Last Year's EOSY Result"
             className="justify-center"
           />
         ),
@@ -491,7 +493,7 @@ export function QueueTable({
                       : "bg-red-600 hover:bg-red-600",
                 )}
               >
-                {formatAcademicStatusLabel(s)}
+                {formatAcademicStatusLabel(s, row.original.isScpDemoted)}
               </Badge>
               {genAve && (
                 <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>

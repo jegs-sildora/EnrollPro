@@ -342,6 +342,7 @@ export async function getBOSYQueue(params: {
         isTemporarilyEnrolled: true,
         isMissingSf9: true,
         hasSf9CertificationLetter: true,
+        applicantType: true,
         learner: {
           select: {
             id: true,
@@ -379,6 +380,7 @@ export async function getBOSYQueue(params: {
         section: {
           select: {
             name: true,
+            programType: true,
           },
         },
         adviser: {
@@ -412,6 +414,9 @@ export async function getBOSYQueue(params: {
       hasPsaBirthCertificate: a.learner.hasPsaBirthCertificate,
       missingRequirements: a.learner.missingRequirements,
     });
+    const isScp = section?.programType && section.programType !== "REGULAR";
+    const isScpDemoted = a.applicantType === "REGULAR" && isScp;
+
     return {
       applicationId: a.id,
       trackingNumber: a.trackingNumber,
@@ -426,6 +431,7 @@ export async function getBOSYQueue(params: {
       gradeLevelName: a.gradeLevel.name,
       gradeLevelDisplayOrder: a.gradeLevel.displayOrder,
       academicStatus: a.academicStatus ?? null,
+      isScpDemoted: !!isScpDemoted,
       isRemedialRequired: a.isRemedialRequired,
       isTemporarilyEnrolled: a.isTemporarilyEnrolled,
       credentialStatus: documentReadiness.isTemporarilyEnrolled
