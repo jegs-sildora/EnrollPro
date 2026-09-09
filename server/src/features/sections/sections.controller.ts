@@ -1331,7 +1331,7 @@ export async function exportSectionSf1(
         province: address?.province ?? "",
         fatherName: fmtMember(father),
         motherName: fmtMember(mother),
-        guardianName: app.guardianName ? app.guardianName.toUpperCase() : "",
+        guardianName: [app.guardianFirstName, app.guardianMiddleName, app.guardianLastName].filter(Boolean).join(" ").toUpperCase(),
         guardianRelationship: app.guardianRelationship ? app.guardianRelationship.toUpperCase() : "",
         contactNumber: app.contactNumber ?? "",
         sf1Remarks: r.sf1Remarks ?? "",

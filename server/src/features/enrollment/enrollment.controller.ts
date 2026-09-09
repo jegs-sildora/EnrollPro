@@ -349,6 +349,57 @@ export async function restoreApplication(req: Request, res: Response) {
 }
 
 /**
+ * DELETE /api/enrollment/:applicationId
+ *
+ * Permanently deletes an enrollment application from the database.
+ */
+export async function deleteApplication(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
+  const userId = req.user!.userId;
+  const { applicationId } = req.params;
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: Number(applicationId) },
+    include: { learner: true },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  const learnerAppCount = await prisma.enrollmentApplication.count({
+    where: { learnerId: application.learnerId },
+  });
+
+  await prisma.enrollmentApplication.delete({
+    where: { id: Number(applicationId) },
+  });
+
+  if (learnerAppCount === 1) {
+    try {
+      await prisma.learner.delete({
+        where: { id: application.learnerId },
+      });
+    } catch (err) {
+      // Ignore if learner has other foreign key dependencies (e.g. past enrollment records)
+    }
+  }
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "ENROLLMENT_APPLICATION_DELETED",
+    description: `Permanently deleted application for ${application.learner.lastName}, ${application.learner.firstName}.`,
+    subjectType: "EnrollmentApplication",
+    recordId: Number(applicationId),
+    req,
+  });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
+  res.json({ success: true, deleted: true });
+}
+
+/**
  * PATCH /api/enrollment/:applicationId/revert
  *
  * Reverts an officially enrolled application back to the FOR REVIEW queue.
@@ -408,7 +459,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
       lrn, firstName, lastName, middleName, birthdate, sex,
       gradeLevelId, assignedProgram,
       previousSchoolName, previousGenAve, originatingSchoolId,
-      guardianName, guardianRelationship, guardianContact,
+      guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
       hasSf9, hasPsa, sf9EligibilityStatus
     } = payload;
 
@@ -472,6 +523,9 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           encodedById: req.user!.userId,
           status: "READY_FOR_SECTIONING",
           academicStatus: sf9EligibilityStatus || "PROMOTED",
+          guardianFirstName,
+          guardianMiddleName,
+          guardianLastName,
           // create previous school if provided
           previousSchool: previousSchoolName ? {
             create: {
@@ -484,8 +538,9 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           familyMembers: {
             create: {
               relationship: guardianRelationship || "GUARDIAN",
-              firstName: guardianName,
-              lastName: "", // Assuming single field from frontend form for simplicity
+              firstName: guardianFirstName,
+              middleName: guardianMiddleName,
+              lastName: guardianLastName,
               contactNumber: guardianContact,
             }
           }

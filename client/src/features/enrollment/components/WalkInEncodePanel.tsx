@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
@@ -87,6 +87,7 @@ export function WalkInEncodePanel() {
   const [open, setOpen] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
+  const lastLookedUpLrn = useRef<string>("");
   const queryClient = useQueryClient();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
@@ -122,8 +123,10 @@ export function WalkInEncodePanel() {
       assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
       previousSchoolName: "",
       previousGenAve: undefined,
-      guardianName: "",
-      guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
+      guardianFirstName: "",
+      guardianMiddleName: "",
+      guardianLastName: "",
+      guardianRelationship: "" as any,
       guardianContact: "",
       hasSf9: false,
       hasPsa: false,
@@ -141,6 +144,8 @@ export function WalkInEncodePanel() {
 
   const handleLrnLookup = async (lrn: string) => {
     if (lrn.length !== 12) return;
+    if (lrn === lastLookedUpLrn.current) return; // skip if same LRN already looked up
+    lastLookedUpLrn.current = lrn;
 
     setIsLookingUp(true);
     try {
@@ -164,7 +169,9 @@ export function WalkInEncodePanel() {
       }
       if (data.familyMembers && data.familyMembers.length > 0) {
         const primary = data.familyMembers[0];
-        form.setValue("guardianName", `${primary.firstName} ${primary.lastName}`.trim());
+        form.setValue("guardianFirstName", primary.firstName.trim());
+        form.setValue("guardianLastName", primary.lastName.trim());
+        form.setValue("guardianMiddleName", "");
         if (primary.contactNumber) {
           form.setValue("guardianContact", primary.contactNumber);
         }
@@ -186,15 +193,16 @@ export function WalkInEncodePanel() {
           assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
           previousSchoolName: "",
           previousGenAve: undefined,
-          guardianName: "",
-          guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
+          guardianFirstName: "",
+          guardianMiddleName: "",
+          guardianLastName: "",
+          guardianRelationship: "" as any,
           guardianContact: "",
           hasSf9: false,
           hasPsa: false,
           originatingSchoolId: "",
           sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
         });
-        sileo.info({ title: "No Match Found", description: "Cleared profile inputs for new entry." });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
       }
@@ -206,6 +214,7 @@ export function WalkInEncodePanel() {
   const resetPanelState = useCallback(() => {
     form.reset();
     setNoLrn(false);
+    lastLookedUpLrn.current = "";
   }, [form]);
 
   const closePanel = useCallback(() => {
@@ -232,7 +241,9 @@ export function WalkInEncodePanel() {
       lastName: values.lastName?.toUpperCase(),
       middleName: values.middleName?.toUpperCase(),
       previousSchoolName: values.previousSchoolName?.toUpperCase(),
-      guardianName: values.guardianName?.toUpperCase(),
+      guardianFirstName: values.guardianFirstName?.toUpperCase(),
+      guardianMiddleName: values.guardianMiddleName?.toUpperCase(),
+      guardianLastName: values.guardianLastName?.toUpperCase(),
     };
     try {
       await api.post("/enrollment/walk-in", payload);
@@ -384,7 +395,7 @@ export function WalkInEncodePanel() {
                                       onBlur={() => {
                                         field.onBlur();
                                         const value = field.value ?? "";
-                                        if (value.length === 12) {
+                                        if (value.length === 12 && value !== lastLookedUpLrn.current) {
                                           handleLrnLookup(value);
                                         }
                                       }}
@@ -424,7 +435,7 @@ export function WalkInEncodePanel() {
                                         onBlur={() => {
                                           field.onBlur();
                                           const value = field.value ?? "";
-                                          if (value.length === 12) {
+                                          if (value.length === 12 && value !== lastLookedUpLrn.current) {
                                             handleLrnLookup(value);
                                           }
                                         }}
@@ -682,20 +693,24 @@ export function WalkInEncodePanel() {
                                     className="font-bold"
                                     type="number"
                                     step="0.01"
+                                    min={75}
+                                    max={99.99}
                                     placeholder="e.g. 85.50"
                                     value={field.value ?? ""}
                                     onChange={(e) => {
-                                      field.onChange(
-                                        e.target.value === ""
-                                          ? undefined
-                                          : Number(e.target.value),
-                                      );
+                                      if (e.target.value === "") {
+                                        field.onChange(undefined);
+                                        return;
+                                      }
+                                      const num = Number(e.target.value);
+                                      field.onChange(Math.min(num, 99.99));
                                     }}
                                     onBlur={field.onBlur}
                                     name={field.name}
                                     ref={field.ref}
                                   />
                                 </FormControl>
+                                <FormMessage />
                               </FormItem>
                             )}
                           />
@@ -747,17 +762,40 @@ export function WalkInEncodePanel() {
                     </div>
                     <div className="px-5 pb-5 pt-4">
                       <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="guardianName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-bold">Parent/Guardian Name <span className="text-destructive">*</span></FormLabel>
-                              <FormControl><Input placeholder="e.g. MARIA DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="grid grid-cols-3 gap-4 font-bold">
+                          <FormField
+                            control={form.control}
+                            name="guardianFirstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">First Name <span className="text-destructive">*</span></FormLabel>
+                                <FormControl><Input placeholder="e.g. MARIA" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="guardianMiddleName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">Middle Name</FormLabel>
+                                <FormControl><Input placeholder="e.g. SANTOS" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="guardianLastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">Last Name <span className="text-destructive">*</span></FormLabel>
+                                <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}

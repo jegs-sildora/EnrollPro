@@ -65,6 +65,7 @@ interface PendingVerification {
   checklistVerified: boolean;
   isMissingSf9: boolean;
   isMissingPsa: boolean;
+  admissionChannel?: string;
 }
 
 interface ApiErrorResponse {
@@ -150,6 +151,7 @@ export function VerificationWorkspace() {
   });
 
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const restoreMutation = useMutation({
     mutationFn: () => api.patch(`/enrollment/${selectedAppId}/restore`),
@@ -167,6 +169,26 @@ export function VerificationWorkspace() {
       sileo.error({
         title: "Restore Failed",
         description: message || "Failed to restore application."
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/enrollment/${selectedAppId}`),
+    onSuccess: () => {
+      sileo.success({
+        title: "Application Deleted",
+        description: `${selectedApp?.learner.firstName}'s application has been permanently deleted.`
+      });
+      queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
+      setDeleteModalOpen(false);
+      setSelectedAppId(null);
+    },
+    onError: (err: unknown) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err instanceof Error ? err.message : "Unknown error";
+      sileo.error({
+        title: "Delete Failed",
+        description: message || "Failed to delete application."
       });
     }
   });
@@ -248,8 +270,7 @@ export function VerificationWorkspace() {
       result = result.filter((app) => app.status === "PENDING_VERIFICATION");
     } else if (activeTab === "READY") {
       result = result.filter((app) => {
-        const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
-        return (app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && !hasMissingDocs;
+        return app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED";
       });
     } else if (activeTab === "INCOMPLETE") {
       result = result.filter((app) => {
@@ -518,8 +539,7 @@ export function VerificationWorkspace() {
                     key: "READY",
                     title: "Enrolled",
                     value: pendingVerifications.filter((app) => {
-                      const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
-                      return (app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && !hasMissingDocs;
+                      return app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED";
                     }).length,
                   },
                   {
@@ -662,9 +682,9 @@ export function VerificationWorkspace() {
                           {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                         </h2>
                         {selectedApp.learner.sex === "MALE" ? (
-                          <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">MALE</Badge>
+                          <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">♂</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-xs px-2 py-0">FEMALE</Badge>
+                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-base px-2 py-0">♀</Badge>
                         )}
                       </div>
                       <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
@@ -707,7 +727,7 @@ export function VerificationWorkspace() {
                             return (
                               <VerificationRow label="Primary Contact">
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-foreground">{primaryContact.lastName}, {primaryContact.firstName}</span>
+                                  <span className="font-bold text-foreground">{primaryContact.firstName} {primaryContact.lastName}</span>
                                   <span className="text-sm text-foreground uppercase tracking-tight mt-0.5">{primaryContact.relationship}</span>
                                   <span className="text-sm text-foreground mt-0.5">{primaryContact.contactNumber || "N/A"}</span>
                                 </div>
@@ -763,7 +783,7 @@ export function VerificationWorkspace() {
                           return (
                             <VerificationRow label="Primary Contact">
                               <div className="flex flex-col">
-                                <span className="text-base font-bold text-foreground">{primaryContact.lastName}, {primaryContact.firstName}</span>
+                                <span className="text-base font-bold text-foreground">{primaryContact.firstName} {primaryContact.lastName}</span>
                                 <span className="text-sm text-foreground uppercase tracking-tight mt-0.5">{primaryContact.relationship}</span>
                                 <span className="text-sm text-foreground mt-0.5">{primaryContact.contactNumber || "N/A"}</span>
                               </div>
@@ -782,45 +802,53 @@ export function VerificationWorkspace() {
                       </VerificationRow>
 
                       {/* Section 3: Curriculum Assignment */}
-                      <VerificationRow label="Requested Curriculum">
-                        {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
-                      </VerificationRow>
+                      {selectedApp.admissionChannel !== "F2F" && (
+                        <VerificationRow label="Requested Curriculum">
+                          {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
+                        </VerificationRow>
+                      )}
                       <VerificationRow label="Official Program">
-                        <div className="flex flex-col w-full py-1">
-                          <Select value={assignedProgram} onValueChange={setAssignedProgram}>
-                            <SelectTrigger className="w-full font-bold h-10 bg-white">
-                              <SelectValue placeholder="Select Program" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(SCP_LABELS).map(([value, label]) => {
-                                const show =
-                                  value === "REGULAR" ||
-                                  (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
-                                  (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
-                                  (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
-                                  selectedApp.applicantType === value ||
-                                  assignedProgram === value;
+                        {selectedApp.admissionChannel === "F2F" ? (
+                          <span className="font-bold text-foreground">
+                            {SCP_LABELS[assignedProgram] || assignedProgram.replace(/_/g, " ")}
+                          </span>
+                        ) : (
+                          <div className="flex flex-col w-full py-1">
+                            <Select value={assignedProgram} onValueChange={setAssignedProgram}>
+                              <SelectTrigger className="w-full font-bold h-10 bg-white">
+                                <SelectValue placeholder="Select Program" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(SCP_LABELS).map(([value, label]) => {
+                                  const show =
+                                    value === "REGULAR" ||
+                                    (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
+                                    (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
+                                    (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
+                                    selectedApp.applicantType === value ||
+                                    assignedProgram === value;
 
-                                if (show) {
-                                  return <SelectItem key={value} value={value}>{label}</SelectItem>;
-                                }
-                                return null;
-                              })}
-                            </SelectContent>
-                          </Select>
-                          {assignedProgram !== "REGULAR" && (
-                            <div className="mt-3 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-md border border-amber-200/50">
-                              <AlertTriangle className="w-4 h-4 shrink-0" />
-                              <span className="text-sm font-bold">Requires manual verification against SCP passers list.</span>
-                            </div>
-                          )}
-                        </div>
+                                  if (show) {
+                                    return <SelectItem key={value} value={value}>{label}</SelectItem>;
+                                  }
+                                  return null;
+                                })}
+                              </SelectContent>
+                            </Select>
+                            {assignedProgram !== "REGULAR" && (
+                              <div className="mt-3 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-md border border-amber-200/50">
+                                <AlertTriangle className="w-4 h-4 shrink-0" />
+                                <span className="text-sm font-bold">Requires manual verification against SCP passers list.</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </VerificationRow>
 
                       {/* Section 4: Required Documents Verification (Checklist) */}
                       <div className="w-full p-4 sm:p-6 border-t border-border/50 flex flex-col gap-5">
                         <h4 className="text-sm font-bold text-primary uppercase tracking-tight">Required Documents</h4>
-                        
+
                         <div className="flex items-start space-x-3">
                           <Checkbox
                             id="sf9-checkbox"
@@ -863,9 +891,17 @@ export function VerificationWorkspace() {
 
                 {/* Action Footer */}
                 {selectedApp.status === "WITHDRAWN" ? (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex w-full">
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
                     <Button
-                      className="w-full h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
+                      variant="destructive"
+                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase"
+                      onClick={() => setDeleteModalOpen(true)}
+                      disabled={processing || isHistoricalReadOnly}
+                    >
+                      Delete Application
+                    </Button>
+                    <Button
+                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => setRestoreModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
@@ -1078,6 +1114,30 @@ export function VerificationWorkspace() {
         confirmDisabled={!cancelReason}
         loading={cancelMutation.isPending}
         onConfirm={() => cancelMutation.mutate(cancelReason)}
+      />
+
+      <ConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Enrollment Application"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-foreground text-center">
+              You are about to permanently delete the application for{" "}
+              <span className="font-bold">
+                {selectedApp?.learner.firstName} {selectedApp?.learner.lastName}
+              </span>
+              .
+            </p>
+            <p className="text-foreground text-center">
+              This action cannot be undone. All data associated with this application will be removed from the database.
+            </p>
+          </div>
+        }
+        variant="danger"
+        confirmText="Permanently Delete"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
       />
 
       <ConfirmationModal

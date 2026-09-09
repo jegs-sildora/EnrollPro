@@ -459,7 +459,9 @@ export function getHistoricalProfileSnapshot(record: {
     hasNoMother: boolean;
     hasNoFather: boolean;
     contactNumber: string | null;
-    guardianName: string | null;
+      guardianFirstName: string | null;
+      guardianMiddleName: string | null;
+      guardianLastName: string | null;
     addresses: Array<{
       addressType: string;
       houseNoStreet: string | null;
@@ -514,7 +516,9 @@ export function getHistoricalProfileSnapshot(record: {
     hasNoMother: record.enrollmentApplication.hasNoMother,
     hasNoFather: record.enrollmentApplication.hasNoFather,
     contactNumber: record.enrollmentApplication.contactNumber ?? "",
-    guardianName: record.enrollmentApplication.guardianName ?? "",
+      guardianFirstName: record.enrollmentApplication.guardianFirstName ?? "",
+      guardianMiddleName: record.enrollmentApplication.guardianMiddleName ?? "",
+      guardianLastName: record.enrollmentApplication.guardianLastName ?? "",
     section: {
       name: record.section.name,
       gradeLevelId: record.section.gradeLevelId,
@@ -703,7 +707,9 @@ export async function executeSchoolYearRollover({
                   hasNoFather: true,
                   encodedById: true,
                   contactNumber: true,
-                  guardianName: true,
+                    guardianFirstName: true,
+                    guardianMiddleName: true,
+                    guardianLastName: true,
                   reportedGrades: true,
                   addresses: {
                     select: {
@@ -972,7 +978,9 @@ export async function executeSchoolYearRollover({
             isRemedialRequired: destination.isRemedialRequired,
             confirmationConsent: null,
             contactNumber: record.enrollmentApplication.contactNumber,
-            guardianName: record.enrollmentApplication.guardianName,
+              guardianFirstName: record.enrollmentApplication.guardianFirstName,
+              guardianMiddleName: record.enrollmentApplication.guardianMiddleName,
+              guardianLastName: record.enrollmentApplication.guardianLastName,
             addresses:
               record.enrollmentApplication.addresses.length > 0
                 ? {

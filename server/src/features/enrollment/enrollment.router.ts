@@ -8,6 +8,7 @@ import {
   directEncodeWalkIn,
   cancelApplication,
   restoreApplication,
+  deleteApplication,
   revertApplication,
 } from "./enrollment.controller.js";
 
@@ -46,6 +47,13 @@ router.patch(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   restoreApplication,
+);
+
+router.delete(
+  "/:applicationId",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  deleteApplication,
 );
 
 router.patch(

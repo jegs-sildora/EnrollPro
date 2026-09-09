@@ -11,9 +11,32 @@ export const directEncodeWalkInSchema = z.object({
   gradeLevelId: z.coerce.number().min(1, "Grade Level is required"),
   assignedProgram: z.string().min(1, "Curriculum Type is required"),
   previousSchoolName: z.string().min(1, "School Name is required"),
-  previousGenAve: z.coerce.number().optional().nullable(),
+  previousGenAve: z.preprocess(
+    (value) => {
+      if (value == null || value === "") return undefined;
+      if (typeof value === "number") return Number.isFinite(value) ? value : Number.NaN;
+      if (typeof value === "string") {
+        const parsed = Number(value.trim().replace(",", "."));
+        return Number.isFinite(parsed) ? parsed : Number.NaN;
+      }
+      return value;
+    },
+    z
+      .number()
+      .refine((v) => Number.isFinite(v), "Final Gen Ave must be a valid number")
+      .min(75, "Final Gen Ave must be at least 75")
+      .max(99.99, "Final Gen Ave must be at most 99.99")
+      .refine((v) => {
+        const dec = v.toString().split(".")[1];
+        return !dec || dec.length <= 2;
+      }, "Final Gen Ave must have at most 2 decimal places")
+      .optional()
+      .nullable(),
+  ),
   transferCertificateNo: z.string().optional(),
-  guardianName: z.string().min(1, "Guardian Name is required"),
+  guardianFirstName: z.string().min(1, "Guardian First Name is required"),
+  guardianMiddleName: z.string().optional(),
+  guardianLastName: z.string().min(1, "Guardian Last Name is required"),
   guardianRelationship: z.enum(["MOTHER", "FATHER", "GUARDIAN"]),
   guardianContact: z.string().regex(/^\d{11}$/, "Contact number must be exactly 11 digits"),
   hasSf9: z.boolean().default(false),
