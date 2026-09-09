@@ -417,7 +417,7 @@ export function IntakePipelinePanel({
                 const total = row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners;
                 return (
                   <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                    <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-">
+                    <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">
                       <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                         {formatGradeLevel(row.gradeLevelName)}
                       </span>

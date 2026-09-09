@@ -695,33 +695,52 @@ export default function BOSYPage() {
                     onConfirm={() => { void executeConfirmSingle(); }}
                     description={
                       <>
-                        <p className="mb-4 text-base font-bold">
+                        <p className="mb-4 text-sm">
                           Confirm learner enrollment for this school year. Learners with
                           incomplete school requirements will be marked as temporarily
-                          enrolled but may still proceed to Section Assignment.
+                          enrolled but may still proceed to section assignment.
                         </p>
                         {confirmSingleTarget && (
-                          <div className="rounded-md border bg-muted px-4 py-3 space-y-1.5 text-left border-primary border-2">
-                            <p className="text-base leading-tight font-bold uppercase text-foreground">
-                              {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
-                              {confirmSingleTarget.middleName
-                                ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
-                                : ""}
-                            </p>
-                            <p className="text-base text-foreground font-bold break-all">
-                              LRN: {confirmSingleTarget.lrn ?? "No LRN"}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
-                              {formatGradeLevel(confirmSingleTarget.gradeLevelName)}
-                            </Badge>
+                          <div className="space-y-4">
+                            <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
+                              <table className="w-full text-sm">
+                                <thead className="bg-gray-50 border-b">
+                                  <tr>
+                                    <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                    <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="bg-white hover:bg-gray-50/80 transition-colors">
+                                    <td className="p-3 px-4 border-r border-gray-100">
+                                      <p className="font-extrabold uppercase text-foreground">
+                                        {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
+                                        {confirmSingleTarget.middleName
+                                          ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
+                                          : ""}
+                                      </p>
+                                      <p className="text-sm text-foreground">
+                                        LRN: {confirmSingleTarget.lrn ?? "No LRN"}
+                                      </p>
+                                    </td>
+                                    <td className="p-3 px-4 text-center">
+                                      <Badge
+                                        variant="outline"
+                                        className={cn("font-bold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}
+                                      >
+                                        {formatGradeLevel(confirmSingleTarget.gradeLevelName)}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                             {confirmSingleTarget.missingDocuments.length > 0 && (
-                              <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+                              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-left">
                                 <p className="text-sm font-bold text-amber-900">
                                   Missing school requirements
                                 </p>
-                                <p className="mt-1 text-sm  text-amber-800">
+                                <p className="mt-1 text-sm text-amber-800">
                                   {confirmSingleTarget.missingDocuments.join(", ")}
                                 </p>
                               </div>
@@ -842,27 +861,40 @@ export default function BOSYPage() {
                           You are about to officially enroll the following learners for the upcoming school year. Please review the list below.
                         </p>
                         {selectedIds.length === 1 ? (
-                          <div className="rounded-md border bg-muted/40 px-4 py-3 text-left">
+                          <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
                             {(() => {
                               const item = queueItems.find(i => i.applicationId === selectedIds[0]);
                               if (!item) return null;
                               return (
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="text-base leading-tight font-medium text-foreground uppercase">
-                                      {item.lastName}, {item.firstName}
-                                      {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                      LRN: {item.lrn || "No LRN"}
-                                    </p>
-                                  </div>
-                                  <Badge
-                                    variant="outline"
-                                    className={cn("font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
-                                    {formatGradeLevel(item.gradeLevelName)}
-                                  </Badge>
-                                </div>
+                                <table className="w-full text-sm">
+                                  <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                      <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                      <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr className="bg-white hover:bg-gray-50/80 transition-colors">
+                                      <td className="p-3 px-4 border-r border-gray-100">
+                                        <p className="font-extrabold uppercase text-foreground">
+                                          {item.lastName}, {item.firstName}
+                                          {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                        </p>
+                                        <p className="text-sm text-foreground">
+                                          LRN: {item.lrn || "No LRN"}
+                                        </p>
+                                      </td>
+                                      <td className="p-3 px-4 text-center">
+                                        <Badge
+                                          variant="outline"
+                                          className={cn("font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}
+                                        >
+                                          {formatGradeLevel(item.gradeLevelName)}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
                               );
                             })()}
                           </div>

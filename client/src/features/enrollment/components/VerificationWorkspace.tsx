@@ -35,6 +35,7 @@ interface PendingVerification {
   trackingNumber: string | null;
   status: string;
   createdAt: string;
+  isTemporarilyEnrolled?: boolean;
   learner: {
     id: number;
     firstName: string;
@@ -42,9 +43,10 @@ interface PendingVerification {
     middleName: string | null;
     lrn: string | null;
     sex: "MALE" | "FEMALE";
-    studentPhoto?: string | null;
-    previousGenAve?: number | null;
+    studentPhoto: string | null;
+    previousGenAve: number | null;
     birthdate: string;
+    hasPsaBirthCertificate?: boolean;
   };
   gradeLevel: {
     name: string;
@@ -245,11 +247,15 @@ export function VerificationWorkspace() {
     if (activeTab === "PENDING") {
       result = result.filter((app) => app.status === "PENDING_VERIFICATION");
     } else if (activeTab === "READY") {
-      result = result.filter(
-        (app) => app.status === "READY_FOR_SECTIONING",
-      );
+      result = result.filter((app) => {
+        const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+        return (app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && !hasMissingDocs;
+      });
     } else if (activeTab === "INCOMPLETE") {
-      result = result.filter((app) => app.status === "FOR_REVISION");
+      result = result.filter((app) => {
+        const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+        return app.status === "FOR_REVISION" || ((app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && hasMissingDocs);
+      });
     } else if (activeTab === "CANCELLED") {
       result = result.filter((app) => app.status === "WITHDRAWN");
     }
@@ -264,13 +270,13 @@ export function VerificationWorkspace() {
   useEffect(() => {
     if (selectedApp) {
       setAssignedProgram(selectedApp.applicantType);
-      if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "FOR_REVISION") {
-        if (selectedApp.checklistVerified) {
+      if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "FOR_REVISION" || selectedApp.status === "OFFICIALLY_ENROLLED") {
+        if (!selectedApp.isTemporarilyEnrolled) {
           setSf9Verified(true);
           setPsaVerified(true);
         } else {
           setSf9Verified(!selectedApp.isMissingSf9);
-          setPsaVerified(!selectedApp.isMissingPsa);
+          setPsaVerified(selectedApp.learner?.hasPsaBirthCertificate === true);
         }
       } else {
         setSf9Verified(false);
@@ -511,14 +517,18 @@ export function VerificationWorkspace() {
                   {
                     key: "READY",
                     title: "Enrolled",
-                    value: pendingVerifications.filter(
-                      (app) => app.status === "READY_FOR_SECTIONING",
-                    ).length,
+                    value: pendingVerifications.filter((app) => {
+                      const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+                      return (app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && !hasMissingDocs;
+                    }).length,
                   },
                   {
                     key: "INCOMPLETE",
                     title: "Deficient",
-                    value: pendingVerifications.filter(a => a.status === "FOR_REVISION").length
+                    value: pendingVerifications.filter((app) => {
+                      const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+                      return app.status === "FOR_REVISION" || ((app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && hasMissingDocs);
+                    }).length
                   },
                   {
                     key: "CANCELLED",
@@ -816,7 +826,7 @@ export function VerificationWorkspace() {
                             id="sf9-checkbox"
                             checked={sf9Verified}
                             onCheckedChange={(checked) => setSf9Verified(checked === true)}
-                            disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                            disabled={isHistoricalReadOnly}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -834,7 +844,7 @@ export function VerificationWorkspace() {
                             id="psa-checkbox"
                             checked={psaVerified}
                             onCheckedChange={(checked) => setPsaVerified(checked === true)}
-                            disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                            disabled={isHistoricalReadOnly}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -853,26 +863,38 @@ export function VerificationWorkspace() {
 
                 {/* Action Footer */}
                 {selectedApp.status === "WITHDRAWN" ? (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex justify-end items-center gap-4 w-full">
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex w-full">
                     <Button
-                      className="h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => setRestoreModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
                       Restore Application
                     </Button>
                   </div>
-                ) : selectedApp.status !== "READY_FOR_SECTIONING" ? (
+                ) : (
                   <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
-                    <Button
-                      variant="ghost"
-                      className="h-14 w-[35%] text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
-                      onClick={() => setCancelModalOpen(true)}
-                      disabled={processing || isHistoricalReadOnly}
-                    >
-                      Cancel Application
-                    </Button>
-                    <div className="w-[65%]">
+                    {(selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION") && (
+                      <Button
+                        variant="ghost"
+                        className="h-14 w-[35%] text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
+                        onClick={() => setCancelModalOpen(true)}
+                        disabled={processing || isHistoricalReadOnly}
+                      >
+                        Cancel Application
+                      </Button>
+                    )}
+                    {selectedApp.status === "READY_FOR_SECTIONING" && (
+                      <Button
+                        variant="ghost"
+                        className="h-14 w-1/2 text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200 shrink-0"
+                        onClick={() => setRevertModalOpen(true)}
+                        disabled={processing || isHistoricalReadOnly}
+                      >
+                        Revert to 'For Review'
+                      </Button>
+                    )}
+                    <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-[65%]" : selectedApp.status === "READY_FOR_SECTIONING" ? "w-1/2" : "w-full"}>
                       {!(sf9Verified && psaVerified) ? (
                         <Button
                           onClick={() => setConfirmModalState("TEMPORARY")}
@@ -880,7 +902,9 @@ export function VerificationWorkspace() {
                           variant="outline"
                           className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
                         >
-                          <span className="truncate">Enroll as Temporary (Missing Docs)</span>
+                          <span className="truncate">
+                            {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Enroll as Temporary (Missing Docs)" : "Save Missing Documents"}
+                          </span>
                         </Button>
                       ) : (
                         <Button
@@ -896,30 +920,19 @@ export function VerificationWorkspace() {
                           {processing ? (
                             <>
                               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Approving...
+                              Saving...
                             </>
                           ) : (
                             <>
                               <CheckCircle2 className="w-5 h-5 mr-2" />
-                              Officially Enroll
+                              {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Officially Enroll" : "Complete Requirements"}
                             </>
                           )}
                         </Button>
                       )}
                     </div>
                   </div>
-                ) : selectedApp.status === "READY_FOR_SECTIONING" ? (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex items-center w-full">
-                    <Button
-                      variant="ghost"
-                      className="h-14 w-full text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200"
-                      onClick={() => setRevertModalOpen(true)}
-                      disabled={processing || isHistoricalReadOnly}
-                    >
-                      Revert to 'For Review'
-                    </Button>
-                  </div>
-                ) : null}
+                )}
               </>
             ) : (
               <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">

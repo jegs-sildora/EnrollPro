@@ -173,8 +173,28 @@ export function WalkInEncodePanel() {
       sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.status === 404) {
-        // Just silent for 404, it's a new learner. Or maybe a tiny toast.
-        // sileo.info("New Learner", "No existing record found.");
+        const currentLearnerType = form.getValues("learnerType");
+        form.reset({
+          learnerType: currentLearnerType,
+          lrn: lrn,
+          firstName: "",
+          lastName: "",
+          middleName: "",
+          birthdate: "",
+          sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
+          gradeLevelId: 0,
+          assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
+          previousSchoolName: "",
+          previousGenAve: undefined,
+          guardianName: "",
+          guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
+          guardianContact: "",
+          hasSf9: false,
+          hasPsa: false,
+          originatingSchoolId: "",
+          sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
+        });
+        sileo.info({ title: "No Match Found", description: "Cleared profile inputs for new entry." });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
       }

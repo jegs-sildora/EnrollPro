@@ -64,6 +64,20 @@ function formatDeficiencyText(value: string | null): string | null {
   return value.startsWith("Deficiency:") ? value : `Deficiency: ${value}`;
 }
 
+function getProgramAbbreviation(type?: string | null) {
+  switch (type) {
+    case "REGULAR": return "BEC";
+    case "SCIENCE_TECHNOLOGY_AND_ENGINEERING": return "STE";
+    case "SPECIAL_PROGRAM_IN_THE_ARTS": return "SPA";
+    case "SPECIAL_PROGRAM_IN_SPORTS": return "SPS";
+    case "SPECIAL_PROGRAM_IN_JOURNALISM": return "SPJ";
+    case "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE": return "SPFL";
+    case "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION": return "SPTVE";
+    case "LATE_ENROLLEE": return "LATE";
+    default: return type ?? "—";
+  }
+}
+
 function statusBadge(item: BOSYQueueItem) {
   if (item.status === "PENDING_CONFIRMATION")
     return (
@@ -130,25 +144,11 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
   if (!s) {
     return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
   }
-  const badge = (
-    <Badge
-      className={cn(
-        "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white cursor-help",
-        (s === "PROMOTED" && !item.isScpDemoted)
-          ? "bg-emerald-600 hover:bg-emerald-600"
-          : (s === "CONDITIONALLY_PROMOTED" || item.isScpDemoted)
-            ? "bg-amber-600 hover:bg-amber-600"
-            : "bg-red-600 hover:bg-red-600",
-      )}
-    >
-      {formatAcademicStatusLabel(s, item.isScpDemoted)}
-    </Badge>
-  );
-
   let title = "";
   let description: React.ReactNode = "";
-  let colorClass = "bg-green-50 border-green-300 text-green-900";
+  let colorClass = "bg-green-50 border border-green-300 text-green-900";
   let titleColorClass = "text-green-800 border-green-200";
+  let hoverClass = "hover:bg-green-100";
 
   if (item.isScpDemoted && s === "RETAINED") {
     title = "Retention & Lateral Transfer";
@@ -174,6 +174,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     );
     colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
     titleColorClass = "text-amber-800 border-b border-amber-200";
+    hoverClass = "hover:bg-amber-100";
   } else if (item.isScpDemoted && s === "PROMOTED") {
     title = "BEC Lateral Transfer";
     description = "Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to grade deficiency.";
@@ -191,6 +192,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     }
     colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
     titleColorClass = "text-amber-800 border-b border-amber-200";
+    hoverClass = "hover:bg-amber-100";
   } else if (s === "RETAINED") {
     title = "Retention Reason";
     const isFailingAve = item.priorYearGenAve !== null && Number(item.priorYearGenAve) < 75;
@@ -199,11 +201,13 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
       : "Learner passed the general average but failed 3 or more individual learning areas";
     colorClass = "bg-red-50 border border-red-300 text-red-900";
     titleColorClass = "text-red-800 border-b border-red-200";
+    hoverClass = "hover:bg-red-100";
   } else if (s === "PROMOTED") {
     title = item.gradeLevelName.includes("11") ? "COMPLETER" : "PROMOTED";
     description = "Learner met all academic requirements and is eligible for the next grade level.";
     colorClass = "bg-green-50 border border-green-300 text-green-900";
     titleColorClass = "text-green-800 border-b border-green-200";
+    hoverClass = "hover:bg-green-100";
   } else if (s === "CONDITIONALLY_PROMOTED") {
     title = "CONDITIONALLY PROMOTED";
     description = item.priorYearDeficiencyNote
@@ -220,9 +224,26 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
         : "Learner has academic deficiencies that must be addressed.";
     colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
     titleColorClass = "text-amber-800 border-b border-amber-200";
+    hoverClass = "hover:bg-amber-100";
   } else {
-    return badge;
+    return (
+      <Badge className="rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide cursor-help">
+        {formatAcademicStatusLabel(s, item.isScpDemoted)}
+      </Badge>
+    );
   }
+
+  const badge = (
+    <Badge
+      className={cn(
+        "rounded-md px-2.5 py-0.5 font-bold uppercase tracking-wide cursor-help transition-colors",
+        colorClass,
+        hoverClass
+      )}
+    >
+      {formatAcademicStatusLabel(s, item.isScpDemoted)}
+    </Badge>
+  );
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -574,6 +595,35 @@ export function QueueTable({
         },
       },
       {
+        id: "programType",
+        accessorKey: "applicantType",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Program Type"
+            className="justify-center"
+          />
+        ),
+        cell: ({ row }) => {
+          const type = row.original.applicantType;
+          if (!type) return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
+          return (
+            <div className="py-3 text-center">
+              <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                {getProgramAbbreviation(type)}
+              </span>
+            </div>
+          );
+        },
+        size: 140,
+        minSize: 120,
+        maxSize: 200,
+        meta: {
+          className: "min-w-0 text-center",
+          headerClassName: "min-w-0",
+        },
+      },
+      {
         id: "academicStatus",
         accessorKey: "academicStatus",
         header: ({ column }) => (
@@ -597,14 +647,6 @@ export function QueueTable({
               {genAve && (
                 <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
                   Final Gen Ave: {genAve}
-                </span>
-              )}
-              {deficiencyText && (
-                <span 
-                  className="max-w-full truncate text-sm font-bold leading-tight text-amber-800" 
-                  title={deficiencyText}
-                >
-                  {formatDeficiencyText(deficiencyText)}
                 </span>
               )}
             </div>

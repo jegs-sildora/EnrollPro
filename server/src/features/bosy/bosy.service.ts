@@ -40,6 +40,7 @@ export interface BOSYQueueItem {
   gradeLevelName: string;
   gradeLevelDisplayOrder: number;
   academicStatus: string | null;
+  applicantType: string | null;
   isRemedialRequired: boolean;
   isTemporarilyEnrolled: boolean;
   credentialStatus: "COMPLETE" | "PENDING";
@@ -431,6 +432,7 @@ export async function getBOSYQueue(params: {
       gradeLevelName: a.gradeLevel.name,
       gradeLevelDisplayOrder: a.gradeLevel.displayOrder,
       academicStatus: a.academicStatus ?? null,
+      applicantType: a.applicantType,
       isScpDemoted: !!isScpDemoted,
       isRemedialRequired: a.isRemedialRequired,
       isTemporarilyEnrolled: a.isTemporarilyEnrolled,

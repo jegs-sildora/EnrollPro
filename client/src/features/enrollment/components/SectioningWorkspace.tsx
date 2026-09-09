@@ -15,6 +15,8 @@ import {
   MoveRight,
   ArrowRightLeft,
   Trash2,
+  Mars,
+  Venus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
@@ -1507,10 +1509,10 @@ export function SectioningWorkspace() {
                                         </span>
                                         <Badge
                                           className={cn(
-                                            "text-sm uppercase font-bold",
+                                            "px-2",
                                             l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                           )}>
-                                          {l.sex}
+                                          {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
                                         </Badge>
                                         {l.programType === "LATE_ENROLLEE" && (
                                           <Badge
@@ -1747,11 +1749,11 @@ export function SectioningWorkspace() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-foreground">
-                                  <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2">
-                                    Male: {roster.genderCounts.boys}
+                                  <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 px-2 gap-1 flex items-center">
+                                    <Mars className="h-4 w-4" />: {roster.genderCounts.boys}
                                   </Badge>
-                                  <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2">
-                                    Female: {roster.genderCounts.girls}
+                                  <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 px-2 gap-1 flex items-center">
+                                    <Venus className="h-4 w-4" />: {roster.genderCounts.girls}
                                   </Badge>
                                   {draftPlacement && (
                                     <Badge variant="secondary">
@@ -1819,12 +1821,12 @@ export function SectioningWorkspace() {
                                             <td className="p-3 font-bold text-center">
                                               <Badge
                                                 className={cn(
-                                                  "uppercase",
+                                                  "px-2",
                                                   learner.sex === "MALE"
                                                     ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2"
                                                     : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                                 )}>
-                                                {learner.sex}
+                                                {learner.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
                                               </Badge>
                                             </td>
                                             <td className="p-3 font-bold text-center">
