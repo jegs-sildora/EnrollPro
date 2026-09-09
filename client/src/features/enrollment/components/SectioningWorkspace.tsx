@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   MoveRight,
   ArrowRightLeft,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
@@ -163,7 +164,7 @@ interface InlineMasterlistResponse {
   learners: InlineMasterlistLearner[];
 }
 
-function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, onMoveLearner?: (learnerId: number, currentSectionId: number) => void }) {
+function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sectionId: number, onMoveLearner?: (learnerId: number, currentSectionId: number) => void, onRemoveLearner?: (learnerId: number, currentSectionId: number) => void }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["section-masterlist", sectionId],
     queryFn: () => api.get<InlineMasterlistResponse>(`/sections/${sectionId}/masterlist`).then(r => r.data),
@@ -209,7 +210,7 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
                 {l.genAve?.toFixed(2) ?? "--"}
               </td>
               <td className="p-3 text-right">
-                {onMoveLearner && (
+                {(onMoveLearner || onRemoveLearner) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -217,10 +218,18 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onMoveLearner(l.enrollmentApplicationId, sectionId)}>
-                        <MoveRight className="mr-2 h-4 w-4" />
-                        Move to Section
-                      </DropdownMenuItem>
+                      {onMoveLearner && (
+                        <DropdownMenuItem onClick={() => onMoveLearner(l.enrollmentApplicationId, sectionId)}>
+                          <MoveRight className="mr-2 h-4 w-4" />
+                          Move to Section
+                        </DropdownMenuItem>
+                      )}
+                      {onRemoveLearner && (
+                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => onRemoveLearner(l.enrollmentApplicationId, sectionId)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove Learner
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
@@ -560,6 +569,10 @@ export function SectioningWorkspace() {
   const [draftMoveAction, setDraftMoveAction] =
     useState<DraftMoveAction | null>(null);
   const [normalMoveAction, setNormalMoveAction] = useState<{
+    learnerApplicationId: number;
+    fromSectionId: number;
+  } | null>(null);
+  const [normalRemoveAction, setNormalRemoveAction] = useState<{
     learnerApplicationId: number;
     fromSectionId: number;
   } | null>(null);
@@ -950,6 +963,51 @@ export function SectioningWorkspace() {
       sileo.error({
         title: "Move Failed",
         description: "An error occurred while moving the learner. Please try again.",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const openRemoveDialog = (
+    learnerApplicationId: number,
+    fromSectionId: number,
+  ) => {
+    setNormalRemoveAction({ learnerApplicationId, fromSectionId });
+  };
+
+  const executeNormalRemove = async () => {
+    if (!normalRemoveAction) return;
+
+    setProcessing(true);
+    try {
+      await api.post("/sections/transfer-learner", {
+        targetSectionId: null,
+        enrollmentApplicationId: normalRemoveAction.learnerApplicationId,
+      });
+      sileo.success({
+        title: "Learner Removed",
+        description: "Learner was successfully unassigned and returned to the pool.",
+      });
+      const oldSectionId = normalRemoveAction.fromSectionId;
+      setNormalRemoveAction(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningSections(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["section-masterlist", oldSectionId],
+      });
+    } catch (error: unknown) {
+      sileo.error({
+        title: "Removal Failed",
+        description:
+          (isAxiosError<ApiMessageResponse>(error)
+            ? error.response?.data.message
+            : undefined) ??
+          "An error occurred while removing the learner. Please try again.",
       });
     } finally {
       setProcessing(false);
@@ -1818,6 +1876,7 @@ export function SectioningWorkspace() {
                                 <InlineSectionTable
                                   sectionId={s.id}
                                   onMoveLearner={!isHistoricalReadOnly ? openNormalMoveDialog : undefined}
+                                  onRemoveLearner={!isHistoricalReadOnly ? openRemoveDialog : undefined}
                                 />
                               )}
                             </div>
@@ -1981,6 +2040,18 @@ export function SectioningWorkspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationModal
+        open={!!normalRemoveAction}
+        onOpenChange={(open) => !open && setNormalRemoveAction(null)}
+        title="Remove Assigned Learner"
+        description="Are you sure you want to remove this learner from the section? The learner will be returned to the pool of unsectioned learners."
+        confirmText="Remove Learner"
+        cancelText="Cancel"
+        onConfirm={executeNormalRemove}
+        loading={processing}
+        variant="danger"
+      />
 
       <Dialog
         open={draftMoveAction?.type === "SWAP"}

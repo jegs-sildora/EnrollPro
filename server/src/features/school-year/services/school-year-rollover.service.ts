@@ -675,6 +675,7 @@ export async function executeSchoolYearRollover({
               section: {
                 select: {
                   name: true,
+                  programType: true,
                   gradeLevelId: true,
                   gradeLevel: {
                     select: { name: true, displayOrder: true },
@@ -937,10 +938,15 @@ export async function executeSchoolYearRollover({
             `Target grade level ${destination.targetGradeOrder} is not configured.`,
           );
         }
-        const effectiveProgram =
+        const isScp = Boolean(record.section?.programType && record.section.programType !== "REGULAR");
+        let effectiveProgram =
           record.nextYearCurriculum
           ?? record.enrollmentApplication.assignedProgram
           ?? record.enrollmentApplication.applicantType;
+
+        if (isScp && record.eosyStatus !== "PROMOTED") {
+          effectiveProgram = "REGULAR";
+        }
         const application = await tx.enrollmentApplication.create({
           data: {
             learnerId: record.learnerId,

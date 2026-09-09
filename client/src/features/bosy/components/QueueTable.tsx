@@ -114,13 +114,133 @@ function formatAcademicStatusLabel(status: string | null, isScpDemoted?: boolean
     return isScpDemoted ? "Promoted (To BEC)" : "Promoted";
   }
   if (status === "CONDITIONALLY_PROMOTED") return "Conditionally Promoted";
-  if (status === "RETAINED") return "Retained";
+  if (status === "RETAINED") {
+    return isScpDemoted ? "Retained (To BEC)" : "Retained";
+  }
   return "—";
 }
 
 function formatGenAve(value: number | null): string | null {
   if (value === null || Number.isNaN(value)) return null;
   return value.toFixed(2);
+}
+
+function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
+  const s = item.academicStatus;
+  if (!s) {
+    return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
+  }
+  const badge = (
+    <Badge
+      className={cn(
+        "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white cursor-help",
+        (s === "PROMOTED" && !item.isScpDemoted)
+          ? "bg-emerald-600 hover:bg-emerald-600"
+          : (s === "CONDITIONALLY_PROMOTED" || item.isScpDemoted)
+            ? "bg-amber-600 hover:bg-amber-600"
+            : "bg-red-600 hover:bg-red-600",
+      )}
+    >
+      {formatAcademicStatusLabel(s, item.isScpDemoted)}
+    </Badge>
+  );
+
+  let title = "";
+  let description: React.ReactNode = "";
+  let colorClass = "bg-green-50 border-green-300 text-green-900";
+  let titleColorClass = "text-green-800 border-green-200";
+
+  if (item.isScpDemoted && s === "RETAINED") {
+    title = "Retention & Lateral Transfer";
+    const isFailingAve = item.priorYearGenAve !== null && Number(item.priorYearGenAve) < 75;
+    const retainReason = isFailingAve 
+      ? `Final average of ${item.priorYearGenAve} is below the passing threshold of 75` 
+      : "Learner passed the general average but failed 3 or more individual learning areas";
+    
+    description = (
+      <>
+        <div className="mb-2">{retainReason}. Learner will be retained in the same grade level but laterally transferred to the Basic Education Curriculum (BEC).</div>
+        {item.priorYearDeficiencyNote && (
+          <>
+            <span className="font-bold">Deficiencies:</span>
+            <ul className="list-disc pl-6 font-extrabold space-y-1 mt-1">
+              {item.priorYearDeficiencyNote.split(',').map((def, i) => (
+                <li key={i}>{def.trim()}</li>
+              ))}
+            </ul>
+          </>
+        )}
+      </>
+    );
+    colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
+    titleColorClass = "text-amber-800 border-b border-amber-200";
+  } else if (item.isScpDemoted && s === "PROMOTED") {
+    title = "BEC Lateral Transfer";
+    description = "Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to grade deficiency.";
+    if (item.priorYearDeficiencyNote) {
+      description = (
+        <>
+          Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
+          <ul className="list-disc pl-6 font-extrabold space-y-1 mt-2">
+            {item.priorYearDeficiencyNote.split(',').map((def, i) => (
+              <li key={i}>{def.trim()}</li>
+            ))}
+          </ul>
+        </>
+      );
+    }
+    colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
+    titleColorClass = "text-amber-800 border-b border-amber-200";
+  } else if (s === "RETAINED") {
+    title = "Retention Reason";
+    const isFailingAve = item.priorYearGenAve !== null && Number(item.priorYearGenAve) < 75;
+    description = isFailingAve 
+      ? `Final average of ${item.priorYearGenAve} is below the passing threshold of 75` 
+      : "Learner passed the general average but failed 3 or more individual learning areas";
+    colorClass = "bg-red-50 border border-red-300 text-red-900";
+    titleColorClass = "text-red-800 border-b border-red-200";
+  } else if (s === "PROMOTED") {
+    title = item.gradeLevelName.includes("11") ? "COMPLETER" : "PROMOTED";
+    description = "Learner met all academic requirements and is eligible for the next grade level.";
+    colorClass = "bg-green-50 border border-green-300 text-green-900";
+    titleColorClass = "text-green-800 border-b border-green-200";
+  } else if (s === "CONDITIONALLY_PROMOTED") {
+    title = "CONDITIONALLY PROMOTED";
+    description = item.priorYearDeficiencyNote
+        ? (
+          <>
+            <span className="block mb-1">Learner has academic deficiencies. {item.priorYearDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
+            <ul className="list-disc pl-6 font-extrabold space-y-1">
+              {item.priorYearDeficiencyNote.split(',').map((def, i) => (
+                <li key={i}>{def.trim()}</li>
+              ))}
+            </ul>
+          </>
+        )
+        : "Learner has academic deficiencies that must be addressed.";
+    colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
+    titleColorClass = "text-amber-800 border-b border-amber-200";
+  } else {
+    return badge;
+  }
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {badge}
+        </TooltipTrigger>
+        <TooltipContent collisionPadding={24} className={cn("shadow-lg rounded-md p-4 w-100 text-left mr-6", colorClass)}>
+          <h4 className={cn("text-base font-extrabold uppercase tracking-wide pb-2 mb-2", titleColorClass)}>
+            {title}
+          </h4>
+          <p className="text-base leading-snug">
+            {description}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 function ActionMenuButton({
@@ -323,17 +443,7 @@ function QueueMobileCard({
               </p>
               <div className="mt-1 flex flex-col items-start gap-1">
                 {item.academicStatus ? (
-                  <Badge
-                    className={cn(
-                      "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white",
-                      item.academicStatus === "PROMOTED"
-                        ? "bg-emerald-600 hover:bg-emerald-600"
-                        : item.academicStatus === "CONDITIONALLY_PROMOTED"
-                          ? "bg-amber-600 hover:bg-amber-600"
-                          : "bg-red-600 hover:bg-red-600",
-                    )}>
-                    {formatAcademicStatusLabel(item.academicStatus, item.isScpDemoted)}
-                  </Badge>
+                  <AcademicStatusTooltipBadge item={item} />
                 ) : (
                   <span className="text-sm font-bold text-foreground">—</span>
                 )}
@@ -483,49 +593,19 @@ export function QueueTable({
             );
           return (
             <div className="flex flex-col items-center gap-1 py-3 text-center">
-              <Badge
-                className={cn(
-                  "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white",
-                  s === "PROMOTED"
-                    ? "bg-emerald-600 hover:bg-emerald-600"
-                    : s === "CONDITIONALLY_PROMOTED"
-                      ? "bg-amber-600 hover:bg-amber-600"
-                      : "bg-red-600 hover:bg-red-600",
-                )}
-              >
-                {formatAcademicStatusLabel(s, row.original.isScpDemoted)}
-              </Badge>
+              <AcademicStatusTooltipBadge item={row.original} />
               {genAve && (
                 <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
                   Final Gen Ave: {genAve}
                 </span>
               )}
               {deficiencyText && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="max-w-full truncate text-sm font-bold leading-tight text-amber-800 cursor-help underline decoration-amber-800/30 decoration-dashed underline-offset-4">
-                        {formatDeficiencyText(deficiencyText)}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px] text-left font-bold text-sm">
-                      {(() => {
-                        const subjects = deficiencyText.split(",").map((s) => s.trim()).filter(Boolean);
-                        const label = subjects.length > 1 ? "Deficiencies" : "Deficiency";
-                        return (
-                          <div>
-                            <p className="mb-1">{label}:</p>
-                            <ul className="list-disc pl-4 space-y-0.5 font-normal">
-                              {subjects.map((subject, index) => (
-                                <li key={index}>{subject}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        );
-                      })()}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <span 
+                  className="max-w-full truncate text-sm font-bold leading-tight text-amber-800" 
+                  title={deficiencyText}
+                >
+                  {formatDeficiencyText(deficiencyText)}
+                </span>
               )}
             </div>
           );
