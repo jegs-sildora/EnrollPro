@@ -41,11 +41,11 @@ export interface SmartSf10Record {
   remedialClasses?: Array<{
     learningAreas: string;
     finalRating: number | string;
-    remedialClassMark?: number | string;
-    conductedFrom?: string;
-    conductedTo?: string;
-    status: string;
-    outcome?: string;
+    remedialClassMark?: number | string | null;
+    conductedFrom?: string | null;
+    conductedTo?: string | null;
+    status?: string | null;
+    outcome?: string | null;
   }>;
 }
 

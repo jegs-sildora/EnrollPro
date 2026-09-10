@@ -746,6 +746,7 @@ export default function EosyUpdating() {
 
       // Refresh all EOSY data only after every section request has finished.
       await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId] });
+      await queryClient.invalidateQueries({ queryKey: ["eosy", "remedial-classes"] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
       await queryClient.invalidateQueries({ queryKey: ["integration", "smart-status"] });
@@ -1081,7 +1082,7 @@ export default function EosyUpdating() {
         && r.eosyStatus !== "TRANSFERRED_OUT"
         && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED"
         && r.smartSyncStatus !== "INCOMPLETE_SUBJECT_GRADES"
-        && r.smartSyncReason !== "Learner has pending remedial classes.";
+        && r.smartSyncReason !== "Previous school year remedial mark is not yet encoded.";
     }).length;
   }, [filteredRecords]);
 
@@ -1089,7 +1090,7 @@ export default function EosyUpdating() {
     return filteredRecords.filter((r) => {
       return r.eosyStatus !== "DROPPED_OUT"
         && r.eosyStatus !== "TRANSFERRED_OUT"
-        && r.smartSyncReason === "Learner has pending remedial classes.";
+        && r.smartSyncReason === "Previous school year remedial mark is not yet encoded.";
     });
   }, [filteredRecords]);
 
@@ -1839,7 +1840,7 @@ export default function EosyUpdating() {
                                       
                                       {hasRemedialBlockers && (
                                         <div>
-                                          <p className="font-bold text-sm mb-1">{scopedRemedialBlockerCount} learner(s) with pending remedial class grades:</p>
+                                          <p className="font-bold text-sm mb-1">{scopedRemedialBlockerCount} learner(s) with an unencoded previous-year remedial mark:</p>
                                           <ul className="list-disc pl-5 space-y-1.5">
                                             {pendingRemedialLearners.map(learner => (
                                               <li key={learner.id} className="text-foreground">
@@ -1957,6 +1958,7 @@ export default function EosyUpdating() {
                                       />
                                       <RemedialClassesTable 
                                         learnerId={row.enrollmentApplication.learner.id} 
+                                        schoolYearId={ayId ?? 0}
                                         activeSchoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
                                       />
                                     </motion.div>

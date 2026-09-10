@@ -23,7 +23,10 @@ import {
   readSmartSyncIssue,
 } from "../integration/smart-outcome-envelope.js";
 import { fetchSmartSf10ByLrn } from "../integration/smart-sf10.service.js";
-import { checkSmartRemedialRolloverBlock } from "../integration/smart-remedial.service.js";
+import {
+  checkSmartRemedialRolloverBlock,
+  getPreviousSchoolYearLabel,
+} from "../integration/smart-remedial.service.js";
 
 function hasFinalizedEosyOutcome(record: {
   schoolYearId: number;
@@ -46,6 +49,54 @@ function hasFinalizedEosyOutcome(record: {
     finalAverage: record.finalAverage,
     eosyStatus: record.eosyStatus,
   });
+}
+
+interface RemedialFinalizationRecord {
+  eosyStatus: EosyStatus | null;
+  learner: {
+    lrn: string | null;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+async function assertNoUnresolvedPreviousYearRemedials(
+  activeSchoolYearLabel: string,
+  records: RemedialFinalizationRecord[],
+): Promise<void> {
+  const previousSchoolYearLabel = getPreviousSchoolYearLabel(activeSchoolYearLabel);
+  if (!previousSchoolYearLabel) {
+    throw new AppError(422, "The active school year label is invalid.");
+  }
+
+  const remedialBlock = await checkSmartRemedialRolloverBlock(previousSchoolYearLabel);
+  if (!remedialBlock.blocked) return;
+
+  if (!remedialBlock.students?.length) {
+    throw new AppError(
+      400,
+      `Cannot finalize. SMART reported unresolved remedial marks from S.Y. ${previousSchoolYearLabel}.`,
+    );
+  }
+
+  const blockedLrns = new Set(remedialBlock.students.map((student) => student.lrn));
+  const affectedLearners = records.filter((record) => {
+    const lrn = record.learner.lrn;
+    return record.eosyStatus !== "DROPPED_OUT"
+      && record.eosyStatus !== "TRANSFERRED_OUT"
+      && lrn !== null
+      && blockedLrns.has(lrn);
+  });
+
+  if (affectedLearners.length === 0) return;
+
+  const names = affectedLearners
+    .map((record) => `${record.learner.lastName}, ${record.learner.firstName}`)
+    .join("; ");
+  throw new AppError(
+    400,
+    `Cannot finalize. The following learner(s) still have an unencoded remedial mark from S.Y. ${previousSchoolYearLabel}: ${names}.`,
+  );
 }
 
 function csvEscape(value: unknown): string {
@@ -479,30 +530,14 @@ async function loadEosyGradeRecords(
   });
 
   let remedialBlockedLrns = new Set<string>();
-  if (schoolYear?.yearLabel) {
-    const remedialBlock = await checkSmartRemedialRolloverBlock(schoolYear.yearLabel).catch(() => null);
+  const previousSchoolYearLabel = schoolYear?.yearLabel
+    ? getPreviousSchoolYearLabel(schoolYear.yearLabel)
+    : null;
+  if (previousSchoolYearLabel) {
+    const remedialBlock = await checkSmartRemedialRolloverBlock(previousSchoolYearLabel).catch(() => null);
     if (remedialBlock?.students) {
       remedialBlockedLrns = new Set(remedialBlock.students.map(s => s.lrn));
     }
-  }
-
-  const remedialPendingMap = new Map<string, boolean>();
-  const remedialRequiredLrns = records
-    .filter(r => r.enrollmentApplication.isRemedialRequired && r.enrollmentApplication.learner.lrn)
-    .map(r => r.enrollmentApplication.learner.lrn as string);
-
-  if (remedialRequiredLrns.length > 0) {
-    await Promise.all(remedialRequiredLrns.map(async (lrn) => {
-      try {
-        const sf10Records = await fetchSmartSf10ByLrn(lrn);
-        const hasPendingRemedial = sf10Records.some((r) => 
-          r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
-        );
-        remedialPendingMap.set(lrn, hasPendingRemedial);
-      } catch (e) {
-        remedialPendingMap.set(lrn, true); // Safely block if API fails
-      }
-    }));
   }
 
   return records.map((record) => {
@@ -534,7 +569,7 @@ async function loadEosyGradeRecords(
     );
 
     const lrn = record.enrollmentApplication.learner.lrn;
-    const isBlockedByRemedial = lrn ? (remedialBlockedLrns.has(lrn) || remedialPendingMap.get(lrn) === true) : false;
+    const isBlockedByRemedial = lrn ? remedialBlockedLrns.has(lrn) : false;
 
     return {
       id: record.id,
@@ -560,7 +595,7 @@ async function loadEosyGradeRecords(
       smartSyncReason: isLocalDeparture 
         ? null
         : isBlockedByRemedial
-          ? "Learner has pending remedial classes."
+          ? "Previous school year remedial mark is not yet encoded."
           : hasMatchingSmartOutcome
             ? null
             : smartIssue?.reason
@@ -809,6 +844,7 @@ export async function finalizeSection(
         schoolYear: {
           select: {
             isEosyFinalized: true,
+            yearLabel: true,
           },
         },
       },
@@ -828,7 +864,7 @@ export async function finalizeSection(
       where: { sectionId },
       include: {
         learner: true,
-        enrollmentApplication: { select: { reportedGrades: true, isRemedialRequired: true } },
+        enrollmentApplication: { select: { reportedGrades: true } },
       },
     });
 
@@ -850,31 +886,10 @@ export async function finalizeSection(
       );
     }
 
-    const irregularLearners = records.filter((r) => r.enrollmentApplication?.isRemedialRequired);
-    if (irregularLearners.length > 0) {
-      await Promise.all(
-        irregularLearners.map(async (record) => {
-          if (!record.learner.lrn) return;
-          const sf10Records = await fetchSmartSf10ByLrn(record.learner.lrn).catch(() => []);
-          const hasRemedialTable = sf10Records.some((r) => r.remedialClasses && r.remedialClasses.length > 0);
-          if (!hasRemedialTable) {
-            throw new AppError(
-              400,
-              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has back subjects but does not have a remedial class grades table yet.`
-            );
-          }
-          const hasPendingRemedial = sf10Records.some((r) => 
-            r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
-          );
-          if (hasPendingRemedial) {
-            throw new AppError(
-              400,
-              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has pending remedial classes.`
-            );
-          }
-        })
-      );
-    }
+    await assertNoUnresolvedPreviousYearRemedials(
+      section.schoolYear.yearLabel,
+      records,
+    );
 
     const updated = await prisma.section.update({
       where: { id: sectionId },
@@ -1512,6 +1527,61 @@ export async function getGradeRecords(
   }
 }
 
+export async function getLearnerRemedialClasses(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const learnerId = Number.parseInt(String(req.params.learnerId), 10);
+    const schoolYearId = Number.parseInt(String(req.query.schoolYearId), 10);
+    if (!Number.isInteger(learnerId) || learnerId <= 0) {
+      throw new AppError(400, "A valid learner ID is required.");
+    }
+    if (!Number.isInteger(schoolYearId) || schoolYearId <= 0) {
+      throw new AppError(400, "A valid schoolYearId query parameter is required.");
+    }
+
+    const [schoolYear, enrollmentRecord] = await Promise.all([
+      prisma.schoolYear.findUnique({
+        where: { id: schoolYearId },
+        select: { yearLabel: true },
+      }),
+      prisma.enrollmentRecord.findFirst({
+        where: { learnerId, schoolYearId },
+        select: { learner: { select: { lrn: true } } },
+      }),
+    ]);
+
+    if (!schoolYear) throw new AppError(404, "School year not found.");
+    if (!enrollmentRecord) {
+      throw new AppError(404, "Learner is not enrolled in the selected school year.");
+    }
+    if (!enrollmentRecord.learner.lrn) {
+      throw new AppError(422, "Learner does not have an LRN for SMART matching.");
+    }
+
+    const previousSchoolYearLabel = getPreviousSchoolYearLabel(schoolYear.yearLabel);
+    const includedYears = new Set([
+      schoolYear.yearLabel,
+      ...(previousSchoolYearLabel ? [previousSchoolYearLabel] : []),
+    ]);
+    const records = (await fetchSmartSf10ByLrn(enrollmentRecord.learner.lrn))
+      .filter((record) =>
+        includedYears.has(record.schoolYear)
+        && Boolean(record.remedialClasses?.length),
+      );
+
+    res.json({
+      activeSchoolYear: schoolYear.yearLabel,
+      previousSchoolYear: previousSchoolYearLabel,
+      records,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function finalizeGradeLevel(
   req: Request,
   res: Response,
@@ -1578,7 +1648,7 @@ export async function finalizeGradeLevel(
       },
       include: {
         learner: true,
-        enrollmentApplication: { select: { reportedGrades: true, isRemedialRequired: true } },
+        enrollmentApplication: { select: { reportedGrades: true } },
       },
     });
 
@@ -1601,31 +1671,10 @@ export async function finalizeGradeLevel(
       );
     }
 
-    const irregularLearners = records.filter((r) => r.enrollmentApplication?.isRemedialRequired);
-    if (irregularLearners.length > 0) {
-      await Promise.all(
-        irregularLearners.map(async (record) => {
-          if (!record.learner.lrn) return;
-          const sf10Records = await fetchSmartSf10ByLrn(record.learner.lrn).catch(() => []);
-          const hasRemedialTable = sf10Records.some((r) => r.remedialClasses && r.remedialClasses.length > 0);
-          if (!hasRemedialTable) {
-            throw new AppError(
-              400,
-              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has back subjects but does not have a remedial class grades table yet.`
-            );
-          }
-          const hasPendingRemedial = sf10Records.some((r) => 
-            r.remedialClasses && r.remedialClasses.some(rc => rc.status === "PENDING" || !rc.outcome || rc.outcome.toUpperCase() !== "PASSED")
-          );
-          if (hasPendingRemedial) {
-            throw new AppError(
-              400,
-              `Cannot finalize. Learner ${record.learner.lastName}, ${record.learner.firstName} has pending remedial classes.`
-            );
-          }
-        })
-      );
-    }
+    await assertNoUnresolvedPreviousYearRemedials(
+      schoolYear.yearLabel,
+      records,
+    );
 
     await prisma.$transaction(async (tx) => {
       // Learner progression is applied only by the atomic school-year rollover.

@@ -12,12 +12,23 @@ export interface SmartRolloverBlockResponse {
   }>;
 }
 
+export function getPreviousSchoolYearLabel(schoolYear: string): string | null {
+  const match = /^(\d{4})-(\d{4})$/.exec(schoolYear.trim());
+  if (!match) return null;
+
+  const startYear = Number.parseInt(match[1], 10);
+  const endYear = Number.parseInt(match[2], 10);
+  if (endYear !== startYear + 1) return null;
+
+  return `${startYear - 1}-${endYear - 1}`;
+}
+
 export async function checkSmartRemedialRolloverBlock(schoolYear: string): Promise<SmartRolloverBlockResponse> {
   const baseUrl = process.env.SMART_API_BASE_URL?.trim();
   const smartToken = process.env.SMART_API_KEY?.trim();
 
   if (!baseUrl) {
-    return { blocked: false };
+    throw new AppError(500, "SMART API base URL is not configured.");
   }
   
   if (!smartToken) {

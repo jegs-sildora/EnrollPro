@@ -54,6 +54,13 @@ router.get(
   ctrl.getGradeRecords,
 );
 
+router.get(
+  "/learners/:learnerId/remedial-classes",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.getLearnerRemedialClasses,
+);
+
 router.post(
   "/grade/:gradeLevelId/finalize",
   authenticate,
