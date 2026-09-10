@@ -11,6 +11,7 @@ const prisma = new PrismaClient({ adapter });
 
 const TARGET_SY_LABEL = "2030-2031";
 const BASE_YEAR = 2030;
+const TARGET_LEARNER_COUNT = 20;
 
 async function seedGrade7() {
   console.log(`🌱 Seeding Grade 7 learners for SY ${TARGET_SY_LABEL}...`);
@@ -28,7 +29,8 @@ async function seedGrade7() {
   }
 
   const sections = await prisma.section.findMany({
-    where: { schoolYearId: sy.id, gradeLevelId: grade7.id }
+    where: { schoolYearId: sy.id, gradeLevelId: grade7.id },
+    orderBy: { id: "asc" }
   });
 
   if (sections.length === 0) {
@@ -43,7 +45,7 @@ async function seedGrade7() {
   let femaleLearnerIndex = 563;
   let totalSeeded = 0;
 
-  for (const section of sections) {
+  for (const [sectionIndex, section] of sections.entries()) {
     const sectionAdviser = await prisma.sectionAdviser.findFirst({
       where: { sectionId: section.id, schoolYearId: sy.id },
       include: { teacher: true }
@@ -51,21 +53,25 @@ async function seedGrade7() {
     
     const enrolledById = sectionAdviser?.teacher?.userId || null;
     if (!enrolledById) {
-      console.warn(`⚠️ No section adviser found for section ${section.name}. Skipping learners for this section.`);
-      continue;
+      throw new Error(`No section adviser found for section ${section.name}.`);
     }
 
-    for (let l = 0; l < 4; l++) {
-      const prismaLSex = l < 2 ? Sex.MALE : Sex.FEMALE;
+    const baseSectionCount = Math.floor(TARGET_LEARNER_COUNT / sections.length);
+    const sectionsWithExtraLearner = TARGET_LEARNER_COUNT % sections.length;
+    const sectionLearnerCount = baseSectionCount + (sectionIndex < sectionsWithExtraLearner ? 1 : 0);
+
+    for (let l = 0; l < sectionLearnerCount; l++) {
+      const learnerOrdinal = totalSeeded;
+      const prismaLSex = learnerOrdinal % 2 === 0 ? Sex.MALE : Sex.FEMALE;
       const learnerNameIndex = prismaLSex === Sex.MALE ? maleLearnerIndex++ : femaleLearnerIndex++;
       
       const baseAge = 12; // Grade 7
-      const birthdate = new Date(BASE_YEAR - baseAge, l % 12, (l % 28) + 1);
+      const birthdate = new Date(BASE_YEAR - baseAge, learnerOrdinal % 12, (learnerOrdinal % 28) + 1);
 
       const learnerName = getFilipinoName(prismaLSex, learnerNameIndex);
 
       const isIps = [true, false, false, false];
-      const isIp = isIps[l % isIps.length];
+      const isIp = isIps[learnerOrdinal % isIps.length];
       const ipGroupNames = ["ATI", "AETA", "BADJAO", "MAMANWA"];
       const ipGroupName = isIp ? ipGroupNames[l % ipGroupNames.length] : null;
       const religions = ["ROMAN CATHOLIC", "ISLAM", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "BIBLE BAPTIST"];
@@ -133,7 +139,7 @@ async function seedGrade7() {
         { relationship: FamilyRelationship.MOTHER, name: motherName, contactNumber: motherContactNumber },
         { relationship: FamilyRelationship.GUARDIAN, name: guardianName, contactNumber: guardianContactNumber },
       ] as const;
-      const primaryContact = familyContacts[l % familyContacts.length];
+      const primaryContact = familyContacts[learnerOrdinal % familyContacts.length];
 
       const barangays = ["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"];
       const zips = ["6100", "6116", "6115", "6101"];
@@ -149,10 +155,10 @@ async function seedGrade7() {
       const permanentZip = zips[(learnerNameIndex + 1) % zips.length];
 
       const g7Types = ["NEW_ENROLLEE", "TRANSFEREE"] as const;
-      const randomLearnerType = g7Types[learnerNameIndex % g7Types.length];
+      const randomLearnerType = g7Types[learnerOrdinal % g7Types.length];
         
       const channels = ["ONLINE", "F2F"] as const;
-      const randomChannel = channels[learnerNameIndex % channels.length];
+      const randomChannel = channels[learnerOrdinal % channels.length];
 
       const app = await prisma.enrollmentApplication.create({
         data: {
@@ -164,7 +170,9 @@ async function seedGrade7() {
           learnerType: randomLearnerType,
           admissionChannel: randomChannel,
           contactNumber: primaryContact.contactNumber,
-          guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
+          guardianFirstName: primaryContact.name.firstName,
+          guardianMiddleName: primaryContact.name.middleName,
+          guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
           addresses: {
@@ -234,6 +242,12 @@ async function seedGrade7() {
 
       totalSeeded++;
     }
+  }
+
+  if (totalSeeded !== TARGET_LEARNER_COUNT) {
+    throw new Error(
+      `Expected to seed ${TARGET_LEARNER_COUNT} Grade 7 learners, but seeded ${totalSeeded}.`
+    );
   }
 
   console.log(`✅ Seeded ${totalSeeded} Grade 7 learners for SY ${TARGET_SY_LABEL}`);
