@@ -2,6 +2,8 @@ import type { Request } from "express";
 import type { ApplicationStatus, Prisma, TermFormat } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+export { parsePositiveInt } from "./integration-query.service.js";
+import { parsePositiveInt } from "./integration-query.service.js";
 
 export const OFFICIAL_ENROLLMENT_STATUSES = [
   "OFFICIALLY_ENROLLED",
@@ -60,20 +62,6 @@ export type SchoolYearScopeErrorCode =
   | "ACTIVE_SCHOOL_YEAR_CONFLICT"
   | "SCHOOL_SETTINGS_UNAVAILABLE"
   | "SCHOOL_YEAR_NOT_FOUND";
-
-export function parsePositiveInt(value: unknown): number | null {
-  const normalized = Array.isArray(value) ? value[0] : value;
-  if (normalized === undefined || normalized === null || normalized === "") {
-    return null;
-  }
-
-  const parsed = Number.parseInt(String(normalized), 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
 
 export function parseOptionalText(value: unknown): string | null {
   const normalized = Array.isArray(value) ? value[0] : value;

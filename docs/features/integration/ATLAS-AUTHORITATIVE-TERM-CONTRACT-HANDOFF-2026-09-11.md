@@ -1,7 +1,7 @@
 # EnrollPro to ATLAS: Authoritative Term Contract Implementation Handoff
 
-Date: 2026-09-11  
-Status: Implemented in EnrollPro source; database migration pending deployment
+Date: 2026-09-11
+Status: Implemented in EnrollPro source; correction worktree not yet committed or deployed
 
 ## Purpose
 
@@ -121,8 +121,18 @@ Contract rules:
 - Display labels are stored by EnrollPro and returned without reconstruction by ATLAS.
 - Terms must not overlap and must be chronologically ordered.
 
-An optional positive `schoolYearId` query parameter returns the complete
-contract for that specific current or historical year.
+An optional canonical positive base-10 integer `schoolYearId` query parameter
+returns the complete contract for that specific current or historical year.
+Fractions, suffixes, scientific notation, signs, leading zeros, blank values,
+unsafe integers, and duplicate query values return
+`400 SCHOOL_YEAR_ID_INVALID`.
+
+School-year create and update operations validate the complete merged term
+contract before persistence. Invalid dates, missing required entries, overlap,
+out-of-order terms, whitespace-only labels, and `QUARTERS` without T4 fail with
+a typed 400 response and produce no school-year or audit write. Valid partial
+updates preserve persisted values. A format change regenerates unspecified
+canonical labels while preserving explicitly supplied valid labels.
 
 ## Active-Term Response
 
@@ -229,9 +239,11 @@ server code:
 server/prisma/migrations/20260911100000_add_authoritative_term_labels/migration.sql
 ```
 
-The migration was intentionally not applied during implementation. It adds and
-backfills label columns; it does not reset, delete, reseed, or rewrite learner,
-personnel, enrollment, grade, or schedule records.
+The additive migration was applied to the configured local EnrollPro database
+on 2026-09-11 under a separate explicit administrator request. The correction
+described in this document added no migration and performed no database write.
+The migration added and backfilled label columns; it did not reset, delete,
+reseed, or rewrite learner, personnel, enrollment, grade, or schedule records.
 
 After the migration, regenerate the Prisma client and restart the EnrollPro
 server before ATLAS performs live verification.
@@ -252,7 +264,7 @@ server before ATLAS performs live verification.
 - `git diff --check` passed.
 
 No database migration, rollover, seed, wipe, or companion-system mutation was
-executed.
+executed as part of the correction implementation.
 
 ## ATLAS Acceptance Checklist
 
@@ -269,8 +281,9 @@ executed.
 
 ## Delivery Metadata
 
-- EnrollPro commit SHA: not created yet
+- Base implementation commit SHA: `396a9892c0124d5e85e0586a23ab953efa24c496`
+- Correction commit SHA: not created yet
 - Deployment revision: not deployed yet
-- Migration status: pending
+- Local migration status: applied before this correction under a separate explicit request
 - ATLAS migration authorization: not granted by this handoff
 - ATLAS schedule generation or publication authorization: not granted by this handoff

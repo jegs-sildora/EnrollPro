@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { SchoolYearStatusEnum, PortalControlEnum, TermFormatEnum } from "../constants/index.js";
-import { integrationTermLabelsSchema } from "./integration-term.schema.js";
+import {
+  integrationTermLabelsSchema,
+  integrationTermLabelUpdatesSchema,
+} from "./integration-term.schema.js";
 
 export const createSchoolYearSchema = z.object({
   yearLabel: z.string().min(1, "Year label is required"),
@@ -22,7 +25,9 @@ export const createSchoolYearSchema = z.object({
   activeTerm: z.string().optional().nullable(),
 });
 
-export const updateSchoolYearSchema = createSchoolYearSchema.partial();
+export const updateSchoolYearSchema = createSchoolYearSchema.partial().extend({
+  termLabels: integrationTermLabelUpdatesSchema.optional(),
+});
 
 export const rolloverSchoolYearSchema = z.object({
   sourceSchoolYearId: z.number().int().positive(),

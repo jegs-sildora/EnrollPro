@@ -6,7 +6,13 @@ import {
 } from "../services/school-year-controller-shared.service.js";
 
 import { normalizeDateToUtcNoon, deriveSchoolYearScheduleFromOpeningDate } from "../school-year.service.js";
-import { resolveStoredTermLabels } from "../services/term-contract.service.js";
+import {
+  buildOrderedTermContract,
+  mergeStoredTermLabels,
+  resolveStoredTermLabels,
+  TermContractError,
+  type SchoolYearTermSource,
+} from "../services/term-contract.service.js";
 import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
 import {
@@ -62,6 +68,37 @@ function requiredCalendarDate(value: unknown, label: string): Date {
   return normalizeDateToUtcNoon(parsed);
 }
 
+function resolveTermDateInput(
+  value: unknown,
+  fallback: Date | null,
+  label: string,
+): Date | null {
+  if (value === undefined) return fallback
+  if (value === null || value === "") return null
+
+  const parsed = value instanceof Date ? value : parseDateInput(value)
+  if (!parsed) {
+    throw new TermContractError(
+      "TERM_DATE_RANGE_INVALID",
+      `${label} must be a valid date.`,
+    )
+  }
+  return normalizeDateToUtcNoon(parsed)
+}
+
+function sendTermContractMutationError(
+  res: Response,
+  error: unknown,
+): boolean {
+  if (!(error instanceof TermContractError)) return false
+
+  res.status(400).json({
+    code: error.code,
+    message: error.message,
+  })
+  return true
+}
+
   export async function createSchoolYear(req: Request, res: Response): Promise<void> {
     const {
       yearLabel,
@@ -70,6 +107,14 @@ function requiredCalendarDate(value: unknown, label: string): Date {
       cloneFromId,
       termFormat,
       termLabels,
+      term1Start,
+      term1End,
+      term2Start,
+      term2End,
+      term3Start,
+      term3End,
+      term4Start,
+      term4End,
     } = req.body;
 
     const [schoolYearCount, settings] = await Promise.all([
@@ -160,6 +205,29 @@ function requiredCalendarDate(value: unknown, label: string): Date {
       termLabels,
     )
 
+    let validatedTermContract: SchoolYearTermSource
+    try {
+      validatedTermContract = {
+        termFormat: resolvedTermFormat,
+        term1Start: resolveTermDateInput(term1Start, schedule.term1Start, "T1 start date"),
+        term1End: resolveTermDateInput(term1End, schedule.term1End, "T1 end date"),
+        term2Start: resolveTermDateInput(term2Start, schedule.term2Start, "T2 start date"),
+        term2End: resolveTermDateInput(term2End, schedule.term2End, "T2 end date"),
+        term3Start: resolveTermDateInput(term3Start, schedule.term3Start, "T3 start date"),
+        term3End: resolveTermDateInput(term3End, schedule.term3End, "T3 end date"),
+        term4Start: resolveTermDateInput(term4Start, null, "T4 start date"),
+        term4End: resolveTermDateInput(term4End, null, "T4 end date"),
+        term1Label: resolvedTermLabels.T1,
+        term2Label: resolvedTermLabels.T2,
+        term3Label: resolvedTermLabels.T3,
+        term4Label: resolvedTermLabels.T4,
+      }
+      buildOrderedTermContract(validatedTermContract)
+    } catch (error: unknown) {
+      if (sendTermContractMutationError(res, error)) return
+      throw error
+    }
+
     const year = await prisma.schoolYear.create({
       data: {
         yearLabel: resolvedYearLabel,
@@ -168,17 +236,19 @@ function requiredCalendarDate(value: unknown, label: string): Date {
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        termFormat: resolvedTermFormat,
-        term1Label: resolvedTermLabels.T1,
-        term2Label: resolvedTermLabels.T2,
-        term3Label: resolvedTermLabels.T3,
-        term4Label: resolvedTermLabels.T4,
+        term1Start: validatedTermContract.term1Start,
+        term1End: validatedTermContract.term1End,
+        term2Start: validatedTermContract.term2Start,
+        term2End: validatedTermContract.term2End,
+        term3Start: validatedTermContract.term3Start,
+        term3End: validatedTermContract.term3End,
+        term4Start: validatedTermContract.term4Start,
+        term4End: validatedTermContract.term4End,
+        termFormat: validatedTermContract.termFormat,
+        term1Label: validatedTermContract.term1Label,
+        term2Label: validatedTermContract.term2Label,
+        term3Label: validatedTermContract.term3Label,
+        term4Label: validatedTermContract.term4Label,
       },
     });
 
@@ -413,34 +483,73 @@ function requiredCalendarDate(value: unknown, label: string): Date {
       return;
     }
 
-    const resolvedTermLabels =
-      termLabels !== undefined ||
-      (termFormat !== undefined && termFormat !== year.termFormat)
-        ? resolveStoredTermLabels(termFormat ?? year.termFormat, termLabels)
-        : null
+    const touchesTermContract =
+      termFormat !== undefined || termLabels !== undefined ||
+      term1Start !== undefined || term1End !== undefined ||
+      term2Start !== undefined || term2End !== undefined ||
+      term3Start !== undefined || term3End !== undefined ||
+      term4Start !== undefined || term4End !== undefined
+
+    let validatedTermContract: SchoolYearTermSource | null = null
+    if (touchesTermContract) {
+      try {
+        const resolvedTermFormat = termFormat ?? year.termFormat
+        const formatChanged = resolvedTermFormat !== year.termFormat
+        const resolvedTermLabels = mergeStoredTermLabels(
+          resolvedTermFormat,
+          {
+            T1: year.term1Label,
+            T2: year.term2Label,
+            T3: year.term3Label,
+            T4: year.term4Label,
+          },
+          termLabels,
+          formatChanged,
+        )
+
+        validatedTermContract = {
+          termFormat: resolvedTermFormat,
+          term1Start: resolveTermDateInput(term1Start, year.term1Start, "T1 start date"),
+          term1End: resolveTermDateInput(term1End, year.term1End, "T1 end date"),
+          term2Start: resolveTermDateInput(term2Start, year.term2Start, "T2 start date"),
+          term2End: resolveTermDateInput(term2End, year.term2End, "T2 end date"),
+          term3Start: resolveTermDateInput(term3Start, year.term3Start, "T3 start date"),
+          term3End: resolveTermDateInput(term3End, year.term3End, "T3 end date"),
+          term4Start: resolveTermDateInput(term4Start, year.term4Start, "T4 start date"),
+          term4End: resolveTermDateInput(term4End, year.term4End, "T4 end date"),
+          term1Label: resolvedTermLabels.T1,
+          term2Label: resolvedTermLabels.T2,
+          term3Label: resolvedTermLabels.T3,
+          term4Label: resolvedTermLabels.T4,
+        }
+        buildOrderedTermContract(validatedTermContract)
+      } catch (error: unknown) {
+        if (sendTermContractMutationError(res, error)) return
+        throw error
+      }
+    }
 
     const updated = await prisma.schoolYear.update({
       where: { id },
       data: {
         ...(yearLabel ? { yearLabel } : {}),
-        ...(classOpeningDate ? { classOpeningDate: new Date(classOpeningDate) } : {}),
         ...(classOpeningDate !== undefined ? { classOpeningDate: classOpeningDate ? normalizeDateToUtcNoon(new Date(classOpeningDate)) : year.classOpeningDate } : {}),
         ...(classEndDate !== undefined ? { classEndDate: classEndDate ? normalizeDateToUtcNoon(new Date(classEndDate)) : year.classEndDate } : {}),
-        ...(term1Start !== undefined ? { term1Start: term1Start ? normalizeDateToUtcNoon(new Date(term1Start)) : null } : {}),
-        ...(term1End !== undefined ? { term1End: term1End ? normalizeDateToUtcNoon(new Date(term1End)) : null } : {}),
-        ...(term2Start !== undefined ? { term2Start: term2Start ? normalizeDateToUtcNoon(new Date(term2Start)) : null } : {}),
-        ...(term2End !== undefined ? { term2End: term2End ? normalizeDateToUtcNoon(new Date(term2End)) : null } : {}),
-        ...(term3Start !== undefined ? { term3Start: term3Start ? normalizeDateToUtcNoon(new Date(term3Start)) : null } : {}),
-        ...(term3End !== undefined ? { term3End: term3End ? normalizeDateToUtcNoon(new Date(term3End)) : null } : {}),
-        ...(term4Start !== undefined ? { term4Start: term4Start ? normalizeDateToUtcNoon(new Date(term4Start)) : null } : {}),
-        ...(term4End !== undefined ? { term4End: term4End ? normalizeDateToUtcNoon(new Date(term4End)) : null } : {}),
-        ...(termFormat !== undefined ? { termFormat } : {}),
-        ...(resolvedTermLabels
+        ...(validatedTermContract
           ? {
-              term1Label: resolvedTermLabels.T1,
-              term2Label: resolvedTermLabels.T2,
-              term3Label: resolvedTermLabels.T3,
-              term4Label: resolvedTermLabels.T4,
+              termFormat: validatedTermContract.termFormat,
+              term1Start: validatedTermContract.term1Start,
+              term1End: validatedTermContract.term1End,
+              term2Start: validatedTermContract.term2Start,
+              term2End: validatedTermContract.term2End,
+              term3Start: validatedTermContract.term3Start,
+              term3End: validatedTermContract.term3End,
+              term4Start: validatedTermContract.term4Start,
+              term4End: validatedTermContract.term4End,
+              term1Label: validatedTermContract.term1Label,
+              term2Label: validatedTermContract.term2Label,
+              term3Label: validatedTermContract.term3Label,
+              term4Label: validatedTermContract.term4Label,
             }
           : {}),
         ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),

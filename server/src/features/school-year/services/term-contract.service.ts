@@ -23,7 +23,7 @@ export class TermContractError extends Error {
 }
 
 export interface SchoolYearTermSource {
-  termFormat: string
+  termFormat: TermFormat
   term1Start: Date | null
   term1End: Date | null
   term2Start: Date | null
@@ -52,7 +52,7 @@ export function getCanonicalTermLabels(termFormat: TermFormat): Required<Integra
 
 export function resolveStoredTermLabels(
   termFormat: TermFormat,
-  labels?: IntegrationTermLabels,
+  labels?: Partial<Required<IntegrationTermLabels>>,
 ): Required<IntegrationTermLabels> {
   const canonical = getCanonicalTermLabels(termFormat)
   return {
@@ -60,6 +60,24 @@ export function resolveStoredTermLabels(
     T2: labels?.T2 ?? canonical.T2,
     T3: labels?.T3 ?? canonical.T3,
     T4: labels?.T4 ?? canonical.T4,
+  }
+}
+
+export function mergeStoredTermLabels(
+  termFormat: TermFormat,
+  stored: Required<IntegrationTermLabels>,
+  updates?: Partial<Required<IntegrationTermLabels>>,
+  resetUnspecifiedToCanonical = false,
+): Required<IntegrationTermLabels> {
+  const base = resetUnspecifiedToCanonical
+    ? getCanonicalTermLabels(termFormat)
+    : stored
+
+  return {
+    T1: updates?.T1 ?? base.T1,
+    T2: updates?.T2 ?? base.T2,
+    T3: updates?.T3 ?? base.T3,
+    T4: updates?.T4 ?? base.T4,
   }
 }
 

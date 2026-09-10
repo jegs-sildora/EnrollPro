@@ -16,8 +16,11 @@ browser JavaScript or written to logs.
 
 `GET /api/integration/v1/school-year`
 
-An optional positive `schoolYearId` returns that year's contract. Without it,
-EnrollPro returns the authoritative active year. Legacy date properties remain
+An optional canonical positive base-10 integer `schoolYearId` returns that
+year's contract. Fractions, suffixes, scientific notation, signs, leading
+zeros, blank values, unsafe integers, and duplicate query values return
+`400 SCHOOL_YEAR_ID_INVALID`. Without it, EnrollPro returns the authoritative
+active year. Legacy date properties remain
 in the payload for existing SMART and AIMS consumers; new consumers must use
 `terms`.
 
@@ -96,7 +99,7 @@ exact-year cache as degraded read-only context.
 
 | Code | Meaning |
 | --- | --- |
-| `SCHOOL_YEAR_ID_INVALID` | Query value is not a positive integer |
+| `SCHOOL_YEAR_ID_INVALID` | Query value is not one canonical positive base-10 integer |
 | `ACTIVE_SCHOOL_YEAR_UNINITIALIZED` | EnrollPro has no initialized active year |
 | `ACTIVE_SCHOOL_YEAR_CONFLICT` | The settings pointer and active rows disagree |
 | `SCHOOL_SETTINGS_UNAVAILABLE` | The authoritative school settings row is missing |

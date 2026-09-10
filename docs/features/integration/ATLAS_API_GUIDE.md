@@ -34,6 +34,12 @@ ATLAS_SCHOOL_ID=optional-external-school-id
 | GET | `/default/faculty` | Active faculty, employee numbers, roles, designations, and advisership |
 | GET | `/sections` | Grade, program, section, capacity, and adviser context |
 
+The optional `schoolYearId` query value must be one canonical positive base-10
+integer. EnrollPro rejects fractions, suffixes, exponents, signs, leading
+zeros, blank values, unsafe integers, and duplicate values with
+`400 SCHOOL_YEAR_ID_INVALID`. Omission continues to select the authoritative
+active year.
+
 ## EnrollPro Trigger And Snapshot Routes
 
 | Method | Path | Purpose |

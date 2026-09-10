@@ -39,6 +39,7 @@ Last reviewed: 2026-09-11
 | [SMART Transferee API](features/integration/SMART-TRANSFEREE-API.md) | SMART and EnrollPro Teams | Dedicated endpoint for synchronizing transferee learners |
 | [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
 | [ATLAS Authoritative Term Contract Handoff](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-HANDOFF-2026-09-11.md) | ATLAS and EnrollPro Teams | Implemented ordered-term API changes, migration requirement, errors, and acceptance checks |
+| [ATLAS Authoritative Term Contract Correction Report](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-CORRECTION-REPORT-2026-09-11.md) | ATLAS and EnrollPro Teams | Strict year-ID parsing, pre-write term validation, regression matrix, and delivery status |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
 | [SMART School Year Rollover](features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md) | SMART and EnrollPro Teams | EOSY publication, grade history, new-year gradebooks, and roster reconciliation |
 | [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |

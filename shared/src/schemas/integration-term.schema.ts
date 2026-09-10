@@ -3,16 +3,31 @@ import { TermFormatEnum } from "../constants/index.js"
 
 export const IntegrationTermIdentityEnum = z.enum(["T1", "T2", "T3", "T4"])
 
+const integrationTermLabelSchema = z.string().refine(
+  (value) => value.trim().length > 0,
+  {
+    message: "Term display label cannot be blank.",
+    params: { errorCode: "TERM_ENTRY_INVALID" },
+  },
+)
+
 export const integrationTermLabelsSchema = z.object({
-  T1: z.string().min(1),
-  T2: z.string().min(1),
-  T3: z.string().min(1),
-  T4: z.string().min(1).optional(),
+  T1: integrationTermLabelSchema,
+  T2: integrationTermLabelSchema,
+  T3: integrationTermLabelSchema,
+  T4: integrationTermLabelSchema.optional(),
+})
+
+export const integrationTermLabelUpdatesSchema = z.object({
+  T1: integrationTermLabelSchema.optional(),
+  T2: integrationTermLabelSchema.optional(),
+  T3: integrationTermLabelSchema.optional(),
+  T4: integrationTermLabelSchema.optional(),
 })
 
 export const integrationTermEntrySchema = z.object({
   identity: IntegrationTermIdentityEnum,
-  displayLabel: z.string().min(1),
+  displayLabel: integrationTermLabelSchema,
   order: z.number().int().min(1).max(4),
   startDate: z.iso.date(),
   endDate: z.iso.date(),

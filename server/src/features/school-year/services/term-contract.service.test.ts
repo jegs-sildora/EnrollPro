@@ -1,8 +1,13 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { integrationSchoolYearTermContractSchema } from "@enrollpro/shared"
+import {
+  integrationSchoolYearTermContractSchema,
+  integrationTermLabelsSchema,
+  updateSchoolYearSchema,
+} from "@enrollpro/shared"
 import {
   buildOrderedTermContract,
+  mergeStoredTermLabels,
   resolveActiveTermEntry,
   TermContractError,
   type SchoolYearTermSource,
@@ -98,4 +103,67 @@ test("shared contract rejects duplicate or out-of-order identities", () => {
     },
   })
   assert.equal(result.success, false)
+})
+
+test("shared contract rejects whitespace-only display labels", () => {
+  const result = integrationTermLabelsSchema.safeParse({
+    T1: "TERM 1",
+    T2: "   ",
+    T3: "TERM 3",
+  })
+  assert.equal(result.success, false)
+  if (!result.success) {
+    assert.equal(result.error.issues[0]?.code, "custom")
+    assert.deepEqual(result.error.issues[0]?.params, {
+      errorCode: "TERM_ENTRY_INVALID",
+    })
+  }
+})
+
+test("update schema accepts one valid label without requiring the other labels", () => {
+  const result = updateSchoolYearSchema.safeParse({
+    termLabels: { T2: "MIDYEAR" },
+  })
+  assert.equal(result.success, true)
+})
+
+test("valid labels are preserved exactly", () => {
+  const result = integrationTermLabelsSchema.parse({
+    T1: " First Term ",
+    T2: "Second Term",
+    T3: "Final Term",
+  })
+  assert.equal(result.T1, " First Term ")
+})
+
+test("format changes regenerate unspecified labels and preserve explicit labels", () => {
+  const labels = mergeStoredTermLabels(
+    "QUARTERS",
+    {
+      T1: "FIRST TERM",
+      T2: "SECOND TERM",
+      T3: "FINAL TERM",
+      T4: "QUARTER 4",
+    },
+    { T2: "MID QUARTER" },
+    true,
+  )
+
+  assert.deepEqual(labels, {
+    T1: "QUARTER 1",
+    T2: "MID QUARTER",
+    T3: "QUARTER 3",
+    T4: "QUARTER 4",
+  })
+})
+
+test("quarters require a complete fourth term before persistence", () => {
+  assert.throws(
+    () => buildOrderedTermContract({
+      ...trimesterSource(),
+      termFormat: "QUARTERS",
+    }),
+    (error: unknown) =>
+      error instanceof TermContractError && error.code === "TERM_ENTRY_INVALID",
+  )
 })

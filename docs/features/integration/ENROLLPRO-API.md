@@ -28,7 +28,7 @@ The configured host may be local, private-network, or deployed. Companion system
 | Companion SSO secret | `Authorization: Bearer <system-specific-secret>` | Server-side one-time-code exchange only |
 | Public | No credential | Public application and reference-data feeds |
 
-Protected API calls may send `x-school-year-context-id: <positive integer>`. If absent, EnrollPro resolves `SchoolSetting.activeSchoolYearId`, then the latest active school year. Partner v1 feeds use `schoolYearId`; feeds documented as optional fall back to the active year.
+Protected API calls may send `x-school-year-context-id: <positive integer>`. If absent, EnrollPro resolves `SchoolSetting.activeSchoolYearId`, then the latest active school year. Partner v1 feeds use `schoolYearId`; feeds documented as optional fall back to the active year. Partner `schoolYearId` values must be one canonical positive base-10 integer. Fractions, suffixes, scientific notation, signs, leading zeros, blanks, unsafe integers, and duplicate values are rejected.
 
 Role names used below are `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, and `MRF`.
 
