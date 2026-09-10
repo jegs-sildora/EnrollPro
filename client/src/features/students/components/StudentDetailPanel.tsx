@@ -46,7 +46,7 @@ import {
 } from "@/shared/ui/select";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { getImageUrl, formatEosyStatus, cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
+import { getImageUrl, formatEosyStatus, cn, formatGradeLevel } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/types/application-detail";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -55,7 +55,6 @@ import {
   PersonalInfo,
   AddressInfo,
   GuardianContact,
-  PreviousSchool,
   Classifications,
 } from "@/features/enrollment/components/BeefSections";
 import { sileo } from "sileo";
@@ -417,7 +416,7 @@ export function StudentDetailPanel({
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, onStudentLoaded, schoolYearId]);
 
   useEffect(() => {
     if (id) {

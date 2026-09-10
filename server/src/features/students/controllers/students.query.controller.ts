@@ -8,7 +8,6 @@ import {
   findStudents,
   getStudentsSummary as fetchStudentsSummary,
 } from "../students.service.js";
-import { fetchSmartSf10ByLrn } from "../../integration/smart-sf10.service.js";
 import {
   parseStoredGrades,
   getHistoricalReportedGrades,
@@ -520,53 +519,10 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         };
       });
 
-      let smartSf10Records: Awaited<ReturnType<typeof fetchSmartSf10ByLrn>> = [];
-      try {
-        if (applicant.learner?.lrn) {
-          smartSf10Records = await fetchSmartSf10ByLrn(applicant.learner.lrn);
-        }
-      } catch (error) {
-        console.error("Failed to fetch SMART SF10 records:", error);
-      }
-
-      const smartHistory = smartSf10Records.map((record) => {
-        const rawGrades: Record<string, any> = {};
-        record.subjectGrades?.forEach((sg: any) => {
-          rawGrades[sg.subjectName] = {
-            T1: sg.T1,
-            T2: sg.T2,
-            T3: sg.T3,
-            Q1: sg.Q1,
-            Q2: sg.Q2,
-            Q3: sg.Q3,
-            Q4: sg.Q4,
-            Final: sg.final,
-            remarks: sg.remarks,
-          };
-        });
-        return {
-          grade_level: record.gradeLevel ? record.gradeLevel.replace("GRADE_", "Grade ") : "Unknown",
-          section_name: record.section || null,
-          school_year: record.schoolYear,
-          status: record.promotionStatus || "Completed",
-          term_format: "TRIMESTER",
-          grades: Object.keys(rawGrades).length > 0 ? rawGrades : null,
-          general_average: record.generalAverage,
-          remedialClasses: record.remedialClasses || null,
-        };
-      });
-
-      const smartYears = new Set(smartHistory.map((h) => h.school_year));
-      const smartGrades = new Set(smartHistory.map((h) => h.grade_level));
-      
-      const filteredLocalHistory = archivedHistory.filter((h) => {
-        if (smartYears.has(h.school_year)) return false;
-        // Don't filter by activeGradeLevel here because this is just profile view of history, but if it conflicts, SMART wins
-        if (smartGrades.has(h.grade_level)) return false;
-        return true;
-      });
-
-      const academicHistory = [...filteredLocalHistory, ...smartHistory].sort(
+      // Learner details must remain available when SMART is offline. Finalized
+      // SMART outcomes are already persisted in EnrollmentHistory during the
+      // synchronization workflow, so a panel read must not call SMART again.
+      const academicHistory = archivedHistory.sort(
         (a, b) => a.school_year.localeCompare(b.school_year)
       );
 

@@ -335,6 +335,7 @@ function toPreviewRow(
 ): Sf1ImportPreviewRow {
   const issues: Sf1ImportIssueCode[] = [];
   const existing = row.lrn ? existingLearners.get(row.lrn) ?? null : null;
+  const guardian = splitGuardianName(row.guardianName);
 
   if (!row.lrn) issues.push("INVALID_LRN");
   else if (seenLrns.has(row.lrn)) issues.push("DUPLICATE_IN_FILE");
@@ -376,7 +377,9 @@ function toPreviewRow(
     province: row.province,
     fatherName: row.fatherName,
     motherName: row.motherName,
-    guardianName: row.guardianName,
+    guardianFirstName: guardian?.firstName ?? null,
+    guardianMiddleName: guardian?.middleName ?? null,
+    guardianLastName: guardian?.lastName ?? null,
     guardianRelationship: row.guardianRelationship,
     contactNumber: row.contactNumber,
     matchStatus,
@@ -579,7 +582,9 @@ export async function commitSf1RosterImport({
             admissionChannel: "F2F",
             status: "OFFICIALLY_ENROLLED",
             contactNumber: row.contactNumber,
-            guardianName: row.guardianName,
+            guardianFirstName: row.guardianFirstName,
+            guardianMiddleName: row.guardianMiddleName,
+            guardianLastName: row.guardianLastName,
             guardianRelationship: row.guardianRelationship,
             isPrivacyConsentGiven: true,
             encodedById: userId,
@@ -595,7 +600,9 @@ export async function commitSf1RosterImport({
             status: "OFFICIALLY_ENROLLED",
             learningModalities: ["FACE_TO_FACE"],
             contactNumber: row.contactNumber,
-            guardianName: row.guardianName,
+            guardianFirstName: row.guardianFirstName,
+            guardianMiddleName: row.guardianMiddleName,
+            guardianLastName: row.guardianLastName,
             guardianRelationship: row.guardianRelationship,
             isPrivacyConsentGiven: true,
             encodedById: userId,
@@ -621,15 +628,14 @@ export async function commitSf1RosterImport({
         await tx.applicationFamilyMember.deleteMany({
           where: { enrollmentId: application.id },
         });
-        const guardian = splitGuardianName(row.guardianName);
-        if (guardian) {
+        if (row.guardianFirstName && row.guardianLastName) {
           await tx.applicationFamilyMember.create({
             data: {
               enrollmentId: application.id,
               relationship: "GUARDIAN",
-              firstName: guardian.firstName,
-              lastName: guardian.lastName,
-              middleName: guardian.middleName,
+              firstName: row.guardianFirstName,
+              lastName: row.guardianLastName,
+              middleName: row.guardianMiddleName,
               contactNumber: row.contactNumber,
             },
           });

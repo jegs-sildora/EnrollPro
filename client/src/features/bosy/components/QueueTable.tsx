@@ -203,7 +203,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     titleColorClass = "text-red-800 border-b border-red-200";
     hoverClass = "hover:bg-red-100";
   } else if (s === "PROMOTED") {
-    title = item.gradeLevelName.includes("11") ? "COMPLETER" : "PROMOTED";
+    title = item.gradeLevelName.includes("11") ? "JHS COMPLETER" : "PROMOTED";
     description = "Learner met all academic requirements and is eligible for the next grade level.";
     colorClass = "bg-green-50 border border-green-300 text-green-900";
     titleColorClass = "text-green-800 border-b border-green-200";

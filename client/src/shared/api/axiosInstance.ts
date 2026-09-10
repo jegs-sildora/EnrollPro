@@ -41,6 +41,18 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const SCHOOL_YEAR_BOOTSTRAP_PATHS = new Set([
+  "/settings/public",
+  "/school-years",
+]);
+
+function isSchoolYearBootstrapRequest(url: string | undefined): boolean {
+  if (!url) return false;
+
+  const path = url.split("?", 1)[0].replace(/\/$/, "");
+  return SCHOOL_YEAR_BOOTSTRAP_PATHS.has(path);
+}
+
 export function getLearnerApi(token: string) {
   return axios.create({
     baseURL: import.meta.env.VITE_API_URL || "/api",
@@ -62,7 +74,10 @@ api.interceptors.request.use((config) => {
     useSettingsStore.getState();
   const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
 
-  if (contextSchoolYearId) {
+  // These endpoints establish the authoritative school-year context. Sending a
+  // persisted context ID here can prevent the client from recovering after a
+  // rollover or after a school year is removed by an administrator.
+  if (contextSchoolYearId && !isSchoolYearBootstrapRequest(config.url)) {
     config.headers.set("x-school-year-context-id", String(contextSchoolYearId));
   }
 

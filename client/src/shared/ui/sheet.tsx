@@ -64,6 +64,7 @@ const SheetContent = React.forwardRef<
 				className={cn(sheetVariants({ side }), className, "outline-none flex flex-col")}
 				{...props}
 			>
+				<DialogPrimitive.Title className="sr-only">Sheet</DialogPrimitive.Title>
 				{children}
 				{showClose ? (
 					<DialogPrimitive.Close className={cn(

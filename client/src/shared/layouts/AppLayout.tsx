@@ -239,7 +239,10 @@ function SYSwitcher() {
   const {
     activeSchoolYearId,
     activeSchoolYearLabel,
+    activeSchoolYearStatus,
     viewingSchoolYearId,
+    viewingSchoolYearLabel,
+    viewingSchoolYearStatus,
     triggerSchoolYearSwitch,
   } = useSettingsStore();
   const { hasOverride } = useHistoricalReadOnly();
@@ -272,7 +275,13 @@ function SYSwitcher() {
 
   const currentId = viewingSchoolYearId ?? activeSchoolYearId;
   const currentYear = years.find((y) => y.id === currentId);
-  const currentLabel = currentYear?.yearLabel ?? "No School Year Set";
+  const currentLabel =
+    currentYear?.yearLabel ??
+    (viewingSchoolYearId ? viewingSchoolYearLabel : activeSchoolYearLabel) ??
+    "No School Year Set";
+  const currentStatus =
+    currentYear?.status ??
+    (viewingSchoolYearId ? viewingSchoolYearStatus : activeSchoolYearStatus);
   const currentAcademicYear = years.find((y) => y.id === activeSchoolYearId) ?? null;
   const archivedYears = years.filter((y) => y.status === "ARCHIVED");
 
@@ -331,7 +340,7 @@ function SYSwitcher() {
                 {currentLabel}
               </span>
               <div className="hidden md:block">
-                {renderStatusBadge(currentYear?.status)}
+                {currentStatus ? renderStatusBadge(currentStatus) : null}
               </div>
               <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
             </button>

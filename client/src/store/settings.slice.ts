@@ -227,9 +227,31 @@ export const useSettingsStore = create<SettingsState>()(
           activeCorrection: _activeCorrection,
           isSwitchingSchoolYear: _isSwitchingSchoolYear,
           switchingToSchoolYearLabel: _switchingToSchoolYearLabel,
+          activeSchoolYearId: _activeSchoolYearId,
+          activeSchoolYearLabel: _activeSchoolYearLabel,
+          activeSchoolYearStatus: _activeSchoolYearStatus,
+          viewingSchoolYearId: _viewingSchoolYearId,
+          viewingSchoolYearStatus: _viewingSchoolYearStatus,
+          viewingSchoolYearLabel: _viewingSchoolYearLabel,
           ...rest
         } = state;
         return rest;
+      },
+      version: 2,
+      migrate: (persistedState, version) => {
+        if (version >= 2 || typeof persistedState !== "object" || persistedState === null) {
+          return persistedState;
+        }
+
+        return {
+          ...persistedState,
+          activeSchoolYearId: null,
+          activeSchoolYearLabel: null,
+          activeSchoolYearStatus: null,
+          viewingSchoolYearId: null,
+          viewingSchoolYearStatus: null,
+          viewingSchoolYearLabel: null,
+        };
       },
     },
   ),

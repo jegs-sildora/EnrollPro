@@ -10,9 +10,14 @@ export function useRetainedSheetValue<T>(
 
   const [prevValue, setPrevValue] = useState<T | null>(value);
 
-  if (value !== null && value !== prevValue) {
+  let currentRetainedValue = retainedValue;
+
+  if (value !== prevValue) {
     setPrevValue(value);
-    setRetainedValue(value);
+    if (value !== null) {
+      setRetainedValue(value);
+      currentRetainedValue = value;
+    }
   }
 
   useEffect(() => {
@@ -29,5 +34,5 @@ export function useRetainedSheetValue<T>(
     };
   }, [retainMs, value]);
 
-  return retainedValue;
+  return currentRetainedValue;
 }

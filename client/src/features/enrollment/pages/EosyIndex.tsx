@@ -229,7 +229,7 @@ const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolea
 
   switch (normalized as string) {
     case "PROMOTED":
-      return isGrade10 ? "COMPLETER" : "PROMOTED";
+      return isGrade10 ? "JHS COMPLETER" : "PROMOTED";
     case "RETAINED":
       return "RETAINED";
     case "CONDITIONALLY_PROMOTED":
@@ -1380,7 +1380,7 @@ export default function EosyUpdating() {
                 ? "SMART Data Needs Review"
                 : "Waiting for Finalization";
           const displayLabel = isDeparture ? statusLabel : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-            ? (r.isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel)
+            ? (r.isScpDemoted && resolvedStatus === "PROMOTED" && !isGrade10 ? "PROMOTED (TO BEC)" : statusLabel)
             : syncLabel;
           const canRecordDeparture = !r.section.isEosyFinalized && !isScopeFinalized && !isHistoricalReadOnly;
 
@@ -1436,7 +1436,7 @@ export default function EosyUpdating() {
           };
 
           const renderGeneralTooltip = (trigger: React.ReactNode) => {
-            if (isScpDemoted && resolvedStatus === "PROMOTED") {
+            if (isScpDemoted && resolvedStatus === "PROMOTED" && !isGrade10) {
               return renderTooltip(trigger);
             }
             if (resolvedStatus === "RETAINED") {
@@ -1450,7 +1450,7 @@ export default function EosyUpdating() {
 
             switch (resolvedStatus) {
               case "PROMOTED":
-                title = isGrade10 ? "COMPLETER" : "PROMOTED";
+                title = isGrade10 ? "JHS COMPLETER" : "PROMOTED";
                 description = "Learner met all academic requirements and is eligible for the next grade level.";
                 break;
               case "CONDITIONALLY_PROMOTED":
