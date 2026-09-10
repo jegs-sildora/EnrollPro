@@ -10,6 +10,7 @@ import {
   restoreApplication,
   deleteApplication,
   revertApplication,
+  completeRequirements,
 } from "./enrollment.controller.js";
 
 const router: Router = Router();
@@ -68,6 +69,13 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   directEncodeWalkIn,
+);
+
+router.patch(
+  "/:applicationId/complete-requirements",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  completeRequirements,
 );
 
 export default router;

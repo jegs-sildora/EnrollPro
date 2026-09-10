@@ -192,6 +192,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
           studentPhoto: true,
           previousGenAve: true,
           birthdate: true,
+          hasPsaBirthCertificate: true,
         },
       },
       gradeLevel: { select: { name: true } },
@@ -557,4 +558,84 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
     console.error("Error in directEncodeWalkIn:", error);
     return res.status(500).json({ message: "Failed to process walk-in encoding", error: error instanceof Error ? error.message : "Unknown error" });
   }
+}
+/**
+ * PATCH /api/enrollment/:applicationId/complete-requirements
+ *
+ * Updates the document checklist for a temporarily enrolled (deficient) learner.
+ * When all documents are now verified, clears the isTemporarilyEnrolled flag.
+ */
+export async function completeRequirements(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
+  const userId = req.user!.userId;
+  const applicationId = Number(req.params.applicationId);
+
+  if (!applicationId || isNaN(applicationId)) {
+    throw new AppError(400, "Valid applicationId is required.");
+  }
+
+  const {
+    sf9Verified,
+    psaVerified,
+  }: { sf9Verified: boolean; psaVerified: boolean } = req.body;
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    include: {
+      learner: { select: { id: true, firstName: true, lastName: true } },
+      schoolYear: { select: { id: true } },
+    },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  if (
+    application.status !== "READY_FOR_SECTIONING" &&
+    application.status !== "OFFICIALLY_ENROLLED"
+  ) {
+    throw new AppError(
+      409,
+      `Application status '${application.status}' does not support document updates via this endpoint.`,
+    );
+  }
+
+  const allDocsVerified = sf9Verified && psaVerified;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.enrollmentApplication.update({
+      where: { id: applicationId },
+      data: {
+        isMissingSf9: !sf9Verified,
+        isTemporarilyEnrolled: !allDocsVerified,
+        confirmationConsent: allDocsVerified,
+      },
+    });
+
+    await tx.learner.update({
+      where: { id: application.learnerId },
+      data: { hasPsaBirthCertificate: psaVerified },
+    });
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "REQUIREMENTS_UPDATED",
+    description: `Document checklist updated for ${application.learner.firstName} ${application.learner.lastName} — SF9: ${sf9Verified}, PSA: ${psaVerified}`,
+    subjectType: "EnrollmentApplication",
+    recordId: applicationId,
+    req,
+  });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
+  return res.json({
+    success: true,
+    message: allDocsVerified
+      ? "All requirements completed. Learner is no longer temporarily enrolled."
+      : "Document checklist updated.",
+    applicationId,
+    isTemporarilyEnrolled: !allDocsVerified,
+  });
 }

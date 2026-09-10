@@ -822,7 +822,7 @@ export default function EnrollmentForm({
                             />
                             <Label
                               htmlFor="certify-check"
-                              className="text-base font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
+                              className="text-base font-semibold leading-relaxed cursor-pointer select-none space-y-3 block">
                               <p>
                                 I certify that all information in this enrollment form
                                 is true, correct, and complete to the best of my

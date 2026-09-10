@@ -46,7 +46,7 @@ export default function PrivacyNotice({
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold ">
+            <CardTitle className="text-2xl font-extrabold ">
               Data Privacy Notice
             </CardTitle>
             <p className="text-base text-foreground font-bold">
@@ -62,13 +62,13 @@ export default function PrivacyNotice({
               className="max-h-160 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
               {/* Header Section */}
               <section>
-                <h3 className="font-bold text-foreground mb-1 uppercase">
+                <h3 className="font-extrabold text-foreground mb-1 uppercase">
                   {schoolName} - DATA PRIVACY NOTICE
                 </h3>
                 <p className="text-foreground text-base mb-2">
-                  The Department of Education (DepEd) and {schoolName}{" "}
+                  The Department of Education (DepEd) and <span className="capitalize">{schoolName?.toLowerCase()}</span>{" "}
                   collect personal and academic information for the purpose of{" "}
-                  <strong>OFFICIAL ENROLLMENT</strong>. This information is
+                  <span className="font-bold">official enrollment</span>. This information is
                   required to establish the learner's official record in the
                   Learner Information System (LIS) and for the issuance of
                   official school documents.
@@ -188,10 +188,10 @@ export default function PrivacyNotice({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-base leading-relaxed cursor-pointer select-none">
+              className="text-base leading-relaxed cursor-pointer select-none font-semibold">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
-              {schoolName} and DepEd for the purpose of{" "}
+              <span className="capitalize">{schoolName?.toLowerCase()}</span> and DepEd for the purpose of{" "}
               Official Enrollment.
               <span className="text-destructive ml-1">*</span>
             </Label>

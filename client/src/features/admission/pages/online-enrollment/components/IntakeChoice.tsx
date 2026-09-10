@@ -93,7 +93,13 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           </CardContent>
         </Card>
 
-        <Card className="group relative overflow-hidden border-2 transition-all hover:border-emerald-600 hover:shadow-xl flex flex-col">
+        <Card 
+          className="group relative overflow-hidden border-2 transition-all hover:border-emerald-600 hover:shadow-xl cursor-pointer flex flex-col"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest('a')) return;
+            document.getElementById('download-slip')?.click();
+          }}
+        >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-emerald-600">
             <UserCheck className="h-24 w-24" />
           </div>
@@ -141,7 +147,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
                 variant="outline"
                 className="w-full h-12 group-hover:bg-emerald-600 group-hover:text-primary-foreground hover:bg-emerald-600 hover:text-primary-foreground transition-all font-bold border-emerald-100 text-emerald-700"
                 asChild>
-                <a href="/Confirmation%20Slip.pdf" download="Confirmation_Slip.pdf">
+                <a id="download-slip" href="/Confirmation%20Slip.pdf" download="Confirmation_Slip.pdf">
                   Download Blank Confirmation Slip (PDF) <ArrowRight className="ml-2 h-4 w-4" />
                 </a>
               </Button>

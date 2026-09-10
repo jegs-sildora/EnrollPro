@@ -10,7 +10,8 @@ import {
   Clock,
   AlertTriangle,
   Mars,
-  Venus
+  Venus,
+  FileCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "@/shared/api/axiosInstance";
@@ -487,6 +488,41 @@ export function VerificationWorkspace() {
     }
   };
 
+  const updateDeficientDocuments = async () => {
+    if (!selectedAppId || !selectedApp) return;
+
+    setProcessing(true);
+    try {
+      await api.patch(`/enrollment/${selectedAppId}/complete-requirements`, {
+        sf9Verified,
+        psaVerified,
+      });
+
+      const allVerified = sf9Verified && psaVerified;
+      sileo.success({
+        title: allVerified ? "Requirements Completed" : "Documents Updated",
+        description: allVerified
+          ? "All requirements verified. Learner is no longer deficient."
+          : "Document checklist has been updated.",
+      });
+      setSelectedAppId(null);
+      setSf9Verified(false);
+      setPsaVerified(false);
+      void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+    } catch (error: unknown) {
+      sileo.error({
+        title: "Update Failed",
+        description: getApiErrorMessage(
+          error,
+          "An error occurred while updating the document checklist.",
+        ),
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   if (isLoading) {
     return <TwoPanelSkeleton />;
   }
@@ -874,14 +910,16 @@ export function VerificationWorkspace() {
 
                       {/* Section 4: Required Documents Verification (Checklist) */}
                       <div className="w-full p-4 sm:p-6 border-t border-border/50 flex flex-col gap-5">
-                        <h4 className="text-sm font-bold text-primary uppercase tracking-tight">Required Documents</h4>
+                        <h4 className="flex items-center gap-2 text-base  font-bold text-primary uppercase tracking-tight">
+                          Required Documents
+                        </h4>
 
                         <div className="flex items-start space-x-3">
                           <Checkbox
                             id="sf9-checkbox"
                             checked={sf9Verified}
                             onCheckedChange={(checked) => setSf9Verified(checked === true)}
-                            disabled={isHistoricalReadOnly || activeTab !== "INCOMPLETE"}
+                            disabled={isHistoricalReadOnly || (activeTab !== "INCOMPLETE" && activeTab !== "PENDING")}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -899,7 +937,7 @@ export function VerificationWorkspace() {
                             id="psa-checkbox"
                             checked={psaVerified}
                             onCheckedChange={(checked) => setPsaVerified(checked === true)}
-                            disabled={isHistoricalReadOnly || activeTab !== "INCOMPLETE"}
+                            disabled={isHistoricalReadOnly || (activeTab !== "INCOMPLETE" && activeTab !== "PENDING")}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -950,7 +988,7 @@ export function VerificationWorkspace() {
                     {selectedApp.status === "READY_FOR_SECTIONING" && (
                       <Button
                         variant="ghost"
-                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200 shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
+                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/15 hover:text-primary/80 border border-primary shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
                         onClick={() => setRevertModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
@@ -961,7 +999,14 @@ export function VerificationWorkspace() {
                       <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-[65%]" : "w-1/2"}>
                         {!(sf9Verified && psaVerified) ? (
                           <Button
-                            onClick={() => setConfirmModalState("TEMPORARY")}
+                            onClick={() => {
+                              // For already-enrolled deficient learners: save directly without confirm modal
+                              if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED") {
+                                void updateDeficientDocuments();
+                              } else {
+                                setConfirmModalState("TEMPORARY");
+                              }
+                            }}
                             disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                             variant="ghost"
                             className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
@@ -972,7 +1017,14 @@ export function VerificationWorkspace() {
                           </Button>
                         ) : (
                           <Button
-                            onClick={() => setConfirmModalState("OFFICIAL")}
+                            onClick={() => {
+                              // For already-enrolled deficient learners: complete requirements directly
+                              if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED") {
+                                void updateDeficientDocuments();
+                              } else {
+                                setConfirmModalState("OFFICIAL");
+                              }
+                            }}
                             disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                             className={cn(
                               "w-full h-14 text-sm sm:text-base leading-tight font-bold uppercase transition-all shadow-none overflow-hidden",

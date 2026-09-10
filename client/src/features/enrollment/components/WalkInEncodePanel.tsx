@@ -33,7 +33,7 @@ import {
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
 
-import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X, Mars, Venus } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X, Mars, Venus, FileCheck } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
@@ -848,7 +848,10 @@ export function WalkInEncodePanel() {
 
                   {/* CHECKLIST */}
                   <div className="w-full p-4 sm:p-5 border border-border rounded-xl flex flex-col gap-5 bg-card shadow-sm">
-                    <h4 className="text-sm font-bold text-primary uppercase tracking-tight">Required Documents</h4>
+                    <h4 className="flex items-center gap-2 text-base font-bold  uppercase tracking-wide">
+                      <FileCheck className="w-4 h-4 text-primary" />
+                      Required Documents
+                    </h4>
 
                     <FormField
                       control={form.control}
