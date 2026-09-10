@@ -613,7 +613,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                 <Button
                   variant="outline"
                   disabled={exportingSf1 || previewingSf1 || downloadingSf1Template || loading}
-                  className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-primary hover:text-primary-foreground shadow-sm"
+                  className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-primary hover:text-primary-foreground shadow-sm rounded-md"
                 >
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   SF1 Roster
@@ -660,8 +660,8 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           {loading ? (
             <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : masterlist.length === 0 ? (
-            <div className="flex py-16 w-full items-center justify-center">
-              <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+            <div className="flex py-38 w-full items-center justify-center">
+              <Card className="w-full border-none shadow-none">
                 <CardContent className="pt-10 pb-10 text-center space-y-3">
                   <div className="mx-auto w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center mb-2">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -670,7 +670,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                     <p className="font-bold text-foreground text-lg">
                       No Enrolled Learners
                     </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                    <p className="text-sm text-foreground leading-relaxed px-4">
                       This class section has no enrolled learners yet.
                     </p>
                   </div>

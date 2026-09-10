@@ -972,6 +972,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     systemPhase,
     isSwitchingSchoolYear,
     switchingToSchoolYearLabel,
+    initialized,
   } = useSettingsStore();
   const { width } = useWindowSize();
   const accentHsl = selectedAccentHsl;
@@ -1017,7 +1018,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     // Walk-in encoder is a direct mutation flow ΓÇö intentional bypass
     location.pathname === "/section-assignment/walk-in";
   const shouldShowNoSchoolYearState =
-    !isSchoolYearBypassRoute && !selectedSchoolYearId;
+    initialized && !isSchoolYearBypassRoute && !selectedSchoolYearId;
 
   const toastTheme = accentForeground === "0 0% 100%" ? "light" : "dark";
   const toastPosition = width < 768 ? "top-center" : "top-right";

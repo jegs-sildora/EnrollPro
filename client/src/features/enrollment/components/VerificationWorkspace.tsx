@@ -871,7 +871,8 @@ export function VerificationWorkspace() {
                         </VerificationRow>
                       )}
                       <VerificationRow label="Official Program">
-                        {selectedApp.admissionChannel === "F2F" ? (
+                        {selectedApp.admissionChannel === "F2F" ||
+                        (selectedApp.status !== "PENDING_VERIFICATION" && selectedApp.status !== "FOR_REVISION") ? (
                           <span className="font-bold text-foreground">
                             {SCP_LABELS[assignedProgram] || assignedProgram.replace(/_/g, " ")}
                           </span>
@@ -1035,12 +1036,10 @@ export function VerificationWorkspace() {
                           >
                             {processing ? (
                               <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Saving...
                               </>
                             ) : (
                               <>
-                                <CheckCircle2 className="w-5 h-5 mr-2" />
                                 {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Officially Enroll" : "Complete Requirements"}
                               </>
                             )}

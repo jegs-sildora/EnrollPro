@@ -2,21 +2,17 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
   SheetTitle,
-  SheetFooter,
+  SheetDescription,
 } from "@/shared/ui/sheet";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
   Search,
-  UserPlus,
   Loader2,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
-  X,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { Badge } from "@/shared/ui/badge";
@@ -185,40 +181,27 @@ export default function InsertLateEnrolleeDrawer({
   };
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        showClose={false}
-        className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl flex flex-col h-full bg-background">
-        <SheetHeader className="px-6 py-4 bg-primary shrink-0 border-b border-primary/20 flex flex-row items-center justify-between space-y-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary-foreground/10 rounded-lg text-primary-foreground border border-primary-foreground/20">
-              <UserPlus className="h-5 w-5" />
-            </div>
-            <div>
-              <SheetTitle className="text-lg font-bold uppercase text-primary-foreground">
-                Insert Late Enrollee
-              </SheetTitle>
-              <SheetDescription className="text-base text-primary-foreground uppercase font-bold mt-0.5">
-                {gradeLevelName} — {sectionName}
-              </SheetDescription>
-            </div>
+        className="p-0 overflow-hidden border-none shadow-2xl flex flex-col h-full bg-background w-full sm:w-[600px] lg:w-[800px] max-w-none"
+      >
+        {/* Header — exactly matches StudentDetailPanel */}
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold relative">
+          <div>
+            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-bold uppercase flex items-center gap-2">
+              Insert Late Enrollee
+            </SheetTitle>
+            <SheetDescription className="text-sm text-primary-foreground/80 font-semibold uppercase">
+              {gradeLevelName} — {sectionName}
+            </SheetDescription>
           </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={closeDrawer}
-            className="size-9 shrink-0 rounded-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            aria-label="Close insert late enrollee panel">
-            <X className="size-4" />
-          </Button>
-        </SheetHeader>
+        </div>
 
-        <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background">
+        {/* Scrollable Content — matches StudentDetailPanel content area */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
           {!selectedLearner ? (
             <div className="space-y-4">
+              {/* Search Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                 <Input
@@ -230,158 +213,187 @@ export default function InsertLateEnrolleeDrawer({
                 />
               </div>
 
-              <div className="border border-border rounded-xl overflow-hidden shadow-sm max-h-[300px] overflow-y-auto bg-card">
-                {loading ? (
-                  <div className="space-y-3 p-4">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <div key={index} className="flex items-center justify-between gap-4 rounded-lg border p-4">
-                        <div className="space-y-2">
-                          <Skeleton className="h-5 w-56" />
-                          <Skeleton className="h-4 w-36" />
+              {/* Learner Pool List */}
+              <div className="bg-[hsl(var(--muted))] rounded-md border overflow-hidden">
+                <div className="max-h-[calc(100vh-22rem)] overflow-y-auto">
+                  {loading ? (
+                    <div className="space-y-0 divide-y divide-border/50">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index} className="flex items-center justify-between gap-4 p-4">
+                          <div className="space-y-2">
+                            <Skeleton className="h-5 w-56" />
+                            <Skeleton className="h-4 w-36" />
+                          </div>
+                          <Skeleton className="h-6 w-28 rounded-full" />
                         </div>
-                        <Skeleton className="h-9 w-28 rounded-lg" />
+                      ))}
+                    </div>
+                  ) : isSearching ? (
+                    <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
+                      <Search className="h-10 w-10 animate-pulse text-foreground/40" />
+                      <div className="space-y-1">
+                        <p className="text-lg font-bold text-foreground">
+                          Searching...
+                        </p>
+                        <p className="text-base leading-tight font-bold text-foreground/60">
+                          Scanning unsectioned records...
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : isSearching ? (
-                  <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
-                    <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                    <div className="space-y-1">
-                      <p className="text-lg font-bold text-slate-500">
-                        Searching...
+                    </div>
+                  ) : filteredPool.length === 0 ? (
+                    <div className="py-16 flex flex-col items-center justify-center text-center px-6">
+                      <AlertCircle className="h-8 w-8 text-foreground/30 mb-2" />
+                      <p className="text-base leading-tight font-bold text-foreground">
+                        No unsectioned learners found
                       </p>
-                      <p className="text-base leading-tight font-bold text-slate-400">
-                        Scanning unsectioned records...
+                      <p className="text-base text-foreground/60 mt-1 max-w-[240px] font-semibold">
+                        Ensure learners have passed verification and are marked
+                        "Ready for Sectioning".
                       </p>
                     </div>
-                  </div>
-                ) : filteredPool.length === 0 ? (
-                  <div className="py-16 flex flex-col items-center justify-center text-center px-6">
-                    <AlertCircle className="h-8 w-8 text-foreground/30 mb-2" />
-                    <p className="text-base leading-tight font-bold text-foreground">
-                      No unsectioned learners found
-                    </p>
-                    <p className="text-base text-foreground/60 mt-1 max-w-[240px]">
-                      Ensure learners have passed verification and are marked
-                      "Ready for Sectioning".
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border/50">
-                    {filteredPool.map((learner) => {
-                      const isTypeMismatch =
-                        isScpSection && learner.applicantType !== programType;
+                  ) : (
+                    <div className="divide-y divide-border/50">
+                      {filteredPool.map((learner) => {
+                        const isTypeMismatch =
+                          isScpSection && learner.applicantType !== programType;
 
-                      return (
-                        <button
-                          key={learner.id}
-                          disabled={isTypeMismatch}
-                          onClick={() => setSelectedLearner(learner)}
-                          className={cn(
-                            "w-full px-4 py-3 flex items-center justify-between transition-colors text-left group",
-                            isTypeMismatch
-                              ? "opacity-50 grayscale cursor-not-allowed bg-muted/10"
-                              : "hover:bg-muted/50 cursor-pointer",
-                          )}>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-base leading-tight uppercase group-hover:text-primary transition-colors">
-                              {learner.lastName}, {learner.firstName}
-                            </span>
-                            <span className="text-base font-bold text-foreground ">
-                              LRN: {learner.lrn || "PENDING"}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            {learner.promotionGenAve != null ? (
-                              <span className="text-sm font-bold uppercase text-foreground/70">
-                                GEN AVE: {learner.promotionGenAve.toFixed(2)}
-                              </span>
-                            ) : (
-                              <span className="text-sm font-bold uppercase text-foreground/40">
-                                GEN AVE: —
-                              </span>
+                        return (
+                          <button
+                            key={learner.id}
+                            disabled={isTypeMismatch}
+                            onClick={() => setSelectedLearner(learner)}
+                            className={cn(
+                              "w-full px-4 py-3 flex items-center justify-between transition-colors text-left group",
+                              isTypeMismatch
+                                ? "opacity-50 grayscale cursor-not-allowed bg-muted/10"
+                                : "hover:bg-primary/5 cursor-pointer",
                             )}
-                            <div className="flex items-center gap-2">
-                              {isTypeMismatch ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-sm font-bold uppercase border-red-200 text-red-600 bg-red-50">
-                                  Program Mismatch
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-sm font-bold uppercase">
-                                  {learner.applicantType?.replace(/_/g, " ")}
-                                </Badge>
-                              )}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-bold text-base leading-tight uppercase group-hover:text-primary transition-colors">
+                                {learner.lastName}, {learner.firstName}
+                              </span>
+                              <span className="text-base font-bold text-foreground/70">
+                                LRN: {learner.lrn || "PENDING"}
+                              </span>
                             </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                            <div className="flex flex-col items-end gap-1">
+                              {learner.promotionGenAve != null ? (
+                                <span className="text-sm font-bold uppercase text-foreground/70">
+                                  GEN AVE: {learner.promotionGenAve.toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-sm font-bold uppercase text-foreground/40">
+                                  GEN AVE: —
+                                </span>
+                              )}
+                              <div className="flex items-center gap-2">
+                                {isTypeMismatch ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-sm font-bold uppercase border-red-200 text-red-600 bg-red-50"
+                                  >
+                                    Program Mismatch
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-sm font-bold uppercase"
+                                  >
+                                    {learner.applicantType?.replace(/_/g, " ")}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border-2 border-primary/20">
-                    <span className="text-lg font-bold uppercase">
-                      {selectedLearner.lastName[0]}
+            <div className="space-y-4">
+              {/* Selected Learner Card — matches StudentDetailPanel summary block style */}
+              <div className="bg-[hsl(var(--muted))] p-4 rounded-md border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground border-2 border-primary/20 shrink-0">
+                      <span className="text-lg font-bold uppercase">
+                        {selectedLearner.lastName[0]}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base uppercase leading-tight">
+                        {selectedLearner.lastName}, {selectedLearner.firstName}
+                      </h3>
+                      <p className="text-sm font-bold text-foreground/70 uppercase mt-0.5">
+                        LRN: {selectedLearner.lrn || "PENDING LRN"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedLearner(null)}
+                    className="text-sm font-bold uppercase text-foreground hover:text-foreground hover:bg-muted"
+                  >
+                    Change
+                  </Button>
+                </div>
+              </div>
+
+              {/* Section Info — matches StudentDetailPanel info rows */}
+              <div className="bg-[hsl(var(--muted))] rounded-md border divide-y divide-border">
+                <div className="grid grid-cols-[30%_70%]">
+                  <div className="bg-muted text-foreground font-bold text-sm uppercase px-4 py-3 border-r border-border flex items-center">
+                    Target Section
+                  </div>
+                  <div className="bg-card text-sm font-bold text-foreground px-4 py-3 flex flex-col">
+                    <span className="uppercase">{sectionName}</span>
+                    <span className="text-foreground/70 font-semibold">{gradeLevelName}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-[30%_70%]">
+                  <div className="bg-muted text-foreground font-bold text-sm uppercase px-4 py-3 border-r border-border flex items-center">
+                    Capacity
+                  </div>
+                  <div className="bg-card text-sm font-bold text-foreground px-4 py-3 flex flex-col">
+                    <span>{enrolledCount} / {maxCapacity} enrolled</span>
+                    <span className="text-emerald-600 font-semibold">
+                      {maxCapacity - enrolledCount} available slot{maxCapacity - enrolledCount !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg uppercase leading-none">
-                      {selectedLearner.lastName}, {selectedLearner.firstName}
-                    </h3>
-                    <p className="text-base font-bold text-foreground uppercase  mt-1">
-                      LRN: {selectedLearner.lrn || "PENDING LRN"}
+                </div>
+                <div className="grid grid-cols-[30%_70%]">
+                  <div className="bg-muted text-foreground font-bold text-sm uppercase px-4 py-3 border-r border-border flex items-center">
+                    Enroll Date
+                  </div>
+                  <div className="bg-card px-4 py-3">
+                    <input
+                      type="date"
+                      value={officialEnrollmentDate}
+                      max={format(new Date(), "yyyy-MM-dd")}
+                      onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm leading-tight font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    <p className="text-xs text-amber-700 font-bold mt-1">
+                      Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedLearner(null)}
-                  className="text-base font-bold uppercase text-foreground hover:text-foreground">
-                  Change
-                </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-base font-bold text-foreground uppercase  mb-1">
-                    Target Section
-                  </p>
-                  <p className="font-bold text-base leading-tight uppercase">{sectionName}</p>
-                  <p className="text-base font-bold text-foreground mt-0.5">
-                    {gradeLevelName}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-base font-bold text-foreground uppercase  mb-1">
-                    Section Status
-                  </p>
-                  <p className="font-bold text-base leading-tight uppercase">
-                    {enrolledCount} / {maxCapacity}
-                  </p>
-                  <p className="text-base font-bold text-emerald-600 mt-0.5">
-                    Available Slots: {maxCapacity - enrolledCount}
-                  </p>
-                </div>
-              </div>
-
+              {/* Warnings */}
               {isAttendanceAtRisk && (
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+                <div className="flex items-start gap-3 p-4 rounded-md bg-red-50 border border-red-200">
                   <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="text-base font-bold text-red-900 uppercase">
+                    <p className="text-sm font-bold text-red-900 uppercase">
                       Attendance Risk
                     </p>
-                    <p className="text-sm leading-relaxed text-red-800 font-bold">
+                    <p className="text-sm leading-relaxed text-red-800 font-semibold">
                       {elapsedSchoolDays} school days have already passed.
                       Learner may struggle to meet the 80% DepEd attendance
                       requirement. Ensure catch-up interventions are planned.
@@ -390,59 +402,45 @@ export default function InsertLateEnrolleeDrawer({
                 </div>
               )}
 
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-3 p-4 rounded-md bg-amber-50 border border-amber-200">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-base font-bold text-amber-900 uppercase">
+                  <p className="text-sm font-bold text-amber-900 uppercase">
                     Inline Slotting Protection
                   </p>
-                  <p className="text-sm leading-relaxed text-amber-800 font-bold">
+                  <p className="text-sm leading-relaxed text-amber-800 font-semibold">
                     This action will bypass the Batch Algorithm. The learner
                     will be added directly to the SF1 masterlist and synced to the
                     grading microservice.
                   </p>
                 </div>
               </div>
-
-              {/* Official Enrollment Date — required for SF10/dateSectioned */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold uppercase text-foreground">
-                  Official Enrollment Date *
-                </label>
-                <input
-                  type="date"
-                  value={officialEnrollmentDate}
-                  max={format(new Date(), "yyyy-MM-dd")}
-                  onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base leading-tight font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <p className="text-sm text-amber-700 font-bold">
-                  Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
-                </p>
-              </div>
             </div>
           )}
         </div>
 
-        <SheetFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2 shrink-0">
+        {/* Footer — matches StudentDetailPanel footer style */}
+        <div className="px-4 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2 shrink-0">
           <Button
             variant="outline"
             onClick={closeDrawer}
-            className="font-bold uppercase text-sm h-10 px-4">
+            className="font-bold uppercase text-sm h-10 px-4"
+          >
             Cancel
           </Button>
           <Button
             disabled={!selectedLearner || isSubmitting}
             onClick={handleSlotting}
-            className="font-bold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
+            className="font-bold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm"
+          >
             {isSubmitting ? (
-              <Loader2 className="h-4 w-4  mr-2" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <CheckCircle2 className="h-4 w-4 mr-2" />
             )}
             Confirm & Update SF1
           </Button>
-        </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   );
