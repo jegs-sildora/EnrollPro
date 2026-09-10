@@ -69,6 +69,15 @@ interface ExternalPasswordChangeResponse {
   returnTo: string | null;
 }
 
+interface LearnerPasswordChangeResponse {
+  token: string;
+  requiresPasswordReset: false;
+  learner: {
+    id: number;
+    lrn: string;
+  };
+}
+
 function getSafeBrowserReturnUrl(value: string | null): URL | null {
   if (!value) return null;
   try {
@@ -357,7 +366,10 @@ export default function ChangePassword() {
           return;
         }
         const learnerApi = getLearnerApi(token);
-        await learnerApi.post("/learner/change-password", { newPassword });
+        const response = await learnerApi.post<LearnerPasswordChangeResponse>(
+          "/learner/change-password",
+          { newPassword },
+        );
 
         const lu = user as { lrn: string; middleName: string | null; schoolName: string; schoolAcronym: string; gradeLevelName: string | null; sectionName: string | null };
         learnerAuth.setAuth(
@@ -372,7 +384,7 @@ export default function ChangePassword() {
             gradeLevelName: lu.gradeLevelName ?? null,
             sectionName: lu.sectionName ?? null,
           },
-          token,
+          response.data.token,
         );
 
         sileo.success({
