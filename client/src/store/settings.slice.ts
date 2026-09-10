@@ -75,6 +75,7 @@ export interface SettingsState {
     bosyGradeId: string;
     sectioningGradeId: string;
     eosyTab: string;
+    verificationTab: string;
   };
   updateUiPreference: (key: keyof SettingsState["uiPreferences"], value: string) => void;
   setSettings: (settings: Partial<SettingsState>) => void;
@@ -151,6 +152,7 @@ export const useSettingsStore = create<SettingsState>()(
         bosyGradeId: "ALL",
         sectioningGradeId: "",
         eosyTab: "summary",
+        verificationTab: "PENDING",
       },
       updateUiPreference: (key, value) => 
         set((state) => ({

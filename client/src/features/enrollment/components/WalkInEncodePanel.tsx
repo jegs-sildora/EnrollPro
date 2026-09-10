@@ -34,7 +34,7 @@ import {
 } from "@/shared/hooks/useUnsavedChanges";
 
 import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X, Mars, Venus } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
@@ -570,7 +570,7 @@ export function WalkInEncodePanel() {
                                     className={cn(
                                       "flex items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                                       field.value === gl.id
-                                        ? "border-primary bg-primary/5 text-primary"
+                                        ? getGradeLevelBadgeStyles(gl.name) + " border-current"
                                         : "border-border hover:bg-muted/50 text-foreground"
                                     )}>
                                     {gl.name}
@@ -847,43 +847,58 @@ export function WalkInEncodePanel() {
                   </div>
 
                   {/* CHECKLIST */}
-                  <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
-                      <span className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        Document Checklist
-                      </span>
-                    </div>
-                    <div className="px-5 pb-5 pt-4">
-                      <p className="text-base font-bold  text-amber-700 mb-4 mt-2">Leave unchecked if missing. Learner will be temporarily enrolled.</p>
-                      <div className="space-y-2">
+                  <div className="w-full p-4 sm:p-5 border border-border rounded-xl flex flex-col gap-5 bg-card shadow-sm">
+                    <h4 className="text-sm font-bold text-primary uppercase tracking-tight">Required Documents</h4>
 
-                        <FormField
-                          control={form.control}
-                          name="hasSf9"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-amber-100 rounded-lg transition-colors">
-                              <FormControl>
-                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <Label className="font-bold cursor-pointer">SF9 (Report Card) Submitted</Label>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="hasPsa"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-amber-100 rounded-lg transition-colors">
-                              <FormControl>
-                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <Label className="font-bold cursor-pointer">PSA Birth Certificate Submitted</Label>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="hasSf9"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              id="sf9-checkbox"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+                            />
+                          </FormControl>
+                          <div className="flex flex-col gap-0.5">
+                            <label htmlFor="sf9-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                              Physical SF9 Verified
+                            </label>
+                            <span className="text-sm text-foreground leading-snug">
+                              Original report card signed by previous school principal.
+                            </span>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="hasPsa"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              id="psa-checkbox"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+                            />
+                          </FormControl>
+                          <div className="flex flex-col gap-0.5">
+                            <label htmlFor="psa-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                              PSA Birth Certificate Verified
+                            </label>
+                            <span className="text-sm text-foreground leading-snug">
+                              Clear copy of Philippine Statistics Authority issued certificate.
+                            </span>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
               </div>

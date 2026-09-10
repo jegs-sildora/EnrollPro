@@ -200,7 +200,7 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
                   </span>
                 </div>
               </td>
-              <td className="p-3 text-center">
+              <td className="p-1 text-center">
                 <Badge className={cn(
                   "text-sm uppercase font-bold",
                   l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
@@ -1509,7 +1509,7 @@ export function SectioningWorkspace() {
                                         </span>
                                         <Badge
                                           className={cn(
-                                            "px-2",
+                                            "p-1",
                                             l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                           )}>
                                           {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}

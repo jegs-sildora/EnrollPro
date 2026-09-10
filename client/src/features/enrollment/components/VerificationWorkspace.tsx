@@ -8,7 +8,9 @@ import {
   CheckCircle2,
   Loader2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Mars,
+  Venus
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "@/shared/api/axiosInstance";
@@ -20,6 +22,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { sileo } from "sileo";
+import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
@@ -226,8 +229,8 @@ export function VerificationWorkspace() {
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
   type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
-  const [activeTab, setActiveTab] =
-    useState<VerificationTab>("PENDING");
+  const activeTab = useSettingsStore((s) => s.uiPreferences.verificationTab) as VerificationTab;
+  const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
 
   const {
     data: pendingVerifications = [],
@@ -287,6 +290,13 @@ export function VerificationWorkspace() {
   const selectedApp = useMemo(() => {
     return pendingVerifications.find(app => app.id === selectedAppId);
   }, [pendingVerifications, selectedAppId]);
+
+  const hasChecklistModifications = useMemo(() => {
+    if (!selectedApp) return false;
+    const initialSf9 = selectedApp.isTemporarilyEnrolled ? !selectedApp.isMissingSf9 : true;
+    const initialPsa = selectedApp.isTemporarilyEnrolled ? (selectedApp.learner?.hasPsaBirthCertificate === true) : true;
+    return sf9Verified !== initialSf9 || psaVerified !== initialPsa;
+  }, [selectedApp, sf9Verified, psaVerified]);
 
   useEffect(() => {
     if (selectedApp) {
@@ -373,6 +383,21 @@ export function VerificationWorkspace() {
       }
     }
   }, [activeSearchQuery, filteredVerifications, selectedAppId]);
+
+  // If the user is on the Deficient tab and it becomes empty, redirect to Enrolled tab
+  useEffect(() => {
+    if (isLoading) return;
+    if (activeTab === "INCOMPLETE") {
+      const deficientCount = pendingVerifications.filter((app) => {
+        const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+        return app.status === "FOR_REVISION" || ((app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && hasMissingDocs);
+      }).length;
+      if (deficientCount === 0) {
+        setActiveTab("PENDING");
+        setSelectedAppId(null);
+      }
+    }
+  }, [pendingVerifications, activeTab, isLoading]);
 
   const getApiErrorMessage = (error: unknown, fallback: string): string => {
     if (isAxiosError<ApiErrorResponse>(error)) {
@@ -529,6 +554,11 @@ export function VerificationWorkspace() {
           <div className="w-[500px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
             <div className="border-b border-border bg-white shrink-0 flex flex-col w-full">
               {(() => {
+                const deficientCount = pendingVerifications.filter((app) => {
+                  const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
+                  return app.status === "FOR_REVISION" || ((app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && hasMissingDocs);
+                }).length;
+
                 const metrics = [
                   {
                     key: "PENDING",
@@ -542,14 +572,11 @@ export function VerificationWorkspace() {
                       return app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED";
                     }).length,
                   },
-                  {
+                  ...(deficientCount > 0 ? [{
                     key: "INCOMPLETE",
                     title: "Deficient",
-                    value: pendingVerifications.filter((app) => {
-                      const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
-                      return app.status === "FOR_REVISION" || ((app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED") && hasMissingDocs);
-                    }).length
-                  },
+                    value: deficientCount
+                  }] : []),
                   {
                     key: "CANCELLED",
                     title: "Cancelled",
@@ -558,14 +585,14 @@ export function VerificationWorkspace() {
                 ] as const;
 
                 return (
-                  <div className="grid grid-cols-4 h-10 w-full divide-x divide-gray-200">
+                  <div className={cn("grid h-10 w-full divide-x divide-gray-200", deficientCount > 0 ? "grid-cols-4" : "grid-cols-3")}>
                     {metrics.map((m) => {
                       const isActive = activeTab === m.key;
                       return (
                         <button
                           key={m.key}
                           onClick={() => {
-                            setActiveTab(m.key);
+                            setActiveTab(m.key as VerificationTab);
                             setSelectedAppId(null);
                           }}
                           className={cn(
@@ -682,9 +709,9 @@ export function VerificationWorkspace() {
                           {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                         </h2>
                         {selectedApp.learner.sex === "MALE" ? (
-                          <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">♂</Badge>
+                          <Badge variant="outline" className="border-blue-600/30 text-blue-600 bg-blue-50 font-bold text-base px-1 py-1"><Mars className="w-4 h-4" /></Badge>
                         ) : (
-                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-base px-2 py-0">♀</Badge>
+                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 font-bold text-base px-1 py-1"><Venus className="w-4 h-4" /></Badge>
                         )}
                       </div>
                       <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
@@ -854,7 +881,7 @@ export function VerificationWorkspace() {
                             id="sf9-checkbox"
                             checked={sf9Verified}
                             onCheckedChange={(checked) => setSf9Verified(checked === true)}
-                            disabled={isHistoricalReadOnly}
+                            disabled={isHistoricalReadOnly || activeTab !== "INCOMPLETE"}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -872,7 +899,7 @@ export function VerificationWorkspace() {
                             id="psa-checkbox"
                             checked={psaVerified}
                             onCheckedChange={(checked) => setPsaVerified(checked === true)}
-                            disabled={isHistoricalReadOnly}
+                            disabled={isHistoricalReadOnly || activeTab !== "INCOMPLETE"}
                             className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -893,15 +920,15 @@ export function VerificationWorkspace() {
                 {selectedApp.status === "WITHDRAWN" ? (
                   <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
                     <Button
-                      variant="destructive"
-                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase"
+                      variant="ghost"
+                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
                       onClick={() => setDeleteModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
                       Delete Application
                     </Button>
                     <Button
-                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
+                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-primary text-white"
                       onClick={() => setRestoreModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
@@ -923,50 +950,52 @@ export function VerificationWorkspace() {
                     {selectedApp.status === "READY_FOR_SECTIONING" && (
                       <Button
                         variant="ghost"
-                        className="h-14 w-1/2 text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200 shrink-0"
+                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200 shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
                         onClick={() => setRevertModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
-                        Revert to 'For Review'
+                        Unenroll Learner
                       </Button>
                     )}
-                    <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-[65%]" : selectedApp.status === "READY_FOR_SECTIONING" ? "w-1/2" : "w-full"}>
-                      {!(sf9Verified && psaVerified) ? (
-                        <Button
-                          onClick={() => setConfirmModalState("TEMPORARY")}
-                          disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                          variant="outline"
-                          className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
-                        >
-                          <span className="truncate">
-                            {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Enroll as Temporary (Missing Docs)" : "Save Missing Documents"}
-                          </span>
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => setConfirmModalState("OFFICIAL")}
-                          disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                          className={cn(
-                            "w-full h-14 text-sm sm:text-base leading-tight font-bold uppercase transition-all shadow-none overflow-hidden",
-                            !duplicateInfo
-                              ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                              : "bg text-foreground hover:bg opacity-50"
-                          )}
-                        >
-                          {processing ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-5 h-5 mr-2" />
-                              {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Officially Enroll" : "Complete Requirements"}
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                    {(selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" || hasChecklistModifications) && (
+                      <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-[65%]" : "w-1/2"}>
+                        {!(sf9Verified && psaVerified) ? (
+                          <Button
+                            onClick={() => setConfirmModalState("TEMPORARY")}
+                            disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                            variant="ghost"
+                            className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
+                          >
+                            <span className="truncate">
+                              {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Enroll as Temporary (Missing Docs)" : "Update Changes"}
+                            </span>
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => setConfirmModalState("OFFICIAL")}
+                            disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                            className={cn(
+                              "w-full h-14 text-sm sm:text-base leading-tight font-bold uppercase transition-all shadow-none overflow-hidden",
+                              !duplicateInfo
+                                ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                                : "bg text-foreground hover:bg opacity-50"
+                            )}
+                          >
+                            {processing ? (
+                              <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-5 h-5 mr-2" />
+                                {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Officially Enroll" : "Complete Requirements"}
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
