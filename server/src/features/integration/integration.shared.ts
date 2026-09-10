@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { ApplicationStatus, Prisma } from "../../generated/prisma/index.js";
+import type { ApplicationStatus, Prisma, TermFormat } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 
@@ -38,7 +38,8 @@ export type SchoolYearScope = {
   schoolName: string | null;
   schoolYearId: number;
   schoolYearLabel: string;
-  termFormat: string;
+  isActiveSchoolYear: boolean;
+  termFormat: TermFormat;
   term1Start: Date | null;
   term1End: Date | null;
   term2Start: Date | null;
@@ -47,7 +48,18 @@ export type SchoolYearScope = {
   term3End: Date | null;
   term4Start: Date | null;
   term4End: Date | null;
+  term1Label: string;
+  term2Label: string;
+  term3Label: string;
+  term4Label: string;
 };
+
+export type SchoolYearScopeErrorCode =
+  | "SCHOOL_YEAR_ID_INVALID"
+  | "ACTIVE_SCHOOL_YEAR_UNINITIALIZED"
+  | "ACTIVE_SCHOOL_YEAR_CONFLICT"
+  | "SCHOOL_SETTINGS_UNAVAILABLE"
+  | "SCHOOL_YEAR_NOT_FOUND";
 
 export function parsePositiveInt(value: unknown): number | null {
   const normalized = Array.isArray(value) ? value[0] : value;
@@ -89,16 +101,27 @@ export function buildTeacherName(teacher: {
 
 export async function resolveSchoolYearScope(
   req: Request,
-): Promise<{ scope: SchoolYearScope } | { status: number; message: string }> {
+): Promise<
+  | { scope: SchoolYearScope }
+  | { status: number; code: SchoolYearScopeErrorCode; message: string }
+> {
   const requestedSchoolYearId = parsePositiveInt(req.query.schoolYearId);
   if (req.query.schoolYearId !== undefined && requestedSchoolYearId === null) {
-    return { status: 400, message: "schoolYearId must be a positive integer" };
+    return {
+      status: 400,
+      code: "SCHOOL_YEAR_ID_INVALID",
+      message: "schoolYearId must be a positive integer",
+    };
   }
 
   const activeResolution = await resolveActiveSchoolYearState()
   if (activeResolution.state !== "VALID") {
     return {
       status: 409,
+      code:
+        activeResolution.state === "INVALID"
+          ? activeResolution.code
+          : "ACTIVE_SCHOOL_YEAR_UNINITIALIZED",
       message:
         activeResolution.state === "INVALID"
           ? activeResolution.message
@@ -114,7 +137,11 @@ export async function resolveSchoolYearScope(
     },
   })
   if (!setting) {
-    return { status: 409, message: "The active school settings record is unavailable." }
+    return {
+      status: 409,
+      code: "SCHOOL_SETTINGS_UNAVAILABLE",
+      message: "The active school settings record is unavailable.",
+    }
   }
 
   const configuredSchoolYearId =
@@ -128,11 +155,17 @@ export async function resolveSchoolYearScope(
       term2Start: true, term2End: true,
       term3Start: true, term3End: true,
       term4Start: true, term4End: true,
+      term1Label: true, term2Label: true,
+      term3Label: true, term4Label: true,
     },
   });
 
   if (!schoolYear) {
-    return { status: 404, message: "School year not found" };
+    return {
+      status: 404,
+      code: "SCHOOL_YEAR_NOT_FOUND",
+      message: "School year not found",
+    };
   }
 
   return {
@@ -141,6 +174,7 @@ export async function resolveSchoolYearScope(
       schoolName: setting.schoolName,
       schoolYearId: schoolYear.id,
       schoolYearLabel: schoolYear.yearLabel,
+      isActiveSchoolYear: schoolYear.id === activeResolution.active.schoolYearId,
       termFormat: schoolYear.termFormat,
       term1Start: schoolYear.term1Start,
       term1End: schoolYear.term1End,
@@ -150,6 +184,10 @@ export async function resolveSchoolYearScope(
       term3End: schoolYear.term3End,
       term4Start: schoolYear.term4Start,
       term4End: schoolYear.term4End,
+      term1Label: schoolYear.term1Label,
+      term2Label: schoolYear.term2Label,
+      term3Label: schoolYear.term3Label,
+      term4Label: schoolYear.term4Label,
     },
   };
 }

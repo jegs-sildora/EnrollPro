@@ -33,6 +33,7 @@ EnrollPro does not own:
 
 - SMART grades or attendance
 - ATLAS schedule authoring
+- SMART, ATLAS, AIMS, and MRF consume EnrollPro's ordered term contract. They do not synthesize term identities, labels, or active-term state. See [Authoritative Term Integration](ACTIVE-TERM-INTEGRATION.md).
 - AIMS intervention records
 - MRF maintenance or waste records
 - No Early Registration, reading assessment, enrollment listing, hardware, or Internet of Things workflows

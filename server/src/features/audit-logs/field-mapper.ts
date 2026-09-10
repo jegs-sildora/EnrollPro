@@ -22,6 +22,10 @@ export const DEPED_FIELD_MAP: Record<string, string> = {
   term3End: "Term 3 End Date",
   term4Start: "Term 4 Start Date",
   term4End: "Term 4 End Date",
+  term1Label: "Term 1 Display Label",
+  term2Label: "Term 2 Display Label",
+  term3Label: "Term 3 Display Label",
+  term4Label: "Term 4 Display Label",
 
   // Settings
   systemName: "System Name",

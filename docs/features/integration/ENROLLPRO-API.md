@@ -439,8 +439,8 @@ Existing ATLAS, SMART, and AIMS endpoints are now key-protected for machine-to-m
 | Method | Path | Auth | School-year scope | Purpose |
 | --- | --- | --- | --- | --- |
 | GET | `/health` | Public | None | EnrollPro DB plus ATLAS, AIMS, and SMART connectivity |
-| GET | `/school-year` | Integration key | Optional `schoolYearId` | Resolve school-year ID and label (defaults to the environment's `SchoolSetting.activeSchoolYearId` if absent) |
-| GET | `/active-term` | Integration key | Optional `schoolYearId` | Computes and broadcasts the active term state ("T1", "T2", "T3", "T4") on the fly based on server date |
+| GET | `/school-year` | Integration key | Optional `schoolYearId` | Resolve the year plus its complete ordered term contract; defaults to `SchoolSetting.activeSchoolYearId` |
+| GET | `/active-term` | Integration key | Optional `schoolYearId` | Resolve the current identity and stored label from the validated ordered term contract; fail when unresolved |
 | GET | `/learners` | Integration key | Optional `schoolYearId` | Paginated current or archived learner roster |
 | GET | `/students` | Integration key | Optional `schoolYearId` | Alias of `/learners` |
 | GET | `/faculty` | Integration key | Optional `schoolYearId` | Paginated faculty and designation context |
@@ -494,22 +494,32 @@ Use only the mounted routes documented above. Routes copied from deleted plannin
 
 EnrollPro does not implement Early Registration, reading assessment, enrollment listings, removed TLE laboratory assignment, hardware, or Internet of Things workflows.
 
-### Active School Year Payload Update
-The `GET /api/integration/v1/school-year` endpoint payload now exposes the active term dates to support realistic JWT generation and lifecycle states for integration partners (ATLAS, SMART, AIMS).
+### Active School Year Term Contract
+
+`GET /api/integration/v1/school-year` exposes `termFormat` and a strict `terms`
+collection in addition to legacy date properties. `TRIMESTER` returns exactly
+three entries and `QUARTERS` exactly four. EnrollPro supplies every identity,
+stored display label, one-based order, and date range.
 
 ```json
 {
   "data": {
     "id": 1,
     "yearLabel": "2026-2027",
+    "termFormat": "TRIMESTER",
+    "terms": [
+      { "identity": "T1", "displayLabel": "TERM 1", "order": 1, "startDate": "2026-08-01", "endDate": "2026-10-15" },
+      { "identity": "T2", "displayLabel": "TERM 2", "order": 2, "startDate": "2026-10-16", "endDate": "2026-12-20" },
+      { "identity": "T3", "displayLabel": "TERM 3", "order": 3, "startDate": "2027-01-05", "endDate": "2027-03-15" }
+    ],
     "term1Start": "2026-08-01T00:00:00.000Z",
     "term1End": "2026-10-15T00:00:00.000Z",
     "term2Start": "2026-10-16T00:00:00.000Z",
     "term2End": "2026-12-20T00:00:00.000Z",
     "term3Start": "2027-01-05T00:00:00.000Z",
     "term3End": "2027-03-15T00:00:00.000Z",
-    "term4Start": "2027-03-16T00:00:00.000Z",
-    "term4End": "2027-05-30T00:00:00.000Z"
+    "term4Start": null,
+    "term4End": null
   }
 }
 ```
@@ -517,11 +527,14 @@ The `GET /api/integration/v1/school-year` endpoint payload now exposes the activ
 ### Active Term Endpoint
 **Endpoint:** `GET /api/integration/v1/active-term`
 
-Dependent microservices (SMART, ATLAS, and AIMS) are strictly instructed to implement a pull mechanism for the active term state. These services must query this specific EnrollPro endpoint:
+Dependent microservices query this endpoint:
 1. Every time a user session initializes.
 2. Every time a critical module loads.
 
-This guarantees that all dependent systems always receive the absolute most current temporal state directly from the master configuration node. The endpoint runs on-the-fly date comparison logic evaluating the server timestamp against the stored grading period boundaries whenever pinged.
+The endpoint validates the ordered contract and compares the current Manila
+calendar date with its configured ranges. It returns
+`ACTIVE_TERM_UNRESOLVED` instead of fabricating `T1` when no range matches.
+The identity and label always match the same `/school-year` term entry.
 
 It is protected from external public access and requires secure internal authentication tokens (`X-Integration-Key`) so only official approved microservices can request the active term data, preventing unauthorized temporal manipulation.
 
@@ -536,3 +549,6 @@ It is protected from external public access and requires secure internal authent
   }
 }
 ```
+
+See [Authoritative Term Integration](../../../ACTIVE-TERM-INTEGRATION.md) for
+the quarters example and complete typed error catalog.

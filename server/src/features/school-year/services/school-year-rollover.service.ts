@@ -640,6 +640,10 @@ export async function executeSchoolYearRollover({
           term3End: true,
           term4Start: true,
           term4End: true,
+          term1Label: true,
+          term2Label: true,
+          term3Label: true,
+          term4Label: true,
           settingsSnapshot: true,
         },
       });
@@ -801,6 +805,10 @@ export async function executeSchoolYearRollover({
             term3End: addOneYear(sourceYear.term3End),
             term4Start: addOneYear(sourceYear.term4Start),
             term4End: addOneYear(sourceYear.term4End),
+            term1Label: sourceYear.term1Label,
+            term2Label: sourceYear.term2Label,
+            term3Label: sourceYear.term3Label,
+            term4Label: sourceYear.term4Label,
             settingsSnapshot: sourceYear.settingsSnapshot || {},
           },
         });

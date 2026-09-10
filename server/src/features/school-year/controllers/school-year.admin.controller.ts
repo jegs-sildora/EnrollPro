@@ -6,6 +6,7 @@ import {
 } from "../services/school-year-controller-shared.service.js";
 
 import { normalizeDateToUtcNoon, deriveSchoolYearScheduleFromOpeningDate } from "../school-year.service.js";
+import { resolveStoredTermLabels } from "../services/term-contract.service.js";
 import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
 import {
@@ -62,7 +63,14 @@ function requiredCalendarDate(value: unknown, label: string): Date {
 }
 
   export async function createSchoolYear(req: Request, res: Response): Promise<void> {
-    const { yearLabel, classOpeningDate, classEndDate, cloneFromId, termFormat } = req.body;
+    const {
+      yearLabel,
+      classOpeningDate,
+      classEndDate,
+      cloneFromId,
+      termFormat,
+      termLabels,
+    } = req.body;
 
     const [schoolYearCount, settings] = await Promise.all([
       prisma.schoolYear.count(),
@@ -146,6 +154,12 @@ function requiredCalendarDate(value: unknown, label: string): Date {
       return;
     }
 
+    const resolvedTermFormat = termFormat ?? "TRIMESTER"
+    const resolvedTermLabels = resolveStoredTermLabels(
+      resolvedTermFormat,
+      termLabels,
+    )
+
     const year = await prisma.schoolYear.create({
       data: {
         yearLabel: resolvedYearLabel,
@@ -160,7 +174,11 @@ function requiredCalendarDate(value: unknown, label: string): Date {
         term2End: schedule.term2End,
         term3Start: schedule.term3Start,
         term3End: schedule.term3End,
-        termFormat: termFormat ?? "TRIMESTER",
+        termFormat: resolvedTermFormat,
+        term1Label: resolvedTermLabels.T1,
+        term2Label: resolvedTermLabels.T2,
+        term3Label: resolvedTermLabels.T3,
+        term4Label: resolvedTermLabels.T4,
       },
     });
 
@@ -382,7 +400,7 @@ function requiredCalendarDate(value: unknown, label: string): Date {
 
   export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, enrollOpenDate, enrollCloseDate, activeTerm } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, activeTerm } = req.body;
 
     const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -394,6 +412,12 @@ function requiredCalendarDate(value: unknown, label: string): Date {
       res.status(400).json({ message: "Cannot edit an archived school year" });
       return;
     }
+
+    const resolvedTermLabels =
+      termLabels !== undefined ||
+      (termFormat !== undefined && termFormat !== year.termFormat)
+        ? resolveStoredTermLabels(termFormat ?? year.termFormat, termLabels)
+        : null
 
     const updated = await prisma.schoolYear.update({
       where: { id },
@@ -411,6 +435,14 @@ function requiredCalendarDate(value: unknown, label: string): Date {
         ...(term4Start !== undefined ? { term4Start: term4Start ? normalizeDateToUtcNoon(new Date(term4Start)) : null } : {}),
         ...(term4End !== undefined ? { term4End: term4End ? normalizeDateToUtcNoon(new Date(term4End)) : null } : {}),
         ...(termFormat !== undefined ? { termFormat } : {}),
+        ...(resolvedTermLabels
+          ? {
+              term1Label: resolvedTermLabels.T1,
+              term2Label: resolvedTermLabels.T2,
+              term3Label: resolvedTermLabels.T3,
+              term4Label: resolvedTermLabels.T4,
+            }
+          : {}),
         ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),
         ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
         ...(activeTerm !== undefined ? { activeTerm } : {}),

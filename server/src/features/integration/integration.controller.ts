@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import axios from "axios";
+import type { IntegrationTermEntry } from "@enrollpro/shared";
 import type { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
@@ -14,6 +15,11 @@ import {
 } from "./integration.shared.js";
 import { SectionAdviserStatus } from "../../generated/prisma/index.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+import {
+  buildOrderedTermContract,
+  resolveActiveTermEntry,
+  TermContractError,
+} from "../school-year/services/term-contract.service.js";
 
 // ---------------------------------------------------------------------------
 // Local Prisma payload types — replace `any` throughout this file
@@ -40,6 +46,15 @@ type TeacherForFaculty = Prisma.TeacherGetPayload<{
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+
+function sendIntegrationError(
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+): void {
+  res.status(status).json({ error: { code, message } })
+}
 
 export async function integrationHealth(
   _req: Request,
@@ -110,17 +125,33 @@ export async function getActiveSchoolYear(
 ): Promise<void> {
   const scopeResult = await resolveSchoolYearScope(req);
   if ("status" in scopeResult) {
-    res
-      .status(scopeResult.status)
-      .json({ error: { message: scopeResult.message } });
+    sendIntegrationError(
+      res,
+      scopeResult.status,
+      scopeResult.code,
+      scopeResult.message,
+    )
     return;
   }
 
   const { scope } = scopeResult;
+  let terms: IntegrationTermEntry[]
+  try {
+    terms = buildOrderedTermContract(scope)
+  } catch (error: unknown) {
+    if (error instanceof TermContractError) {
+      sendIntegrationError(res, 409, error.code, error.message)
+      return
+    }
+    throw error
+  }
+
   res.json({
     data: {
       id: scope.schoolYearId,
       yearLabel: scope.schoolYearLabel,
+      termFormat: scope.termFormat,
+      terms,
       term1Start: scope.term1Start,
       term1End: scope.term1End,
       term2Start: scope.term2Start,
@@ -139,45 +170,43 @@ export async function getActiveTerm(
 ): Promise<void> {
   const scopeResult = await resolveSchoolYearScope(req);
   if ("status" in scopeResult) {
-    res
-      .status(scopeResult.status)
-      .json({ error: { message: scopeResult.message } });
+    sendIntegrationError(
+      res,
+      scopeResult.status,
+      scopeResult.code,
+      scopeResult.message,
+    )
     return;
   }
 
   const { scope } = scopeResult;
-  const now = new Date();
-  
-  const checkTerm = (start: Date | null, end: Date | null) => {
-    if (!start || !end) return false;
-    // Set end date to end of day to properly include the last day
-    const endOfDay = new Date(end);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-    return now >= start && now <= endOfDay;
-  };
-
-  let activeTerm: string | null = null;
-  if (checkTerm(scope.term1Start, scope.term1End)) {
-    activeTerm = "T1";
-  } else if (checkTerm(scope.term2Start, scope.term2End)) {
-    activeTerm = "T2";
-  } else if (checkTerm(scope.term3Start, scope.term3End)) {
-    activeTerm = "T3";
-  } else if (checkTerm(scope.term4Start, scope.term4End)) {
-    activeTerm = "T4";
-  } else {
-    activeTerm = "T1";
+  if (!scope.isActiveSchoolYear) {
+    sendIntegrationError(
+      res,
+      409,
+      "HISTORICAL_ACTIVE_TERM_UNAVAILABLE",
+      "An active term is available only for the authoritative active school year.",
+    )
+    return
   }
 
-  const termFormat = (scope as any).termFormat || "TRIMESTER";
-  const prefix = termFormat === "QUARTERS" ? "QUARTER" : "TERM";
-  const activeTermLabel = `${prefix} ${activeTerm.replace("T", "")}`;
+  let activeTerm: IntegrationTermEntry
+  try {
+    const terms = buildOrderedTermContract(scope)
+    activeTerm = resolveActiveTermEntry(terms)
+  } catch (error: unknown) {
+    if (error instanceof TermContractError) {
+      sendIntegrationError(res, 409, error.code, error.message)
+      return
+    }
+    throw error
+  }
 
   res.json({
     data: {
-      activeTerm,
-      activeTermLabel,
-      termFormat,
+      activeTerm: activeTerm.identity,
+      activeTermLabel: activeTerm.displayLabel,
+      termFormat: scope.termFormat,
       schoolYearId: scope.schoolYearId,
     },
   });

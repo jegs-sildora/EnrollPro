@@ -195,6 +195,10 @@ model SchoolYear {
   term3Start             DateTime?               @map("term3_start") @db.Date
   term4End               DateTime?               @map("term4_end") @db.Date
   term4Start             DateTime?               @map("term4_start") @db.Date
+  term1Label             String                  @default("TERM 1") @map("term1_label")
+  term2Label             String                  @default("TERM 2") @map("term2_label")
+  term3Label             String                  @default("TERM 3") @map("term3_label")
+  term4Label             String                  @default("QUARTER 4") @map("term4_label")
   activeTerm             String?                 @map("active_term")
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]

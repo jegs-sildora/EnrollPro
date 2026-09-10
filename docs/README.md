@@ -2,7 +2,7 @@
 
 This index lists the maintained EnrollPro product documentation. The implementation remains authoritative when a document becomes stale.
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-11
 
 ## Repository And Core
 
@@ -32,11 +32,13 @@ Last reviewed: 2026-09-01
 | Document | Owner | Purpose |
 | --- | --- | --- |
 | [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
+| [Authoritative Term Integration](../ACTIVE-TERM-INTEGRATION.md) | Companion Teams | Ordered term identities, labels, dates, active-term resolution, and typed failures |
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
 | [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
 | [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
 | [SMART Transferee API](features/integration/SMART-TRANSFEREE-API.md) | SMART and EnrollPro Teams | Dedicated endpoint for synchronizing transferee learners |
 | [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
+| [ATLAS Authoritative Term Contract Handoff](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-HANDOFF-2026-09-11.md) | ATLAS and EnrollPro Teams | Implemented ordered-term API changes, migration requirement, errors, and acceptance checks |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
 | [SMART School Year Rollover](features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md) | SMART and EnrollPro Teams | EOSY publication, grade history, new-year gradebooks, and roster reconciliation |
 | [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |
