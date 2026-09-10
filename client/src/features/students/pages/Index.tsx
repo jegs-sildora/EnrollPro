@@ -92,7 +92,6 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
-import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { EosyStatus } from "@enrollpro/shared";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -346,7 +345,6 @@ export default function Students() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
     null,
   );
-  const retainedStudentId = useRetainedSheetValue(selectedStudentId);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
@@ -578,17 +576,9 @@ export default function Students() {
     }
   }, [queryClient, ayId]);
 
-  const handleViewDetails = useCallback(
-    (identifier: string | number) => {
-      // If we use string for LRN, we might need to change selectedStudentId type 
-      // or resolve it. But typically selectedStudentId is number. 
-      // If selectedStudentId is number, we should pass student.id here instead of LRN.
-      // Wait, handleViewDetails is used to open the Quick View Modal which uses StudentDetailPanel!
-      // StudentDetailPanel accepts id as a number. So let's keep handleViewDetails receiving id.
-      setSelectedStudentId(Number(identifier));
-    },
-    [],
-  );
+  const handleViewDetails = useCallback((learnerId: number) => {
+    setSelectedStudentId(learnerId);
+  }, []);
 
   const renderLearnerStatus = (student: Student) => {
     let status = student.learnerStatus || "ACTIVE";
@@ -1089,7 +1079,7 @@ export default function Students() {
                 className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewDetails(row.original.lrn || row.original.id);
+                  handleViewDetails(row.original.id);
                 }}
               >
                 <Eye className="w-4 h-4 mr-2" />
@@ -1397,7 +1387,7 @@ export default function Students() {
                         variant="secondary"
                         size="sm"
                         className="h-9 flex-1 font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                        onClick={() => handleViewDetails(student.lrn || student.id)}>
+                        onClick={() => handleViewDetails(student.id)}>
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View
                       </Button>
@@ -1654,16 +1644,16 @@ export default function Students() {
             <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
           </div>
 
-          {retainedStudentId && (
+          {selectedStudentId !== null && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
-                id={retainedStudentId}
+                id={selectedStudentId}
                 schoolYearId={ayId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={refreshTables}
                 onTransferOut={handlePanelTransferOut}
                 onDropout={handlePanelDropout}
-                onExpand={(identifier) => navigate(`/learner/${identifier || retainedStudentId}`)}
+                onExpand={(identifier) => navigate(`/learner/${identifier ?? selectedStudentId}`)}
                 canEditProfile={false}
               />
             </div>
