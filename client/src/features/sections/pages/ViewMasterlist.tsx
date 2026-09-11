@@ -561,11 +561,11 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               </span>
               <div className="w-px h-4 bg-border" />
               <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
-                <Mars className="h-4 w-4" /> Male: {maleLearners.length}
+                <Mars className="h-4 w-4" />: {maleLearners.length}
               </Badge>
               <div className="w-px h-4 bg-border" />
               <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
-                <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
+                <Venus className="h-4 w-4" />: {femaleLearners.length}
               </Badge>
             </div>
           </div>

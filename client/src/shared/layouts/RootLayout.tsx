@@ -115,12 +115,13 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         enableHomogeneousSections: data.enableHomogeneousSections,
         homogeneousSectionCount: data.homogeneousSectionCount,
         heterogeneousRoundRobin: data.heterogeneousRoundRobin,
+        initialized: true,
       });
       return;
     }
 
     if (publicSettingsQuery.isError) {
-      setSettings({});
+      setSettings({ initialized: true });
     }
   }, [publicSettingsQuery.data, publicSettingsQuery.isError, setSettings]);
 

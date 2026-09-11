@@ -442,7 +442,7 @@ export default function Step5Enrollment() {
                       }
                       className="mt-0.5 border-yellow-500 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600"
                     />
-                    <Label htmlFor="scp-consent" className="text-base font-bold leading-tight cursor-pointer">
+                    <Label htmlFor="scp-consent" className="text-base font-semibold leading-tight cursor-pointer">
                       I confirm that the learner is on the official published list of passers for this program. I understand that submitting a false claim will result in enrollment delays and automatic placement in the Regular curriculum. <span className="text-destructive">*</span>
                     </Label>
                   </div>
