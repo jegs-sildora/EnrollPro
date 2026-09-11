@@ -899,12 +899,6 @@ export function VerificationWorkspace() {
                                 })}
                               </SelectContent>
                             </Select>
-                            {assignedProgram !== "REGULAR" && (
-                              <div className="mt-3 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-md border border-amber-200/50">
-                                <AlertTriangle className="w-4 h-4 shrink-0" />
-                                <span className="text-sm font-bold">Requires manual verification against SCP passers list.</span>
-                              </div>
-                            )}
                           </div>
                         )}
                       </VerificationRow>

@@ -162,7 +162,7 @@ export const useSettingsStore = create<SettingsState>()(
           }
         })),
       setSettings: (settings) =>
-        set((state) => ({ ...state, ...settings, initialized: true })),
+        set((state) => ({ ...state, ...settings })),
       setViewingSY: (id, status, label) =>
         set({
           viewingSchoolYearId: id,
@@ -235,25 +235,44 @@ export const useSettingsStore = create<SettingsState>()(
           viewingSchoolYearId: _viewingSchoolYearId,
           viewingSchoolYearStatus: _viewingSchoolYearStatus,
           viewingSchoolYearLabel: _viewingSchoolYearLabel,
+          // initialized must NOT be persisted — it must always start false
+          // until the current session's /settings/public API call completes.
+          // If persisted as true, AppLayout would incorrectly show NoSchoolYearState
+          // on every subsequent page load before the API responds.
+          initialized: _initialized,
           ...rest
         } = state;
         return rest;
       },
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
-        if (version >= 2 || typeof persistedState !== "object" || persistedState === null) {
+        if (typeof persistedState !== "object" || persistedState === null) {
           return persistedState;
         }
 
-        return {
-          ...persistedState,
-          activeSchoolYearId: null,
-          activeSchoolYearLabel: null,
-          activeSchoolYearStatus: null,
-          viewingSchoolYearId: null,
-          viewingSchoolYearStatus: null,
-          viewingSchoolYearLabel: null,
-        };
+        let state = persistedState as Record<string, unknown>;
+
+        // version < 2: add school year fields that didn't exist yet
+        if (version < 2) {
+          state = {
+            ...state,
+            activeSchoolYearId: null,
+            activeSchoolYearLabel: null,
+            activeSchoolYearStatus: null,
+            viewingSchoolYearId: null,
+            viewingSchoolYearStatus: null,
+            viewingSchoolYearLabel: null,
+          };
+        }
+
+        // version < 3: strip `initialized` — it was incorrectly persisted in v2
+        // and must now always start as false (session-only, excluded from partialize)
+        if (version < 3) {
+          const { initialized: _initialized, ...rest } = state;
+          state = rest;
+        }
+
+        return state;
       },
     },
   ),
