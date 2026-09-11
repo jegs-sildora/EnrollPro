@@ -157,6 +157,7 @@ function getInvalidationPrefixes(
         break;
       case "sectioning:sections":
         prefixes.push(["sectioning", "sections"]);
+        prefixes.push(["section-masterlist"]);
         break;
       case "sectioning:pool":
         prefixes.push(["sectioning", "pool"]);

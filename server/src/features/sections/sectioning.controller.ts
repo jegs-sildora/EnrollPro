@@ -2,9 +2,21 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
-import { Prisma, SectioningMethod } from "../../generated/prisma/index.js";
+import { EosyStatus, Prisma, SectioningMethod } from "../../generated/prisma/index.js";
 import { getAllowedSectionProgramsForPlacement } from "@enrollpro/shared";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+
+const INACTIVE_EOSY_STATUSES: EosyStatus[] = [
+  EosyStatus.TRANSFERRED_OUT,
+  EosyStatus.DROPPED_OUT,
+]
+
+const activeSectionEnrollmentFilter: Prisma.EnrollmentRecordWhereInput = {
+  OR: [
+    { eosyStatus: null },
+    { eosyStatus: { notIn: INACTIVE_EOSY_STATUSES } },
+  ],
+}
 
 function broadcastSectioningInvalidation({
   schoolYearId,
@@ -52,6 +64,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
           include: { teacher: { select: { firstName: true, lastName: true } } },
         },
         enrollmentRecords: {
+          where: activeSectionEnrollmentFilter,
           include: { learner: { select: { sex: true } } },
         },
       },
@@ -198,7 +211,10 @@ export async function assignBulk(req: Request, res: Response) {
       prisma.section.findUnique({
         where: { id: sectionId },
         include: {
-          enrollmentRecords: { select: { id: true } },
+          enrollmentRecords: {
+            where: activeSectionEnrollmentFilter,
+            select: { id: true },
+          },
           gradeLevel: { select: { displayOrder: true } }
         },
       }),
@@ -485,7 +501,10 @@ export async function commitDraft(req: Request, res: Response) {
       prisma.section.findMany({
         where: { id: { in: sectionIds } },
         include: {
-          enrollmentRecords: { select: { id: true } },
+          enrollmentRecords: {
+            where: activeSectionEnrollmentFilter,
+            select: { id: true },
+          },
         },
       }),
       prisma.enrollmentApplication.findMany({

@@ -263,6 +263,12 @@ interface SkippedApplication {
 
 interface CommitDraftResponse {
   committedCount: number;
+  committedApplications: Array<{
+    applicationId: number;
+    enrollmentRecordId: number;
+    sectionId: number;
+    sectioningMethod: string;
+  }>;
   skippedApplications: SkippedApplication[];
 }
 
@@ -758,10 +764,11 @@ export function SectioningWorkspace() {
   const assignLearners = async () => {
     if (!targetSectionId || selectedAppIds.length === 0) return;
 
+    const assignedSectionId = targetSectionId;
     setProcessing(true);
     try {
       await api.post("/sectioning/assign-bulk", {
-        sectionId: targetSectionId,
+        sectionId: assignedSectionId,
         applicationIds: selectedAppIds,
       });
 
@@ -774,12 +781,17 @@ export function SectioningWorkspace() {
       });
       setSelectedAppIds([]);
       setTargetSectionId(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningSections(),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningPool(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningSections(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["section-masterlist", assignedSectionId],
+        }),
+      ]);
     } catch (error: unknown) {
       sileo.error({
         title: "Assignment Failed",
@@ -1103,12 +1115,26 @@ export function SectioningWorkspace() {
 
       setCommitDialogOpen(false);
       discardDraft();
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningSections(),
-      });
+      const affectedSectionIds = Array.from(
+        new Set(
+          response.data.committedApplications.map(
+            (application) => application.sectionId,
+          ),
+        ),
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningPool(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningSections(),
+        }),
+        ...affectedSectionIds.map((sectionId) =>
+          queryClient.invalidateQueries({
+            queryKey: ["section-masterlist", sectionId],
+          }),
+        ),
+      ]);
     } catch (error: unknown) {
       sileo.error({
         title: "Draft Commit Failed",

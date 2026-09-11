@@ -33,6 +33,7 @@ Last reviewed: 2026-09-11
 | --- | --- | --- |
 | [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
 | [Authoritative Term Integration](../ACTIVE-TERM-INTEGRATION.md) | Companion Teams | Ordered term identities, labels, dates, active-term resolution, and typed failures |
+| [School Year and Term API Changes](features/integration/ENROLLPRO-SCHOOL-YEAR-TERM-API-CHANGES-2026-09-11.md) | EnrollPro and Companion Teams | Consolidated school-year and term API, validation, persistence, rollover, compatibility, and verification changes |
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
 | [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
 | [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
