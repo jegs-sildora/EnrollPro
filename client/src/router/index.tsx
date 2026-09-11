@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 // router/index.tsx
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { useLocation } from "react-router";
 import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
 import { PageLoadingSkeleton, type SkeletonPageVariant } from "@/shared/components/PageLoadingSkeleton";
@@ -13,7 +13,6 @@ import LearnerAuthLayout from "@/shared/layouts/LearnerAuthLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 import NotFound from "@/shared/components/NotFound";
 
-const SMARTLayout = lazy(() => import("@/features/smart/layouts/SMARTLayout"));
 const Login = lazy(() => import("@/features/auth/pages/Login"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Index"));
 import LearnerLogin from "@/features/learner/pages/Login";
@@ -41,7 +40,6 @@ const Monitor = lazy(() => import("@/features/admission/pages/online-enrollment/
 const Apply = lazy(() => import("@/features/admission/pages/online-enrollment/Index"));
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
-import { smartRoutes } from "@/features/smart/routes";
 
 function getFallbackVariant(pathname: string): SkeletonPageVariant {
   if (pathname === "/dashboard") return "dashboard";
@@ -90,12 +88,6 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      {
-        path: "/smart",
-        element: renderLazyPage(SMARTLayout),
-        children: smartRoutes,
-      },
-
       // 1. Learner Portal routes (public - no staff auth required)
       {
         element: <LearnerAuthLayout />,
@@ -237,6 +229,7 @@ export const router = createBrowserRouter([
               "SYSTEM_ADMIN",
               "TEACHER",
               "CLASS_ADVISER",
+              "MRF",
             ]}
           />
         ),

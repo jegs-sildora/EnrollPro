@@ -5,7 +5,7 @@ This document outlines how the MRF system should ingest the SSO login session fr
 
 ## 1. Configure EnrollPro Credentials
 MRF must configure the following environment variable to match EnrollPro's settings:
-- `ENROLLPRO_SSO_CLIENT_SECRET`: `2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3`
+- `ENROLLPRO_SSO_CLIENT_SECRET`: `<distinct server-only secret issued for MRF>`
 
 ## 2. Implement the Callback Endpoint
 EnrollPro will redirect the user to your callback URL with an authorization code:

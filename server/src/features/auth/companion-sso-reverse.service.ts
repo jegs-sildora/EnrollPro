@@ -23,6 +23,7 @@ const ENROLLPRO_STAFF_ROLES: readonly Role[] = [
   "HEAD_REGISTRAR",
   "TEACHER",
   "CLASS_ADVISER",
+  "MRF",
 ];
 
 const reverseUserSelect = {
@@ -41,6 +42,11 @@ const reverseUserSelect = {
     select: {
       lrn: true,
       status: true,
+    },
+  },
+  teacherProfile: {
+    select: {
+      employeeId: true,
     },
   },
 } satisfies Prisma.UserSelect;
@@ -278,6 +284,24 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
+async function readCompanionErrorCode(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    if (
+      typeof body === "object"
+      && body !== null
+      && "code" in body
+      && typeof body.code === "string"
+      && /^[A-Z0-9_]{1,64}$/.test(body.code)
+    ) {
+      return body.code;
+    }
+  } catch {
+    // The browser still receives a stable EnrollPro error for a malformed response.
+  }
+  return "UNSPECIFIED";
+}
+
 async function exchangeCodeWithCompanion(input: {
   system: CompanionSystem;
   code: string;
@@ -310,21 +334,12 @@ async function exchangeCodeWithCompanion(input: {
   }
 
   if (!response.ok) {
-    // Surface the companion's own error detail — the mapped AppError is
-    // generic on purpose (safe for the browser), but the server log must
-    // show exactly WHY the companion rejected the exchange.
-    let companionErrorDetail = "";
-    try {
-      companionErrorDetail = (await response.text()).slice(0, 500);
-    } catch {
-      companionErrorDetail = "<unreadable body>";
-    }
+    const companionErrorCode = await readCompanionErrorCode(response);
     console.error(
-      "[ReverseSSO] %s exchange endpoint %s returned HTTP %s — body: %s",
+      "[ReverseSSO] %s exchange failed with HTTP %s and code %s",
       input.system,
-      configuration.exchangeUrl.toString(),
       response.status,
-      companionErrorDetail,
+      companionErrorCode,
     );
 
     if ([400, 401].includes(response.status)) {
@@ -370,14 +385,30 @@ function normalizedName(value: string | null): string {
   return (value ?? "").trim().replace(/\s+/g, " ").toLocaleUpperCase("en-PH");
 }
 
+function normalizedEmail(value: string | null | undefined): string | null {
+  return value?.trim().toLocaleLowerCase("en-PH") || null;
+}
+
 function assertIdentityMatchesUser(
   assertion: CompanionSsoReverseExchangeResponse["identity"],
   user: ReverseSsoUser,
 ): void {
+  const assertedEmployeeId = assertion.employeeId?.trim() || null;
+  const employeeIdMatches = !assertedEmployeeId || [
+    user.employeeId,
+    user.teacherProfile?.employeeId,
+  ].some((employeeId) => employeeId === assertedEmployeeId);
+  const accountName = assertion.accountName?.trim() || null;
+  const accountNameMatches = !accountName || user.accountName === accountName;
+  const email = normalizedEmail(assertion.email);
+  const emailMatches = !email || normalizedEmail(user.email) === email;
+
   if (
     normalizedName(assertion.firstName) !== normalizedName(user.firstName)
     || normalizedName(assertion.lastName) !== normalizedName(user.lastName)
-    || (assertion.employeeId && assertion.employeeId !== user.employeeId)
+    || !employeeIdMatches
+    || !accountNameMatches
+    || !emailMatches
     || (assertion.lrn && assertion.lrn !== user.learnerProfile?.lrn)
   ) {
     throw new AppError(
@@ -424,13 +455,31 @@ async function findUnlinkedCandidate(
   assertion: CompanionSsoReverseExchangeResponse["identity"],
 ): Promise<ReverseSsoUser> {
   const candidates = new Map<number, ReverseSsoUser>();
+  let userEmployeeMatch = false;
+  let teacherEmployeeMatch = false;
+  let learnerLrnMatch = false;
 
-  if (assertion.employeeId) {
+  const employeeId = assertion.employeeId?.trim() || null;
+  if (employeeId) {
     const employeeUser = await prisma.user.findUnique({
-      where: { employeeId: assertion.employeeId },
+      where: { employeeId },
       select: reverseUserSelect,
     });
-    if (employeeUser) candidates.set(employeeUser.id, employeeUser);
+    if (employeeUser) {
+      userEmployeeMatch = true;
+      candidates.set(employeeUser.id, employeeUser);
+    }
+
+    const employeeTeacher = await prisma.teacher.findUnique({
+      where: { employeeId },
+      select: {
+        user: { select: reverseUserSelect },
+      },
+    });
+    if (employeeTeacher?.user) {
+      teacherEmployeeMatch = true;
+      candidates.set(employeeTeacher.user.id, employeeTeacher.user);
+    }
   }
 
   if (assertion.lrn) {
@@ -438,10 +487,24 @@ async function findUnlinkedCandidate(
       where: { lrn: assertion.lrn },
       select: { user: { select: reverseUserSelect } },
     });
-    if (learner?.user) candidates.set(learner.user.id, learner.user);
+    if (learner?.user) {
+      learnerLrnMatch = true;
+      candidates.set(learner.user.id, learner.user);
+    }
   }
 
   if (candidates.size !== 1) {
+    console.warn(
+      "[ReverseSSO] Account reconciliation produced %d candidate(s): "
+        + "employeeIdSupplied=%s userEmployeeMatch=%s teacherEmployeeMatch=%s "
+        + "lrnSupplied=%s learnerLrnMatch=%s.",
+      candidates.size,
+      Boolean(employeeId),
+      userEmployeeMatch,
+      teacherEmployeeMatch,
+      Boolean(assertion.lrn),
+      learnerLrnMatch,
+    );
     throw new AppError(
       409,
       "The companion identity must be linked to exactly one EnrollPro account.",
@@ -602,6 +665,9 @@ export async function completeCompanionReverseSso(input: {
 export function reverseSsoLandingPath(roles: readonly Role[]): string {
   if (roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR")) {
     return "/dashboard";
+  }
+  if (roles.includes("MRF")) {
+    return "/my-activity";
   }
   return "/teacher/advisory";
 }

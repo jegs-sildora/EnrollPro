@@ -55,6 +55,9 @@ interface SsoUser {
     lrn: string | null;
     status: string;
   } | null;
+  teacherProfile: {
+    employeeId: string;
+  } | null;
 }
 
 function configurationNames(system: CompanionSystem): {
@@ -147,6 +150,9 @@ async function getSsoUser(userId: number): Promise<SsoUser> {
       learnerProfile: {
         select: { lrn: true, status: true },
       },
+      teacherProfile: {
+        select: { employeeId: true },
+      },
     },
   });
   if (!user || !user.isActive) {
@@ -157,6 +163,10 @@ async function getSsoUser(userId: number): Promise<SsoUser> {
     );
   }
   return user;
+}
+
+function companionEmployeeId(user: SsoUser): string | null {
+  return user.employeeId ?? user.teacherProfile?.employeeId ?? null;
 }
 
 function assertUserCanLaunch(system: CompanionSystem, user: SsoUser): void {
@@ -188,7 +198,7 @@ function assertUserCanLaunch(system: CompanionSystem, user: SsoUser): void {
       "COMPANION_SSO_ROLE_DENIED",
     );
   }
-  if (!user.employeeId && !user.learnerProfile?.lrn) {
+  if (!companionEmployeeId(user) && !user.learnerProfile?.lrn) {
     throw new AppError(
       403,
       "Your EnrollPro account does not have a companion-system identifier.",
@@ -216,9 +226,13 @@ export async function getCompanionSsoCatalog(
   const systems = COMPANION_SYSTEMS.map((system) => {
     const enabled = readCompanionConfiguration(system) !== null;
     const roleEligible = hasCompanionRole(system, user.roles);
+    const identityEligible = Boolean(
+      companionEmployeeId(user) || user.learnerProfile?.lrn,
+    );
     const accountEligible =
       !user.mustChangePassword
-      && user.learnerProfile?.status !== "JHS_COMPLETER";
+      && user.learnerProfile?.status !== "JHS_COMPLETER"
+      && identityEligible;
     const eligible = roleEligible && accountEligible;
 
     let disabledReason: string | null = null;
@@ -230,6 +244,8 @@ export async function getCompanionSsoCatalog(
       disabledReason = "JHS completers cannot open active companion-system workspaces.";
     } else if (!roleEligible) {
       disabledReason = `Your EnrollPro role does not have access to ${system}.`;
+    } else if (!identityEligible) {
+      disabledReason = "Your EnrollPro account does not have a companion-system identifier.";
     }
 
     return { system, enabled, eligible, disabledReason };
@@ -425,6 +441,9 @@ export async function exchangeCompanionSsoCode(input: {
                 learnerProfile: {
                   select: { lrn: true, status: true },
                 },
+                teacherProfile: {
+                  select: { employeeId: true },
+                },
               },
             },
           },
@@ -509,7 +528,7 @@ export async function exchangeCompanionSsoCode(input: {
     identity: {
       subject: `ENROLLPRO_USER:${exchanged.user.id}`,
       userId: exchanged.user.id,
-      employeeId: exchanged.user.employeeId,
+      employeeId: companionEmployeeId(exchanged.user),
       lrn: exchanged.user.learnerProfile?.lrn ?? null,
       firstName: exchanged.user.firstName,
       middleName: exchanged.user.middleName,

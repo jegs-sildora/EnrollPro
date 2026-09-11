@@ -5,7 +5,7 @@ This document outlines how the SMART system should ingest the SSO login session 
 
 ## 1. Configure EnrollPro Credentials
 SMART must configure the following environment variable to match EnrollPro's settings:
-- `ENROLLPRO_SSO_CLIENT_SECRET`: `60303ae22b998861bce3b28f33eec1be758a213c86c93c076dbe9f558c11c752`
+- `ENROLLPRO_SSO_CLIENT_SECRET`: `<distinct server-only secret issued for SMART>`
 
 ## 2. Implement the Callback Endpoint
 EnrollPro will redirect the user to your callback URL with an authorization code:

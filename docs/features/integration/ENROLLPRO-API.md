@@ -73,7 +73,7 @@ Common errors are:
 
 | Consumer | Primary EnrollPro endpoints | Purpose |
 | --- | --- | --- |
-| SMART | `/integration/v1/default/smart/students`, `/integration/v1/sections`, `/integration/v1/sections/:sectionId/learners` | Grade-encoding masterlists and archived EOSY reconciliation |
+| SMART | `/integration/v1/default/smart/students`, `/integration/v1/default/smart/transferees`, `/integration/v1/sections`, `/integration/v1/sections/:sectionId/learners` | Grade-encoding masterlists, transferee roster synchronization, and archived EOSY reconciliation |
 | AIMS | `/integration/v1/default/aims/context`, `/integration/v1/sections`, `/integration/v1/default/faculty` | LMS classrooms, learner program context, and remedial flags |
 | ATLAS | `/integration/v1/default/faculty`, `/integration/v1/sections`, `/integration/v1/school-year` | Scheduling, faculty load, advisership, and section context |
 | MRF | `/integration/v1/default/mrf/identities` | Keyed learner, teacher, staff, and MRF-role identity reconciliation |
@@ -450,6 +450,7 @@ Existing ATLAS, SMART, and AIMS endpoints are now key-protected for machine-to-m
 | GET | `/sections/:sectionId/learners` | Integration key | Optional `schoolYearId` | Current or archived section roster |
 | GET | `/default/faculty` | Integration key | Optional `schoolYearId` | ATLAS-ready active faculty feed |
 | GET | `/default/smart/students` | Integration key | Optional `schoolYearId` | SMART-ready current or archived grade roster |
+| GET | `/default/smart/transferees` | Integration key | Optional `schoolYearId`, `page`, `limit` | SMART-ready active-year transferee roster; only officially enrolled and sectioned learners are included |
 | GET | `/default/aims/context` | Integration key | Optional `schoolYearId` | AIMS-ready current or archived learner context |
 | GET | `/default/mrf/identities` | `X-Integration-Key` | Optional `schoolYearId` | MRF learner, teacher, staff, and MRF-role identity groups |
 

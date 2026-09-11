@@ -67,6 +67,8 @@ export const companionSsoReverseExchangeResponseSchema = z.object({
     subject: z.string().min(1).max(191),
     employeeId: z.string().nullable(),
     lrn: z.string().regex(/^\d{12}$/).nullable(),
+    accountName: z.string().trim().min(1).nullable().optional(),
+    email: z.string().trim().email().nullable().optional(),
     firstName: z.string().min(1),
     middleName: z.string().nullable(),
     lastName: z.string().min(1),

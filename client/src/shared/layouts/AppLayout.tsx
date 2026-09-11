@@ -657,7 +657,7 @@ function AppSidebar() {
             const response = await api.post<CompanionSsoLaunchResponse>(
               `/auth/companion-sso/${system.toLowerCase()}/launch`,
               undefined,
-              { timeout: 3000 }
+              { timeout: 10_000 }
             );
             window.location.assign(response.data.launchUrl);
           } catch (error: unknown) {

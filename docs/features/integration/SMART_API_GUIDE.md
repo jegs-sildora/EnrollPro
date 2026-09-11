@@ -143,12 +143,18 @@ SMART reads learner and section context from the protected or compatibility feed
 
 ```text
 GET /api/integration/v1/default/smart/students?schoolYearId=:id
+GET /api/integration/v1/default/smart/transferees?schoolYearId=:id
 GET /api/integration/v1/sections?schoolYearId=:id
 GET /api/integration/v1/sections/:sectionId/learners?schoolYearId=:id
 GET /api/integration/v1/school-year?schoolYearId=:id
 ```
 
 Historical school-year requests use immutable `EnrollmentHistory` data where live enrollment rows have been archived.
+
+The dedicated transferee endpoint includes only sectioned applications whose
+status is `OFFICIALLY_ENROLLED`. Its complete intake-to-publication contract,
+pagination behavior, data-minimization boundary, and current archived-feed
+limitation are documented in [SMART Transferee Enrollment Handoff](./SMART-TRANSFEREE-API.md).
 
 Attendance remains entirely in SMART. EnrollPro supplies identity, enrollment, section, and school-year context only.
 

@@ -5,7 +5,7 @@ This document outlines how the ATLAS system should ingest the SSO login session 
 
 ## 1. Configure EnrollPro Credentials
 ATLAS must configure the following environment variable to match EnrollPro's settings:
-- `ENROLLPRO_SSO_CLIENT_SECRET`: `9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08`
+- `ENROLLPRO_SSO_CLIENT_SECRET`: `<distinct server-only secret issued for ATLAS>`
 
 ## 2. Implement the Callback Endpoint
 EnrollPro will redirect the user to your callback URL with an authorization code:

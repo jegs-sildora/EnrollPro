@@ -1,6 +1,6 @@
 # Integrated Systems Sidebar and SSO Implementation Guide
 
-Last reviewed: 2026-09-07
+Last reviewed: 2026-09-11
 
 ## Purpose
 
@@ -59,10 +59,12 @@ The following EnrollPro components are implemented:
 - hashed authorization-code persistence
 - atomic one-time code consumption
 - active-account and active-school-year checks
+- staff employee-ID resolution through either the user or linked teacher profile
 - launch and exchange audit events
 - signed reverse-flow state cookies
 - server-to-server exchange of companion-issued one-time codes
 - stable companion identity links and EnrollPro session issuance
+- retirement of the legacy embedded `/smart` route and its browser-stored bypass token
 
 Reverse SSO is source-complete on the EnrollPro side but is not operational for a companion until its reverse authorization and exchange endpoints are implemented, the new migration is applied, and all reverse settings are configured.
 
@@ -492,6 +494,8 @@ The companion must atomically consume the code and validate the code, client, au
     "subject": "AIMS_USER:42",
     "employeeId": "1234501",
     "lrn": null,
+    "accountName": "1234501",
+    "email": "jose.rizal@example.edu.ph",
     "firstName": "Jose",
     "middleName": null,
     "lastName": "Rizal",
@@ -509,7 +513,7 @@ Rules:
 
 - `issuer` must exactly match the source route.
 - `identity.subject` is a stable, source-namespaced identifier and must never be recycled.
-- At least one exact EnrollPro identifier, employee ID or LRN, must be present for first-time reconciliation.
+- At least one exact EnrollPro identifier must be present for first-time reconciliation: employee ID for staff or LRN for learners.
 - `activeSchoolYear.id` is the mirrored EnrollPro school-year ID, not the companion's local database ID.
 - The year ID and label must both match EnrollPro's authoritative active year.
 - EnrollPro uses its local account roles for the resulting session. Companion roles cannot elevate EnrollPro permissions.
@@ -521,6 +525,7 @@ EnrollPro first looks up `(companion, externalSubject)` in `CompanionIdentityLin
 For a first successful reverse login only, EnrollPro may create the link when:
 
 - the asserted employee ID or LRN resolves to exactly one EnrollPro user
+- a staff employee ID may resolve through either the EnrollPro user record or its linked teacher profile
 - first and last names match after whitespace and case normalization
 - all supplied identifiers match that same account
 - the EnrollPro account is active
@@ -710,7 +715,7 @@ MRF remains disabled in the EnrollPro catalog until both callback and secret are
 
 The SSO secret must be distinct from the minimized MRF identity-feed key.
 
-For MRF-to-EnrollPro, MRF must implement the reverse authorization and exchange endpoints. Only a linked user whose current EnrollPro role permits a staff workspace receives an EnrollPro session. An MRF-only account remains denied because EnrollPro currently has no protected MRF-role workspace.
+For MRF-to-EnrollPro, MRF must implement the reverse authorization and exchange endpoints. A linked active `MRF` account receives an EnrollPro session and lands on `/my-activity`; system administrators land on `/dashboard`. MRF access does not grant registrar, learner-record, or teacher-workspace permissions.
 
 ## Configuration Requirements
 
