@@ -44,7 +44,10 @@ import {
   ChevronDown,
   FileText,
   MoreHorizontal,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Label } from "@/shared/ui/label";
 import api from "@/shared/api/axiosInstance";
 import axios from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -60,7 +63,6 @@ import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { Badge } from "@/shared/ui/badge";
 import { sileo } from "sileo";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate } from "react-router";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
@@ -394,6 +396,20 @@ export default function EosyUpdating() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
+  const [localSectionFilter, setLocalSectionFilter] = useState<string>("ALL");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalSectionFilter(sectionFilter);
+    }
+  }, [isFilterPopoverOpen, sectionFilter]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (sectionFilter !== "ALL") count++;
+    return count;
+  }, [sectionFilter]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
@@ -1690,35 +1706,80 @@ export default function EosyUpdating() {
                           <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                              placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
+                              placeholder="Search LRN, first name, last name..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-bold"
+                              className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
                             />
+                            <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                              <PopoverTrigger asChild>
+                                <button className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                                  <SlidersHorizontal className="h-5 w-5" />
+                                  {activeFilterCount > 0 && (
+                                    <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                                      {activeFilterCount}
+                                    </span>
+                                  )}
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+                                <div className="p-4 border-b">
+                                  <h4 className="text-lg font-bold">Filter Learners</h4>
+                                </div>
+                                <div className="p-4 space-y-4 flex flex-col">
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm text-muted-foreground uppercase">Section & Adviser</Label>
+                                    <Select
+                                      isFilter
+                                      value={localSectionFilter}
+                                      onValueChange={setLocalSectionFilter}
+                                    >
+                                      <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                        <SelectValue placeholder="All Sections" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="ALL" className="font-bold cursor-pointer">All Sections</SelectItem>
+                                        {sectionGroups.map(([groupName, secs]) => (
+                                          <SelectGroup key={groupName}>
+                                            <SelectLabel className="font-bold text-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
+                                            {secs.map(sec => (
+                                              <SelectItem key={sec} value={sec} className="font-bold pl-6">{sec}</SelectItem>
+                                            ))}
+                                          </SelectGroup>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setLocalSectionFilter("ALL");
+                                      setSectionFilter("ALL");
+                                      setIsFilterPopoverOpen(false);
+                                    }}
+                                    className="font-bold text-gray-600 hover:text-gray-900"
+                                  >
+                                    Clear All
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      setSectionFilter(localSectionFilter);
+                                      setIsFilterPopoverOpen(false);
+                                    }}
+                                    className="font-bold bg-primary hover:bg-primary/90 text-white"
+                                  >
+                                    Apply Filters
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 shrink-0">
-                          <Select
-                            isFilter
-                            value={sectionFilter}
-                            onValueChange={setSectionFilter}
-                          >
-                            <SelectTrigger className="w-44 bg-background border-border font-bold">
-                              <SelectValue placeholder="Filter by Section / Adviser" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ALL" className="font-bold cursor-pointer">All Sections</SelectItem>
-                              {sectionGroups.map(([groupName, secs]) => (
-                                <SelectGroup key={groupName}>
-                                  <SelectLabel className="font-bold text-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
-                                  {secs.map(sec => (
-                                    <SelectItem key={sec} value={sec} className="font-bold pl-6">{sec}</SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              ))}
-                            </SelectContent>
-                          </Select>
 
                           <Button
                             variant="outline"

@@ -4,6 +4,7 @@ import {
   useEffect,
   useCallback,
   startTransition,
+  useMemo,
 } from "react";
 import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 
@@ -11,7 +12,10 @@ import {
   Search,
   HelpCircle,
   Users,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Label } from "@/shared/ui/label";
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useHeaderStore } from "@/store/header.slice";
@@ -121,6 +125,27 @@ export default function BOSYPage() {
   const [curricularProgram, setCurricularProgram] = useState<string>("ALL");
   const [_intakeCategory, _setIntakeCategory] = useState<string>("ALL");
   const [_verificationStatus, _setVerificationStatus] = useState<string>("ALL");
+
+  const [localTargetGrade, setLocalTargetGrade] = useState<string>(targetGrade);
+  const [localCurricularProgram, setLocalCurricularProgram] = useState<string>("ALL");
+  const [localPreviousSectionName, setLocalPreviousSectionName] = useState<string>("ALL");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalTargetGrade(targetGrade);
+      setLocalCurricularProgram(curricularProgram);
+      setLocalPreviousSectionName(previousSectionName);
+    }
+  }, [isFilterPopoverOpen, targetGrade, curricularProgram, previousSectionName]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (targetGrade !== "ALL") count++;
+    if (curricularProgram !== "ALL") count++;
+    if (previousSectionName !== "ALL") count++;
+    return count;
+  }, [targetGrade, curricularProgram, previousSectionName]);
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [queuePage, setQueuePage] = useState(1);
@@ -548,8 +573,8 @@ export default function BOSYPage() {
                       <div className="relative w-full flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
-                          placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                          className="w-full h-10 pl-9 bg-muted border-gray-300 font-bold uppercase"
+                          placeholder="Search LRN, first name, last name..."
+                          className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
                           value={queueSearch}
                           onChange={(e) => {
                             setQueueSearch(e.target.value);
@@ -558,6 +583,119 @@ export default function BOSYPage() {
                             });
                           }}
                         />
+                        <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <button className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                              <SlidersHorizontal className="h-5 w-5" />
+                              {activeFilterCount > 0 && (
+                                <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                                  {activeFilterCount}
+                                </span>
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+                            <div className="p-4 border-b">
+                              <h4 className="text-lg font-bold">Filter Learners</h4>
+                            </div>
+                            <div className="p-4 space-y-4 flex flex-col">
+                              <div className="space-y-1.5">
+                                <Label className="text-sm text-muted-foreground uppercase">Incoming Grade</Label>
+                                <Select
+                                  isFilter
+                                  value={localTargetGrade}
+                                  onValueChange={setLocalTargetGrade}
+                                >
+                                  <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                    <SelectValue placeholder="All Incoming Grades" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="ALL" className="leading-tight font-bold">All Incoming Grades</SelectItem>
+                                    <SelectItem value="8" className="leading-tight font-bold">Grade 8</SelectItem>
+                                    <SelectItem value="9" className="leading-tight font-bold">Grade 9</SelectItem>
+                                    <SelectItem value="10" className="leading-tight font-bold">Grade 10</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label className="text-sm text-muted-foreground uppercase">Program Type</Label>
+                                <Select
+                                  isFilter
+                                  value={localCurricularProgram}
+                                  onValueChange={setLocalCurricularProgram}
+                                >
+                                  <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                    <SelectValue placeholder="All Programs" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
+                                    <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                                    <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
+                                    <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
+                                    <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label className="text-sm text-muted-foreground uppercase">Previous Section</Label>
+                                <Select
+                                  isFilter
+                                  value={localPreviousSectionName}
+                                  onValueChange={setLocalPreviousSectionName}
+                                >
+                                  <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                    <SelectValue placeholder="All Previous Sections" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="ALL" className="leading-tight font-bold">All Previous Sections</SelectItem>
+                                    {previousSections
+                                      .filter((sec) => typeof sec === "string" && sec.trim() !== "")
+                                      .map((sec) => (
+                                        <SelectItem key={sec} value={sec} className="leading-tight font-bold">
+                                          {sec}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  setLocalTargetGrade("ALL");
+                                  setLocalCurricularProgram("ALL");
+                                  setLocalPreviousSectionName("ALL");
+                                  setTargetGrade("ALL");
+                                  setCurricularProgram("ALL");
+                                  setPreviousSectionName("ALL");
+                                  startTransition(() => setQueuePage(1));
+                                  setRowSelection({});
+                                  setIsFilterPopoverOpen(false);
+                                }}
+                                className="font-bold text-gray-600 hover:text-gray-900"
+                              >
+                                Clear All
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setTargetGrade(localTargetGrade);
+                                  setCurricularProgram(localCurricularProgram);
+                                  setPreviousSectionName(localPreviousSectionName);
+                                  startTransition(() => setQueuePage(1));
+                                  setRowSelection({});
+                                  setIsFilterPopoverOpen(false);
+                                }}
+                                className="font-bold bg-primary hover:bg-primary/90 text-white"
+                              >
+                                Apply Filters
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
@@ -570,79 +708,7 @@ export default function BOSYPage() {
                               onClear={() => setRowSelection({})}
                             />
                           </div>
-                        ) : (
-                          <>
-                            <Select
-                              isFilter
-                              value={targetGrade}
-                              onValueChange={(val) => {
-                                setTargetGrade(val);
-                                setQueuePage(1);
-                                setRowSelection({});
-                              }}
-                            >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
-                                <SelectValue placeholder="All Incoming Grades" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-bold">All Incoming Grades</SelectItem>
-                                <SelectItem value="8" className="leading-tight font-bold">Grade 8</SelectItem>
-                                <SelectItem value="9" className="leading-tight font-bold">Grade 9</SelectItem>
-                                <SelectItem value="10" className="leading-tight font-bold">Grade 10</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            <Select
-                              isFilter
-                              value={curricularProgram}
-                              onValueChange={(val) => {
-                                setCurricularProgram(val);
-                                setQueuePage(1);
-                                setRowSelection({});
-                              }}
-                            >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
-                                <SelectValue placeholder="All Programs">
-                                  {curricularProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
-                                    : curricularProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
-                                      : curricularProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
-                                        : curricularProgram === "REGULAR" ? "BEC"
-                                          : "All Programs"}
-                                </SelectValue>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
-                                <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
-                                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
-                                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
-                                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            <Select
-                              isFilter
-                              value={previousSectionName}
-                              onValueChange={(val) => {
-                                setPreviousSectionName(val);
-                                startTransition(() => setQueuePage(1));
-                              }}
-                            >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
-                                <SelectValue placeholder="All Previous Sections" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-bold">All Previous Sections</SelectItem>
-                                {previousSections
-                                  .filter((sec) => typeof sec === "string" && sec.trim() !== "")
-                                  .map((sec) => (
-                                    <SelectItem key={sec} value={sec} className="leading-tight font-bold">
-                                      {sec}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </>
-                        )}
+                        ) : null}
                       </div>
                     </div>
 

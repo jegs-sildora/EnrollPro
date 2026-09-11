@@ -28,7 +28,10 @@ import {
   ChevronDownIcon,
   UploadIcon,
   DownloadIcon,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
 import {
   DropdownMenu,
@@ -151,6 +154,27 @@ export default function Teachers() {
     useState<TeacherDesignationFilter>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [activeMetric, setActiveMetric] = useState<"total" | "active" | "inactive" | "advisers">("total");
+
+  const [localPersonnelTypeFilter, setLocalPersonnelTypeFilter] = useState<"all" | "TEACHING" | "NON_TEACHING">("all");
+  const [localDesignationFilter, setLocalDesignationFilter] = useState<TeacherDesignationFilter>("all");
+  const [localDepartmentFilter, setLocalDepartmentFilter] = useState<string>("all");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalPersonnelTypeFilter(personnelTypeFilter);
+      setLocalDesignationFilter(designationFilter);
+      setLocalDepartmentFilter(departmentFilter);
+    }
+  }, [isFilterPopoverOpen, personnelTypeFilter, designationFilter, departmentFilter]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (personnelTypeFilter !== "all") count++;
+    if (designationFilter !== "all") count++;
+    if (departmentFilter !== "all") count++;
+    return count;
+  }, [personnelTypeFilter, designationFilter, departmentFilter]);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
@@ -827,100 +851,138 @@ export default function Teachers() {
 
   const controlBar = useMemo(
     () => (
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-        <div className="flex-1 w-full min-w-[200px]">
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              className="w-full h-10 pl-9 bg-muted text-base border-gray-300 uppercase font-bold"
-              aria-label="Search faculty and staff"
-              placeholder="Search name, Employee ID, mobile number, subject area, ..."
-              value={activeFilter}
-              onChange={(e) => setActiveFilter(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-between w-full">
+        <div className="relative w-full">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
+            aria-label="Search faculty and staff"
+            placeholder="Search name, employee ID, mobile number, subject area..."
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value)}
+          />
+          <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors"
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+              <div className="p-4 border-b">
+                <h4 className="text-lg font-bold">Filter Personnel</h4>
+              </div>
+              <div className="p-4 space-y-4 flex flex-col">
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground uppercase">Personnel Type</Label>
+                  <Select
+                    isFilter
+                    value={localPersonnelTypeFilter}
+                    onValueChange={(value) => setLocalPersonnelTypeFilter(value as "all" | "TEACHING" | "NON_TEACHING")}
+                  >
+                    <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                      <SelectValue placeholder="All Personnel Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="leading-tight font-bold">All Personnel Types</SelectItem>
+                      <SelectItem value="TEACHING" className="leading-tight font-bold">Teaching Personnel</SelectItem>
+                      <SelectItem value="NON_TEACHING" className="leading-tight font-bold">Non-Teaching Personnel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-bold shrink-0">
-          <div className="w-full sm:w-48">
-            <Select
-              isFilter
-              value={personnelTypeFilter}
-              onValueChange={(value) =>
-                onPersonnelTypeFilterChange(value as "all" | "TEACHING" | "NON_TEACHING")
-              }>
-              <SelectTrigger className="h-10 bg-muted">
-                <SelectValue placeholder="Personnel Type" />
-              </SelectTrigger>
-              <SelectContent className="font-bold">
-                <SelectItem value="all">All Personnel Types</SelectItem>
-                <SelectItem value="TEACHING">Teaching Personnel</SelectItem>
-                <SelectItem value="NON_TEACHING">Non-Teaching Personnel</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full sm:w-48">
-            <Select
-              isFilter
-              value={designationFilter}
-              onValueChange={(val) => onDesignationFilterChange(val as TeacherDesignationFilter)}>
-              <SelectTrigger className="h-10 bg-muted">
-                <SelectValue placeholder="Plantilla / Designation" />
-              </SelectTrigger>
-              <SelectContent className="font-bold">
-                <SelectItem value="all">All Designations</SelectItem>
-                {availableDesignationFilters.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full sm:w-48">
-            <Select
-              isFilter
-              value={departmentFilter}
-              onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="h-10 bg-muted min-w-[160px]">
-                <SelectValue placeholder="Subject" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="font-bold">All Subjects</SelectItem>
-                {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
-                  <SelectItem
-                    className=" font-bold"
-                    key={opt.value}
-                    value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground uppercase">Designation</Label>
+                  <Select
+                    isFilter
+                    value={localDesignationFilter}
+                    onValueChange={(val) => setLocalDesignationFilter(val as TeacherDesignationFilter)}
+                  >
+                    <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                      <SelectValue placeholder="All Designations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="leading-tight font-bold">All Designations</SelectItem>
+                      {availableDesignationFilters.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="leading-tight font-bold">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          <div className="hidden xl:block w-px h-6 bg-gray-300 mx-1 shrink-0"></div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground uppercase">Subject</Label>
+                  <Select
+                    isFilter
+                    value={localDepartmentFilter}
+                    onValueChange={setLocalDepartmentFilter}
+                  >
+                    <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                      <SelectValue placeholder="All Subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="leading-tight font-bold">All Subjects</SelectItem>
+                      {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="leading-tight font-bold">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <Button
-            className="h-10 px-3  text-gray-600 hover:text-gray-900 shrink-0"
-            variant="ghost"
-            onClick={() => {
-              setActiveFilter("");
-              setPersonnelTypeFilter("all");
-              setDesignationFilter("all");
-              setDepartmentFilter("all");
-            }}>
-            <FilterXIcon className="w-4 h-4 mr-2" /> Clear
-          </Button>
+              <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setLocalPersonnelTypeFilter("all");
+                    setLocalDesignationFilter("all");
+                    setLocalDepartmentFilter("all");
+                    setPersonnelTypeFilter("all");
+                    setDesignationFilter("all");
+                    setDepartmentFilter("all");
+                    setPage(1);
+                    setIsFilterPopoverOpen(false);
+                  }}
+                  className="font-bold text-gray-600 hover:text-gray-900"
+                >
+                  Clear All
+                </Button>
+                <Button
+                  onClick={() => {
+                    setPersonnelTypeFilter(localPersonnelTypeFilter);
+                    setDesignationFilter(localDesignationFilter);
+                    setDepartmentFilter(localDepartmentFilter);
+                    setPage(1);
+                    setIsFilterPopoverOpen(false);
+                  }}
+                  className="font-bold bg-primary hover:bg-primary/90 text-white"
+                >
+                  Apply Filters
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     ),
     [
       activeFilter,
-      personnelTypeFilter,
-      designationFilter,
-      departmentFilter,
+      localPersonnelTypeFilter,
+      localDesignationFilter,
+      localDepartmentFilter,
       availableDesignationFilters,
+      isFilterPopoverOpen,
+      activeFilterCount,
     ]
   );
 

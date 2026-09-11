@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { addressSchema } from "./application.schema.js";
 
 export const directEncodeWalkInSchema = z.object({
   learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"]),
@@ -8,6 +9,7 @@ export const directEncodeWalkInSchema = z.object({
   middleName: z.string().optional(),
   birthdate: z.string().min(1, "Birthdate is required"),
   sex: z.enum(["MALE", "FEMALE"]),
+  motherTongue: z.string().min(1, "Mother Tongue is required"),
   gradeLevelId: z.coerce.number().min(1, "Grade Level is required"),
   assignedProgram: z.enum([
     "REGULAR",
@@ -56,6 +58,7 @@ export const directEncodeWalkInSchema = z.object({
     .array(z.string().trim().min(1, "Subject code is required"))
     .max(2, "Select no more than 2 back subjects")
     .default([]),
+  currentAddress: addressSchema,
 })
 .superRefine((obj, ctx) => {
   const { learnerType, lrn } = obj;

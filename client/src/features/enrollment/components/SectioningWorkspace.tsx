@@ -17,7 +17,10 @@ import {
   Trash2,
   Mars,
   Venus,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Label } from "@/shared/ui/label";
 import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -665,6 +668,21 @@ export function SectioningWorkspace() {
   };
 
   const [filterProgram, setFilterProgram] = useState<string>("all");
+  const [localFilterProgram, setLocalFilterProgram] = useState<string>("all");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalFilterProgram(filterProgram);
+    }
+  }, [isFilterPopoverOpen, filterProgram]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filterProgram !== "all") count++;
+    return count;
+  }, [filterProgram]);
+
   const {
     inputValue: searchQuery,
     setInputValue: setSearchQuery,
@@ -1317,35 +1335,75 @@ export function SectioningWorkspace() {
                 </div>
                 <div className="flex gap-2 mt-4">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                      className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-bold uppercase"
+                      placeholder="Search LRN, first name, last name..."
+                      className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                    <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <button className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                          <SlidersHorizontal className="h-5 w-5" />
+                          {activeFilterCount > 0 && (
+                            <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                              {activeFilterCount}
+                            </span>
+                          )}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+                        <div className="p-4 border-b">
+                          <h4 className="text-lg font-bold">Filter Learners</h4>
+                        </div>
+                        <div className="p-4 space-y-4 flex flex-col">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm text-muted-foreground uppercase">Program Type</Label>
+                            <Select
+                              isFilter
+                              value={localFilterProgram}
+                              onValueChange={setLocalFilterProgram}
+                            >
+                              <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                <SelectValue placeholder="All Programs" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all" className="leading-tight font-bold">All Programs</SelectItem>
+                                <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
+                                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
+                                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setLocalFilterProgram("all");
+                              setFilterProgram("all");
+                              setIsFilterPopoverOpen(false);
+                            }}
+                            className="font-bold text-gray-600 hover:text-gray-900"
+                          >
+                            Clear All
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setFilterProgram(localFilterProgram);
+                              setIsFilterPopoverOpen(false);
+                            }}
+                            className="font-bold bg-primary hover:bg-primary/90 text-white"
+                          >
+                            Apply Filters
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  <Select
-                    isFilter
-                    value={filterProgram}
-                    onValueChange={setFilterProgram}>
-                    <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-bold transition-colors">
-                      <SelectValue placeholder="All Programs">
-                        {filterProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
-                          : filterProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
-                            : filterProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
-                              : filterProgram === "REGULAR" ? "BEC"
-                                : "All Programs"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" className="leading-tight font-bold">All Programs</SelectItem>
-                      <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
-                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
-                      <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
-                      <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </CardHeader>
               <div className="p-0 relative flex-1">

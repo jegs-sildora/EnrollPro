@@ -22,7 +22,7 @@ interface SectionProps {
 function DataSection({ title, icon, children }: SectionProps) {
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
         {icon && <span className="text-primary">{icon}</span>}
         <span className="uppercase">{title}</span>
       </div>
@@ -58,7 +58,7 @@ function DataItem({
 
   return (
     <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-      <div className="p-3 text-foreground bg-muted/30">{label}:</div>
+      <div className="p-3 text-foreground bg-muted/30 font-extrabold">{label}:</div>
       <div
         className={cn(
           "p-3 flex items-center",
@@ -251,7 +251,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
   }) => {
     return (
       <div key={c.label} className="grid grid-cols-[180px_1fr] divide-x divide-border">
-        <div className="p-3 text-foreground bg-muted/30 flex items-center gap-1.5 flex-wrap">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center gap-1.5 flex-wrap font-extrabold">
           {c.label}:
           {c.isPrimary && (
             <span className="text-sm bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
@@ -359,7 +359,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
       />
 
       <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-        <div className="p-3 text-foreground bg-muted/30 flex items-center">IP Community:</div>
+        <div className="p-3 text-foreground bg-muted/30 flex items-center font-extrabold">IP Community:</div>
         <div className="p-3 flex items-center">
           {isIp ? (
             <div className="text-foreground">
@@ -372,7 +372,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
       </div>
 
       <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-        <div className="p-3 text-foreground bg-muted/30 flex items-center">4Ps Beneficiary:</div>
+        <div className="p-3 text-foreground bg-muted/30 flex items-center font-extrabold">4Ps Beneficiary:</div>
         <div className="p-3 flex items-center">
           {is4Ps ? (
             <div className="text-foreground">
@@ -385,7 +385,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
       </div>
 
       <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-        <div className="p-3 text-foreground bg-muted/30 flex items-center">Disability:</div>
+        <div className="p-3 text-foreground bg-muted/30 flex items-center font-extrabold">Disability:</div>
         <div className="p-3 flex items-center">
           {isPwd ? (
             <div className="space-y-2">
@@ -412,7 +412,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
       </div>
 
       <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-        <div className="p-3 text-foreground bg-muted/30 flex items-center">Balik-Aral:</div>
+        <div className="p-3 text-foreground bg-muted/30 flex items-center font-extrabold">Balik-Aral:</div>
         <div className="p-3 flex items-center">
           {isBalikAral ? (
             <div className="text-foreground">

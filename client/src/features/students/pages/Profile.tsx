@@ -171,35 +171,41 @@ export default function StudentProfile() {
 
         <TabsContent
           value="record"
-          className="min-h-0 flex-1 overflow-hidden rounded-md border bg-background"
+          className="min-h-0 flex-1 rounded-md border bg-background relative"
         >
-          <StudentDetailPanel
-            key={`${learnerId}-${schoolYearId ?? "active"}-${refreshVersion}`}
-            id={learnerId}
-            schoolYearId={schoolYearId}
-            onClose={() => navigate("/learners")}
-            onRefreshData={refreshProfile}
-            onTransferOut={handleTransferOut}
-            onDropout={handleDropout}
-            canEditProfile={canEditProfile}
-            onStudentLoaded={setLoadedStudent}
-            showHeader={false}
-          />
+          <div className="absolute inset-0">
+            <StudentDetailPanel
+              key={`${learnerId}-${schoolYearId ?? "active"}-${refreshVersion}`}
+              id={learnerId}
+              schoolYearId={schoolYearId}
+              onClose={() => navigate("/learners")}
+              onRefreshData={refreshProfile}
+              onTransferOut={handleTransferOut}
+              onDropout={handleDropout}
+              canEditProfile={canEditProfile}
+              onStudentLoaded={setLoadedStudent}
+              showHeader={false}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent
           value="academic"
-          className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-background p-4"
+          className="min-h-0 flex-1 rounded-md border bg-background relative"
         >
-          <AcademicHistoryTab student={loadedStudent} />
+          <div className="absolute inset-0 overflow-y-auto p-4">
+            <AcademicHistoryTab student={loadedStudent} />
+          </div>
         </TabsContent>
 
         {needsRemedial && (
           <TabsContent
             value="back_subjects"
-            className="min-h-0 flex-1 overflow-hidden rounded-md border bg-background"
+            className="min-h-0 flex-1 rounded-md border bg-background relative"
           >
-            <BackSubjectWorkspace student={loadedStudent} schoolYearId={schoolYearId ?? 0} onRefreshData={refreshProfile} />
+            <div className="absolute inset-0 overflow-y-auto">
+              <BackSubjectWorkspace student={loadedStudent} schoolYearId={schoolYearId ?? 0} onRefreshData={refreshProfile} />
+            </div>
           </TabsContent>
         )}
       </Tabs>

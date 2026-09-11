@@ -229,6 +229,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         limit: parseQueryString(req.query.limit),
         sortBy: parseQueryString(req.query.sortBy),
         sortOrder: parseSortOrder(req.query.sortOrder),
+        hasBackSubjects: parseQueryString(req.query.hasBackSubjects),
       });
 
       const students = applications.map((applicant: StudentSearchItem) => {
@@ -279,6 +280,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           schoolYear: schoolYearInfo,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
+          hasBackSubjects: applicant.backSubjects ? applicant.backSubjects.length > 0 : false,
         };
       });
 
@@ -376,6 +378,12 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
                   email: true,
                 },
               },
+            },
+          },
+          encodedBy: {
+            select: {
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -678,7 +686,22 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
               transferOutSchoolName: applicant.enrollmentRecord.transferOutSchoolName,
               transferOutReason: applicant.enrollmentRecord.transferOutReason,
             }
-          : null,
+          : {
+              id: 0,
+              section: "UNASSIGNED",
+              sectionId: null,
+              advisingTeacher: null,
+              enrolledAt: applicant.createdAt,
+              enrolledBy: (applicant as any).encodedBy 
+                ? `${(applicant as any).encodedBy.lastName || ""}, ${(applicant as any).encodedBy.firstName || ""}`
+                : "System / Unknown",
+              eosyStatus: null,
+              dropOutReason: null,
+              dropOutDate: null,
+              transferOutDate: null,
+              transferOutSchoolName: null,
+              transferOutReason: null,
+            },
         createdAt: applicant.createdAt,
         updatedAt: applicant.updatedAt,
         academicHistory,

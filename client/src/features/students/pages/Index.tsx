@@ -16,9 +16,10 @@ import {
   BadgeAlert,
   FileBadge2,
   Fingerprint,
-  CalendarDays,
   FilterXIcon,
   AlertTriangle,
+  SlidersHorizontal,
+  CalendarDays,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -88,6 +89,11 @@ import {
   type StudentDropoutPayload,
   type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/popover";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
@@ -135,6 +141,7 @@ interface Student {
   studentPhoto?: string | null;
   portalStatus?: string;
   schoolYear?: { yearLabel: string } | string;
+  hasBackSubjects?: boolean;
 }
 
 
@@ -310,6 +317,28 @@ export default function Students() {
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [promotionStatusFilter, setPromotionStatusFilter] = useState<string>("all");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [localGradeFilter, setLocalGradeFilter] = useState<string>("all");
+  const [localProgramFilter, setLocalProgramFilter] = useState<string>("all");
+  const [localSectionFilter, setLocalSectionFilter] = useState<string>("all");
+  const [localPromotionStatusFilter, setLocalPromotionStatusFilter] = useState<string>("all");
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalGradeFilter(gradeLevelFilter);
+      setLocalProgramFilter(programFilter);
+      setLocalSectionFilter(sectionFilter);
+      setLocalPromotionStatusFilter(promotionStatusFilter);
+    }
+  }, [isFilterPopoverOpen, gradeLevelFilter, programFilter, sectionFilter, promotionStatusFilter]);
+
+  const activeFilterCount =
+    (gradeLevelFilter !== "all" ? 1 : 0) +
+    (programFilter !== "all" ? 1 : 0) +
+    (sectionFilter !== "all" ? 1 : 0) +
+    (promotionStatusFilter !== "all" ? 1 : 0);
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
   const [sortBy, setSortBy] = useState<string>("lastName");
@@ -406,6 +435,10 @@ export default function Students() {
       }
     }
 
+    if (promotionStatusFilter !== "all") {
+      params.hasBackSubjects = promotionStatusFilter === "conditional" ? "true" : "false";
+    }
+
     return params;
   }, [
     page,
@@ -419,6 +452,7 @@ export default function Students() {
     programFilter,
     sectionFilter,
     statusFilter,
+    promotionStatusFilter,
   ]);
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -930,6 +964,11 @@ export default function Students() {
                     <span>
                       LRN: {row.original.lrn}
                     </span>
+                    {row.original.hasBackSubjects && (
+                      <Badge className="h-6 px-2 text-sm bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 uppercase font-bold tracking-tight">
+                        Conditionally Promoted
+                      </Badge>
+                    )}
                     {row.original.applicantType === "LATE_ENROLLEE" && (
                       <Badge className="h-4 px-1 text-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-bold">
                         Late Enrollee
@@ -1103,181 +1142,219 @@ export default function Students() {
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         {/* Control Bar (Filters) */}
         <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
-          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-            <div className="flex-1 w-full min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                  className="w-full h-10 pl-9 bg-muted border-gray-300 uppercase font-bold"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
-              <Select
-                isFilter
-                value={gradeLevelFilter}
-                onValueChange={(value) => {
-                  startTransition(() => {
-                    setGradeLevelFilter(value);
-                    setPage(1);
-                  });
-                }}>
-                <SelectTrigger className="h-10 w-full leading-tight font-bold sm:w-40">
-                  <SelectValue placeholder="All Grade Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="leading-tight font-bold uppercase">
-                    All Grade Level
-                  </SelectItem>
-                  {gradeLevels.map((gl) => (
-                    <SelectItem
-                      key={gl.id}
-                      value={gl.id.toString()}
-                      className="leading-tight font-bold uppercase">
-                      <div className="flex items-center gap-2">
-                        <span>{gl.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                isFilter
-                value={programFilter}
-                onValueChange={(value) => {
-                  startTransition(() => {
-                    setProgramFilter(value);
-                    setPage(1);
-                  });
-                }}>
-                <SelectTrigger className="h-10 w-full leading-tight font-bold sm:w-48">
-                  <SelectValue placeholder="All Programs" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="leading-tight font-bold">
-                    All Programs
-                  </SelectItem>
-                  {programOptionsQuery.isPending && (
-                    <SelectItem value="__loading" disabled>
-                      Loading programs...
-                    </SelectItem>
-                  )}
-                  {programOptionsQuery.isError && (
-                    <SelectItem value="__error" disabled>
-                      Programs could not be loaded
-                    </SelectItem>
-                  )}
-                  {availablePrograms.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="leading-tight font-bold">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                isFilter
-                value={sectionFilter}
-                onValueChange={(value) => {
-                  startTransition(() => {
-                    setSectionFilter(value);
-                    setPage(1);
-                  });
-                }}>
-                <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors sm:w-48">
-                  <SelectValue placeholder="All Sections" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="leading-tight font-bold">
-                    All Sections
-                  </SelectItem>
-                  {gradeLevelFilter === "all" ? (
-                    gradeLevels.map((gl) => {
-                      const glSections = filteredSections.filter((s) => s.gradeLevelId === gl.id);
-                      if (glSections.length === 0) return null;
-                      return (
-                        <SelectGroup key={gl.id}>
-                          <SelectLabel className={cn("uppercase font-bold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
-                          {glSections.map((sec) => (
+          <div className="flex flex-col items-center justify-between w-full">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search LRN, first name, last name..."
+                className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors"
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+                  <div className="p-4 border-b">
+                    <h4 className="text-lg font-bold">Filter Learners</h4>
+                  </div>
+                  <div className="p-4 space-y-4 flex flex-col">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground uppercase">Grade Level</Label>
+                      <Select
+                        isFilter
+                        value={localGradeFilter}
+                        onValueChange={setLocalGradeFilter}>
+                        <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                          <SelectValue placeholder="All Grades" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="leading-tight font-bold">
+                            All Grades
+                          </SelectItem>
+                          {gradeLevels.map((gl) => (
                             <SelectItem
-                              key={sec.id}
-                              value={sec.id.toString()}
+                              key={gl.id}
+                              value={gl.id.toString()}
                               className="leading-tight font-bold">
-                              {formatSectionLabel(sec.name)}
+                              <div className="flex items-center gap-2">
+                                <span>{gl.name}</span>
+                              </div>
                             </SelectItem>
                           ))}
-                        </SelectGroup>
-                      );
-                    })
-                  ) : (
-                    filteredSections.map((sec) => (
-                      <SelectItem
-                        key={sec.id}
-                        value={sec.id.toString()}
-                        className="leading-tight font-bold">
-                        {formatSectionLabel(sec.name)}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              {activeTab === "inactive" && (
-                <Select
-                  isFilter
-                  value={statusFilter}
-                  onValueChange={(value) => {
-                    startTransition(() => {
-                      setStatusFilter(value);
-                      setPage(1);
-                    });
-                  }}>
-                  <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors sm:w-48">
-                    <SelectValue placeholder="All Inactive" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="leading-tight font-bold">
-                      All Inactive
-                    </SelectItem>
-                    <SelectItem value="DROPPED" className="leading-tight font-bold text-red-600">
-                      Dropped Out
-                    </SelectItem>
-                    <SelectItem value="TRANSFERRED_OUT" className="leading-tight font-bold text-amber-600">
-                      Transferred Out
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground uppercase">Program</Label>
+                      <Select
+                        isFilter
+                        value={localProgramFilter}
+                        onValueChange={setLocalProgramFilter}>
+                        <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                          <SelectValue placeholder="All Programs" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="leading-tight font-bold">
+                            All Programs
+                          </SelectItem>
+                          {programOptionsQuery.isPending && (
+                            <SelectItem value="__loading" disabled>
+                              Loading programs...
+                            </SelectItem>
+                          )}
+                          {programOptionsQuery.isError && (
+                            <SelectItem value="__error" disabled>
+                              Programs could not be loaded
+                            </SelectItem>
+                          )}
+                          {availablePrograms.map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className="leading-tight font-bold">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              {/* Vertical Divider (Hidden on small screens when wrapped) */}
-              <div className="hidden xl:block w-px h-6 bg-border mx-1" />
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground uppercase">Section</Label>
+                      <Select
+                        isFilter
+                        value={localSectionFilter}
+                        onValueChange={setLocalSectionFilter}>
+                        <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                          <SelectValue placeholder="All Sections" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="leading-tight font-bold">
+                            All Sections
+                          </SelectItem>
+                          {localGradeFilter === "all" ? (
+                            gradeLevels.map((gl) => {
+                              const glSections = filteredSections.filter((s) => s.gradeLevelId === gl.id);
+                              if (glSections.length === 0) return null;
+                              return (
+                                <SelectGroup key={gl.id}>
+                                  <SelectLabel className={cn("uppercase font-bold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
+                                  {glSections.map((sec) => (
+                                    <SelectItem
+                                      key={sec.id}
+                                      value={sec.id.toString()}
+                                      className="leading-tight font-bold">
+                                      {formatSectionLabel(sec.name)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              );
+                            })
+                          ) : (
+                            filteredSections.map((sec) => (
+                              <SelectItem
+                                key={sec.id}
+                                value={sec.id.toString()}
+                                className="leading-tight font-bold">
+                                {formatSectionLabel(sec.name)}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              {/* Action Buttons */}
-              <Button
-                className="h-10 px-3 text-gray-600 hover:text-gray-900 shrink-0 font-bold"
-                variant="ghost"
-                onClick={() => {
-                  startTransition(() => {
-                    clearSearch();
-                    setGradeLevelFilter("all");
-                    setProgramFilter("all");
-                    setSectionFilter("all");
-                    setStatusFilter("all");
-                    setSortBy("dateEnrolled");
-                    setSortOrder("desc");
-                    setPage(1);
-                  });
-                }}>
-                <FilterXIcon className="w-4 h-4 mr-2" /> Clear
-              </Button>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground uppercase">EOSY Promotion Status</Label>
+                      <Select
+                        isFilter
+                        value={localPromotionStatusFilter}
+                        onValueChange={setLocalPromotionStatusFilter}>
+                        <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                          <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="leading-tight font-bold">
+                            All Statuses
+                          </SelectItem>
+                          <SelectItem value="regular" className="leading-tight font-bold">
+                            Regular (Promoted)
+                          </SelectItem>
+                          <SelectItem value="conditional" className="leading-tight font-bold">
+                            With Back Subjects
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {activeTab === "inactive" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-gray-500 uppercase">Inactive Status</Label>
+                        <Select
+                          isFilter
+                          value={statusFilter}
+                          onValueChange={(value) => {
+                            startTransition(() => {
+                              setStatusFilter(value);
+                              setPage(1);
+                            });
+                          }}>
+                          <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                            <SelectValue placeholder="All Inactive" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all" className="leading-tight font-bold">
+                              All Inactive
+                            </SelectItem>
+                            <SelectItem value="DROPPED" className="leading-tight font-bold text-red-600">
+                              Dropped Out
+                            </SelectItem>
+                            <SelectItem value="TRANSFERRED_OUT" className="leading-tight font-bold text-amber-600">
+                              Transferred Out
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 border-t flex items-center justify-between bg-muted/30 rounded-b-md">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                        setLocalGradeFilter("all");
+                        setLocalProgramFilter("all");
+                        setLocalSectionFilter("all");
+                        setLocalPromotionStatusFilter("all");
+                        if (activeTab === "inactive") setStatusFilter("all");
+                        clearSearch();
+                    }}>
+                      Clear All
+                    </Button>
+                    <Button size="sm" onClick={() => {
+                        startTransition(() => {
+                           setGradeLevelFilter(localGradeFilter);
+                           setProgramFilter(localProgramFilter);
+                           setSectionFilter(localSectionFilter);
+                           setPromotionStatusFilter(localPromotionStatusFilter);
+                           setPage(1);
+                           setIsFilterPopoverOpen(false);
+                        });
+                    }}>
+                      Apply Filters
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>

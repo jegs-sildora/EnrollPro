@@ -163,6 +163,7 @@ export async function findStudents(query: {
   limit?: number | string;
   sortBy?: string;
   sortOrder?: StudentSortOrder;
+  hasBackSubjects?: string | boolean;
 }) {
   const {
     schoolYearId,
@@ -179,6 +180,7 @@ export async function findStudents(query: {
     limit,
     sortBy,
     sortOrder,
+    hasBackSubjects,
   } = query;
 
   const resolvedSchoolYearId = parsePositiveInt(schoolYearId);
@@ -196,6 +198,7 @@ export async function findStudents(query: {
   );
   const resolvedStatuses = normalizeStatuses(status) ?? (resolvedSchoolYearId ? ACTIVE_STATUS_DEFAULTS : undefined);
   const resolvedSortOrder = normalizeSortOrder(sortOrder);
+  const resolvedHasBackSubjects = normalizeBoolean(hasBackSubjects);
   
   const skip = (resolvedPage - 1) * resolvedLimit;
   const orderBy = resolveStudentOrderBy(sortBy, resolvedSortOrder);
@@ -294,6 +297,7 @@ export async function findStudents(query: {
             },
             addresses: true,
             familyMembers: true,
+            backSubjects: { select: { id: true } },
           },
         },
       },
@@ -315,6 +319,7 @@ export async function findStudents(query: {
         gradeLevel: latestApp?.gradeLevel,
         enrollmentRecord: latestApp?.enrollmentRecord,
         schoolYear: latestApp?.schoolYear,
+        backSubjects: latestApp?.backSubjects ?? [],
       };
     });
 
@@ -398,6 +403,7 @@ export async function findStudents(query: {
               include: {
                 addresses: true,
                 familyMembers: true,
+                backSubjects: { select: { id: true } },
               },
             },
           },
@@ -447,6 +453,7 @@ export async function findStudents(query: {
         },
         familyMembers: app?.familyMembers ?? [],
         addresses: app?.addresses ?? [],
+        backSubjects: app?.backSubjects ?? [],
       };
     });
 
@@ -510,6 +517,12 @@ export async function findStudents(query: {
   if (resolvedSectionIds && resolvedSectionIds.length > 0) enrollmentRecordFilters.sectionId = { in: resolvedSectionIds };
   if (resolvedSectionFilter) {
     enrollmentRecordFilters.section = resolvedSectionFilter;
+  }
+
+  if (resolvedHasBackSubjects === true) {
+    where.backSubjects = { some: {} };
+  } else if (resolvedHasBackSubjects === false) {
+    where.backSubjects = { none: {} };
   }
 
   if (Object.keys(enrollmentRecordFilters).length > 0) {
@@ -584,6 +597,7 @@ export async function findStudents(query: {
       },
       addresses: true,
       familyMembers: true,
+      backSubjects: { select: { id: true } },
     },
     orderBy,
     skip,

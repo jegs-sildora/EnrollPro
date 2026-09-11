@@ -11,8 +11,11 @@ import {
   AlertTriangle,
   Mars,
   Venus,
-  FileCheck
+  FileCheck,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Label } from "@/shared/ui/label";
 import { format } from "date-fns";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -234,6 +237,24 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
+
+  const [localIntakeCategoryFilter, setLocalIntakeCategoryFilter] = useState<string>("ALL");
+  const [localProgramFilter, setLocalProgramFilter] = useState<string>("ALL");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isFilterPopoverOpen) {
+      setLocalIntakeCategoryFilter(intakeCategoryFilter);
+      setLocalProgramFilter(programFilter);
+    }
+  }, [isFilterPopoverOpen, intakeCategoryFilter, programFilter]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (intakeCategoryFilter !== "ALL") count++;
+    if (programFilter !== "ALL") count++;
+    return count;
+  }, [intakeCategoryFilter, programFilter]);
   type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
   const activeTab = useSettingsStore((s) => s.uiPreferences.verificationTab) as VerificationTab;
   const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
@@ -241,6 +262,7 @@ export function VerificationWorkspace() {
   const {
     data: pendingVerifications = [],
     isLoading,
+    isPending,
   } = useQuery({
     queryKey: ["enrollment", "pending-verifications"],
     queryFn: () =>
@@ -387,7 +409,7 @@ export function VerificationWorkspace() {
 
   // If the user is on the Deficient tab and it becomes empty, redirect to Enrolled tab
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isPending) return;
     if (activeTab === "INCOMPLETE") {
       const deficientCount = pendingVerifications.filter((app) => {
         const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
@@ -398,7 +420,7 @@ export function VerificationWorkspace() {
         setSelectedAppId(null);
       }
     }
-  }, [pendingVerifications, activeTab, isLoading]);
+  }, [pendingVerifications, activeTab, isLoading, isPending]);
 
   const getApiErrorMessage = (error: unknown, fallback: string): string => {
     if (isAxiosError<ApiErrorResponse>(error)) {
@@ -535,50 +557,97 @@ export function VerificationWorkspace() {
           <div className="relative w-full flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-              className="w-full h-10 pl-9 bg border-gray-300 font-bold uppercase"
+              placeholder="Search LRN, first name, last name..."
+              className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                  <SlidersHorizontal className="h-5 w-5" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[320px] p-0 shadow-xl border-border bg-card">
+                <div className="p-4 border-b">
+                  <h4 className="text-lg font-bold">Filter Learners</h4>
+                </div>
+                <div className="p-4 space-y-4 flex flex-col">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground uppercase">Enrollment Status</Label>
+                    <Select
+                      isFilter
+                      value={localIntakeCategoryFilter}
+                      onValueChange={setLocalIntakeCategoryFilter}
+                    >
+                      <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                        <SelectValue placeholder="All Enrollment Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="leading-tight font-bold">All Enrollment Statuses</SelectItem>
+                        <SelectItem value="NEW_ENROLLEE" className="leading-tight font-bold">New Entrants</SelectItem>
+                        <SelectItem value="TRANSFEREE" className="leading-tight font-bold">Transferees</SelectItem>
+                        <SelectItem value="BALIK_ARAL" className="leading-tight font-bold">Returnee (Balik-Aral)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground uppercase">Program Type</Label>
+                    <Select
+                      isFilter
+                      value={localProgramFilter}
+                      onValueChange={setLocalProgramFilter}
+                    >
+                      <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                        <SelectValue placeholder="All Programs" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
+                        <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                        <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setLocalIntakeCategoryFilter("ALL");
+                      setLocalProgramFilter("ALL");
+                      setIntakeCategoryFilter("ALL");
+                      setProgramFilter("ALL");
+                      setIsFilterPopoverOpen(false);
+                    }}
+                    className="font-bold text-gray-600 hover:text-gray-900"
+                  >
+                    Clear All
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIntakeCategoryFilter(localIntakeCategoryFilter);
+                      setProgramFilter(localProgramFilter);
+                      setIsFilterPopoverOpen(false);
+                    }}
+                    className="font-bold bg-primary hover:bg-primary/90 text-white"
+                  >
+                    Apply Filters
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
-
-            <Select
-              isFilter
-              value={intakeCategoryFilter}
-              onValueChange={(val) => setIntakeCategoryFilter(val)}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
-                <SelectValue placeholder="ALL ENROLLMENT STATUSES" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="leading-tight font-bold">ALL ENROLLMENT STATUSES</SelectItem>
-                <SelectItem value="NEW_ENROLLEE" className="leading-tight font-bold">NEW ENTRANTS</SelectItem>
-                <SelectItem value="TRANSFEREE" className="leading-tight font-bold">TRANSFEREES</SelectItem>
-                <SelectItem value="BALIK_ARAL" className="leading-tight font-bold">RETURNEE (Balik-Aral)</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              isFilter
-              value={programFilter}
-              onValueChange={(val) => setProgramFilter(val)}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
-                <SelectValue placeholder="All Programs" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
-                <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
-                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
-                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
-                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
-              </SelectContent>
-            </Select>
-
-
-
             {!isHistoricalReadOnly && (
               <WalkInEncodePanel />
             )}
@@ -802,7 +871,7 @@ export function VerificationWorkspace() {
 
                         {/* Academic Background */}
                         <VerificationRow label="Previous School">
-                          {selectedApp.previousSchool?.schoolName || "N/A"}
+                          <span className="capitalize">{selectedApp.previousSchool?.schoolName || "N/A"}</span>
                         </VerificationRow>
                         <VerificationRow label="Final General Average">
                           {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}
@@ -863,7 +932,7 @@ export function VerificationWorkspace() {
 
                       {/* Section 2: Academic History */}
                       <VerificationRow label="Previous School">
-                        {selectedApp.previousSchool?.schoolName || "N/A"}
+                        <span className="capitalize">{selectedApp.previousSchool?.schoolName || "N/A"}</span>
                       </VerificationRow>
                       <VerificationRow label="Final Gen Ave">
                         {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}

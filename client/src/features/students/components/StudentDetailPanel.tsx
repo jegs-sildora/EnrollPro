@@ -58,6 +58,19 @@ import {
   Classifications,
 } from "@/features/enrollment/components/BeefSections";
 import { sileo } from "sileo";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+
+const MOTHER_TONGUE_OPTIONS = [
+  { value: "Tagalog", label: "Tagalog" },
+  { value: "Cebuano", label: "Cebuano" },
+  { value: "Hiligaynon (Ilonggo)", label: "Hiligaynon (Ilonggo)" },
+  { value: "Ilocano (Iloko)", label: "Ilocano (Iloko)" },
+  { value: "Bicolano (Central Bikol)", label: "Bicolano (Central Bikol)" },
+  { value: "Kapampangan", label: "Kapampangan" },
+  { value: "Pangasinan (Pangasinense)", label: "Pangasinan (Pangasinense)" },
+  { value: "Waray", label: "Waray" },
+  { value: "Others", label: "Others" },
+];
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
@@ -388,6 +401,7 @@ export function StudentDetailPanel({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
+  const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(false);
 
   const showSkeleton = useDelayedLoading(loading);
   const isJhsCompleter = student?.learnerStatus === "JHS_COMPLETER";
@@ -552,6 +566,11 @@ export function StudentDetailPanel({
       guardianContactNumber: student.guardianInfo?.contactNumber || "",
     });
     setErrors({});
+    if (student?.motherTongue && !MOTHER_TONGUE_OPTIONS.some((o) => o.value === student.motherTongue)) {
+      setIsOtherMotherTongue(true);
+    } else {
+      setIsOtherMotherTongue(false);
+    }
     setIsEditing(false);
   }, [student]);
 
@@ -621,6 +640,11 @@ export function StudentDetailPanel({
       guardianContactNumber: (student.guardianInfo?.contactNumber || "").replace(/\D/g, ""),
     });
     setErrors({});
+    if (student?.motherTongue && !MOTHER_TONGUE_OPTIONS.some((o) => o.value === student.motherTongue)) {
+      setIsOtherMotherTongue(true);
+    } else {
+      setIsOtherMotherTongue(false);
+    }
     setIsEditing(true);
   };
 
@@ -655,6 +679,7 @@ export function StudentDetailPanel({
     if (!profileForm.cityMunicipality)
       newErrors.cityMunicipality = "City / Municipality is required.";
     if (!profileForm.barangay) newErrors.barangay = "Barangay is required.";
+    if (!profileForm.motherTongue.trim()) newErrors.motherTongue = "Mother Tongue is required.";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -943,156 +968,176 @@ export function StudentDetailPanel({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
         {/* Summary Block */}
-        <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
-          <div className="flex flex-col items-center mb-6 pt-2">
-            <UserPhoto
-              photo={student.studentPhoto}
-              containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
-              className="w-full h-full object-cover rounded-full"
-              onEnlarge={() => setIsPhotoEnlarged(true)}
-              alt={student.fullName}
-              fallbackIcon={
-                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl bg-primary">
-                  {((f, l) => `${f}${l}`)(
-                    String(student.firstName || "")
+        <div className="bg-[hsl(var(--muted))] p-4 sm:p-6 rounded-md border">
+          {/* Top Row: Identity & Actions */}
+          <div className="flex justify-between items-start">
+            {/* Left Side: Media Object */}
+            <div className="flex items-start gap-4 sm:gap-6">
+              <UserPhoto
+                photo={student.studentPhoto}
+                containerClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
+                className="w-full h-full object-cover rounded-full"
+                onEnlarge={() => setIsPhotoEnlarged(true)}
+                alt={student.fullName}
+                fallbackIcon={
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl bg-primary">
+                    {((f, l) => `${f}${l}`)(
+                      String(student.firstName || "")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase(),
+                      String(student.lastName || "")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase(),
+                    ) || "?"}
+                  </div>
+                }
+              />
+              <div className="flex flex-col mt-1">
+                <h3 className="text-2xl font-extrabold text-foreground leading-tight uppercase break-words">
+                  {isEditing
+                    ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`
                       .trim()
-                      .charAt(0)
-                      .toUpperCase(),
-                    String(student.lastName || "")
-                      .trim()
-                      .charAt(0)
-                      .toUpperCase(),
-                  ) || "?"}
-                </div>
-              }
-            />
-            <div className="text-center mt-4">
-              <h3 className="font-bold text-lg sm:text-xl uppercase  break-words">
-                {isEditing
-                  ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`
-                    .trim()
-                    .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
-                  : student.fullName}
-              </h3>
-              <div className="flex flex-col items-center justify-center gap-2 mt-1">
-                <div className="flex items-center justify-center gap-2 font-bold">
+                      .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
+                    : student.fullName}
+                </h3>
+                <p className="font-bold uppercase mb-2 text-lg">
+                  LRN: {student.lrn || "N/A"}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
                   {isJhsCompleter ? (
-                    <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
+                    <Badge className="bg-primary text-primary-foreground rounded-full uppercase shadow-sm px-3 py-0.5 text-sm font-bold border-0">
                       JHS Completer
                     </Badge>
                   ) : student.enrollment?.eosyStatus === "TRANSFERRED_OUT" ? (
-                    <Badge className="bg-red-800 hover:bg-red-900 text-white gap-1 px-3 py-1 rounded-md uppercase shadow-sm">
+                    <Badge className="bg-red-800 hover:bg-red-900 text-white px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0">
                       Transferred Out
                     </Badge>
                   ) : student.enrollment?.eosyStatus === "DROPPED_OUT" ? (
-                    <Badge className="bg-red-800 hover:bg-red-900 text-white gap-1 px-3 py-1 rounded-md uppercase shadow-sm">
+                    <Badge className="bg-red-800 hover:bg-red-900 text-white px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0">
                       Dropped Out
                     </Badge>
                   ) : (
-                    <Badge className="bg-emerald-600 text-white gap-1 px-3 py-1 rounded-md uppercase  shadow-sm">
+                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0">
                       Officially Enrolled
                     </Badge>
                   )}
                   {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
-                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-bold">
+                    <Badge className="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-0.5 rounded-full uppercase shadow-sm font-bold text-sm">
                       Late Enrollee
                     </Badge>
                   )}
+                  {(student.isRemedialRequired || (student.academicDeficiencies && student.academicDeficiencies.length > 0) || (student.remedialClasses && student.remedialClasses.length > 0)) && (
+                    <Badge className="bg-amber-500 text-white hover:bg-amber-600 px-3 py-0.5 rounded-full uppercase shadow-sm font-bold text-sm border-0">
+                      WITH BACK SUBJECTS
+                    </Badge>
+                  )}
                 </div>
-                {(student.isRemedialRequired || (student.academicDeficiencies && student.academicDeficiencies.length > 0) || (student.remedialClasses && student.remedialClasses.length > 0)) && (
-                  <Badge className="bg-amber-500 text-white hover:bg-amber-600 gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-bold">
-                    WITH BACK SUBJECTS
-                  </Badge>
-                )}
               </div>
-              {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
-                <div className="mt-4 flex justify-center w-full px-2">
-                  <Button
-                    variant="default"
-                    className="font-bold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
-                    onClick={handleEditClick}>
-                    <UserRoundPen className="mr-2 h-5 w-5 shrink-0" />
-                    Edit Learner Data
-                  </Button>
-                </div>
-              )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
-            {!isJhsCompleter ? (
-              <div>
-                <p className="text-base uppercase text-foreground mb-1">
+            {/* Right Side: Action Button */}
+            {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
+              <div className="shrink-0 ml-4 hidden sm:block">
+                <Button
+                  variant="outline"
+                  className="font-bold text-sm h-9 px-4 uppercase border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-sm rounded-md transition-all active:scale-[0.98]"
+                  onClick={handleEditClick}>
+                  <UserRoundPen className="mr-2 h-4 w-4 shrink-0" />
+                  Edit Learner Data
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Mobile Edit Button */}
+          {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
+            <div className="mt-4 sm:hidden flex w-full">
+                <Button
+                  variant="outline"
+                  className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
+                  onClick={handleEditClick}>
+                  <UserRoundPen className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+                  Edit Learner Data
+                </Button>
+            </div>
+          )}
+
+          <div className="mt-6 pt-5 border-t border-gray-200">
+            {/* Bottom Row: Metadata Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Column 1: Grade Level & Section */}
+              <div className="flex flex-col">
+                <p className="text-base font-extrabold mb-1 text-foreground">
                   Grade Level & Section
                 </p>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-base font-bold text-foreground">
-                    {formatGradeLevel(student.gradeLevel)}
-                    {student.enrollment?.section && ` - ${student.enrollment.section}`}
+                {!isJhsCompleter ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className="font-bold p-0 rounded-md cursor-help text-base text-primary border-none"
+                          >
+                            {getProgramBadge(student.applicantType).short}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{getProgramBadge(student.applicantType).full}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span className="text-base font-bold text-foreground">
+                      {formatGradeLevel(student.gradeLevel)}
+                      {student.enrollment?.section ? ` - ${student.enrollment.section}` : " - UNASSIGNED"}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm font-bold text-foreground uppercase">N/A</span>
+                )}
+              </div>
+
+              {/* Column 2: Primary Contact */}
+              <div className="flex flex-col">
+                <p className="text-base font-extrabold mb-1.5 text-foreground">
+                  Primary Contact
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums">
+                    {isEditing
+                      ? (profileForm.primaryContact === "MOTHER"
+                        ? profileForm.motherContactNumber
+                        : profileForm.primaryContact === "FATHER"
+                          ? profileForm.fatherContactNumber
+                          : profileForm.guardianContactNumber) || "N/A"
+                      : student.contactNumber ||
+                      student.parentGuardianContact ||
+                      "N/A"}
                   </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="font-bold px-2 py-0 rounded-md cursor-help"
-                        >
-                          {getProgramBadge(student.applicantType).short}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{getProgramBadge(student.applicantType).full}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               </div>
-            ) : (
-              <div></div>
-            )}
-            <div className="text-left sm:text-right">
-              <p className="uppercase text-foreground">
-                Learner Reference Number
-              </p>
-              <p className="leading-tight tabular-nums">
-                {student.lrn || "N/A"}
-              </p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4 mt-4">
-            <div>
-              <p className="text-base uppercase text-foreground">Address</p>
-              <p className="text-base leading-tight pr-2">
-                {isEditing
-                  ? [
-                    profileForm.houseNoStreet,
-                    profileForm.sitioPurok,
-                    profileForm.barangay,
-                    profileForm.cityMunicipality,
-                    profileForm.province,
-                  ]
-                    .filter(Boolean)
-                    .join(", ")
-                    .toUpperCase() || "N/A"
-                  : student.address || "N/A"}
-              </p>
-            </div>
-            <div className="text-left sm:text-right mt-2 sm:mt-0">
-              <p className="text-base uppercase text-foreground">
-                Primary Contact
-              </p>
-              <p className="text-base leading-tight">
-                {isEditing
-                  ? (profileForm.primaryContact === "MOTHER"
-                    ? profileForm.motherContactNumber
-                    : profileForm.primaryContact === "FATHER"
-                      ? profileForm.fatherContactNumber
-                      : profileForm.guardianContactNumber) || "N/A"
-                  : student.contactNumber ||
-                  student.parentGuardianContact ||
-                  "N/A"}
-              </p>
+              {/* Column 3: Address */}
+              <div className="flex flex-col">
+                <p className="text-base font-extrabold mb-1.5 text-foreground">
+                  Address
+                </p>
+                <span className="text-base font-bold text-foreground leading-tight">
+                  {isEditing
+                    ? [
+                      profileForm.houseNoStreet,
+                      profileForm.sitioPurok,
+                      profileForm.barangay,
+                      profileForm.cityMunicipality,
+                      profileForm.province,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "N/A"
+                    : student.address || "N/A"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1119,19 +1164,19 @@ export function StudentDetailPanel({
           </div>
         ) : (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-            <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
+            <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
               <GraduationCap className="h-4 w-4 text-primary" />
               Enrollment Information
             </div>
             <div className="text-base leading-tight font-bold divide-y divide-border border-b-0">
               <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-                <div className="p-3 text-foreground bg-muted/30">School Year:</div>
+                <div className="p-3 text-foreground bg-muted/30 font-extrabold">School Year:</div>
                 <div className="p-3 flex items-center uppercase">
                   {student.schoolYear}
                 </div>
               </div>
               <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-                <div className="p-3 text-foreground bg-muted/30">Enrolled At:</div>
+                <div className="p-3 text-foreground bg-muted/30 font-extrabold">Enrolled At:</div>
                 <div className="p-3 flex items-center uppercase">
                   {student.enrollment?.enrolledAt
                     ? formatDate(student.enrollment.enrolledAt)
@@ -1139,14 +1184,14 @@ export function StudentDetailPanel({
                 </div>
               </div>
               <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-                <div className="p-3 text-foreground bg-muted/30">Enrolled By:</div>
+                <div className="p-3 text-foreground bg-muted/30 font-extrabold">Enrolled By:</div>
                 <div className="p-3 flex items-center uppercase">
                   {student.enrollment?.enrolledBy || "N/A"}
                 </div>
               </div>
               {student.enrollment?.advisingTeacher && (
                 <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-                  <div className="p-3 text-foreground bg-muted/30">Advising Teacher:</div>
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">Advising Teacher:</div>
                   <div className="p-3 flex items-center uppercase">
                     {student.enrollment.advisingTeacher}
                   </div>
@@ -1159,17 +1204,17 @@ export function StudentDetailPanel({
         {/* Lifecycle Outcome (if any) */}
         {student.enrollment?.eosyStatus && (
           <div className="border rounded-md mb-4 border-dashed bg-muted/30 overflow-hidden">
-            <div className="p-3 font-bold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
+            <div className="p-3 font-extrabold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
               <BadgeAlert className="h-4 w-4" />
               Lifecycle Outcome
             </div>
             <div className="p-4 text-base leading-tight space-y-2">
-              <p className="font-bold text-primary uppercase">
+              <p className="font-extrabold text-primary uppercase">
                 {formatEosyStatus(student.enrollment.eosyStatus)}
               </p>
               {student.enrollment.transferOutDate && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-extrabold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.transferOutDate)}
@@ -1177,7 +1222,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutSchoolName && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-extrabold uppercase">
                     To:
                   </span>
                   {student.enrollment.transferOutSchoolName}
@@ -1185,7 +1230,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutReason && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-extrabold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.transferOutReason}
@@ -1193,7 +1238,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutDate && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-extrabold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.dropOutDate)}
@@ -1201,7 +1246,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutReason && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-extrabold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.dropOutReason}
@@ -1219,7 +1264,7 @@ export function StudentDetailPanel({
             id="learner-edit-form"
             onSubmit={submitProfileUpdate}
             className="space-y-6 bg-card border rounded-lg p-5 mt-4 shadow-sm">
-            <h3 className="font-bold text-lg text-primary flex items-center gap-2 mb-2">
+            <h3 className="font-extrabold text-lg text-primary flex items-center gap-2 mb-2">
               <UserRoundPen className="h-5 w-5" />
               Update Learner Profile
             </h3>
@@ -1227,7 +1272,7 @@ export function StudentDetailPanel({
             {/* Step I: Personal Information */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-bold uppercase text-primary">
+                <h3 className="text-lg font-extrabold uppercase text-primary">
                   I. Personal Information
                 </h3>
               </div>
@@ -1235,7 +1280,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="firstName"
-                    className="font-bold text-base uppercase flex gap-1">
+                    className="font-extrabold text-base uppercase flex gap-1">
                     First Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -1259,7 +1304,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="lastName"
-                    className="font-bold text-base uppercase flex gap-1">
+                    className="font-extrabold text-base uppercase flex gap-1">
                     Last Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -1283,7 +1328,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="middleName"
-                    className="font-bold text-base uppercase">
+                    className="font-extrabold text-base uppercase">
                     Middle Name
                   </Label>
                   <Input
@@ -1306,7 +1351,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="suffix"
-                    className="font-bold text-base uppercase">
+                    className="font-extrabold text-base uppercase">
                     Extension Name
                   </Label>
                   <Select
@@ -1331,10 +1376,12 @@ export function StudentDetailPanel({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
                 <div className="space-y-2">
                   <Label
                     htmlFor="birthDate"
-                    className="font-bold text-base uppercase flex gap-1">
+                    className="font-extrabold text-base uppercase flex gap-1">
                     Date of Birth <span className="text-destructive">*</span>
                   </Label>
                   <HybridDatePicker
@@ -1349,7 +1396,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="sex"
-                    className="font-bold text-base uppercase flex gap-1">
+                    className="font-extrabold text-base uppercase flex gap-1">
                     Sex <span className="text-destructive">*</span>
                   </Label>
                   <Select
@@ -1367,6 +1414,53 @@ export function StudentDetailPanel({
                     </SelectContent>
                   </Select>
                   <AnimatedError error={errors.sex} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-extrabold text-base uppercase flex gap-1">
+                    Mother Tongue <span className="text-destructive">*</span>
+                  </Label>
+                  <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
+                    <SearchableCombobox
+                      items={MOTHER_TONGUE_OPTIONS}
+                      value={
+                        isOtherMotherTongue
+                          ? "Others"
+                          : MOTHER_TONGUE_OPTIONS.some((o) => o.value === profileForm.motherTongue)
+                            ? profileForm.motherTongue
+                            : ""
+                      }
+                      onChange={(val) => {
+                        if (val === "Others") {
+                          setIsOtherMotherTongue(true);
+                          setProfileForm((p) => ({ ...p, motherTongue: "" }));
+                        } else {
+                          setIsOtherMotherTongue(false);
+                          setProfileForm((p) => ({ ...p, motherTongue: val }));
+                        }
+                      }}
+                      placeholder="Select Mother Tongue"
+                      className={`uppercase h-10 ${errors.motherTongue ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
+                    {isOtherMotherTongue && (
+                      <Input
+                        value={profileForm.motherTongue}
+                        onInput={(e) => {
+                          (e.target as HTMLInputElement).value = (
+                            e.target as HTMLInputElement
+                          ).value.toUpperCase();
+                        }}
+                        onChange={(e) =>
+                          setProfileForm((p) => ({
+                            ...p,
+                            motherTongue: e.target.value,
+                          }))
+                        }
+                        placeholder="Please specify"
+                        className={`font-bold text-base leading-tight bg-background uppercase ${errors.motherTongue ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      />
+                    )}
+                  </div>
+                  <AnimatedError error={errors.motherTongue} />
                 </div>
               </div>
 
@@ -1895,27 +1989,7 @@ export function StudentDetailPanel({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label className="font-bold text-base uppercase">
-                    Mother Tongue
-                  </Label>
-                  <Input
-                    value={profileForm.motherTongue}
-                    onInput={(e) => {
-                      (e.target as HTMLInputElement).value = (
-                        e.target as HTMLInputElement
-                      ).value.toUpperCase();
-                    }}
-                    onChange={(e) =>
-                      setProfileForm((p) => ({
-                        ...p,
-                        motherTongue: e.target.value,
-                      }))
-                    }
-                    placeholder="e.g. HILIGAYNON"
-                    className="font-bold text-base leading-tight bg-background uppercase"
-                  />
-                </div>
+
                 <div className="space-y-2">
                   <Label className="font-bold text-base uppercase">
                     Religion
@@ -1942,7 +2016,7 @@ export function StudentDetailPanel({
             {/* V: Portal Access and Security */}
             {!isJhsCompleter && (
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-bold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <FileBadge2 className="h-4 w-4 text-primary" />
                     PORTAL ACCESS & SECURITY
@@ -2029,13 +2103,13 @@ export function StudentDetailPanel({
             <Classifications applicant={typedStudentShim} />
             {!isJhsCompleter && (
               <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden mb-4">
-                <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
                   <FileBadge2 className="h-4 w-4 text-primary" />
                   PORTAL ACCESS & SECURITY
                 </div>
-                <div className="text-base leading-tight font-bold divide-y divide-border">
+                <div className="text-base leading-tight divide-y divide-border">
                   <div className="grid grid-cols-[160px_1fr] md:grid-cols-[200px_1fr] divide-x divide-border">
-                    <div className="p-3 text-foreground bg-[hsl(var(--muted)/30)] uppercase flex items-center">Portal</div>
+                    <div className="p-3 text-foreground bg-[hsl(var(--muted)/30)] uppercase flex items-center font-extrabold">Portal</div>
                     <div className="p-3 uppercase flex items-center gap-2 text-foreground">
                       <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-amber-500")} />
                       {portalActive ? "Active — Login Allowed" : "Disabled — Login Blocked"}
@@ -2048,11 +2122,11 @@ export function StudentDetailPanel({
             <div className="pt-4 border-t text-base uppercase text-foreground flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
-                Record Created: {formatDate(student.createdAt)}
+                Record Created: {student.createdAt ? format(new Date(student.createdAt), "MMMM dd, yyyy ' | ' hh:mm:ss aa") : "N/A"}
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
-                Last System Update: {formatDate(student.updatedAt)}
+                Last System Update: {student.updatedAt ? format(new Date(student.updatedAt), "MMMM dd, yyyy ' | ' hh:mm:ss aa") : "N/A"}
               </div>
             </div>
           </div>
@@ -2061,7 +2135,7 @@ export function StudentDetailPanel({
 
       {/* Action Footer */}
       {isJhsCompleter ? (
-        <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
+        <div className="p-3 border-t bg-card sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-2">
             <Button
               variant="default"
@@ -2073,7 +2147,7 @@ export function StudentDetailPanel({
           </div>
         </div>
       ) : isEditing ? (
-        <div className="p-4 bg-white border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row">
+        <div className="p-4 bg-card border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <Button
             variant="outline"
             type="button"
@@ -2096,7 +2170,7 @@ export function StudentDetailPanel({
           </Button>
         </div>
       ) : canEditProfile && student.enrollment?.eosyStatus !== "DROPPED_OUT" && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" ? (
-        <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
+        <div className="p-3 border-t bg-card sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-2">
             <Dialog
               open={showTransferOutDialog}
@@ -2290,7 +2364,7 @@ export function StudentDetailPanel({
           </div>
         </div>
       ) : canEditProfile && (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
-        <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
+        <div className="p-3 border-t bg-card sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-2">
             <Dialog
               open={showReactivateDialog}

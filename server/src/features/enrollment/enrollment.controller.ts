@@ -580,6 +580,7 @@ export async function directEncodeWalkIn(
       previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo,
       guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
       hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjectCodes,
+      motherTongue, currentAddress,
     } = payload;
 
     const schoolYearId = intakeContext.schoolYearId;
@@ -629,6 +630,7 @@ export async function directEncodeWalkIn(
             middleName: middleName || null,
             birthdate: new Date(birthdate),
             sex: sex,
+            motherTongue: motherTongue,
             hasPsaBirthCertificate: hasPsa,
           }
         });
@@ -645,6 +647,7 @@ export async function directEncodeWalkIn(
             isLearnerWithDisability: false,
             is4PsBeneficiary: false,
             hasPwdId: false,
+            motherTongue: motherTongue,
             hasPsaBirthCertificate: hasPsa,
           }
         });
@@ -698,6 +701,16 @@ export async function directEncodeWalkIn(
               subjectCode: subject.code,
               subjectName: subject.name,
             })),
+          } : undefined,
+          addresses: currentAddress ? {
+            create: {
+              addressType: "CURRENT",
+              houseNoStreet: currentAddress.houseNoStreet || null,
+              sitio: currentAddress.sitio || null,
+              barangay: currentAddress.barangay,
+              cityMunicipality: currentAddress.cityMunicipality,
+              province: currentAddress.province,
+            }
           } : undefined,
         }
       });
