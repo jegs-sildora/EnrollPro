@@ -21,6 +21,7 @@ interface MultiSearchableComboboxProps {
   error?: boolean;
   className?: string;
   emptyText?: string;
+  maxSelected?: number;
 }
 
 export function MultiSearchableCombobox({
@@ -33,6 +34,7 @@ export function MultiSearchableCombobox({
   error = false,
   className,
   emptyText = "No results found",
+  maxSelected,
 }: MultiSearchableComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -55,7 +57,7 @@ export function MultiSearchableCombobox({
   const handleSelect = (item: MultiSearchableComboboxItem) => {
     if (value.includes(item.value)) {
       onChange(value.filter((v) => v !== item.value));
-    } else {
+    } else if (maxSelected === undefined || value.length < maxSelected) {
       onChange([...value, item.value]);
     }
   };
@@ -85,7 +87,7 @@ export function MultiSearchableCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed transition-colors duration-200",
+            "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 transition-colors duration-200",
             error && "border-destructive focus-visible:ring-destructive",
             className
           )}
@@ -149,26 +151,35 @@ export function MultiSearchableCombobox({
               {emptyText}
             </li>
           ) : (
-            filtered.map((item) => (
-              <li key={item.value}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(item)}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-base font-bold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors",
-                    value.includes(item.value) && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  <Check
+            filtered.map((item) => {
+              const isSelected = value.includes(item.value);
+              const isAtLimit =
+                maxSelected !== undefined &&
+                value.length >= maxSelected &&
+                !isSelected;
+
+              return (
+                <li key={item.value}>
+                  <button
+                    type="button"
+                    disabled={isAtLimit}
+                    onClick={() => handleSelect(item)}
                     className={cn(
-                      "h-3.5 w-3.5 shrink-0",
-                      value.includes(item.value) ? "opacity-100" : "opacity-0"
+                      "w-full flex items-center gap-2 px-3 py-2 text-base font-bold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                      isSelected && "bg-accent text-accent-foreground"
                     )}
-                  />
-                  {item.label}
-                </button>
-              </li>
-            ))
+                  >
+                    <Check
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {item.label}
+                  </button>
+                </li>
+              );
+            })
           )}
         </ul>
       </PopoverContent>

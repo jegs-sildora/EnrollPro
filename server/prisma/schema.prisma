@@ -226,6 +226,7 @@ model GradeLevel {
   enrollmentApplications EnrollmentApplication[]
   sections               Section[]
   enrollmentHistories    EnrollmentHistory[]
+  enrollmentBackSubjects EnrollmentBackSubject[]
 
   @@map("grade_levels")
 }
@@ -388,10 +389,28 @@ model EnrollmentApplication {
   schoolYear                 SchoolYear                @relation(fields: [schoolYearId], references: [id])
   previousSchool             EnrollmentPreviousSchool?
   enrollmentRecord           EnrollmentRecord?
+  backSubjects               EnrollmentBackSubject[]
 
   @@unique([learnerId, schoolYearId], name: "uq_enrollment_learner_sy")
   @@index([status, schoolYearId], map: "idx_enrollment_apps_status_sy")
   @@map("enrollment_applications")
+}
+
+/// ATLAS-validated subject deficiencies declared on an incoming transferee's SF9.
+model EnrollmentBackSubject {
+  id              Int                   @id @default(autoincrement())
+  applicationId   Int                   @map("application_id")
+  gradeLevelId    Int                   @map("grade_level_id")
+  atlasSubjectIds Int[]                 @default([]) @map("atlas_subject_ids")
+  subjectCode     String                @map("subject_code")
+  subjectName     String                @map("subject_name")
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  application     EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  gradeLevel      GradeLevel            @relation(fields: [gradeLevelId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, subjectCode], map: "uq_enrollment_back_subject_app_code")
+  @@index([gradeLevelId], map: "idx_enrollment_back_subject_grade")
+  @@map("enrollment_back_subjects")
 }
 
 /// Previous school record linked to enrollment application

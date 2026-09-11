@@ -6,12 +6,15 @@ import {
   getPendingVerifications,
   flagDeficient,
   directEncodeWalkIn,
+  getWalkInAtlasSubjects,
   cancelApplication,
   restoreApplication,
   deleteApplication,
   revertApplication,
   completeRequirements,
 } from "./enrollment.controller.js";
+import { validate } from "../../middleware/validate.js";
+import { directEncodeWalkInSchema } from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -68,7 +71,15 @@ router.post(
   "/walk-in",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(directEncodeWalkInSchema),
   directEncodeWalkIn,
+);
+
+router.get(
+  "/walk-in/atlas-subjects",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getWalkInAtlasSubjects,
 );
 
 router.patch(

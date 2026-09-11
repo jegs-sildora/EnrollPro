@@ -1,4 +1,5 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
+import type { DirectEncodeWalkInPayload } from "@enrollpro/shared";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
@@ -6,10 +7,29 @@ import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 import { isStaffIntakeAllowed } from "../settings/enrollment-gate.service.js";
 import type { ApplicantType } from "../../generated/prisma/index.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+import {
+  fetchAtlasSubjectCatalog,
+  getPreviousJhsGradeNumber,
+  type AtlasSubjectCatalogItem,
+} from "../integration/atlas-subject-catalog.service.js";
 
 interface StaffIntakeContext {
   schoolYearId: number;
   systemPhase: string;
+}
+
+const walkInProgramTypes = new Set<ApplicantType>([
+  "REGULAR",
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+]);
+
+interface ResolvedWalkInSubjectCatalog {
+  incomingGradeLevel: number;
+  subjectGradeLevel: number;
+  subjectGradeLevelId: number;
+  subjects: AtlasSubjectCatalogItem[];
 }
 
 async function assertStaffIntakeAllowed(): Promise<StaffIntakeContext> {
@@ -38,6 +58,96 @@ async function assertStaffIntakeAllowed(): Promise<StaffIntakeContext> {
     schoolYearId: activeResolution.active.schoolYearId,
     systemPhase: setting!.systemPhase,
   };
+}
+
+function parseWalkInProgramType(value: unknown): ApplicantType {
+  if (typeof value !== "string" || !walkInProgramTypes.has(value as ApplicantType)) {
+    throw new AppError(400, "A supported curriculum type is required.");
+  }
+  return value as ApplicantType;
+}
+
+async function resolveWalkInSubjectCatalog(
+  gradeLevelId: number,
+  programType: ApplicantType,
+): Promise<ResolvedWalkInSubjectCatalog> {
+  const incomingGradeLevel = await prisma.gradeLevel.findUnique({
+    where: { id: gradeLevelId },
+    select: { displayOrder: true },
+  });
+
+  if (
+    !incomingGradeLevel ||
+    incomingGradeLevel.displayOrder < 7 ||
+    incomingGradeLevel.displayOrder > 10
+  ) {
+    throw new AppError(400, "Select a valid Grade 7 to Grade 10 level.");
+  }
+
+  const subjectGradeNumber = getPreviousJhsGradeNumber(
+    incomingGradeLevel.displayOrder,
+  );
+
+  const subjectGradeLevels = await prisma.gradeLevel.findMany({
+    where: { displayOrder: subjectGradeNumber },
+    select: { id: true, displayOrder: true },
+    take: 2,
+  });
+  if (subjectGradeLevels.length !== 1) {
+    throw new AppError(
+      409,
+      `Grade ${subjectGradeNumber} must resolve to exactly one EnrollPro grade-level record.`,
+    );
+  }
+  const subjectGradeLevel = subjectGradeLevels[0]!;
+
+  const schoolId = process.env.ATLAS_SCHOOL_ID?.trim() || "1";
+  const subjects = await fetchAtlasSubjectCatalog({
+    schoolId,
+    gradeLevel: subjectGradeLevel.displayOrder,
+    programType,
+  });
+
+  return {
+    incomingGradeLevel: incomingGradeLevel.displayOrder,
+    subjectGradeLevel: subjectGradeLevel.displayOrder,
+    subjectGradeLevelId: subjectGradeLevel.id,
+    subjects,
+  };
+}
+
+export async function getWalkInAtlasSubjects(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await assertStaffIntakeAllowed();
+    const gradeLevelId = Number(req.query.gradeLevelId);
+    if (!Number.isInteger(gradeLevelId) || gradeLevelId <= 0) {
+      throw new AppError(400, "A valid gradeLevelId is required.");
+    }
+
+    const programType = parseWalkInProgramType(req.query.programType);
+    const catalog = await resolveWalkInSubjectCatalog(
+      gradeLevelId,
+      programType,
+    );
+
+    res.json({
+      data: catalog.subjects,
+      meta: {
+        source: "ATLAS",
+        gradeLevelId,
+        incomingGradeLevel: catalog.incomingGradeLevel,
+        subjectGradeLevelId: catalog.subjectGradeLevelId,
+        subjectGradeLevel: catalog.subjectGradeLevel,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error: unknown) {
+    next(error);
+  }
 }
 
 
@@ -198,6 +308,10 @@ export async function getPendingVerifications(req: Request, res: Response) {
       gradeLevel: { select: { name: true } },
       previousSchool: true,
       familyMembers: true,
+      backSubjects: {
+        select: { subjectCode: true, subjectName: true },
+        orderBy: { subjectName: "asc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -451,24 +565,53 @@ export async function revertApplication(req: Request, res: Response) {
   res.json({ success: true, application: updated });
 }
 
-export async function directEncodeWalkIn(req: Request, res: Response) {
+export async function directEncodeWalkIn(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const intakeContext = await assertStaffIntakeAllowed();
-    const payload = req.body;
+    const payload = req.body as DirectEncodeWalkInPayload;
     const {
       learnerType,
       lrn, firstName, lastName, middleName, birthdate, sex,
       gradeLevelId, assignedProgram,
-      previousSchoolName, previousGenAve, originatingSchoolId,
+      previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo,
       guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
-      hasSf9, hasPsa, sf9EligibilityStatus
+      hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjectCodes,
     } = payload;
 
-    if (!gradeLevelId || !firstName || !lastName || !birthdate || !sex) {
-      return res.status(400).json({ message: "Missing required basic fields." });
-    }
-
     const schoolYearId = intakeContext.schoolYearId;
+    const applicantType = parseWalkInProgramType(assignedProgram);
+    let backSubjectSelection: {
+      gradeLevelId: number;
+      subjects: AtlasSubjectCatalogItem[];
+    } | null = null;
+
+    if (learnerType === "TRANSFEREE" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") {
+      const catalog = await resolveWalkInSubjectCatalog(
+        gradeLevelId,
+        applicantType,
+      );
+      const catalogByCode = new Map(
+        catalog.subjects.map((subject) => [subject.code, subject]),
+      );
+      const selectedSubjects = conditionalSubjectCodes.map((code) => {
+        const subject = catalogByCode.get(code);
+        if (!subject) {
+          throw new AppError(
+            422,
+            `Back subject '${code}' is not available in the current ATLAS catalog for the selected grade level and curriculum.`,
+          );
+        }
+        return subject;
+      });
+      backSubjectSelection = {
+        gradeLevelId: catalog.subjectGradeLevelId,
+        subjects: selectedSubjects,
+      };
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Upsert Learner
@@ -507,7 +650,6 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
 
       // 2. Create Application
       const isTemporarilyEnrolled = !(hasSf9 && hasPsa);
-      const applicantType = (assignedProgram as ApplicantType) || "REGULAR";
 
       const application = await tx.enrollmentApplication.create({
         data: {
@@ -523,7 +665,8 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           isTemporarilyEnrolled,
           encodedById: req.user!.userId,
           status: "READY_FOR_SECTIONING",
-          academicStatus: sf9EligibilityStatus || "PROMOTED",
+          academicStatus: sf9EligibilityStatus,
+          isRemedialRequired: backSubjectSelection !== null,
           guardianFirstName,
           guardianMiddleName,
           guardianLastName,
@@ -532,7 +675,8 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
             create: {
               schoolName: previousSchoolName,
               schoolId: originatingSchoolId || null,
-              generalAverage: previousGenAve ? parseFloat(previousGenAve) : null,
+              generalAverage: previousGenAve ?? null,
+              transferCertificateNo: transferCertificateNo || null,
             }
           } : undefined,
           // create family member
@@ -544,7 +688,14 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
               lastName: guardianLastName,
               contactNumber: guardianContact,
             }
-          }
+          },
+          backSubjects: backSubjectSelection ? {
+            create: backSubjectSelection.subjects.map((subject) => ({
+              gradeLevelId: backSubjectSelection.gradeLevelId,
+              subjectCode: subject.code,
+              subjectName: subject.name,
+            })),
+          } : undefined,
         }
       });
 
@@ -553,10 +704,9 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
 
     broadcastEnrollmentInvalidation(result.schoolYearId, [result.learnerId]);
 
-    return res.status(201).json({ message: "Walk-in application directly encoded", application: result });
-  } catch (error) {
-    console.error("Error in directEncodeWalkIn:", error);
-    return res.status(500).json({ message: "Failed to process walk-in encoding", error: error instanceof Error ? error.message : "Unknown error" });
+    res.status(201).json({ message: "Walk-in application directly encoded", application: result });
+  } catch (error: unknown) {
+    next(error);
   }
 }
 /**

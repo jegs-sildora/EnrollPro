@@ -54,6 +54,13 @@ export async function getRemedialPending(
           },
           gradeLevel: { select: { id: true, name: true } },
           schoolYear: { select: { id: true, yearLabel: true } },
+          backSubjects: {
+            select: {
+              subjectCode: true,
+              subjectName: true,
+            },
+            orderBy: { subjectName: "asc" },
+          },
           enrollmentRecord: {
             select: { id: true, finalAverage: true, eosyStatus: true },
           },
@@ -74,6 +81,7 @@ export async function getRemedialPending(
       schoolYear: app.schoolYear,
       academicStatus: app.academicStatus,
       isRemedialRequired: app.isRemedialRequired,
+      backSubjects: app.backSubjects,
       currentFinalAverage: app.enrollmentRecord?.finalAverage ?? null,
       eosyStatus: app.enrollmentRecord?.eosyStatus ?? null,
     }));

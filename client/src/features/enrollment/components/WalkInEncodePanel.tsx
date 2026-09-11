@@ -9,7 +9,6 @@ import { isAxiosError } from "axios";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -17,7 +16,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { Label } from "@/shared/ui/label";
 import {
   Form,
   FormControl,
@@ -33,12 +31,13 @@ import {
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
 
-import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X, Mars, Venus, FileCheck } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, Mars, Venus, FileCheck } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
+import { MultiSearchableCombobox } from "@/shared/ui/multi-searchable-combobox";
 
 interface SchoolYearGradeLevel {
   id: number;
@@ -68,6 +67,24 @@ interface LearnerLookupResponse {
 
 interface ApiErrorResponse {
   message?: string;
+}
+
+interface AtlasSubjectOption {
+  code: string;
+  displayCode: string;
+  name: string;
+}
+
+interface AtlasSubjectCatalogResponse {
+  data: AtlasSubjectOption[];
+  meta: {
+    source: "ATLAS";
+    gradeLevelId: number;
+    incomingGradeLevel: number;
+    subjectGradeLevelId: number;
+    subjectGradeLevel: number;
+    fetchedAt: string;
+  };
 }
 
 function getWalkInErrorMessage(error: unknown, fallback: string): string {
@@ -126,15 +143,37 @@ export function WalkInEncodePanel() {
       guardianFirstName: "",
       guardianMiddleName: "",
       guardianLastName: "",
-      guardianRelationship: "" as any,
+      guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
       guardianContact: "",
       hasSf9: false,
       hasPsa: false,
       originatingSchoolId: "",
       sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
+      conditionalSubjectCodes: [],
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
+  const learnerType = form.watch("learnerType");
+  const gradeLevelId = form.watch("gradeLevelId");
+  const assignedProgram = form.watch("assignedProgram");
+  const sf9EligibilityStatus = form.watch("sf9EligibilityStatus");
+  const requiresBackSubjects =
+    learnerType === "TRANSFEREE" &&
+    sf9EligibilityStatus === "CONDITIONALLY_PROMOTED";
+
+  const atlasSubjectsQuery = useQuery({
+    queryKey: ["enrollment", "walk-in", "atlas-subjects", gradeLevelId, assignedProgram],
+    queryFn: async () => {
+      const response = await api.get<AtlasSubjectCatalogResponse>(
+        "/enrollment/walk-in/atlas-subjects",
+        { params: { gradeLevelId, programType: assignedProgram } },
+      );
+      return response.data;
+    },
+    enabled: requiresBackSubjects && gradeLevelId > 0 && Boolean(assignedProgram),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   useEffect(() => {
     if (searchParams.get("action") === "walk-in") {
@@ -196,12 +235,13 @@ export function WalkInEncodePanel() {
           guardianFirstName: "",
           guardianMiddleName: "",
           guardianLastName: "",
-          guardianRelationship: "" as any,
+          guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
           guardianContact: "",
           hasSf9: false,
           hasPsa: false,
           originatingSchoolId: "",
           sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
+          conditionalSubjectCodes: [],
         });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
@@ -253,6 +293,7 @@ export function WalkInEncodePanel() {
       });
       closePanel();
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+      void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
     } catch (err: unknown) {
       sileo.error({
         title: "Encoding Failed",
@@ -274,8 +315,6 @@ export function WalkInEncodePanel() {
   const hasSf9 = form.watch("hasSf9");
   const hasPsa = form.watch("hasPsa");
   const isCompleteDocs = hasSf9 && hasPsa;
-
-  console.log("dirtyFields:", form.formState.dirtyFields);
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -329,7 +368,10 @@ export function WalkInEncodePanel() {
                       <div className="grid grid-cols-3 gap-4 font-bold">
                         <button
                           type="button"
-                          onClick={() => form.setValue("learnerType", "NEW_ENROLLEE", { shouldDirty: true })}
+                          onClick={() => {
+                            form.setValue("learnerType", "NEW_ENROLLEE", { shouldDirty: true, shouldValidate: true });
+                            form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                          }}
                           className={cn(
                             "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                             form.watch('learnerType') === "NEW_ENROLLEE"
@@ -341,7 +383,7 @@ export function WalkInEncodePanel() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => form.setValue("learnerType", "TRANSFEREE", { shouldDirty: true })}
+                          onClick={() => form.setValue("learnerType", "TRANSFEREE", { shouldDirty: true, shouldValidate: true })}
                           className={cn(
                             "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                             form.watch('learnerType') === "TRANSFEREE"
@@ -353,7 +395,10 @@ export function WalkInEncodePanel() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => form.setValue("learnerType", "RETURNING", { shouldDirty: true })}
+                          onClick={() => {
+                            form.setValue("learnerType", "RETURNING", { shouldDirty: true, shouldValidate: true });
+                            form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                          }}
                           className={cn(
                             "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                             form.watch('learnerType') === "RETURNING"
@@ -566,7 +611,10 @@ export function WalkInEncodePanel() {
                                   <button
                                     key={gl.id}
                                     type="button"
-                                    onClick={() => field.onChange(gl.id)}
+                                    onClick={() => {
+                                      field.onChange(gl.id);
+                                      form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                    }}
                                     className={cn(
                                       "flex items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                                       field.value === gl.id
@@ -592,7 +640,10 @@ export function WalkInEncodePanel() {
                                   <button
                                     key={prog.val}
                                     type="button"
-                                    onClick={() => field.onChange(prog.val)}
+                                    onClick={() => {
+                                      field.onChange(prog.val);
+                                      form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                    }}
                                     className={cn(
                                       "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                                       field.value === prog.val
@@ -732,7 +783,12 @@ export function WalkInEncodePanel() {
                                   <button
                                     key={s.val}
                                     type="button"
-                                    onClick={() => field.onChange(s.val)}
+                                    onClick={() => {
+                                      field.onChange(s.val);
+                                      if (s.val !== "CONDITIONALLY_PROMOTED") {
+                                        form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                      }
+                                    }}
                                     className={cn(
                                       "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                                       field.value === s.val
@@ -748,6 +804,91 @@ export function WalkInEncodePanel() {
                             </FormItem>
                           )}
                         />
+                        {requiresBackSubjects && (
+                          <FormField
+                            control={form.control}
+                            name="conditionalSubjectCodes"
+                            render={({ field, fieldState }) => (
+                              <FormItem className="mt-4 rounded-lg border border-border bg-muted/10 p-4">
+                                <div className="flex items-center justify-between gap-4">
+                                  <FormLabel className="font-bold">
+                                    {atlasSubjectsQuery.data
+                                      ? `Grade ${atlasSubjectsQuery.data.meta.subjectGradeLevel} Back Subjects`
+                                      : "Previous Grade Back Subjects"}{" "}
+                                    <span className="text-destructive">*</span>
+                                  </FormLabel>
+                                  <span className="text-sm font-bold text-muted-foreground">
+                                    {field.value.length} / 2 selected
+                                  </span>
+                                </div>
+                                <FormControl>
+                                  <MultiSearchableCombobox
+                                    items={(atlasSubjectsQuery.data?.data ?? []).map((subject) => ({
+                                      value: subject.code,
+                                      label: `${subject.displayCode} - ${subject.name}`,
+                                    }))}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    maxSelected={2}
+                                    placeholder={
+                                      gradeLevelId <= 0 || !assignedProgram
+                                        ? "Select grade level and curriculum first"
+                                        : atlasSubjectsQuery.isLoading
+                                          ? "Loading subjects from ATLAS..."
+                                          : atlasSubjectsQuery.isError
+                                            ? "ATLAS subjects are unavailable"
+                                            : (atlasSubjectsQuery.data?.data.length ?? 0) === 0
+                                              ? `No Grade ${atlasSubjectsQuery.data?.meta.subjectGradeLevel ?? "previous-grade"} subjects available`
+                                              : `Select 1 or 2 Grade ${atlasSubjectsQuery.data?.meta.subjectGradeLevel ?? ""} subjects`.trim()
+                                    }
+                                    searchPlaceholder="Search ATLAS subjects"
+                                    emptyText="No ATLAS subjects available for this grade and curriculum"
+                                    disabled={
+                                      gradeLevelId <= 0 ||
+                                      !assignedProgram ||
+                                      atlasSubjectsQuery.isLoading ||
+                                      atlasSubjectsQuery.isError ||
+                                      (atlasSubjectsQuery.data?.data.length ?? 0) === 0
+                                    }
+                                    error={Boolean(fieldState.error)}
+                                  />
+                                </FormControl>
+                                {gradeLevelId <= 0 || !assignedProgram ? (
+                                  <p className="text-sm font-medium text-muted-foreground">
+                                    Select the learner&apos;s incoming grade level and curriculum first.
+                                  </p>
+                                ) : atlasSubjectsQuery.isLoading ? (
+                                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    Loading Grade {gradeLevelId - 1} subjects from ATLAS...
+                                  </div>
+                                ) : atlasSubjectsQuery.isError ? (
+                                  <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2">
+                                    <p className="text-sm font-bold text-destructive">
+                                      {getWalkInErrorMessage(atlasSubjectsQuery.error, "ATLAS subjects could not be loaded.")}
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => void atlasSubjectsQuery.refetch()}
+                                    >
+                                      Retry
+                                    </Button>
+                                  </div>
+                                ) : (atlasSubjectsQuery.data?.data.length ?? 0) === 0 ? (
+                                  <p className="text-sm font-medium text-amber-800">
+                                    ATLAS returned no Grade {gradeLevelId - 1} subjects for the selected curriculum.
+                                  </p>
+                                ) : null}
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  ATLAS subjects are filtered for the grade immediately before the learner&apos;s incoming grade and the selected curriculum.
+                                </p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>

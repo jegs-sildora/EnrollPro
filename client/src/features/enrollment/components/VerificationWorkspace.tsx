@@ -56,6 +56,11 @@ interface PendingVerification {
     name: string;
   };
   applicantType: string;
+  academicStatus: string;
+  backSubjects?: Array<{
+    subjectCode: string;
+    subjectName: string;
+  }>;
   previousSchool: {
     schoolName?: string;
     generalAverage?: number;
@@ -807,6 +812,11 @@ export function VerificationWorkspace() {
                         <VerificationRow label="Final General Average">
                           {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}
                         </VerificationRow>
+                        {(selectedApp.backSubjects?.length ?? 0) > 0 && (
+                          <VerificationRow label="Back Subjects">
+                            {selectedApp.backSubjects?.map((subject) => subject.subjectName).join(", ")}
+                          </VerificationRow>
+                        )}
                         {/* Program Assignment */}
                         <VerificationRow label="Requested Curriculum">
                           {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
@@ -863,6 +873,11 @@ export function VerificationWorkspace() {
                       <VerificationRow label="Final Gen Ave">
                         {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}
                       </VerificationRow>
+                      {(selectedApp.backSubjects?.length ?? 0) > 0 && (
+                        <VerificationRow label="Back Subjects">
+                          {selectedApp.backSubjects?.map((subject) => subject.subjectName).join(", ")}
+                        </VerificationRow>
+                      )}
 
                       {/* Section 3: Curriculum Assignment */}
                       {selectedApp.admissionChannel !== "F2F" && (
