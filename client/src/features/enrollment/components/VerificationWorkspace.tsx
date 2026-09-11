@@ -299,8 +299,8 @@ export function VerificationWorkspace() {
 
   const hasChecklistModifications = useMemo(() => {
     if (!selectedApp) return false;
-    const initialSf9 = selectedApp.isTemporarilyEnrolled ? !selectedApp.isMissingSf9 : true;
-    const initialPsa = selectedApp.isTemporarilyEnrolled ? (selectedApp.learner?.hasPsaBirthCertificate === true) : true;
+    const initialSf9 = !selectedApp.isMissingSf9;
+    const initialPsa = selectedApp.learner?.hasPsaBirthCertificate === true;
     return sf9Verified !== initialSf9 || psaVerified !== initialPsa;
   }, [selectedApp, sf9Verified, psaVerified]);
 
@@ -308,13 +308,8 @@ export function VerificationWorkspace() {
     if (selectedApp) {
       setAssignedProgram(selectedApp.applicantType);
       if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "FOR_REVISION" || selectedApp.status === "OFFICIALLY_ENROLLED") {
-        if (!selectedApp.isTemporarilyEnrolled) {
-          setSf9Verified(true);
-          setPsaVerified(true);
-        } else {
-          setSf9Verified(!selectedApp.isMissingSf9);
-          setPsaVerified(selectedApp.learner?.hasPsaBirthCertificate === true);
-        }
+        setSf9Verified(!selectedApp.isMissingSf9);
+        setPsaVerified(selectedApp.learner?.hasPsaBirthCertificate === true);
       } else {
         setSf9Verified(false);
         setPsaVerified(false);

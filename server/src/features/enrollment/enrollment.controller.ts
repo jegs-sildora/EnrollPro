@@ -629,6 +629,7 @@ export async function directEncodeWalkIn(
             middleName: middleName || null,
             birthdate: new Date(birthdate),
             sex: sex,
+            hasPsaBirthCertificate: hasPsa,
           }
         });
       } else {
@@ -644,6 +645,7 @@ export async function directEncodeWalkIn(
             isLearnerWithDisability: false,
             is4PsBeneficiary: false,
             hasPwdId: false,
+            hasPsaBirthCertificate: hasPsa,
           }
         });
       }
@@ -663,6 +665,7 @@ export async function directEncodeWalkIn(
           admissionChannel: "F2F",
           trackingNumber: null, // intentionally null for direct encode
           isTemporarilyEnrolled,
+          isMissingSf9: !hasSf9,
           encodedById: req.user!.userId,
           status: "READY_FOR_SECTIONING",
           academicStatus: sf9EligibilityStatus,
