@@ -587,7 +587,7 @@ export function WalkInEncodePanel() {
                                       <s.icon
                                         className={cn(
                                           "w-4 h-4",
-                                          field.value === s.val ? "text-primary" : "text-muted-foreground"
+                                          field.value === s.val ? "text-primary" : "text-foreground"
                                         )}
                                       />
                                       {s.label}
@@ -817,7 +817,7 @@ export function WalkInEncodePanel() {
                                       : "Previous Grade Back Subjects"}{" "}
                                     <span className="text-destructive">*</span>
                                   </FormLabel>
-                                  <span className="text-sm font-bold text-muted-foreground">
+                                  <span className="text-sm font-bold text-foreground">
                                     {field.value.length} / 2 selected
                                   </span>
                                 </div>
@@ -825,7 +825,7 @@ export function WalkInEncodePanel() {
                                   <MultiSearchableCombobox
                                     items={(atlasSubjectsQuery.data?.data ?? []).map((subject) => ({
                                       value: subject.code,
-                                      label: `${subject.displayCode} - ${subject.name}`,
+                                      label: subject.name,
                                     }))}
                                     value={field.value}
                                     onChange={field.onChange}
@@ -854,11 +854,11 @@ export function WalkInEncodePanel() {
                                   />
                                 </FormControl>
                                 {gradeLevelId <= 0 || !assignedProgram ? (
-                                  <p className="text-sm font-medium text-muted-foreground">
+                                  <p className="text-sm text-foreground">
                                     Select the learner&apos;s incoming grade level and curriculum first.
                                   </p>
                                 ) : atlasSubjectsQuery.isLoading ? (
-                                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                  <div className="flex items-center gap-2 text-sm text-foreground">
                                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                     Loading Grade {gradeLevelId - 1} subjects from ATLAS...
                                   </div>
@@ -877,11 +877,11 @@ export function WalkInEncodePanel() {
                                     </Button>
                                   </div>
                                 ) : (atlasSubjectsQuery.data?.data.length ?? 0) === 0 ? (
-                                  <p className="text-sm font-medium text-amber-800">
+                                  <p className="text-sm text-amber-800">
                                     ATLAS returned no Grade {gradeLevelId - 1} subjects for the selected curriculum.
                                   </p>
                                 ) : null}
-                                <p className="text-sm font-medium text-muted-foreground">
+                                <p className="text-sm text-foreground">
                                   ATLAS subjects are filtered for the grade immediately before the learner&apos;s incoming grade and the selected curriculum.
                                 </p>
                                 <FormMessage />
@@ -1061,7 +1061,7 @@ export function WalkInEncodePanel() {
                   type="submit"
                   disabled={isSubmitting || !isValid}
                   className={`w-full font-bold uppercase text-base px-6 ${(!isValid || isSubmitting)
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    ? 'bg-muted text-foreground cursor-not-allowed'
                     : isCompleteDocs
                       ? 'bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer'
                       : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
