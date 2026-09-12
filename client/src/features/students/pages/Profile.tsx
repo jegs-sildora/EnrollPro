@@ -58,9 +58,13 @@ export default function StudentProfile() {
     requestKey: string;
     available: boolean;
   } | null>(null);
-  const hasBackSubjects =
-    backSubjectAvailability?.requestKey === backSubjectRequestKey &&
-    backSubjectAvailability.available;
+  const hasBackSubjects = Boolean(
+    (loadedStudent &&
+      (loadedStudent.isRemedialRequired ||
+        (loadedStudent.academicDeficiencies && loadedStudent.academicDeficiencies.length > 0) ||
+        (loadedStudent.remedialClasses && loadedStudent.remedialClasses.length > 0))) ||
+    (backSubjectAvailability?.requestKey === backSubjectRequestKey && backSubjectAvailability.available)
+  );
   const activeTab: ProfileTab =
     preferredTab === "back_subjects" && !hasBackSubjects
       ? "record"

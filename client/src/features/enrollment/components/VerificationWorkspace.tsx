@@ -3,17 +3,11 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import {
-  Search,
-  CheckCircle2,
-  Loader2,
-  Clock,
-  AlertTriangle,
-  Mars,
-  Venus,
-  FileCheck,
-  SlidersHorizontal,
+import { 
+  FileText, CheckCircle2, XCircle, AlertCircle, Trash2, ShieldAlert,
+  Loader2, Phone, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, FileCheck
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
 import { format } from "date-fns";
@@ -35,6 +29,23 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 
+interface AtlasSubjectOption {
+  code: string;
+  displayCode: string;
+  name: string;
+}
+
+interface AtlasSubjectCatalogResponse {
+  data: AtlasSubjectOption[];
+  meta: {
+    source: "ATLAS";
+    gradeLevelId: number;
+    incomingGradeLevel: number;
+    subjectGradeLevelId: number;
+    subjectGradeLevel: number;
+    fetchedAt: string;
+  };
+}
 
 interface PendingVerification {
   id: number;
@@ -56,9 +67,11 @@ interface PendingVerification {
     hasPsaBirthCertificate?: boolean;
   };
   gradeLevel: {
+    id: number;
     name: string;
   };
   applicantType: string;
+  learnerType: string;
   academicStatus: string;
   backSubjects?: Array<{
     subjectCode: string;
@@ -138,6 +151,9 @@ export function VerificationWorkspace() {
   const [psaVerified, setPsaVerified] = useState(false);
   const [assignedProgram, setAssignedProgram] = useState<string>("REGULAR");
   const [confirmModalState, setConfirmModalState] = useState<"TEMPORARY" | "OFFICIAL" | null>(null);
+
+  const [sf9EligibilityStatus, setSf9EligibilityStatus] = useState<"PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED" | "">("PROMOTED");
+  const [conditionalSubjects, setConditionalSubjects] = useState<{subjectCode: string, grade: string}[]>([]);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState<string>("");
@@ -300,9 +316,7 @@ export function VerificationWorkspace() {
     if (activeTab === "PENDING") {
       result = result.filter((app) => app.status === "PENDING_VERIFICATION");
     } else if (activeTab === "READY") {
-      result = result.filter((app) => {
-        return app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED";
-      });
+      result = result.filter((app) => app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED");
     } else if (activeTab === "INCOMPLETE") {
       result = result.filter((app) => {
         const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
@@ -316,8 +330,22 @@ export function VerificationWorkspace() {
   }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, activeTab]);
 
   const selectedApp = useMemo(() => {
-    return pendingVerifications.find(app => app.id === selectedAppId);
-  }, [pendingVerifications, selectedAppId]);
+    return filteredVerifications.find((app) => app.id === selectedAppId) || null;
+  }, [filteredVerifications, selectedAppId]);
+
+  const atlasSubjectsQuery = useQuery({
+    queryKey: ["enrollment", "walk-in", "atlas-subjects", selectedApp?.gradeLevel.id, assignedProgram],
+    queryFn: async () => {
+      const response = await api.get<AtlasSubjectCatalogResponse>(
+        "/enrollment/walk-in/atlas-subjects",
+        { params: { gradeLevelId: selectedApp?.gradeLevel.id, programType: assignedProgram } },
+      );
+      return response.data;
+    },
+    enabled: !!selectedApp && selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED",
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   const hasChecklistModifications = useMemo(() => {
     if (!selectedApp) return false;
@@ -403,6 +431,8 @@ export function VerificationWorkspace() {
         setSelectedAppId(filteredVerifications[0].id);
         setSf9Verified(false);
         setPsaVerified(false);
+        setSf9EligibilityStatus("PROMOTED");
+        setConditionalSubjects([]);
       }
     }
   }, [activeSearchQuery, filteredVerifications, selectedAppId]);
@@ -436,6 +466,8 @@ export function VerificationWorkspace() {
 
   const handleSelect = (appId: number) => {
     setSelectedAppId(appId);
+    setSf9EligibilityStatus("PROMOTED");
+    setConditionalSubjects([]);
   };
 
   const approveLearner = async () => {
@@ -447,6 +479,8 @@ export function VerificationWorkspace() {
         applicationId: selectedAppId,
         checklistVerified: true,
         assignedProgram,
+        sf9EligibilityStatus: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F") ? sf9EligibilityStatus : undefined,
+        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.map(s => ({ subjectCode: s.subjectCode, grade: Number(s.grade) })) : [],
       });
 
       sileo.success({
@@ -480,10 +514,12 @@ export function VerificationWorkspace() {
     try {
       await api.post("/enrollment/finalize-intake", {
         applicationId: selectedAppId,
-        checklistVerified: false,
+        checklistVerified: false, // indicating temporary enrollment
         isMissingSf9: !sf9Verified,
         isMissingPsa: !psaVerified,
         assignedProgram,
+        sf9EligibilityStatus: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F") ? sf9EligibilityStatus : undefined,
+        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.map(s => ({ subjectCode: s.subjectCode, grade: Number(s.grade) })) : [],
       });
 
       sileo.success({
@@ -981,6 +1017,180 @@ export function VerificationWorkspace() {
                           </div>
                         )}
                       </VerificationRow>
+                      
+                      {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && (
+                        <VerificationRow label="SF9 Eligibility Status">
+                          <div className="w-full py-1 flex flex-col gap-4">
+                            <Select 
+                              value={sf9EligibilityStatus} 
+                              onValueChange={(val: any) => {
+                                setSf9EligibilityStatus(val);
+                                if (val !== "CONDITIONALLY_PROMOTED") {
+                                  setConditionalSubjects([]);
+                                } else {
+                                  setConditionalSubjects([{ subjectCode: "", grade: "" }]);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full font-bold h-10 bg-white">
+                                <SelectValue placeholder="Select Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="PROMOTED">Promoted</SelectItem>
+                                <SelectItem value="CONDITIONALLY_PROMOTED">Conditionally Promoted</SelectItem>
+                                <SelectItem value="RETAINED">Retained</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </VerificationRow>
+                      )}
+
+                      {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED" && (
+                          <div className="bg-muted/10 p-4 space-y-4 mt-2">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Label className="font-bold text-base">
+                                  {atlasSubjectsQuery.data
+                                    ? `Grade ${atlasSubjectsQuery.data.meta.subjectGradeLevel} Back Subjects`
+                                    : "Previous Grade Back Subjects"}{" "}
+                                  <span className="text-destructive">*</span>
+                                </Label>
+                                <span className="text-sm text-muted-foreground">
+                                  (Maximum of 2 subjects)
+                                </span>
+                              </div>
+                              {atlasSubjectsQuery.isLoading ? (
+                                <div className="flex items-center gap-2 text-sm text-foreground mt-2">
+                                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                  Loading ATLAS subjects...
+                                </div>
+                              ) : atlasSubjectsQuery.isError ? (
+                                <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 mt-2">
+                                  <p className="text-sm font-bold text-destructive">
+                                    ATLAS subjects could not be loaded.
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => void atlasSubjectsQuery.refetch()}
+                                  >
+                                    Retry
+                                  </Button>
+                                </div>
+                              ) : (atlasSubjectsQuery.data?.data.length ?? 0) === 0 ? (
+                                <p className="text-sm text-amber-800 mt-2 font-medium">
+                                  ATLAS returned no subjects for the selected curriculum.
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div className="space-y-4">
+                              {conditionalSubjects.map((fieldItem, index) => {
+                                const selectedSubjectCodes = conditionalSubjects.map(s => s.subjectCode);
+                                const availableSubjects = (atlasSubjectsQuery.data?.data ?? []).filter(
+                                  (subject: AtlasSubjectOption) => !selectedSubjectCodes.includes(subject.code) || subject.code === fieldItem.subjectCode
+                                );
+                                const hasError = fieldItem.grade && (Number(fieldItem.grade) < 60 || Number(fieldItem.grade) > 75);
+
+                                return (
+                                  <div key={index} className="grid grid-cols-12 gap-4 items-start relative">
+                                    <div className="col-span-8 relative">
+                                      <Select 
+                                        onValueChange={(val) => {
+                                          const newSubjects = [...conditionalSubjects];
+                                          newSubjects[index].subjectCode = val;
+                                          setConditionalSubjects(newSubjects);
+                                        }} 
+                                        value={fieldItem.subjectCode || ""}
+                                      >
+                                        <SelectTrigger 
+                                          className="w-full font-bold bg-white"
+                                          disabled={atlasSubjectsQuery.isLoading || atlasSubjectsQuery.isError || (atlasSubjectsQuery.data?.data.length ?? 0) === 0}
+                                        >
+                                          <SelectValue placeholder="Search subject..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {availableSubjects.length > 0 ? availableSubjects.map((subject: any) => (
+                                            <SelectItem key={subject.code} value={subject.code} className="font-bold">
+                                              {subject.name}
+                                            </SelectItem>
+                                          )) : (
+                                            <div className="p-2 text-sm text-muted-foreground text-center">No subjects available</div>
+                                          )}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="col-span-4 relative flex items-start gap-2">
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="relative flex-1">
+                                              <Input
+                                                type="number"
+                                                min={60}
+                                                max={75}
+                                                maxLength={2}
+                                                placeholder="Rating"
+                                                className={cn(
+                                                  "font-bold pr-8",
+                                                  hasError && "border-destructive focus-visible:ring-destructive"
+                                                )}
+                                                value={fieldItem.grade || ""}
+                                                onChange={(e) => {
+                                                  const newSubjects = [...conditionalSubjects];
+                                                  newSubjects[index].grade = e.target.value;
+                                                  setConditionalSubjects(newSubjects);
+                                                }}
+                                              />
+                                              {hasError && (
+                                                <AlertCircle className="w-4 h-4 text-destructive absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                              )}
+                                            </div>
+                                          </TooltipTrigger>
+                                          {hasError && (
+                                            <TooltipContent side="top" className="bg-destructive text-destructive-foreground font-bold text-xs">
+                                              Grade must be between 60-75
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive hover:bg-destructive/10"
+                                        disabled={conditionalSubjects.length === 1}
+                                        onClick={() => {
+                                          const newSubjects = [...conditionalSubjects];
+                                          newSubjects.splice(index, 1);
+                                          setConditionalSubjects(newSubjects);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+
+                              {conditionalSubjects.length < 2 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setConditionalSubjects([...conditionalSubjects, { subjectCode: "", grade: "" }]);
+                                  }}
+                                  className="font-bold"
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Add Back Subject
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                       {/* Section 4: Required Documents Verification (Checklist) */}
                       <div className="w-full p-4 sm:p-6 border-t border-border/50 flex flex-col gap-5">
@@ -1023,6 +1233,7 @@ export function VerificationWorkspace() {
                             </span>
                           </div>
                         </div>
+
                       </div>
                     </div>
                   )}

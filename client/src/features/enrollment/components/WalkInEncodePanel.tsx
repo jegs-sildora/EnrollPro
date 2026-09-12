@@ -818,7 +818,7 @@ export function WalkInEncodePanel() {
                                   : "Previous Grade Back Subjects"}{" "}
                                 <span className="text-destructive">*</span>
                               </FormLabel>
-                              <span className="text-sm font-medium text-muted-foreground">
+                              <span className="text-sm text-muted-foreground">
                                 (Maximum of 2 subjects)
                               </span>
                             </div>
@@ -962,7 +962,7 @@ export function WalkInEncodePanel() {
                                 ATLAS returned no Grade {gradeLevelId - 1} subjects for the selected curriculum.
                               </p>
                             ) : null}
-                            <p className="text-sm text-foreground">
+                            <p className="text-sm">
                               ATLAS subjects are filtered for the grade immediately before the learner&apos;s incoming grade and the selected curriculum.
                             </p>
                             

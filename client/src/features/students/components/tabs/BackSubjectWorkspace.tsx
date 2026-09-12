@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FileX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import type {
@@ -55,7 +55,11 @@ export function BackSubjectWorkspace({
   return (
     <div className="p-6 h-full flex flex-col bg-background overflow-y-auto">
       <div className="w-full flex flex-col gap-4 pb-20">
-        {subjects && subjects.length > 0 ? (
+        {subjects === null ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground animate-pulse">
+            Loading SMART back subjects...
+          </div>
+        ) : subjects.length > 0 ? (
           <div className="mb-2">
             <div
               onClick={() => setIsOpen((current) => !current)}
@@ -142,7 +146,17 @@ export function BackSubjectWorkspace({
               )}
             </AnimatePresence>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-xl bg-muted/20">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <FileX className="h-8 w-8 text-foreground" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">No Records Found</h3>
+            <p className="text-muted-foreground mt-2 font-medium">
+              No back subject records were found from SMART for this learner.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

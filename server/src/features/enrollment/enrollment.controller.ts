@@ -174,6 +174,8 @@ export async function finalizeIntake(req: Request, res: Response) {
     isMissingSf9,
     isMissingPsa,
     assignedProgram,
+    sf9EligibilityStatus,
+    conditionalSubjects = [],
   }: {
     applicationId: number;
     heightCm?: number;
@@ -182,6 +184,11 @@ export async function finalizeIntake(req: Request, res: Response) {
     isMissingSf9?: boolean;
     isMissingPsa?: boolean;
     assignedProgram?: ApplicantType;
+    sf9EligibilityStatus?: "PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED";
+    conditionalSubjects?: Array<{
+      subjectCode: string;
+      grade: number;
+    }>;
   } = req.body;
 
   if (!applicationId) {
@@ -220,6 +227,38 @@ export async function finalizeIntake(req: Request, res: Response) {
 
   const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
 
+  let backSubjectSelection: {
+    gradeLevelId: number;
+    subjects: Array<AtlasSubjectCatalogItem & { grade: number }>;
+  } | null = null;
+
+  if (application.learnerType === "TRANSFEREE" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED" && application.admissionChannel !== "F2F") {
+    const catalog = await resolveWalkInSubjectCatalog(
+      application.gradeLevelId,
+      application.applicantType,
+    );
+    const catalogByCode = new Map(
+      catalog.subjects.map((subject) => [subject.code, subject]),
+    );
+    const selectedSubjects = conditionalSubjects.map((subj) => {
+      const subject = catalogByCode.get(subj.subjectCode);
+      if (!subject) {
+        throw new AppError(
+          422,
+          `Back subject '${subj.subjectCode}' is not available in the current ATLAS catalog for the selected grade level and curriculum.`,
+        );
+      }
+      return {
+        ...subject,
+        grade: subj.grade,
+      };
+    });
+    backSubjectSelection = {
+      gradeLevelId: catalog.subjectGradeLevelId,
+      subjects: selectedSubjects,
+    };
+  }
+
   // Wrap in transaction: save BMI + update status
   await prisma.$transaction(async (tx) => {
     await tx.enrollmentApplication.update({
@@ -233,6 +272,16 @@ export async function finalizeIntake(req: Request, res: Response) {
         isTemporarilyEnrolled: !checklistVerified,
         assignedProgram: assignedProgram ?? undefined,
         isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+        academicStatus: sf9EligibilityStatus ?? undefined,
+        isRemedialRequired: backSubjectSelection !== null ? true : undefined,
+        backSubjects: backSubjectSelection ? {
+          create: backSubjectSelection.subjects.map((subject) => ({
+            gradeLevelId: backSubjectSelection!.gradeLevelId,
+            subjectCode: subject.code,
+            subjectName: subject.name,
+            finalRating: subject.grade,
+          })),
+        } : undefined,
       },
     });
 
