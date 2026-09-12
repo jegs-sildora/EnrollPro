@@ -1793,14 +1793,21 @@ export function SectioningWorkspace() {
                               )}>
                               <div className="flex items-start justify-between gap-3 mb-3">
                                 <div>
-                                  <h4
-                                    className={cn(
-                                      "font-extrabold text-xl uppercase transition-colors flex items-center gap-2",
-                                      isSelected ? "text-primary" : "text-foreground",
-                                    )}>
-                                    {s.name}
-                                  </h4>
-                                  <span className="text-sm uppercase text-foreground font-bold">
+                                    <h4
+                                      className={cn(
+                                        "font-extrabold text-xl uppercase transition-colors flex items-center gap-2 flex-wrap",
+                                        isSelected ? "text-primary" : "text-foreground",
+                                      )}>
+                                      {s.name}
+                                      {s.isHomogeneous && s.programType === "REGULAR" && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs font-bold uppercase bg-blue-50 text-blue-700 border-blue-200 shrink-0">
+                                          Top BEC
+                                        </Badge>
+                                      )}
+                                    </h4>
+                                    <span className="text-sm uppercase text-foreground font-bold">
                                     Adviser: {s.adviser || "No Adviser Assigned"}
                                   </span>
                                 </div>

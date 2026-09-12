@@ -334,7 +334,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
     where: {
       schoolYearId,
       status: {
-        in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION", "WITHDRAWN"],
+        in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION", "WITHDRAWN", "OFFICIALLY_ENROLLED"],
       },
       learnerType: {
         in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],

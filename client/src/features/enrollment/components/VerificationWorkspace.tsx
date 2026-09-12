@@ -774,7 +774,7 @@ export function VerificationWorkspace() {
                           )}
                           <span className="truncate relative z-20 text-xs">{m.title}</span>
                           <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-sm text-primary-foreground relative z-20">
-                            {m.value > 9 ? "9+" : m.value}
+                            {m.value}
                           </span>
                         </button>
                       );
@@ -862,7 +862,7 @@ export function VerificationWorkspace() {
                   <div className="flex items-center gap-3">
                     <UserPhoto
                       photo={selectedApp.learner.studentPhoto}
-                      containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-primary/20"
+                      containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-2 border-primary"
                       className="w-full h-full object-cover"
                       alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
                     />

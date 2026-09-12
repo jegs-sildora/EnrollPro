@@ -149,7 +149,7 @@ export function WalkInEncodePanel() {
       hasPsa: false,
       originatingSchoolId: "",
       sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-      conditionalSubjects: [{ subjectCode: "", grade: "" as unknown as number }],
+      conditionalSubjects: [],
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
@@ -179,6 +179,18 @@ export function WalkInEncodePanel() {
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
+
+  useEffect(() => {
+    if (!requiresBackSubjects) {
+      if (conditionalSubjectFields.length > 0) {
+        replaceConditionalSubjects([]);
+      }
+    } else {
+      if (conditionalSubjectFields.length === 0) {
+        replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
+      }
+    }
+  }, [requiresBackSubjects, conditionalSubjectFields.length, replaceConditionalSubjects]);
 
   useEffect(() => {
     if (searchParams.get("action") === "walk-in") {
@@ -246,7 +258,7 @@ export function WalkInEncodePanel() {
           hasPsa: false,
           originatingSchoolId: "",
           sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-          conditionalSubjects: [{ subjectCode: "", grade: "" as unknown as number }],
+          conditionalSubjects: [],
         });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
