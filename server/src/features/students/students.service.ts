@@ -345,6 +345,14 @@ export async function findStudents(query: {
       historyWhere.section = resolvedSectionFilter;
     }
 
+    if (resolvedHasBackSubjects === true) {
+      historyWhere.AND = historyWhere.AND || [];
+      (historyWhere.AND as Prisma.EnrollmentHistoryWhereInput[]).push({ eosyStatus: "CONDITIONALLY_PROMOTED" });
+    } else if (resolvedHasBackSubjects === false) {
+      historyWhere.AND = historyWhere.AND || [];
+      (historyWhere.AND as Prisma.EnrollmentHistoryWhereInput[]).push({ eosyStatus: "PROMOTED" });
+    }
+
     const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
       (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus as ApplicationStatus),
     ) ?? false;
@@ -520,9 +528,23 @@ export async function findStudents(query: {
   }
 
   if (resolvedHasBackSubjects === true) {
-    where.backSubjects = { some: {} };
+    where.AND = where.AND || [];
+    (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({
+      OR: [
+        { academicStatus: "CONDITIONALLY_PROMOTED" },
+        { isRemedialRequired: true },
+        { backSubjects: { some: {} } }
+      ]
+    });
   } else if (resolvedHasBackSubjects === false) {
-    where.backSubjects = { none: {} };
+    where.AND = where.AND || [];
+    (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({
+      AND: [
+        { academicStatus: { not: "CONDITIONALLY_PROMOTED" } },
+        { isRemedialRequired: false },
+        { backSubjects: { none: {} } }
+      ]
+    });
   }
 
   if (Object.keys(enrollmentRecordFilters).length > 0) {
@@ -530,14 +552,13 @@ export async function findStudents(query: {
     if (hasSectionFilter || learnerStatus) {
       where.enrollmentRecord = enrollmentRecordFilters;
     } else {
-      where.AND = [
-        {
-          OR: [
-            { enrollmentRecord: null },
-            { enrollmentRecord: enrollmentRecordFilters }
-          ]
-        }
-      ];
+      where.AND = where.AND || [];
+      (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({
+        OR: [
+          { enrollmentRecord: null },
+          { enrollmentRecord: enrollmentRecordFilters }
+        ]
+      });
     }
   }
 
