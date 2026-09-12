@@ -964,16 +964,6 @@ export default function Students() {
                     <span>
                       LRN: {row.original.lrn}
                     </span>
-                    {row.original.hasBackSubjects && (
-                      <Badge className="h-6 px-2 text-sm bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 uppercase font-bold tracking-tight">
-                        Conditionally Promoted
-                      </Badge>
-                    )}
-                    {row.original.applicantType === "LATE_ENROLLEE" && (
-                      <Badge className="h-4 px-1 text-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-bold">
-                        Late Enrollee
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>

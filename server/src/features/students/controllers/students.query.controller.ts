@@ -386,6 +386,9 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
               lastName: true,
             },
           },
+          backSubjects: {
+            include: { gradeLevel: true }
+          },
         },
       });
       type StudentDetailApplication = NonNullable<typeof liveApplicant>;
@@ -446,7 +449,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         // Fetch application for the selected school year (if it somehow still exists)
         const appForYear = await prisma.enrollmentApplication.findFirst({
           where: { learnerId: actualLearnerId, schoolYearId },
-          include: { addresses: true, familyMembers: true, previousSchool: true }
+          include: { addresses: true, familyMembers: true, previousSchool: true, backSubjects: { include: { gradeLevel: true } } }
         });
 
         const snapshotData = asRecord(historyForYear?.learnerProfileSnapshot);
@@ -539,39 +542,86 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const hasDeficiency = latestHistory?.eosyStatus === "CONDITIONALLY_PROMOTED" || !!latestHistory?.academicDeficiencyNote;
       
       const existingDeficiencies = await prisma.subjectDeficiency.findMany({
-        where: {
-          learnerId: actualLearnerId,
-          schoolYearId,
-        }
+        where: { learnerId: actualLearnerId }
       });
       
-      const academicDeficiencies = hasDeficiency && latestHistory?.academicDeficiencyNote 
-        ? latestHistory.academicDeficiencyNote.split(',').map((subj, index) => {
-            const subjectName = subj.trim();
-            const gradeName = latestHistory.gradeLevel.name;
+      console.log(`[DEBUG] Learner ${actualLearnerId} existing deficiencies:`, existingDeficiencies);
+      console.log(`[DEBUG] Learner histories length:`, histories.length);
+      histories.forEach(h => console.log(`[DEBUG] History SY ${h.schoolYearId}, Grade ${h.gradeLevel.name}, Note: ${h.academicDeficiencyNote}, eosyStatus: ${h.eosyStatus}`));
+      
+      const academicDeficiencies: any[] = [];
+      
+      // Map deficiencies from ALL past histories
+      histories.forEach(history => {
+        const isConditionallyPromoted = history.eosyStatus === "CONDITIONALLY_PROMOTED";
+        if ((isConditionallyPromoted || history.academicDeficiencyNote) && history.academicDeficiencyNote) {
+          const subjects = history.academicDeficiencyNote.split(',').map(s => s.trim());
+          subjects.forEach((subjectName, index) => {
+            const gradeName = history.gradeLevel.name;
             const gradeNum = gradeName.replace("Grade ", "");
             
-            // Generate official subject code (e.g. MATH7, SCI7)
             let subjectCode = subjectName.substring(0, 4).toUpperCase() + gradeNum;
             if (subjectName.toLowerCase().includes("science")) subjectCode = "SCI" + gradeNum;
             else if (subjectName.toLowerCase().includes("math")) subjectCode = "MATH" + gradeNum;
             else if (subjectName.toLowerCase().includes("english")) subjectCode = "ENG" + gradeNum;
             else if (subjectName.toLowerCase().includes("filipino")) subjectCode = "FIL" + gradeNum;
             
-            const existingRecord = existingDeficiencies.find(d => d.subjectName === subjectName);
+            // Find if there's an active SubjectDeficiency record for this subject
+            // Check for the most recent status
+            const existingRecords = existingDeficiencies.filter(d => d.subjectName === subjectName);
+            const latestRecord = existingRecords.length > 0 ? existingRecords[existingRecords.length - 1] : null;
             
-            return {
-              id: existingRecord?.id || index + 1,
+            academicDeficiencies.push({
+              id: latestRecord?.id || (history.id * 100 + index),
               subject: subjectName,
               gradeLevel: gradeName,
               subjectCode: subjectCode,
-              grade: 74, // Mock grade as it's not stored in the note
-              status: existingRecord ? existingRecord.status : "PENDING_ENROLLMENT",
+              grade: null,
+              status: latestRecord ? latestRecord.status : "UNRESOLVED",
               teacherId: "",
-              schoolYear: latestHistory.schoolYear.yearLabel
-            };
-          })
-        : [];
+              schoolYear: history.schoolYear.yearLabel
+            });
+          });
+        }
+      });
+      
+      console.log(`[DEBUG] Mapped from histories:`, academicDeficiencies);
+      
+      // Also add any active deficiencies that might not be in a history note (manually added)
+      // Wait, what if they were manually added but for ANY school year? Let's just append ALL that aren't mapped!
+      existingDeficiencies.forEach(def => {
+        if (!academicDeficiencies.find(a => a.subject === def.subjectName)) {
+           academicDeficiencies.push({
+              id: def.id,
+              subject: def.subjectName,
+              gradeLevel: "Unknown",
+              subjectCode: def.subjectName.substring(0, 4).toUpperCase(),
+              grade: null,
+              status: def.status,
+              teacherId: "",
+              schoolYear: "Prior Year"
+           });
+        }
+      });
+      
+      // Finally, append EnrollmentBackSubject records from the current application (for transferees)
+      const appBackSubjects = applicant?.backSubjects || [];
+      appBackSubjects.forEach(bs => {
+        if (!academicDeficiencies.find(a => a.subject === bs.subjectName)) {
+           academicDeficiencies.push({
+              id: bs.id * 1000, // ensure unique ID
+              subject: bs.subjectName,
+              gradeLevel: bs.gradeLevel.name,
+              subjectCode: bs.subjectCode,
+              grade: null,
+              status: "UNRESOLVED",
+              teacherId: "",
+              schoolYear: applicant?.schoolYear?.yearLabel || "Prior Year"
+           });
+        }
+      });
+      
+      console.log(`[DEBUG] Final academic deficiencies:`, academicDeficiencies);
       
       const computedIsRemedialRequired = applicant.isRemedialRequired || hasDeficiency;
 

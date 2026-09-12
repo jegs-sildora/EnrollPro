@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -30,14 +30,14 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
-import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, Mars, Venus, FileCheck } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
-import { MultiSearchableCombobox } from "@/shared/ui/multi-searchable-combobox";
 
 interface SchoolYearGradeLevel {
   id: number;
@@ -149,10 +149,15 @@ export function WalkInEncodePanel() {
       hasPsa: false,
       originatingSchoolId: "",
       sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-      conditionalSubjectCodes: [],
+      conditionalSubjects: [{ subjectCode: "", grade: "" as unknown as number }],
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
+
+  const { fields: conditionalSubjectFields, append: appendConditionalSubject, remove: removeConditionalSubject, replace: replaceConditionalSubjects } = useFieldArray({
+    control: form.control,
+    name: "conditionalSubjects",
+  });
   const learnerType = form.watch("learnerType");
   const gradeLevelId = form.watch("gradeLevelId");
   const assignedProgram = form.watch("assignedProgram");
@@ -241,7 +246,7 @@ export function WalkInEncodePanel() {
           hasPsa: false,
           originatingSchoolId: "",
           sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-          conditionalSubjectCodes: [],
+          conditionalSubjects: [{ subjectCode: "", grade: "" as unknown as number }],
         });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
@@ -370,7 +375,7 @@ export function WalkInEncodePanel() {
                           type="button"
                           onClick={() => {
                             form.setValue("learnerType", "NEW_ENROLLEE", { shouldDirty: true, shouldValidate: true });
-                            form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                            replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                           }}
                           className={cn(
                             "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
@@ -397,7 +402,7 @@ export function WalkInEncodePanel() {
                           type="button"
                           onClick={() => {
                             form.setValue("learnerType", "RETURNING", { shouldDirty: true, shouldValidate: true });
-                            form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                            replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                           }}
                           className={cn(
                             "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
@@ -613,7 +618,7 @@ export function WalkInEncodePanel() {
                                     type="button"
                                     onClick={() => {
                                       field.onChange(gl.id);
-                                      form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                      replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                                     }}
                                     className={cn(
                                       "flex items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
@@ -642,7 +647,7 @@ export function WalkInEncodePanel() {
                                     type="button"
                                     onClick={() => {
                                       field.onChange(prog.val);
-                                      form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                      replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                                     }}
                                     className={cn(
                                       "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
@@ -786,7 +791,7 @@ export function WalkInEncodePanel() {
                                     onClick={() => {
                                       field.onChange(s.val);
                                       if (s.val !== "CONDITIONALLY_PROMOTED") {
-                                        form.setValue("conditionalSubjectCodes", [], { shouldValidate: true });
+                                        replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                                       }
                                     }}
                                     className={cn(
@@ -805,89 +810,174 @@ export function WalkInEncodePanel() {
                           )}
                         />
                         {requiresBackSubjects && (
-                          <FormField
-                            control={form.control}
-                            name="conditionalSubjectCodes"
-                            render={({ field, fieldState }) => (
-                              <FormItem className="mt-4 rounded-lg border border-border bg-muted/10 p-4">
-                                <div className="flex items-center justify-between gap-4">
-                                  <FormLabel className="font-bold">
-                                    {atlasSubjectsQuery.data
-                                      ? `Grade ${atlasSubjectsQuery.data.meta.subjectGradeLevel} Back Subjects`
-                                      : "Previous Grade Back Subjects"}{" "}
-                                    <span className="text-destructive">*</span>
-                                  </FormLabel>
-                                  <span className="text-sm font-bold text-foreground">
-                                    {field.value.length} / 2 selected
-                                  </span>
-                                </div>
-                                <FormControl>
-                                  <MultiSearchableCombobox
-                                    items={(atlasSubjectsQuery.data?.data ?? []).map((subject) => ({
-                                      value: subject.code,
-                                      label: subject.name,
-                                    }))}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    maxSelected={2}
-                                    placeholder={
-                                      gradeLevelId <= 0 || !assignedProgram
-                                        ? "Select grade level and curriculum first"
-                                        : atlasSubjectsQuery.isLoading
-                                          ? "Loading subjects from ATLAS..."
-                                          : atlasSubjectsQuery.isError
-                                            ? "ATLAS subjects are unavailable"
-                                            : (atlasSubjectsQuery.data?.data.length ?? 0) === 0
-                                              ? `No Grade ${atlasSubjectsQuery.data?.meta.subjectGradeLevel ?? "previous-grade"} subjects available`
-                                              : `Select 1 or 2 Grade ${atlasSubjectsQuery.data?.meta.subjectGradeLevel ?? ""} subjects`.trim()
-                                    }
-                                    searchPlaceholder="Search ATLAS subjects"
-                                    emptyText="No ATLAS subjects available for this grade and curriculum"
-                                    disabled={
-                                      gradeLevelId <= 0 ||
-                                      !assignedProgram ||
-                                      atlasSubjectsQuery.isLoading ||
-                                      atlasSubjectsQuery.isError ||
-                                      (atlasSubjectsQuery.data?.data.length ?? 0) === 0
-                                    }
-                                    error={Boolean(fieldState.error)}
-                                  />
-                                </FormControl>
-                                {gradeLevelId <= 0 || !assignedProgram ? (
-                                  <p className="text-sm text-foreground">
-                                    Select the learner&apos;s incoming grade level and curriculum first.
-                                  </p>
-                                ) : atlasSubjectsQuery.isLoading ? (
-                                  <div className="flex items-center gap-2 text-sm text-foreground">
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                    Loading Grade {gradeLevelId - 1} subjects from ATLAS...
+                          <div className="mt-4 rounded-lg border border-border bg-muted/10 p-4 space-y-4">
+                            <div className="flex items-center gap-2">
+                              <FormLabel className="font-bold">
+                                {atlasSubjectsQuery.data
+                                  ? `Grade ${atlasSubjectsQuery.data.meta.subjectGradeLevel} Back Subjects`
+                                  : "Previous Grade Back Subjects"}{" "}
+                                <span className="text-destructive">*</span>
+                              </FormLabel>
+                              <span className="text-sm font-medium text-muted-foreground">
+                                (Maximum of 2 subjects)
+                              </span>
+                            </div>
+
+                            <div className="space-y-4">
+                              {conditionalSubjectFields.map((fieldItem, index) => {
+                                const selectedSubjectCodes = form.watch("conditionalSubjects").map(s => s.subjectCode);
+                                
+                                return (
+                                  <div key={fieldItem.id} className="grid grid-cols-12 gap-4 items-start relative">
+                                    <div className="col-span-8 relative">
+                                      <FormField
+                                        control={form.control}
+                                        name={`conditionalSubjects.${index}.subjectCode`}
+                                        render={({ field, fieldState }) => {
+                                          // Exclude subjects that are selected in OTHER rows
+                                          const availableSubjects = (atlasSubjectsQuery.data?.data ?? []).filter(
+                                            subject => !selectedSubjectCodes.includes(subject.code) || subject.code === field.value
+                                          );
+                                          
+                                          return (
+                                            <FormItem className="relative">
+                                              <FormControl>
+                                                <div className={cn("relative flex items-center w-full", fieldState.error && "border-destructive")}>
+                                                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                                                    <SelectTrigger 
+                                                      className={cn("w-full font-bold", fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                                                      disabled={atlasSubjectsQuery.isLoading || atlasSubjectsQuery.isError || (atlasSubjectsQuery.data?.data.length ?? 0) === 0}
+                                                    >
+                                                      <SelectValue placeholder="Search subject..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      {availableSubjects.map((subject) => (
+                                                        <SelectItem key={subject.code} value={subject.code} className="font-bold">
+                                                          {subject.name}
+                                                        </SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
+                                              </FormControl>
+                                            </FormItem>
+                                          );
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="col-span-4 relative flex items-start gap-2">
+                                      <FormField
+                                        control={form.control}
+                                        name={`conditionalSubjects.${index}.grade`}
+                                        render={({ field, fieldState }) => (
+                                          <FormItem className="flex-1 relative">
+                                            <FormControl>
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <div className="relative">
+                                                      <Input
+                                                        {...field}
+                                                        type="number"
+                                                        min={60}
+                                                        max={75}
+                                                        maxLength={2}
+                                                        placeholder="Rating"
+                                                        className={cn(
+                                                          "font-bold pr-8",
+                                                          fieldState.error && "border-destructive focus-visible:ring-destructive"
+                                                        )}
+                                                        value={field.value || ""}
+                                                      />
+                                                      {fieldState.error && (
+                                                        <AlertCircle className="w-4 h-4 text-destructive absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                      )}
+                                                    </div>
+                                                  </TooltipTrigger>
+                                                  {fieldState.error && (
+                                                    <TooltipContent side="top" className="bg-destructive text-destructive-foreground font-bold text-xs">
+                                                      Grade must be between 60-75
+                                                    </TooltipContent>
+                                                  )}
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            </FormControl>
+                                          </FormItem>
+                                        )}
+                                      />
+                                      {index > 0 && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                                          onClick={() => removeConditionalSubject(index)}
+                                        >
+                                          <span className="text-xl leading-none">&times;</span>
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
-                                ) : atlasSubjectsQuery.isError ? (
-                                  <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2">
-                                    <p className="text-sm font-bold text-destructive">
-                                      {getWalkInErrorMessage(atlasSubjectsQuery.error, "ATLAS subjects could not be loaded.")}
-                                    </p>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => void atlasSubjectsQuery.refetch()}
-                                    >
-                                      Retry
-                                    </Button>
-                                  </div>
-                                ) : (atlasSubjectsQuery.data?.data.length ?? 0) === 0 ? (
-                                  <p className="text-sm text-amber-800">
-                                    ATLAS returned no Grade {gradeLevelId - 1} subjects for the selected curriculum.
-                                  </p>
-                                ) : null}
-                                <p className="text-sm text-foreground">
-                                  ATLAS subjects are filtered for the grade immediately before the learner&apos;s incoming grade and the selected curriculum.
-                                </p>
-                                <FormMessage />
-                              </FormItem>
+                                );
+                              })}
+                            </div>
+
+                            {conditionalSubjectFields.length < 2 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground font-bold hover:text-foreground mt-2"
+                                onClick={() => appendConditionalSubject({ subjectCode: "", grade: "" as unknown as number })}
+                              >
+                                <Plus className="w-4 h-4 mr-2" /> Add Second Subject
+                              </Button>
                             )}
-                          />
+
+                            {gradeLevelId <= 0 || !assignedProgram ? (
+                              <p className="text-sm text-foreground mt-4">
+                                Select the learner&apos;s incoming grade level and curriculum first.
+                              </p>
+                            ) : atlasSubjectsQuery.isLoading ? (
+                              <div className="flex items-center gap-2 text-sm text-foreground mt-4">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                Loading Grade {gradeLevelId - 1} subjects from ATLAS...
+                              </div>
+                            ) : atlasSubjectsQuery.isError ? (
+                              <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 mt-4">
+                                <p className="text-sm font-bold text-destructive">
+                                  {getWalkInErrorMessage(atlasSubjectsQuery.error, "ATLAS subjects could not be loaded.")}
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => void atlasSubjectsQuery.refetch()}
+                                >
+                                  Retry
+                                </Button>
+                              </div>
+                            ) : (atlasSubjectsQuery.data?.data.length ?? 0) === 0 ? (
+                              <p className="text-sm text-amber-800 mt-4">
+                                ATLAS returned no Grade {gradeLevelId - 1} subjects for the selected curriculum.
+                              </p>
+                            ) : null}
+                            <p className="text-sm text-foreground">
+                              ATLAS subjects are filtered for the grade immediately before the learner&apos;s incoming grade and the selected curriculum.
+                            </p>
+                            
+                            {/* Display array-level errors directly from formState */}
+                            {form.formState.errors.conditionalSubjects?.root?.message && (
+                              <p className="text-[0.8rem] font-medium text-destructive">
+                                {form.formState.errors.conditionalSubjects.root.message}
+                              </p>
+                            )}
+                            {form.formState.errors.conditionalSubjects?.message && typeof form.formState.errors.conditionalSubjects.message === 'string' && (
+                              <p className="text-[0.8rem] font-medium text-destructive">
+                                {form.formState.errors.conditionalSubjects.message}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

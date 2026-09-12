@@ -54,8 +54,11 @@ export const directEncodeWalkInSchema = z.object({
     "CONDITIONALLY_PROMOTED",
     "RETAINED"
   ]),
-  conditionalSubjectCodes: z
-    .array(z.string().trim().min(1, "Subject code is required"))
+  conditionalSubjects: z
+    .array(z.object({
+      subjectCode: z.string().trim().min(1, "Subject code is required"),
+      grade: z.coerce.number().min(60, "Grade must be at least 60").max(75, "Grade must be at most 75")
+    }))
     .max(2, "Select no more than 2 back subjects")
     .default([]),
   currentAddress: addressSchema,
@@ -80,12 +83,12 @@ export const directEncodeWalkInSchema = z.object({
     }
   }
 
-  const uniqueSubjectCodes = new Set(obj.conditionalSubjectCodes);
-  if (uniqueSubjectCodes.size !== obj.conditionalSubjectCodes.length) {
+  const uniqueSubjectCodes = new Set(obj.conditionalSubjects.map(s => s.subjectCode));
+  if (uniqueSubjectCodes.size !== obj.conditionalSubjects.length) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Back subjects must be unique",
-      path: ["conditionalSubjectCodes"],
+      path: ["conditionalSubjects"],
     });
   }
 
@@ -93,19 +96,19 @@ export const directEncodeWalkInSchema = z.object({
     obj.learnerType === "TRANSFEREE" &&
     obj.sf9EligibilityStatus === "CONDITIONALLY_PROMOTED";
 
-  if (requiresBackSubjects && obj.conditionalSubjectCodes.length === 0) {
+  if (requiresBackSubjects && obj.conditionalSubjects.length === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Select 1 or 2 back subjects",
-      path: ["conditionalSubjectCodes"],
+      path: ["conditionalSubjects"],
     });
   }
 
-  if (!requiresBackSubjects && obj.conditionalSubjectCodes.length > 0) {
+  if (!requiresBackSubjects && obj.conditionalSubjects.length > 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Back subjects apply only to conditionally promoted transferees",
-      path: ["conditionalSubjectCodes"],
+      path: ["conditionalSubjects"],
     });
   }
 });

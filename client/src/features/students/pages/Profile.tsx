@@ -24,7 +24,24 @@ export default function StudentProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const [activeTab, setActiveTab] = useState("record");
+  
+  const uiPreferences = useSettingsStore((state) => state.uiPreferences);
+  const updateUiPreference = useSettingsStore((state) => state.updateUiPreference);
+  
+  const requestedTab = uiPreferences.studentProfileTab;
+  const VALID_TABS = ["record", "academic", "back_subjects"] as const;
+  type ProfileTab = (typeof VALID_TABS)[number];
+  
+  const activeTab: ProfileTab = VALID_TABS.includes(
+    (requestedTab ?? "") as ProfileTab,
+  )
+    ? ((requestedTab as ProfileTab) ?? "record")
+    : "record";
+
+  const setActiveTab = (val: string) => {
+    updateUiPreference("studentProfileTab", val);
+  };
+
   const learnerId = Number.parseInt(id ?? "", 10);
   const activeSchoolYearId = useSettingsStore((state) => state.activeSchoolYearId);
   const viewingSchoolYearId = useSettingsStore(
@@ -171,7 +188,12 @@ export default function StudentProfile() {
 
         <TabsContent
           value="record"
-          className="min-h-0 flex-1 rounded-md border bg-background relative"
+          forceMount={true}
+          hidden={activeTab !== "record"}
+          className={cn(
+            "min-h-0 flex-1 rounded-md border bg-background relative",
+            activeTab !== "record" && "hidden"
+          )}
         >
           <div className="absolute inset-0">
             <StudentDetailPanel

@@ -1,45 +1,40 @@
-# Prompt for UI/UX Implementation: Learner Profile Header Refactor
+# Prompt for UI/UX Implementation: Conditionally Promoted Back Subjects Form
 
 ## Role & Context
-Act as a Frontend Developer. We are redesigning the "Primary Profile" header card in the Learner Profile module of EnrollPro. 
+Act as a Frontend Developer. We are refactoring the "Walk-In Learner Enrollment" modal in EnrollPro. 
 
-Currently, the layout is center-aligned with massive empty white space on the sides, and the metadata is split to the extreme left and right edges. We need to convert this into a modern, highly scannable, left-aligned "Media Object" layout.
+Currently, when a registrar selects `CONDITIONALLY PROMOTED`, the UI reveals a generic multi-select dropdown for "Back Subjects." This is insufficient for DepEd compliance, as the system must also capture the specific failing grade (typically 60-74) for each failed subject. 
 
 ## The Objective
-Anchor the learner's identity (Avatar, Name, LRN, Badges) to the top left. Move the primary action button to the top right. Consolidate the metadata (Grade, Contact, Address) into a structured, left-aligned grid at the bottom of the card.
+Replace the multi-select dropdown with a dynamic, 2-row maximum input system. Each row must contain a searchable Subject Dropdown paired with a restricted Numeric Input for the failing grade.
 
 ## UI Component Requirements
 
-Please implement the following layout restructuring:
+Please update the highlighted section in the modal with the following specifications:
 
-### 1. Top Row: Identity & Actions (Flex Container)
-Create a top-level flex container that aligns items horizontally (`flex`, `justify-between`, `items-start`).
+### 1. Section Header
+*   Keep the header: `Grade [X] Back Subjects *`
+*   Remove the `0 / 2 selected` text. Replace it with a small helper text: `(Maximum of 2 subjects)` styled in muted gray.
 
-*   **Left Side (The Media Object):**
-    *   **Avatar:** Keep the circular avatar, but ensure it is a perfect circle with smooth edges.
-    *   **Text Container (beside the avatar):**
-        *   **Learner Name:** Display prominently in large, bold, dark text (e.g., `text-2xl font-bold`).
-        *   **LRN:** Move the Learner Reference Number up here, directly below the name. Style it in a muted gray (e.g., `LRN: 123123123123`). In DepEd, the LRN is an extension of the student's name and should never be buried in the lower metadata.
-        *   **Status Badges:** Display the badges (`OFFICIALLY ENROLLED`, `WITH BACK SUBJECTS`) horizontally inline below the LRN, not stacked vertically. Keep their current green and orange color coding, but make them compact (pill-shaped).
+### 2. The Subject + Grade Row Layout (Grid)
+Implement a 2-column grid layout for the input row (e.g., `grid grid-cols-12 gap-4`).
+*   **Column 1 (Searchable Dropdown - Span 8 or 9):**
+    *   Convert this into a combobox (searchable dropdown) so the user can type "Math" to quickly find "Mathematics".
+    *   Placeholder: `Search subject...`
+*   **Column 2 (Grade Input - Span 4 or 3):**
+    *   Add a standard text/number input field.
+    *   Placeholder: `Rating` or `Grade`.
+    *   Add a small right-aligned suffix inside the input if possible, or just keep it clean.
 
-*   **Right Side (Primary Action):**
-    *   Move the `EDIT LEARNER DATA` button to the absolute top-right of this flex container. 
-    *   Change it from a heavy red button to a sleek secondary/outline button (e.g., gray border with a small pencil icon) to keep the visual focus on the learner's status badges.
+### 3. Validation & Constraints (Strict)
+*   **Grade Input Limits:** The number input must strictly only accept integers between **60 and 75**. 
+    *   Use `type="number"`, `min="60"`, `max="75"`, and `maxLength="2"`.
+    *   If the user types a number outside this range, highlight the field border in red and show a micro-tooltip: `Grade must be between 60-75`.
+*   **Subject Uniqueness:** If Subject A is selected in Row 1, disable or hide Subject A from the dropdown options in Row 2.
 
-### 2. Divider
-Add a subtle horizontal divider (`border-b border-gray-200`) below the top row to separate the identity section from the metadata section.
-
-### 3. Bottom Row: Metadata Grid
-Remove the `justify-between` layout that pushes text to the far edges. Replace it with a structured 3-column or 4-column CSS Grid (`grid grid-cols-3 gap-6`).
-
-*   **Column 1:** 
-    *   Label: `GRADE LEVEL & SECTION` (Muted, smaller text, e.g., `text-xs text-gray-500`)
-    *   Value: `G8 - UNASSIGNED` (Dark, medium weight). Keep the `SPA` tag as a small inline badge next to the value.
-*   **Column 2:**
-    *   Label: `PRIMARY CONTACT`
-    *   Value: `09230129039`
-*   **Column 3:**
-    *   Label: `ADDRESS`
-    *   Value: `N/A` (or the full string when available).
-
-*   *Note:* The LRN was moved to the top identity block, so it is permanently removed from this lower grid.
+### 4. Dynamic Row Logic (1 or 2 Subjects)
+Since a student can be conditionally promoted by failing just 1 subject, the UI should not force them to fill out 2 rows.
+*   **Default State:** Show exactly 1 input row (Subject + Grade).
+*   **Add Action:** Below the first row, add a subtle ghost button with a plus icon: `+ Add Second Subject`.
+*   **Max Capacity:** Once clicked, reveal the second row and hide the `+ Add` button (since DepEd policy caps this at 2 subjects). 
+*   **Remove Action:** On the second row, include a small 'X' or trash icon on the far right so the registrar can remove it if they clicked it by mistake.

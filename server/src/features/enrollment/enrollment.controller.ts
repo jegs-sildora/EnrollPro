@@ -579,7 +579,7 @@ export async function directEncodeWalkIn(
       gradeLevelId, assignedProgram,
       previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo,
       guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
-      hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjectCodes,
+      hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjects,
       motherTongue, currentAddress,
     } = payload;
 
@@ -598,15 +598,18 @@ export async function directEncodeWalkIn(
       const catalogByCode = new Map(
         catalog.subjects.map((subject) => [subject.code, subject]),
       );
-      const selectedSubjects = conditionalSubjectCodes.map((code) => {
-        const subject = catalogByCode.get(code);
+      const selectedSubjects = conditionalSubjects.map((subj) => {
+        const subject = catalogByCode.get(subj.subjectCode);
         if (!subject) {
           throw new AppError(
             422,
-            `Back subject '${code}' is not available in the current ATLAS catalog for the selected grade level and curriculum.`,
+            `Back subject '${subj.subjectCode}' is not available in the current ATLAS catalog for the selected grade level and curriculum.`,
           );
         }
-        return subject;
+        return {
+          ...subject,
+          grade: subj.grade,
+        };
       });
       backSubjectSelection = {
         gradeLevelId: catalog.subjectGradeLevelId,
@@ -697,9 +700,10 @@ export async function directEncodeWalkIn(
           },
           backSubjects: backSubjectSelection ? {
             create: backSubjectSelection.subjects.map((subject) => ({
-              gradeLevelId: backSubjectSelection.gradeLevelId,
+              gradeLevelId: backSubjectSelection!.gradeLevelId,
               subjectCode: subject.code,
               subjectName: subject.name,
+              finalRating: (subject as any).grade,
             })),
           } : undefined,
           addresses: currentAddress ? {

@@ -95,7 +95,7 @@ const validWalkIn = {
   hasPsa: true,
   originatingSchoolId: "123456",
   sf9EligibilityStatus: "CONDITIONALLY_PROMOTED",
-  conditionalSubjectCodes: ["SCIENCE"],
+  conditionalSubjects: [{ subjectCode: "SCIENCE", grade: 70 }],
 } as const
 
 test("filters ATLAS subjects by grade and program without replacing stable codes", () => {
@@ -139,14 +139,14 @@ test("requires one or two unique back subjects for a conditional transferee", ()
   assert.equal(
     directEncodeWalkInSchema.safeParse({
       ...validWalkIn,
-      conditionalSubjectCodes: [],
+      conditionalSubjects: [],
     }).success,
     false,
   )
   assert.equal(
     directEncodeWalkInSchema.safeParse({
       ...validWalkIn,
-      conditionalSubjectCodes: ["SCIENCE", "TLE", "MATHEMATICS"],
+      conditionalSubjects: [{ subjectCode: "SCIENCE", grade: 70 }, { subjectCode: "TLE", grade: 74 }, { subjectCode: "MATHEMATICS", grade: 65 }],
     }).success,
     false,
   )

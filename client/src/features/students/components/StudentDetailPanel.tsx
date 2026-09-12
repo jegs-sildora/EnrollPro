@@ -2169,7 +2169,7 @@ export function StudentDetailPanel({
             Save Changes
           </Button>
         </div>
-      ) : canEditProfile && student.enrollment?.eosyStatus !== "DROPPED_OUT" && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" ? (
+      ) : student.enrollment?.eosyStatus !== "DROPPED_OUT" && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" ? (
         <div className="p-3 border-t bg-card sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-2">
             <Dialog
@@ -2363,7 +2363,7 @@ export function StudentDetailPanel({
             </Dialog>
           </div>
         </div>
-      ) : canEditProfile && (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
+      ) : (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
         <div className="p-3 border-t bg-card sticky bottom-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-2">
             <Dialog

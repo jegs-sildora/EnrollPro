@@ -404,6 +404,7 @@ model EnrollmentBackSubject {
   atlasSubjectIds Int[]                 @default([]) @map("atlas_subject_ids")
   subjectCode     String                @map("subject_code")
   subjectName     String                @map("subject_name")
+  finalRating     Int?                  @map("final_rating")
   createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   application     EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   gradeLevel      GradeLevel            @relation(fields: [gradeLevelId], references: [id], onDelete: Restrict)

@@ -723,7 +723,7 @@ function AppSidebar() {
               )}
               <div className="grid flex-1 text-left leading-tight overflow-hidden transition-all duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:m-0">
                 {schoolName ? (
-                  <span className="font-bold leading-[1.1] uppercase text-primary block text-wrap">
+                  <span className="font-extrabold leading-[1.1] uppercase text-primary block text-wrap">
                     {schoolName}
                   </span>
                 ) : (
