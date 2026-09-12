@@ -24,6 +24,7 @@ import {
   addHealthRecord as createStudentHealthRecord,
   updateHealthRecord as updateStudentHealthRecord,
 } from "./controllers/students.health.controller.js";
+import { getStudentBackSubjects } from "./controllers/students.back-subjects.controller.js";
 import { validate } from "../../middleware/validate.js";
 import { updateStudentSchema, healthRecordSchema } from "@enrollpro/shared";
 
@@ -76,6 +77,12 @@ router.get(
   "/:id/record-history",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   getStudentRecordHistory,
+);
+
+router.get(
+  "/:id/back-subjects",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  getStudentBackSubjects,
 );
 
 // Update student information

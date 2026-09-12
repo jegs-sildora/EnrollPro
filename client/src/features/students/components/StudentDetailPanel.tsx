@@ -188,7 +188,7 @@ interface Props {
   onTransferOut?: (payload: StudentTransferOutPayload) => void;
   onDropout?: (payload: StudentDropoutPayload) => void;
   onExpand?: (identifier?: string | number) => void;
-  onStudentLoaded?: (student: unknown) => void;
+  onStudentLoaded?: (student: StudentDetail) => void;
   canEditProfile?: boolean;
   showHeader?: boolean;
 }

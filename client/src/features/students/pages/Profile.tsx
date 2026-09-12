@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, HeartPulse, UserRound } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { sileo } from "sileo";
 import { motion } from "motion/react";
@@ -13,10 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useSettingsStore } from "@/store/settings.slice";
 import {
   StudentDetailPanel,
+  type StudentDetail,
   type StudentDropoutPayload,
   type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
-import { Badge } from "@/shared/ui/badge";
 import { BackSubjectWorkspace } from "../components/tabs/BackSubjectWorkspace";
 import { AcademicHistoryTab } from "../components/tabs/AcademicHistoryTab";
 
@@ -32,7 +32,7 @@ export default function StudentProfile() {
   const VALID_TABS = ["record", "academic", "back_subjects"] as const;
   type ProfileTab = (typeof VALID_TABS)[number];
   
-  const activeTab: ProfileTab = VALID_TABS.includes(
+  const preferredTab: ProfileTab = VALID_TABS.includes(
     (requestedTab ?? "") as ProfileTab,
   )
     ? ((requestedTab as ProfileTab) ?? "record")
@@ -50,11 +50,30 @@ export default function StudentProfile() {
   const systemPhase = useSettingsStore((state) => state.systemPhase);
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
 
-  // We capture the loaded student here to render the Hero Header
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [loadedStudent, setLoadedStudent] = useState<any>(null);
+  const [loadedStudent, setLoadedStudent] = useState<StudentDetail | null>(null);
 
   const schoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
+  const backSubjectRequestKey = `${id ?? ""}:${schoolYearId ?? 0}`;
+  const [backSubjectAvailability, setBackSubjectAvailability] = useState<{
+    requestKey: string;
+    available: boolean;
+  } | null>(null);
+  const hasBackSubjects =
+    backSubjectAvailability?.requestKey === backSubjectRequestKey &&
+    backSubjectAvailability.available;
+  const activeTab: ProfileTab =
+    preferredTab === "back_subjects" && !hasBackSubjects
+      ? "record"
+      : preferredTab;
+  const handleBackSubjectAvailability = useCallback(
+    (available: boolean) => {
+      setBackSubjectAvailability({
+        requestKey: backSubjectRequestKey,
+        available,
+      });
+    },
+    [backSubjectRequestKey],
+  );
   const canEditProfile = useMemo(
     () =>
       (!isHistoricalReadOnly || hasOverride) &&
@@ -113,11 +132,6 @@ export default function StudentProfile() {
     );
   }
 
-  const needsRemedial =
-    loadedStudent?.isRemedialRequired ||
-    (loadedStudent?.academicDeficiencies && loadedStudent.academicDeficiencies.length > 0) ||
-    (loadedStudent?.remedialClasses && loadedStudent.remedialClasses.length > 0);
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
       <div className="flex items-center">
@@ -136,7 +150,12 @@ export default function StudentProfile() {
         onValueChange={setActiveTab}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <TabsList className={cn("grid w-full h-auto gap-1 p-1 bg-muted border border-border rounded-md relative shadow-sm", needsRemedial ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}>
+        <TabsList
+          className={cn(
+            "relative grid h-auto w-full grid-cols-1 gap-1 rounded-md border border-border bg-muted p-1 shadow-sm",
+            hasBackSubjects ? "sm:grid-cols-3" : "sm:grid-cols-2",
+          )}
+        >
           <TabsTrigger
             value="record"
             className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
@@ -167,7 +186,7 @@ export default function StudentProfile() {
               Academic History
             </span>
           </TabsTrigger>
-          {needsRemedial && (
+          {hasBackSubjects ? (
             <TabsTrigger
               value="back_subjects"
               className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
@@ -183,7 +202,7 @@ export default function StudentProfile() {
                 BACK SUBJECTS
               </span>
             </TabsTrigger>
-          )}
+          ) : null}
         </TabsList>
 
         <TabsContent
@@ -220,16 +239,22 @@ export default function StudentProfile() {
           </div>
         </TabsContent>
 
-        {needsRemedial && (
-          <TabsContent
-            value="back_subjects"
-            className="min-h-0 flex-1 rounded-md border bg-background relative"
-          >
-            <div className="absolute inset-0 overflow-y-auto">
-              <BackSubjectWorkspace student={loadedStudent} schoolYearId={schoolYearId ?? 0} onRefreshData={refreshProfile} />
-            </div>
-          </TabsContent>
-        )}
+        <TabsContent
+          value="back_subjects"
+          forceMount
+          className={cn(
+            "min-h-0 flex-1 rounded-md border bg-background relative",
+            activeTab !== "back_subjects" && "hidden",
+          )}
+        >
+          <div className="absolute inset-0 overflow-y-auto">
+            <BackSubjectWorkspace
+              learnerIdentifier={id ?? ""}
+              schoolYearId={schoolYearId ?? 0}
+              onAvailabilityChange={handleBackSubjectAvailability}
+            />
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

@@ -68,7 +68,15 @@ export function getHistoricalReportedGrades(value: unknown): unknown {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
-  return "reportedGrades" in value
-    ? (value as { reportedGrades?: unknown }).reportedGrades ?? null
-    : null;
+
+  const snapshot = value as {
+    reportedGrades?: unknown;
+    smartOutcome?: unknown;
+  };
+
+  if (snapshot.smartOutcome !== null && snapshot.smartOutcome !== undefined) {
+    return { __smartOutcome: snapshot.smartOutcome };
+  }
+
+  return snapshot.reportedGrades ?? null;
 }

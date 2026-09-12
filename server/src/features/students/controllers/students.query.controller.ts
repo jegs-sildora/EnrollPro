@@ -541,87 +541,10 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const latestHistory = histories.length > 0 ? histories[histories.length - 1] : null;
       const hasDeficiency = latestHistory?.eosyStatus === "CONDITIONALLY_PROMOTED" || !!latestHistory?.academicDeficiencyNote;
       
-      const existingDeficiencies = await prisma.subjectDeficiency.findMany({
-        where: { learnerId: actualLearnerId }
-      });
-      
-      console.log(`[DEBUG] Learner ${actualLearnerId} existing deficiencies:`, existingDeficiencies);
-      console.log(`[DEBUG] Learner histories length:`, histories.length);
-      histories.forEach(h => console.log(`[DEBUG] History SY ${h.schoolYearId}, Grade ${h.gradeLevel.name}, Note: ${h.academicDeficiencyNote}, eosyStatus: ${h.eosyStatus}`));
-      
-      const academicDeficiencies: any[] = [];
-      
-      // Map deficiencies from ALL past histories
-      histories.forEach(history => {
-        const isConditionallyPromoted = history.eosyStatus === "CONDITIONALLY_PROMOTED";
-        if ((isConditionallyPromoted || history.academicDeficiencyNote) && history.academicDeficiencyNote) {
-          const subjects = history.academicDeficiencyNote.split(',').map(s => s.trim());
-          subjects.forEach((subjectName, index) => {
-            const gradeName = history.gradeLevel.name;
-            const gradeNum = gradeName.replace("Grade ", "");
-            
-            let subjectCode = subjectName.substring(0, 4).toUpperCase() + gradeNum;
-            if (subjectName.toLowerCase().includes("science")) subjectCode = "SCI" + gradeNum;
-            else if (subjectName.toLowerCase().includes("math")) subjectCode = "MATH" + gradeNum;
-            else if (subjectName.toLowerCase().includes("english")) subjectCode = "ENG" + gradeNum;
-            else if (subjectName.toLowerCase().includes("filipino")) subjectCode = "FIL" + gradeNum;
-            
-            // Find if there's an active SubjectDeficiency record for this subject
-            // Check for the most recent status
-            const existingRecords = existingDeficiencies.filter(d => d.subjectName === subjectName);
-            const latestRecord = existingRecords.length > 0 ? existingRecords[existingRecords.length - 1] : null;
-            
-            academicDeficiencies.push({
-              id: latestRecord?.id || (history.id * 100 + index),
-              subject: subjectName,
-              gradeLevel: gradeName,
-              subjectCode: subjectCode,
-              grade: null,
-              status: latestRecord ? latestRecord.status : "UNRESOLVED",
-              teacherId: "",
-              schoolYear: history.schoolYear.yearLabel
-            });
-          });
-        }
-      });
-      
-      console.log(`[DEBUG] Mapped from histories:`, academicDeficiencies);
-      
-      // Also add any active deficiencies that might not be in a history note (manually added)
-      // Wait, what if they were manually added but for ANY school year? Let's just append ALL that aren't mapped!
-      existingDeficiencies.forEach(def => {
-        if (!academicDeficiencies.find(a => a.subject === def.subjectName)) {
-           academicDeficiencies.push({
-              id: def.id,
-              subject: def.subjectName,
-              gradeLevel: "Unknown",
-              subjectCode: def.subjectName.substring(0, 4).toUpperCase(),
-              grade: null,
-              status: def.status,
-              teacherId: "",
-              schoolYear: "Prior Year"
-           });
-        }
-      });
-      
-      // Finally, append EnrollmentBackSubject records from the current application (for transferees)
-      const appBackSubjects = applicant?.backSubjects || [];
-      appBackSubjects.forEach(bs => {
-        if (!academicDeficiencies.find(a => a.subject === bs.subjectName)) {
-           academicDeficiencies.push({
-              id: bs.id * 1000, // ensure unique ID
-              subject: bs.subjectName,
-              gradeLevel: bs.gradeLevel.name,
-              subjectCode: bs.subjectCode,
-              grade: null,
-              status: "UNRESOLVED",
-              teacherId: "",
-              schoolYear: applicant?.schoolYear?.yearLabel || "Prior Year"
-           });
-        }
-      });
-      
-      console.log(`[DEBUG] Final academic deficiencies:`, academicDeficiencies);
+      // Academic back-subject rows are read directly from SMART by the dedicated
+      // Back Subjects endpoint. Do not reconstruct active deficiencies from
+      // historical notes or legacy local records in this profile response.
+      const academicDeficiencies: unknown[] = [];
       
       const computedIsRemedialRequired = applicant.isRemedialRequired || hasDeficiency;
 
@@ -706,7 +629,10 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         trackingNumber: applicant.trackingNumber,
         isRemedialRequired: computedIsRemedialRequired,
         academicDeficiencies: academicDeficiencies,
-        academicDeficiencyNote: (applicant as any).academicDeficiencyNote || latestHistory?.academicDeficiencyNote || null,
+        academicDeficiencyNote:
+          applicant.enrollmentRecord?.academicDeficiencyNote
+          ?? latestHistory?.academicDeficiencyNote
+          ?? null,
         status: applicant.status,
         applicantType: applicant.applicantType,
         rejectionReason: applicant.rejectionReason,
@@ -742,8 +668,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
               sectionId: null,
               advisingTeacher: null,
               enrolledAt: applicant.createdAt,
-              enrolledBy: (applicant as any).encodedBy 
-                ? `${(applicant as any).encodedBy.lastName || ""}, ${(applicant as any).encodedBy.firstName || ""}`
+              enrolledBy: applicant.encodedBy
+                ? `${applicant.encodedBy.lastName || ""}, ${applicant.encodedBy.firstName || ""}`
                 : "System / Unknown",
               eosyStatus: null,
               dropOutReason: null,
