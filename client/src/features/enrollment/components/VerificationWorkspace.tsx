@@ -66,8 +66,8 @@ interface PendingVerification {
     birthdate: string;
     hasPsaBirthCertificate?: boolean;
   };
+  gradeLevelId: number;
   gradeLevel: {
-    id: number;
     name: string;
   };
   applicantType: string;
@@ -334,11 +334,11 @@ export function VerificationWorkspace() {
   }, [filteredVerifications, selectedAppId]);
 
   const atlasSubjectsQuery = useQuery({
-    queryKey: ["enrollment", "walk-in", "atlas-subjects", selectedApp?.gradeLevel.id, assignedProgram],
+    queryKey: ["enrollment", "walk-in", "atlas-subjects", selectedApp?.gradeLevelId, assignedProgram],
     queryFn: async () => {
       const response = await api.get<AtlasSubjectCatalogResponse>(
         "/enrollment/walk-in/atlas-subjects",
-        { params: { gradeLevelId: selectedApp?.gradeLevel.id, programType: assignedProgram } },
+        { params: { gradeLevelId: selectedApp?.gradeLevelId, programType: assignedProgram } },
       );
       return response.data;
     },
@@ -473,6 +473,17 @@ export function VerificationWorkspace() {
   const approveLearner = async () => {
     if (!selectedAppId || !sf9Verified || !psaVerified) return;
 
+    if (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") {
+      if (conditionalSubjects.length === 0) {
+        sileo.error({ title: "Validation Error", description: "Conditionally promoted learners must have at least one back subject." });
+        return;
+      }
+      if (conditionalSubjects.some(s => !s.subjectCode || !s.grade || isNaN(Number(s.grade)))) {
+        sileo.error({ title: "Validation Error", description: "Please enter a valid numerical grade for all selected back subjects." });
+        return;
+      }
+    }
+
     setProcessing(true);
     try {
       await api.post("/enrollment/finalize-intake", {
@@ -480,7 +491,7 @@ export function VerificationWorkspace() {
         checklistVerified: true,
         assignedProgram,
         sf9EligibilityStatus: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F") ? sf9EligibilityStatus : undefined,
-        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.map(s => ({ subjectCode: s.subjectCode, grade: Number(s.grade) })) : [],
+        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.filter(s => s.subjectCode.trim() !== "").map(s => ({ subjectCode: s.subjectCode, grade: s.grade ? Number(s.grade) : undefined })) : [],
       });
 
       sileo.success({
@@ -510,6 +521,17 @@ export function VerificationWorkspace() {
   const enrollTemporary = async () => {
     if (!selectedAppId) return;
 
+    if (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") {
+      if (conditionalSubjects.length === 0) {
+        sileo.error({ title: "Validation Error", description: "Conditionally promoted learners must have at least one back subject." });
+        return;
+      }
+      if (conditionalSubjects.some(s => !s.subjectCode || !s.grade || isNaN(Number(s.grade)))) {
+        sileo.error({ title: "Validation Error", description: "Please enter a valid numerical grade for all selected back subjects." });
+        return;
+      }
+    }
+
     setProcessing(true);
     try {
       await api.post("/enrollment/finalize-intake", {
@@ -519,7 +541,7 @@ export function VerificationWorkspace() {
         isMissingPsa: !psaVerified,
         assignedProgram,
         sf9EligibilityStatus: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F") ? sf9EligibilityStatus : undefined,
-        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.map(s => ({ subjectCode: s.subjectCode, grade: Number(s.grade) })) : [],
+        conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.filter(s => s.subjectCode.trim() !== "").map(s => ({ subjectCode: s.subjectCode, grade: s.grade ? Number(s.grade) : undefined })) : [],
       });
 
       sileo.success({
