@@ -139,7 +139,29 @@ export default function Step2Family() {
           Current Home Address
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <PhilippineAddressSelector
+          value={{
+            region: data.currentAddress?.region ?? "",
+            province: data.currentAddress?.province ?? "",
+            cityMunicipality: data.currentAddress?.cityMunicipality ?? "",
+            barangay: data.currentAddress?.barangay ?? "",
+          }}
+          onChange={(field, val) =>
+            setValue(`currentAddress.${field}`, val, {
+              shouldValidate: true,
+              shouldDirty: true,
+            })
+          }
+          errors={{
+            region: errors.currentAddress?.region?.message,
+            province: errors.currentAddress?.province?.message,
+            cityMunicipality: errors.currentAddress?.cityMunicipality?.message,
+            barangay: errors.currentAddress?.barangay?.message,
+          }}
+          required
+        />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.houseNo"
@@ -180,28 +202,6 @@ export default function Step2Family() {
           </div>
         </div>
 
-        <PhilippineAddressSelector
-          value={{
-            region: data.currentAddress?.region ?? "",
-            province: data.currentAddress?.province ?? "",
-            cityMunicipality: data.currentAddress?.cityMunicipality ?? "",
-            barangay: data.currentAddress?.barangay ?? "",
-          }}
-          onChange={(field, val) =>
-            setValue(`currentAddress.${field}`, val, {
-              shouldValidate: true,
-              shouldDirty: true,
-            })
-          }
-          errors={{
-            region: errors.currentAddress?.region?.message,
-            province: errors.currentAddress?.province?.message,
-            cityMunicipality: errors.currentAddress?.cityMunicipality?.message,
-            barangay: errors.currentAddress?.barangay?.message,
-          }}
-          required
-        />
-
         <div className="flex items-center space-x-3 pt-2">
           <Checkbox
             id="same-address"
@@ -232,7 +232,32 @@ export default function Step2Family() {
                 <h3 className="text-base leading-tight font-bold uppercase  text-primary">
                   Permanent Address
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <PhilippineAddressSelector
+                  value={{
+                    region: data.permanentAddress?.region ?? "",
+                    province: data.permanentAddress?.province ?? "",
+                    cityMunicipality:
+                      data.permanentAddress?.cityMunicipality ?? "",
+                    barangay: data.permanentAddress?.barangay ?? "",
+                  }}
+                  onChange={(field, val) =>
+                    setValue(`permanentAddress.${field}`, val, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
+                  errors={{
+                    region: errors.permanentAddress?.region?.message,
+                    province: errors.permanentAddress?.province?.message,
+                    cityMunicipality:
+                      errors.permanentAddress?.cityMunicipality?.message,
+                    barangay: errors.permanentAddress?.barangay?.message,
+                  }}
+                />
+              </div>
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.houseNo"
@@ -273,29 +298,6 @@ export default function Step2Family() {
                   </div>
                 </div>
 
-                <PhilippineAddressSelector
-                  value={{
-                    region: data.permanentAddress?.region ?? "",
-                    province: data.permanentAddress?.province ?? "",
-                    cityMunicipality:
-                      data.permanentAddress?.cityMunicipality ?? "",
-                    barangay: data.permanentAddress?.barangay ?? "",
-                  }}
-                  onChange={(field, val) =>
-                    setValue(`permanentAddress.${field}`, val, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    })
-                  }
-                  errors={{
-                    region: errors.permanentAddress?.region?.message,
-                    province: errors.permanentAddress?.province?.message,
-                    cityMunicipality:
-                      errors.permanentAddress?.cityMunicipality?.message,
-                    barangay: errors.permanentAddress?.barangay?.message,
-                  }}
-                />
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,40 +1,44 @@
-# Prompt for UI/UX Implementation: Conditionally Promoted Back Subjects Form
+# Prompt for UI/UX Implementation: Walk-In Modal Extended Demographics & Address
 
 ## Role & Context
-Act as a Frontend Developer. We are refactoring the "Walk-In Learner Enrollment" modal in EnrollPro. 
+Act as a Frontend Developer. We are updating the "Walk-In Learner Enrollment" modal in EnrollPro. 
 
-Currently, when a registrar selects `CONDITIONALLY PROMOTED`, the UI reveals a generic multi-select dropdown for "Back Subjects." This is insufficient for DepEd compliance, as the system must also capture the specific failing grade (typically 60-74) for each failed subject. 
-
-## The Objective
-Replace the multi-select dropdown with a dynamic, 2-row maximum input system. Each row must contain a searchable Subject Dropdown paired with a restricted Numeric Input for the failing grade.
+We need to restructure the top personal details section to accommodate a Learner's Photo upload, integrate the "Mother Tongue" field, and add a comprehensive, structured "Current Home Address" section mirroring the official DepEd SF1 requirements.
 
 ## UI Component Requirements
 
-Please update the highlighted section in the modal with the following specifications:
+Please refactor the modal layout using the following specifications:
 
-### 1. Section Header
-*   Keep the header: `Grade [X] Back Subjects *`
-*   Remove the `0 / 2 selected` text. Replace it with a small helper text: `(Maximum of 2 subjects)` styled in muted gray.
+### 1. Section 1: Personal Details & Photo (Media Object Layout)
+Wrap the identity fields in a grid container with a fixed left column (for the photo) and a fluid right column (e.g., `grid grid-cols-[120px_1fr] gap-6`).
 
-### 2. The Subject + Grade Row Layout (Grid)
-Implement a 2-column grid layout for the input row (e.g., `grid grid-cols-12 gap-4`).
-*   **Column 1 (Searchable Dropdown - Span 8 or 9):**
-    *   Convert this into a combobox (searchable dropdown) so the user can type "Math" to quickly find "Mathematics".
-    *   Placeholder: `Search subject...`
-*   **Column 2 (Grade Input - Span 4 or 3):**
-    *   Add a standard text/number input field.
-    *   Placeholder: `Rating` or `Grade`.
-    *   Add a small right-aligned suffix inside the input if possible, or just keep it clean.
+*   **Left Column (Learner's Photo):**
+    *   Create a 2x2 aspect ratio upload box (`border-dashed border-2 border-gray-300`).
+    *   Include a camera icon and the text `UPLOAD PHOTO`. Add the label `Learner's Photo` above it.
+*   **Right Column (Dense Data Grid):**
+    *   Use a 2-column internal grid for the text inputs.
+    *   **Row 1:** `Last Name *` (Span 1) | `First Name *` (Span 1)
+    *   **Row 2:** `Middle Name` (Span 1) | `Suffix (Extension)` (Span 1 - Dropdown)
+    *   **Row 3:** `Birthdate *` (Span 1 - Datepicker) | `Sex *` (Span 1 - Radio/Toggle)
+    *   **Row 4 (New):** `Mother Tongue *` (Span 2 - Full width of this column). Use a searchable dropdown (Combobox) containing standard Philippine languages/dialects (e.g., Hiligaynon, Tagalog, Cebuano).
 
-### 3. Validation & Constraints (Strict)
-*   **Grade Input Limits:** The number input must strictly only accept integers between **60 and 75**. 
-    *   Use `type="number"`, `min="60"`, `max="75"`, and `maxLength="2"`.
-    *   If the user types a number outside this range, highlight the field border in red and show a micro-tooltip: `Grade must be between 60-75`.
-*   **Subject Uniqueness:** If Subject A is selected in Row 1, disable or hide Subject A from the dropdown options in Row 2.
+### 2. Section 2: Current Home Address (Cascading Grid)
+Below the Personal Details and Curriculum sections, add a new section header: **`CURRENT HOME ADDRESS`**. 
+Use a strict 2-column grid (`grid grid-cols-2 gap-4`) to keep the form compact and prevent excessive vertical scrolling inside the modal.
 
-### 4. Dynamic Row Logic (1 or 2 Subjects)
-Since a student can be conditionally promoted by failing just 1 subject, the UI should not force them to fill out 2 rows.
-*   **Default State:** Show exactly 1 input row (Subject + Grade).
-*   **Add Action:** Below the first row, add a subtle ghost button with a plus icon: `+ Add Second Subject`.
-*   **Max Capacity:** Once clicked, reveal the second row and hide the `+ Add` button (since DepEd policy caps this at 2 subjects). 
-*   **Remove Action:** On the second row, include a small 'X' or trash icon on the far right so the registrar can remove it if they clicked it by mistake.
+*   **Row 1 (Manual Entry):**
+    *   Input 1: `House No. / Street` (Placeholder: `e.g. 123 or Rizal Street`)
+    *   Input 2: `Sitio / Purok` (Placeholder: `e.g. Sitio Calambuga`)
+*   **Row 2 (Cascading Dropdowns - Level 1):**
+    *   Input 1: `Region *` (Dropdown: `Select Region...`)
+    *   Input 2: `Province *` (Dropdown: `Select Region First`). **Logic:** This field MUST be disabled until a Region is selected. Once selected, populate only the provinces within that region.
+*   **Row 3 (Cascading Dropdowns - Level 2):**
+    *   Input 1: `City / Municipality *` (Dropdown: `Select Province First`). **Logic:** Disabled until Province is selected.
+    *   Input 2: `Barangay *` (Dropdown: `Select City First`). **Logic:** Disabled until City is selected.
+
+### 3. Checkbox Action
+*   **Bottom of Address Section:** Add a full-width checkbox (`col-span-2`) labeled: **`Permanent Address is same as Current Address`**. Keep it checked by default to save the registrar time.
+
+### 4. Layout & Spacing Polish
+*   Use subtle horizontal dividers (`border-b border-gray-200`) with ample padding (`py-6`) between the Personal Details block and the Home Address block to establish clear visual sections.
+*   Ensure all required fields `*` feature a red asterisk to visually enforce completion before the "Save as Temporary" button becomes active.

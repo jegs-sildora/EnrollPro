@@ -629,7 +629,9 @@ export async function directEncodeWalkIn(
       previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo,
       guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
       hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjects,
-      motherTongue, currentAddress,
+      motherTongue, 
+      addressStreet, addressSitio, addressRegion, addressProvince, addressCity, addressBarangay,
+      studentPhoto, permanentAddressSameAsCurrent, extensionName
     } = payload;
 
     const schoolYearId = intakeContext.schoolYearId;
@@ -683,6 +685,7 @@ export async function directEncodeWalkIn(
             birthdate: new Date(birthdate),
             sex: sex,
             motherTongue: motherTongue,
+            studentPhoto: studentPhoto,
             hasPsaBirthCertificate: hasPsa,
           }
         });
@@ -700,6 +703,7 @@ export async function directEncodeWalkIn(
             is4PsBeneficiary: false,
             hasPwdId: false,
             motherTongue: motherTongue,
+            studentPhoto: studentPhoto,
             hasPsaBirthCertificate: hasPsa,
           }
         });
@@ -755,14 +759,14 @@ export async function directEncodeWalkIn(
               finalRating: (subject as any).grade,
             })),
           } : undefined,
-          addresses: currentAddress ? {
+          addresses: addressRegion ? {
             create: {
               addressType: "CURRENT",
-              houseNoStreet: currentAddress.houseNoStreet || null,
-              sitio: currentAddress.sitio || null,
-              barangay: currentAddress.barangay,
-              cityMunicipality: currentAddress.cityMunicipality,
-              province: currentAddress.province,
+              houseNoStreet: addressStreet || null,
+              sitio: addressSitio || null,
+              barangay: addressBarangay,
+              cityMunicipality: addressCity,
+              province: addressProvince,
             }
           } : undefined,
         }

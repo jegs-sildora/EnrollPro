@@ -32,12 +32,38 @@ import {
 } from "@/shared/hooks/useUnsavedChanges";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
-import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2 } from "lucide-react";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { UserPhoto } from "@/shared/components/UserPhoto";
+import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
+import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, X } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
+
+const MOTHER_TONGUE_OPTIONS = [
+  { value: "Tagalog", label: "Tagalog" },
+  { value: "Cebuano", label: "Cebuano" },
+  { value: "Hiligaynon (Ilonggo)", label: "Hiligaynon (Ilonggo)" },
+  { value: "Ilocano (Iloko)", label: "Ilocano (Iloko)" },
+  { value: "Bicolano (Central Bikol)", label: "Bicolano (Central Bikol)" },
+  { value: "Kapampangan", label: "Kapampangan" },
+  { value: "Pangasinan (Pangasinense)", label: "Pangasinan (Pangasinense)" },
+  { value: "Waray", label: "Waray" },
+  { value: "Tausug", label: "Tausug" },
+  { value: "Maguindanaoan", label: "Maguindanaoan" },
+  { value: "Maranao", label: "Maranao" },
+  { value: "Chavacano (Chabacano)", label: "Chavacano (Chabacano)" },
+  { value: "Ybanag (Ibanag)", label: "Ybanag (Ibanag)" },
+  { value: "Ivatan", label: "Ivatan" },
+  { value: "Sambal", label: "Sambal" },
+  { value: "Aklanon", label: "Aklanon" },
+  { value: "Kinaray-a", label: "Kinaray-a" },
+  { value: "Yakan", label: "Yakan" },
+  { value: "Surigaonon", label: "Surigaonon" },
+  { value: "Others", label: "Others" },
+];
 
 interface SchoolYearGradeLevel {
   id: number;
@@ -105,6 +131,7 @@ export function WalkInEncodePanel() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
   const lastLookedUpLrn = useRef<string>("");
+  const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(false);
   const queryClient = useQueryClient();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
@@ -136,6 +163,16 @@ export function WalkInEncodePanel() {
       middleName: "",
       birthdate: "",
       sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
+      motherTongue: "",
+      studentPhoto: "",
+      extensionName: "",
+      addressStreet: "",
+      addressSitio: "",
+      addressRegion: "",
+      addressProvince: "",
+      addressCity: "",
+      addressBarangay: "",
+      permanentAddressSameAsCurrent: true,
       gradeLevelId: 0,
       assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
       previousSchoolName: "",
@@ -245,6 +282,16 @@ export function WalkInEncodePanel() {
           middleName: "",
           birthdate: "",
           sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
+          motherTongue: "",
+          studentPhoto: "",
+          extensionName: "",
+          addressStreet: "",
+          addressSitio: "",
+          addressRegion: "",
+          addressProvince: "",
+          addressCity: "",
+          addressBarangay: "",
+          permanentAddressSameAsCurrent: true,
           gradeLevelId: 0,
           assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
           previousSchoolName: "",
@@ -529,39 +576,124 @@ export function WalkInEncodePanel() {
                           </>
                         )}
 
-                        <div className="grid grid-cols-3 gap-4 font-bold">
-                          <FormField
-                            control={form.control}
-                            name="firstName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="font-bold">First Name <span className="text-destructive">*</span></FormLabel>
-                                <FormControl><Input placeholder="e.g. JUAN" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="middleName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="font-bold">Middle Name</FormLabel>
-                                <FormControl><Input placeholder="e.g. PEREZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="lastName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="font-bold">Last Name <span className="text-destructive">*</span></FormLabel>
-                                <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                        <div className="grid grid-cols-[120px_1fr] gap-6">
+                          {/* LEFT COLUMN: Photo */}
+                          <div className="flex flex-col space-y-2 items-center">
+                            <FormLabel className="font-bold whitespace-nowrap">Learner's Photo</FormLabel>
+                            <div className="relative group w-[120px]">
+                              <UserPhoto
+                                photo={form.watch("studentPhoto")}
+                                containerClassName={cn(
+                                  "w-[120px] h-[120px] rounded-lg border-2 border-dashed transition-all duration-200",
+                                  form.watch("studentPhoto")
+                                    ? "border-primary/50 bg-background"
+                                    : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
+                                )}
+                                fallbackIcon={
+                                  <div className="flex flex-col items-center justify-center text-foreground group-hover:text-primary transition-colors h-full w-full">
+                                    <Camera className="w-8 h-8 mb-1" />
+                                    <span className="text-[0.625rem] uppercase font-bold text-center leading-tight">Upload<br/>Photo</span>
+                                  </div>
+                                }>
+                                {form.watch("studentPhoto") && (
+                                  <button
+                                    onClick={(e) => { e.preventDefault(); form.setValue("studentPhoto", undefined, { shouldDirty: true }); }}
+                                    type="button"
+                                    className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </UserPhoto>
+                              <input
+                                type="file"
+                                className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed z-10 w-full h-full"
+                                accept="image/jpeg,image/png,image/jpg"
+                                title="Upload learner's photo"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    alert("File size must be less than 5MB");
+                                    return;
+                                  }
+                                  if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+                                    alert("Only JPG and PNG files are accepted");
+                                    return;
+                                  }
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    form.setValue("studentPhoto", reader.result as string, { shouldDirty: true });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* RIGHT COLUMN: Dense Data Grid */}
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 font-bold">
+                              <FormField
+                                control={form.control}
+                                name="lastName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="font-bold">Last Name <span className="text-destructive">*</span></FormLabel>
+                                    <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="firstName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="font-bold">First Name <span className="text-destructive">*</span></FormLabel>
+                                    <FormControl><Input placeholder="e.g. JUAN" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 font-bold">
+                              <FormField
+                                control={form.control}
+                                name="middleName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="font-bold">Middle Name</FormLabel>
+                                    <FormControl><Input placeholder="e.g. PEREZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="extensionName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="font-bold">Suffix (Extension)</FormLabel>
+                                    <Select
+                                      onValueChange={(val) => field.onChange(val === "NONE" ? "" : val)}
+                                      value={field.value || "NONE"}>
+                                      <SelectTrigger className="font-bold">
+                                        <SelectValue placeholder="Select Suffix" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="NONE">None</SelectItem>
+                                        {["Jr.", "Sr.", "II", "III", "IV", "V"].map((opt) => (
+                                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -610,6 +742,55 @@ export function WalkInEncodePanel() {
                                       {s.label}
                                     </button>
                                   ))}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 font-bold">
+                          <FormField
+                            control={form.control}
+                            name="motherTongue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-bold">Mother Tongue <span className="text-destructive">*</span></FormLabel>
+                                <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
+                                  <FormControl>
+                                    <SearchableCombobox
+                                      items={MOTHER_TONGUE_OPTIONS}
+                                      value={
+                                        isOtherMotherTongue
+                                          ? "Others"
+                                          : MOTHER_TONGUE_OPTIONS.some((o) => o.value === field.value)
+                                            ? (field.value ?? "")
+                                            : ""
+                                      }
+                                      onChange={(val) => {
+                                        if (val === "Others") {
+                                          setIsOtherMotherTongue(true);
+                                          field.onChange("");
+                                        } else {
+                                          setIsOtherMotherTongue(false);
+                                          field.onChange(val);
+                                        }
+                                      }}
+                                      placeholder="Select Mother Tongue"
+                                      className="uppercase font-bold"
+                                    />
+                                  </FormControl>
+                                  {isOtherMotherTongue && (
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Please specify mother tongue"
+                                        className="font-bold uppercase"
+                                        {...field}
+                                        value={field.value || ""}
+                                        autoFocus
+                                      />
+                                    </FormControl>
+                                  )}
                                 </div>
                                 <FormMessage />
                               </FormItem>
@@ -675,6 +856,88 @@ export function WalkInEncodePanel() {
                           )}
                         />
                       </div>
+                    </div>
+                  </div>
+                  
+                  {/* CURRENT HOME ADDRESS BLOCK */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                      <span className="flex items-center gap-2">
+                        CURRENT HOME ADDRESS
+                      </span>
+                    </div>
+                    <div className="px-5 pt-4 pb-5 space-y-4">
+                      
+                      <PhilippineAddressSelector
+                        value={{
+                          region: form.watch("addressRegion") || "",
+                          province: form.watch("addressProvince") || "",
+                          cityMunicipality: form.watch("addressCity") || "",
+                          barangay: form.watch("addressBarangay") || "",
+                        }}
+                        onChange={(f, val) => {
+                          if (f === "cityMunicipality") form.setValue("addressCity", val, { shouldValidate: true, shouldDirty: true });
+                          else if (f === "region") form.setValue("addressRegion", val, { shouldValidate: true, shouldDirty: true });
+                          else if (f === "province") form.setValue("addressProvince", val, { shouldValidate: true, shouldDirty: true });
+                          else if (f === "barangay") form.setValue("addressBarangay", val, { shouldValidate: true, shouldDirty: true });
+                        }}
+                        errors={{
+                          region: form.formState.errors.addressRegion?.message as string,
+                          province: form.formState.errors.addressProvince?.message as string,
+                          cityMunicipality: form.formState.errors.addressCity?.message as string,
+                          barangay: form.formState.errors.addressBarangay?.message as string,
+                        }}
+                        required={true}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="addressStreet"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-bold uppercase">House No. / Street</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. 123 or Rizal Street" className="uppercase font-bold" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="addressSitio"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-bold uppercase">Sitio / Purok</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. Sitio Calambuga" className="uppercase font-bold" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="permanentAddressSameAsCurrent"
+                        render={({ field }) => (
+                          <FormItem className="col-span-2 mt-4 flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm border-border bg-muted/20">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-bold cursor-pointer text-base">
+                                Permanent Address is same as Current Address
+                              </FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
 

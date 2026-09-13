@@ -7,6 +7,7 @@ export const directEncodeWalkInSchema = z.object({
   firstName: z.string().min(1, "First Name is required"),
   lastName: z.string().min(1, "Last Name is required"),
   middleName: z.string().optional(),
+  extensionName: z.string().optional(),
   birthdate: z.string().min(1, "Birthdate is required"),
   sex: z.enum(["MALE", "FEMALE"]),
   motherTongue: z.string().optional().nullable(),
@@ -61,7 +62,14 @@ export const directEncodeWalkInSchema = z.object({
     }))
     .max(2, "Select no more than 2 back subjects")
     .default([]),
-  currentAddress: addressSchema.optional().nullable(),
+  studentPhoto: z.string().optional(),
+  addressStreet: z.string().optional(),
+  addressSitio: z.string().optional(),
+  addressRegion: z.string().min(1, "Region is required"),
+  addressProvince: z.string().min(1, "Province is required"),
+  addressCity: z.string().min(1, "City/Municipality is required"),
+  addressBarangay: z.string().min(1, "Barangay is required"),
+  permanentAddressSameAsCurrent: z.boolean().default(true),
 })
 .superRefine((obj, ctx) => {
   const { learnerType, lrn } = obj;

@@ -473,9 +473,11 @@ const NavItem = memo(function NavItem({
       }
 
       event.preventDefault();
+      if (pathname === to) return;
+
       confirmOrRun(() => navigate(to));
     },
-    [confirmOrRun, navigate, to],
+    [confirmOrRun, navigate, to, pathname],
   );
 
   let isActive = pathname === to;
