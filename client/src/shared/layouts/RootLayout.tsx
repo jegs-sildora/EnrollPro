@@ -6,7 +6,6 @@ import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import api from "@/shared/api/axiosInstance";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { UnsavedChangesProvider } from "@/shared/hooks/useUnsavedChanges";
-import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useActiveTheme } from "@/store/theme.slice";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
@@ -208,11 +207,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   }, [colorScheme, selectedAccentHsl, setSettings, isDark]);
 
   if (!isHydrated || !initialized) {
-    return (
-      <div className="min-h-screen w-screen bg-background p-6">
-        <PageLoadingSkeleton variant="dashboard" />
-      </div>
-    );
+    return <div className="min-h-screen w-screen bg-background" />;
   }
 
   return (

@@ -161,26 +161,7 @@ export default function Step2Family() {
           required
         />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.houseNo"
-              className="text-base font-bold uppercase">
-              House No. / Street
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.houseNo"
-              {...register("currentAddress.houseNo")}
-              className="h-11 font-bold uppercase"
-              placeholder="e.g. 123 OR RIZAL STREET"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.street"
@@ -193,6 +174,25 @@ export default function Step2Family() {
               {...register("currentAddress.street")}
               className="h-11 font-bold uppercase"
               placeholder="e.g. SITIO CALAMBUGA"
+              onInput={(e) => {
+                (e.target as HTMLInputElement).value = (
+                  e.target as HTMLInputElement
+                ).value.toUpperCase();
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="currentAddress.houseNo"
+              className="text-base font-bold uppercase">
+              House No. / Street
+            </Label>
+            <Input
+              autoComplete="off"
+              id="currentAddress.houseNo"
+              {...register("currentAddress.houseNo")}
+              className="h-11 font-bold uppercase"
+              placeholder="e.g. 123 OR RIZAL STREET"
               onInput={(e) => {
                 (e.target as HTMLInputElement).value = (
                   e.target as HTMLInputElement
@@ -260,25 +260,6 @@ export default function Step2Family() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label
-                      htmlFor="permanentAddress.houseNo"
-                      className="text-base font-bold uppercase">
-                      House No. / Street
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.houseNo"
-                      {...register("permanentAddress.houseNo")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. 456"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label
                       htmlFor="permanentAddress.street"
                       className="text-base font-bold uppercase">
                       Sitio / Purok
@@ -289,6 +270,25 @@ export default function Step2Family() {
                       {...register("permanentAddress.street")}
                       className="h-11 font-bold uppercase"
                       placeholder="e.g. MAGSAYSAY BLVD"
+                      onInput={(e) => {
+                        (e.target as HTMLInputElement).value = (
+                          e.target as HTMLInputElement
+                        ).value.toUpperCase();
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="permanentAddress.houseNo"
+                      className="text-base font-bold uppercase">
+                      House No. / Street
+                    </Label>
+                    <Input
+                      autoComplete="off"
+                      id="permanentAddress.houseNo"
+                      {...register("permanentAddress.houseNo")}
+                      className="h-11 font-bold uppercase"
+                      placeholder="e.g. 456"
                       onInput={(e) => {
                         (e.target as HTMLInputElement).value = (
                           e.target as HTMLInputElement

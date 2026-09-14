@@ -23,6 +23,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInBusinessDays, format } from "date-fns";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { isAxiosError } from "axios";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 
 interface UnsectionedLearner {
   id: number;
@@ -73,6 +74,7 @@ export default function InsertLateEnrolleeDrawer({
   onSuccess,
 }: InsertLateEnrolleeDrawerProps) {
   const { classOpeningDate } = useSettingsStore();
+  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
   const {
     inputValue: search,
     setInputValue: setSearch,
@@ -183,8 +185,16 @@ export default function InsertLateEnrolleeDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        className="p-0 overflow-hidden border-none shadow-2xl flex flex-col h-full bg-background w-full sm:w-[600px] lg:w-[800px] max-w-none"
+        className="p-0 overflow-visible border-l shadow-2xl flex flex-col h-full bg-background w-full sm:w-auto sm:max-w-none"
+        style={isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined}
       >
+        {/* Resize Handle — hidden on mobile */}
+        <div
+          onMouseDown={startResizing}
+          className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+          <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+        </div>
+
         {/* Header — exactly matches StudentDetailPanel */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold relative">
           <div>

@@ -543,7 +543,7 @@ export default function BOSYPage() {
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <HelpCircle className="h-4 w-4 text-muted-foreground/60 hover:text-primary transition-all cursor-help shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100" />
+                                    <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-all cursor-help shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100" />
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-[250px] p-2 text-sm text-center font-bold font-sans">
                                     {subBadge}

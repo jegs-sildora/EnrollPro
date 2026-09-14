@@ -1457,30 +1457,6 @@ export function StudentDetailPanel({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                   <div className="space-y-2">
                     <Label
-                      htmlFor="houseNoStreet"
-                      className="font-bold text-base uppercase">
-                      House No. / Street
-                    </Label>
-                    <Input
-                      id="houseNoStreet"
-                      value={profileForm.houseNoStreet}
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                      onChange={(e) =>
-                        setProfileForm((p) => ({
-                          ...p,
-                          houseNoStreet: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g. 123 OR RIZAL STREET"
-                      className="font-bold text-base leading-tight bg-background uppercase"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
                       htmlFor="sitioPurok"
                       className="font-bold text-base uppercase">
                       Sitio / Purok
@@ -1500,6 +1476,30 @@ export function StudentDetailPanel({
                         }))
                       }
                       placeholder="e.g. PUROK 1"
+                      className="font-bold text-base leading-tight bg-background uppercase"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="houseNoStreet"
+                      className="font-bold text-base uppercase">
+                      House No. / Street
+                    </Label>
+                    <Input
+                      id="houseNoStreet"
+                      value={profileForm.houseNoStreet}
+                      onInput={(e) => {
+                        (e.target as HTMLInputElement).value = (
+                          e.target as HTMLInputElement
+                        ).value.toUpperCase();
+                      }}
+                      onChange={(e) =>
+                        setProfileForm((p) => ({
+                          ...p,
+                          houseNoStreet: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. 123 OR RIZAL STREET"
                       className="font-bold text-base leading-tight bg-background uppercase"
                     />
                   </div>

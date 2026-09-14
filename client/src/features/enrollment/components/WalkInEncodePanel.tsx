@@ -893,19 +893,6 @@ export function WalkInEncodePanel() {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
-                          name="addressStreet"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-bold uppercase">House No. / Street</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g. 123 or Rizal Street" className="uppercase font-bold" {...field} value={field.value || ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
                           name="addressSitio"
                           render={({ field }) => (
                             <FormItem>
@@ -917,27 +904,21 @@ export function WalkInEncodePanel() {
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name="addressStreet"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-bold uppercase">House No. / Street</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. 123 or Rizal Street" className="uppercase font-bold" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
-                      <FormField
-                        control={form.control}
-                        name="permanentAddressSameAsCurrent"
-                        render={({ field }) => (
-                          <FormItem className="col-span-2 mt-4 flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm border-border bg-muted/20">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel className="font-bold cursor-pointer text-base">
-                                Permanent Address is same as Current Address
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
                     </div>
                   </div>
 

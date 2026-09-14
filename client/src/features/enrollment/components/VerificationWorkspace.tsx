@@ -1042,32 +1042,62 @@ export function VerificationWorkspace() {
                       
                       {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && (
                         <VerificationRow label="SF9 Eligibility Status">
-                          <div className="w-full py-1 flex flex-col gap-4">
-                            <Select 
-                              value={sf9EligibilityStatus} 
-                              onValueChange={(val: any) => {
-                                setSf9EligibilityStatus(val);
-                                if (val !== "CONDITIONALLY_PROMOTED") {
-                                  setConditionalSubjects([]);
-                                } else {
-                                  setConditionalSubjects([{ subjectCode: "", grade: "" }]);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="w-full font-bold h-10 bg-white">
-                                <SelectValue placeholder="Select Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="PROMOTED">Promoted</SelectItem>
-                                <SelectItem value="CONDITIONALLY_PROMOTED">Conditionally Promoted</SelectItem>
-                                <SelectItem value="RETAINED">Retained</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          {selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED" ? (
+                             <div className="w-full py-1 text-base font-bold text-foreground flex items-center">
+                                {selectedApp.academicStatus === "CONDITIONALLY_PROMOTED" 
+                                  ? "Conditionally Promoted" 
+                                  : selectedApp.academicStatus === "RETAINED" 
+                                  ? "Retained" 
+                                  : selectedApp.academicStatus === "PROMOTED" 
+                                  ? "Promoted" 
+                                  : selectedApp.academicStatus}
+                             </div>
+                          ) : (
+                            <div className="w-full py-1 flex flex-col gap-4">
+                              <Select 
+                                value={sf9EligibilityStatus} 
+                                onValueChange={(val: any) => {
+                                  setSf9EligibilityStatus(val);
+                                  if (val !== "CONDITIONALLY_PROMOTED") {
+                                    setConditionalSubjects([]);
+                                  } else {
+                                    setConditionalSubjects([{ subjectCode: "", grade: "" }]);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="w-full font-bold h-10 bg-white">
+                                  <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="PROMOTED">Promoted</SelectItem>
+                                  <SelectItem value="CONDITIONALLY_PROMOTED">Conditionally Promoted</SelectItem>
+                                  <SelectItem value="RETAINED">Retained</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </VerificationRow>
                       )}
 
-                      {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED" && (
+                      {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED" ? selectedApp.academicStatus === "CONDITIONALLY_PROMOTED" : sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") && (
+                        selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED" ? (
+                          <div className="bg-muted/10 p-4 space-y-2 mt-2">
+                            <Label className="font-bold text-base">
+                              Back Subjects
+                            </Label>
+                            {selectedApp.backSubjects && selectedApp.backSubjects.length > 0 ? (
+                              <ul className="list-disc pl-5 space-y-1 mt-2">
+                                {selectedApp.backSubjects.map((bs, i) => (
+                                  <li key={i} className="text-base font-bold text-foreground ml-2">
+                                    {bs.subjectName} ({bs.subjectCode})
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="text-base text-muted-foreground mt-2 font-medium">No back subjects recorded.</div>
+                            )}
+                          </div>
+                        ) : (
                           <div className="bg-muted/10 p-4 space-y-4 mt-2">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
@@ -1212,7 +1242,8 @@ export function VerificationWorkspace() {
                               )}
                             </div>
                           </div>
-                        )}
+                        )
+                      )}
 
                       {/* Section 4: Required Documents Verification (Checklist) */}
                       <div className="w-full p-4 sm:p-6 border-t border-border/50 flex flex-col gap-5">

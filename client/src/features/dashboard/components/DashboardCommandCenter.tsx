@@ -319,7 +319,7 @@ export function CurriculumDistributionPanel({
 
   const ALL_PROGRAMS = [
     { programType: "REGULAR", acronym: "BEC", label: "Basic Education Curriculum", isSpecialProgram: false },
-    ...(steEnabled ? [{ programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", acronym: "STE", label: "SCIENCE, TECHNOLOGY, AND ENGINEERING", isSpecialProgram: true }] : []),
+    ...(steEnabled ? [{ programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", acronym: "STE", label: "Science, Technology, and Engineering", isSpecialProgram: true }] : []),
     ...(spaEnabled ? [{ programType: "SPECIAL_PROGRAM_IN_THE_ARTS", acronym: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
     ...(spsEnabled ? [{ programType: "SPECIAL_PROGRAM_IN_SPORTS", acronym: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
   ]
@@ -357,12 +357,12 @@ export function CurriculumDistributionPanel({
           return (
             <div key={item.programType} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-base">
-                <span className="min-w-0 truncate font-bold uppercase">
+                <span className="min-w-0 truncate font-bold">
                   {item.label}
                 </span>
                 <span className="shrink-0">
                   <span className="font-bold text-primary">{item.count} Learners</span>
-                  {item.count > 0 && <span className="text-foreground ml-1">({percentage}%)</span>}
+                  {item.count > 0 && <span className="text-foreground ml-1 font-bold">({percentage}%)</span>}
                 </span>
               </div>
               <Progress value={percentage} className="h-2" />
@@ -422,19 +422,19 @@ export function IntakePipelinePanel({
                         {formatGradeLevel(row.gradeLevelName)}
                       </span>
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
                       {row.continuingLearners}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
                       {row.newEntrants}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
                       {row.transferee}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
                       {row.returningLearners}
                     </td>
-                    <td className={cn("px-1 py-3 text-center font-bold bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground/60")}>
+                    <td className={cn("px-1 py-3 text-center font-bold bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground")}>
                       {total}
                     </td>
                   </tr>
@@ -525,7 +525,7 @@ export function SectionSaturationPanel({
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="truncate text-base font-bold">
+                        <p className="truncate text-base font-extrabold">
                           {section.gradeLevelName} - {section.name}
                         </p>
                         <Tooltip>
@@ -544,7 +544,7 @@ export function SectionSaturationPanel({
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <p className="text-base opacity-80">
+                      <p className="text-base font-bold">
                         {section.enrolled} of {section.capacity} learners
                       </p>
                     </div>
