@@ -823,7 +823,7 @@ export function VerificationWorkspace() {
                           alt={`${app.learner.firstName} ${app.learner.lastName}`}
                         />
                         <div className="flex flex-col min-w-0">
-                          <h4 className={cn("font-bold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}`}>
+                          <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}`}>
                             {app.learner.lastName}, {app.learner.firstName}
                           </h4>
                           <span className="text-sm font-bold uppercase text-foreground mt-0.5 truncate text-foreground">
@@ -858,17 +858,17 @@ export function VerificationWorkspace() {
             {selectedApp ? (
               <>
                 {/* STICKY HEADER */}
-                <div className="shrink-0 px-6 md:px-12 pt-6 md:pt-12 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
+                <div className="shrink-0 px-6 md:px-12 pt-6 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
                   <div className="flex items-center gap-3">
                     <UserPhoto
                       photo={selectedApp.learner.studentPhoto}
-                      containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-2 border-primary"
+                      containerClassName="w-18 h-18 rounded-full shadow-sm border shrink-0 border-2 border-primary"
                       className="w-full h-full object-cover"
                       alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
                     />
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
+                        <h2 className="text-2xl font-extrabold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
                           {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                         </h2>
                         {selectedApp.learner.sex === "MALE" ? (
@@ -877,7 +877,7 @@ export function VerificationWorkspace() {
                           <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 font-bold text-base px-1 py-1"><Venus className="w-4 h-4" /></Badge>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
+                      <span className="font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                     </div>
                   </div>
                 </div>
@@ -1323,10 +1323,10 @@ export function VerificationWorkspace() {
                         Cancel Application
                       </Button>
                     )}
-                    {selectedApp.status === "READY_FOR_SECTIONING" && (
+                    {(selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED") && (
                       <Button
                         variant="ghost"
-                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/15 hover:text-primary/80 border border-primary shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
+                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/10 hover:text-primary border border-primary shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
                         onClick={() => setRevertModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
@@ -1586,32 +1586,32 @@ export function VerificationWorkspace() {
             setRevertReason("");
           }
         }}
-        title="Revert Enrollment Status"
+        title="Unenroll Learner"
         description={
           <div className="space-y-4 text-left">
             <p className="text-foreground">
-              You are about to reverse the enrollment for{" "}
+              You are about to unenroll{" "}
               <strong>
                 {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
               </strong>
-              . This will remove them from the 'Enrolled' list and place them back into the 'For Review' queue. They will not be available for Section Assignment.
+              . This will remove them from the official enrollment list and return their application for review. If they were assigned to a section, they will be removed from it.
             </p>
             <div className="space-y-2 mt-4">
-              <label className="text-sm font-bold text-foreground">Reversal Reason</label>
+              <label className="text-sm font-bold text-foreground">Reason for Unenrollment</label>
               <Select value={revertReason} onValueChange={setRevertReason}>
                 <SelectTrigger className="w-full bg-muted font-bold text-base h-12 uppercase">
                   <SelectValue placeholder="Select a reason..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Clerical / Encoding Error" className="font-bold uppercase">Clerical / Encoding Error</SelectItem>
-                  <SelectItem value="Pending Additional Document Verification" className="font-bold uppercase">Pending Additional Document Verification</SelectItem>
+                  <SelectItem value="Clerical Error" className="font-bold uppercase">Clerical Error</SelectItem>
+                  <SelectItem value="Pending Additional Documents" className="font-bold uppercase">Pending Additional Documents</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         }
         variant="danger"
-        confirmText="Confirm Reversal"
+        confirmText="Confirm Unenrollment"
         confirmDisabled={!revertReason}
         loading={revertMutation.isPending}
         onConfirm={() => revertMutation.mutate()}

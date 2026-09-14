@@ -588,17 +588,22 @@ export async function revertApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  if (application.status !== "READY_FOR_SECTIONING") {
+  if (application.status !== "READY_FOR_SECTIONING" && application.status !== "OFFICIALLY_ENROLLED") {
     throw new AppError(
       409,
-      `Application is in status '${application.status}'. Only ENROLLED (READY_FOR_SECTIONING) applications can be reverted.`,
+      `Application is in status '${application.status}'. Only ENROLLED applications can be reverted.`,
     );
   }
 
-  const updated = await prisma.enrollmentApplication.update({
-    where: { id: Number(applicationId) },
-    data: { status: "PENDING_VERIFICATION" },
-  });
+  const [updated] = await prisma.$transaction([
+    prisma.enrollmentApplication.update({
+      where: { id: Number(applicationId) },
+      data: { status: "PENDING_VERIFICATION" },
+    }),
+    prisma.enrollmentRecord.deleteMany({
+      where: { enrollmentApplicationId: Number(applicationId) },
+    })
+  ]);
 
   await auditLog({
     userId: userId ?? null,
