@@ -454,7 +454,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                       <TableCell className="py-3 pl-4">
                         <div className="flex flex-col">
                           <span className="font-bold text-sm uppercase text-foreground leading-tight">
-                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""} [{learner.id ?? "NO_ID"}-{learner.learnerId ?? "NO_LID"}-{learner.enrollmentApplicationId ?? "NO_APPID"}]
+                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
                           </span>
                           <span className="text-sm font-bold uppercase text-foreground mt-0.5">
                             {learner.lrn || "NO LRN"}

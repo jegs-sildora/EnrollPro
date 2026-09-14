@@ -1064,61 +1064,66 @@ export function StudentDetailPanel({
             </div>
           )}
 
-          <div className="mt-6 pt-5 border-t border-gray-200">
-            {/* Bottom Row: Metadata Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Column 1: Grade Level & Section */}
-              <div className="flex flex-col">
-                <p className="text-base font-extrabold mb-1 text-foreground">
-                  Grade Level & Section
-                </p>
-                {!isJhsCompleter ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className="font-bold p-0 rounded-md cursor-help text-base text-primary border-none"
-                          >
-                            {getProgramBadge(student.applicantType).short}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{getProgramBadge(student.applicantType).full}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <span className="text-base font-bold text-foreground">
-                      {formatGradeLevel(student.gradeLevel)}
-                      {student.enrollment?.section ? ` - ${student.enrollment.section}` : " - UNASSIGNED"}
+          <div className="mt-6 mb-4">
+            <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+              <div className="text-base leading-tight font-bold divide-y divide-border">
+                
+                {/* Header Row */}
+                <div className="grid grid-cols-2 divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
+                    Grade Level & Section
+                  </div>
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
+                    Primary Contact
+                  </div>
+                </div>
+
+                {/* Value Row */}
+                <div className="grid grid-cols-2 divide-x divide-border">
+                  <div className="p-3 flex items-center justify-center uppercase min-w-0">
+                    {!isJhsCompleter ? (
+                      <div className="flex items-center gap-2 flex-wrap justify-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="outline"
+                                className="font-bold p-0 rounded-md cursor-help text-base text-primary border-none"
+                              >
+                                {getProgramBadge(student.applicantType).short}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{getProgramBadge(student.applicantType).full}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <span className="text-base font-bold text-foreground text-center">
+                          {formatGradeLevel(student.gradeLevel)}
+                          {student.enrollment?.section ? ` - ${student.enrollment.section}` : " - UNASSIGNED"}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-base font-bold text-foreground uppercase">N/A</span>
+                    )}
+                  </div>
+                  
+                  <div className="p-3 flex items-center justify-center uppercase min-w-0">
+                    <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums text-center">
+                      {isEditing
+                        ? (profileForm.primaryContact === "MOTHER"
+                          ? profileForm.motherContactNumber
+                          : profileForm.primaryContact === "FATHER"
+                            ? profileForm.fatherContactNumber
+                            : profileForm.guardianContactNumber) || "N/A"
+                        : student.contactNumber ||
+                        student.parentGuardianContact ||
+                        "N/A"}
                     </span>
                   </div>
-                ) : (
-                  <span className="text-sm font-bold text-foreground uppercase">N/A</span>
-                )}
-              </div>
-
-              {/* Column 2: Primary Contact */}
-              <div className="flex flex-col">
-                <p className="text-base font-extrabold mb-1.5 text-foreground">
-                  Primary Contact
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums">
-                    {isEditing
-                      ? (profileForm.primaryContact === "MOTHER"
-                        ? profileForm.motherContactNumber
-                        : profileForm.primaryContact === "FATHER"
-                          ? profileForm.fatherContactNumber
-                          : profileForm.guardianContactNumber) || "N/A"
-                      : student.contactNumber ||
-                      student.parentGuardianContact ||
-                      "N/A"}
-                  </span>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
         </div>
