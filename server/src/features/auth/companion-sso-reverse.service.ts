@@ -1,30 +1,29 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import jwt from "jsonwebtoken";
 
 import {
   companionSsoReverseExchangeResponseSchema,
   type CompanionSsoReverseExchangeResponse,
   type CompanionSystem,
-  type Role,
 } from "@enrollpro/shared";
 
 import { Prisma } from "../../generated/prisma/index.js";
 import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 
 const REVERSE_STATE_AUDIENCE = "enrollpro-companion-reverse-sso";
 const REVERSE_STATE_PURPOSE = "COMPANION_REVERSE_SSO";
 const REVERSE_STATE_TTL_SECONDS = 300;
 const REVERSE_EXCHANGE_TIMEOUT_MS = 5_000;
-const ENROLLPRO_STAFF_ROLES: readonly Role[] = [
-  "SYSTEM_ADMIN",
-  "HEAD_REGISTRAR",
-  "TEACHER",
-  "CLASS_ADVISER",
-  "MRF",
-];
+export const REVERSE_COMPLETION_CACHE_TTL_MS = 30_000;
+
+interface ReverseCompletionEntry {
+  promise: Promise<ReverseSsoUser>;
+  expiresAt: number;
+}
+
+const reverseCompletions = new Map<string, ReverseCompletionEntry>();
 
 const reverseUserSelect = {
   id: true,
@@ -284,22 +283,35 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-async function readCompanionErrorCode(response: Response): Promise<string> {
+interface CompanionErrorDetails {
+  code: string;
+  csrfRejected: boolean;
+}
+
+async function readCompanionErrorDetails(
+  response: Response,
+): Promise<CompanionErrorDetails> {
   try {
     const body: unknown = await response.json();
-    if (
-      typeof body === "object"
-      && body !== null
-      && "code" in body
-      && typeof body.code === "string"
-      && /^[A-Z0-9_]{1,64}$/.test(body.code)
-    ) {
-      return body.code;
+    if (typeof body === "object" && body !== null) {
+      const details = body as Record<string, unknown>;
+      const code = typeof details.code === "string"
+        && /^[A-Z0-9_]{1,64}$/.test(details.code)
+        ? details.code
+        : "UNSPECIFIED";
+      const message = [details.error, details.message]
+        .filter((value): value is string => typeof value === "string")
+        .join(" ")
+        .toLocaleLowerCase("en-PH");
+      return {
+        code,
+        csrfRejected: message.includes("csrf"),
+      };
     }
   } catch {
     // The browser still receives a stable EnrollPro error for a malformed response.
   }
-  return "UNSPECIFIED";
+  return { code: "UNSPECIFIED", csrfRejected: false };
 }
 
 async function exchangeCodeWithCompanion(input: {
@@ -334,14 +346,22 @@ async function exchangeCodeWithCompanion(input: {
   }
 
   if (!response.ok) {
-    const companionErrorCode = await readCompanionErrorCode(response);
+    const companionError = await readCompanionErrorDetails(response);
     console.error(
-      "[ReverseSSO] %s exchange failed with HTTP %s and code %s",
+      "[ReverseSSO] %s exchange failed with HTTP %s, code %s, csrfRejected=%s",
       input.system,
       response.status,
-      companionErrorCode,
+      companionError.code,
+      companionError.csrfRejected,
     );
 
+    if (companionError.code === "COMPANION_SSO_CLIENT_INVALID") {
+      throw new AppError(
+        503,
+        `${input.system} rejected EnrollPro's reverse SSO client credentials.`,
+        "COMPANION_REVERSE_SSO_CONFIGURATION_ERROR",
+      );
+    }
     if ([400, 401].includes(response.status)) {
       throw new AppError(
         401,
@@ -350,6 +370,13 @@ async function exchangeCodeWithCompanion(input: {
       );
     }
     if (response.status === 403) {
+      if (companionError.csrfRejected) {
+        throw new AppError(
+          503,
+          `${input.system} rejected the server-to-server SSO exchange configuration.`,
+          "COMPANION_REVERSE_SSO_CONFIGURATION_ERROR",
+        );
+      }
       throw new AppError(
         403,
         "The companion account is not authorized for EnrollPro.",
@@ -381,44 +408,6 @@ async function exchangeCodeWithCompanion(input: {
   return parsed.data;
 }
 
-function normalizedName(value: string | null): string {
-  return (value ?? "").trim().replace(/\s+/g, " ").toLocaleUpperCase("en-PH");
-}
-
-function normalizedEmail(value: string | null | undefined): string | null {
-  return value?.trim().toLocaleLowerCase("en-PH") || null;
-}
-
-function assertIdentityMatchesUser(
-  assertion: CompanionSsoReverseExchangeResponse["identity"],
-  user: ReverseSsoUser,
-): void {
-  const assertedEmployeeId = assertion.employeeId?.trim() || null;
-  const employeeIdMatches = !assertedEmployeeId || [
-    user.employeeId,
-    user.teacherProfile?.employeeId,
-  ].some((employeeId) => employeeId === assertedEmployeeId);
-  const accountName = assertion.accountName?.trim() || null;
-  const accountNameMatches = !accountName || user.accountName === accountName;
-  const email = normalizedEmail(assertion.email);
-  const emailMatches = !email || normalizedEmail(user.email) === email;
-
-  if (
-    normalizedName(assertion.firstName) !== normalizedName(user.firstName)
-    || normalizedName(assertion.lastName) !== normalizedName(user.lastName)
-    || !employeeIdMatches
-    || !accountNameMatches
-    || !emailMatches
-    || (assertion.lrn && assertion.lrn !== user.learnerProfile?.lrn)
-  ) {
-    throw new AppError(
-      409,
-      "The companion identity does not match the linked EnrollPro account.",
-      "COMPANION_REVERSE_SSO_IDENTITY_CONFLICT",
-    );
-  }
-}
-
 function assertUserCanEnterEnrollPro(user: ReverseSsoUser): void {
   if (!user.isActive) {
     throw new AppError(
@@ -427,160 +416,83 @@ function assertUserCanEnterEnrollPro(user: ReverseSsoUser): void {
       "COMPANION_REVERSE_SSO_ACCOUNT_UNAVAILABLE",
     );
   }
-  if (user.mustChangePassword) {
-    throw new AppError(
-      428,
-      "Change the default password in EnrollPro before using reverse SSO.",
-      "PASSWORD_CHANGE_REQUIRED",
-    );
-  }
-  if (user.learnerProfile?.status === "JHS_COMPLETER") {
-    throw new AppError(
-      403,
-      "JHS completers cannot open an active EnrollPro staff workspace.",
-      "COMPANION_REVERSE_SSO_COMPLETER_BLOCKED",
-    );
-  }
-  const permitted = new Set<Role>(ENROLLPRO_STAFF_ROLES);
-  if (!user.roles.some((role) => permitted.has(role))) {
-    throw new AppError(
-      403,
-      "The linked account does not have access to an EnrollPro staff workspace.",
-      "COMPANION_REVERSE_SSO_ROLE_DENIED",
-    );
-  }
 }
 
-async function findUnlinkedCandidate(
-  assertion: CompanionSsoReverseExchangeResponse["identity"],
-): Promise<ReverseSsoUser> {
-  const candidates = new Map<number, ReverseSsoUser>();
-  let userEmployeeMatch = false;
-  let teacherEmployeeMatch = false;
-  let learnerLrnMatch = false;
-
-  const employeeId = assertion.employeeId?.trim() || null;
-  if (employeeId) {
-    const employeeUser = await prisma.user.findUnique({
-      where: { employeeId },
-      select: reverseUserSelect,
-    });
-    if (employeeUser) {
-      userEmployeeMatch = true;
-      candidates.set(employeeUser.id, employeeUser);
-    }
-
-    const employeeTeacher = await prisma.teacher.findUnique({
-      where: { employeeId },
-      select: {
-        user: { select: reverseUserSelect },
-      },
-    });
-    if (employeeTeacher?.user) {
-      teacherEmployeeMatch = true;
-      candidates.set(employeeTeacher.user.id, employeeTeacher.user);
-    }
-  }
-
-  if (assertion.lrn) {
-    const learner = await prisma.learner.findUnique({
-      where: { lrn: assertion.lrn },
-      select: { user: { select: reverseUserSelect } },
-    });
-    if (learner?.user) {
-      learnerLrnMatch = true;
-      candidates.set(learner.user.id, learner.user);
-    }
-  }
-
-  if (candidates.size !== 1) {
-    console.warn(
-      "[ReverseSSO] Account reconciliation produced %d candidate(s): "
-        + "employeeIdSupplied=%s userEmployeeMatch=%s teacherEmployeeMatch=%s "
-        + "lrnSupplied=%s learnerLrnMatch=%s.",
-      candidates.size,
-      Boolean(employeeId),
-      userEmployeeMatch,
-      teacherEmployeeMatch,
-      Boolean(assertion.lrn),
-      learnerLrnMatch,
-    );
-    throw new AppError(
-      409,
-      "The companion identity must be linked to exactly one EnrollPro account.",
-      candidates.size === 0
-        ? "COMPANION_REVERSE_SSO_LINK_REQUIRED"
-        : "COMPANION_REVERSE_SSO_IDENTITY_CONFLICT",
-    );
-  }
-
-  const user = [...candidates.values()][0];
-  assertIdentityMatchesUser(assertion, user);
-  return user;
-}
-
-async function resolveLinkedUser(input: {
-  system: CompanionSystem;
+async function resolveUserById(input: {
   assertion: CompanionSsoReverseExchangeResponse["identity"];
   authenticatedAt: Date;
 }): Promise<ReverseSsoUser> {
-  const existing = await prisma.companionIdentityLink.findFirst({
-    where: {
-      companion: input.system,
-      externalSubject: input.assertion.subject,
-    },
-    select: {
-      id: true,
-      user: { select: reverseUserSelect },
-    },
+  let user = null;
+  if (input.assertion.userId) {
+    user = await prisma.user.findUnique({
+      where: { id: input.assertion.userId },
+      select: reverseUserSelect,
+    });
+  } else if (input.assertion.employeeId) {
+    user = await prisma.user.findUnique({
+      where: { employeeId: input.assertion.employeeId },
+      select: reverseUserSelect,
+    });
+  }
+
+  if (!user) {
+    throw new AppError(
+      401,
+      "The EnrollPro user ID does not identify an account.",
+      "COMPANION_REVERSE_SSO_USER_NOT_FOUND",
+    );
+  }
+
+  assertUserCanEnterEnrollPro(user);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: input.authenticatedAt },
+  });
+  return { ...user, lastLoginAt: input.authenticatedAt };
+}
+
+function reverseCompletionKey(input: {
+  system: CompanionSystem;
+  code: string;
+  state: string;
+}): string {
+  return createHash("sha256")
+    .update(input.system)
+    .update("\0")
+    .update(input.state)
+    .update("\0")
+    .update(input.code)
+    .digest("hex");
+}
+
+async function completeCompanionReverseSsoOnce(input: {
+  system: CompanionSystem;
+  code: string;
+  req: RequestAuditContext;
+}): Promise<ReverseSsoUser> {
+  const assertion = await exchangeCodeWithCompanion({
+    system: input.system,
+    code: input.code,
   });
 
-  if (existing) {
-    assertIdentityMatchesUser(input.assertion, existing.user);
-    assertUserCanEnterEnrollPro(existing.user);
-    await prisma.$transaction([
-      prisma.companionIdentityLink.update({
-        where: { id: existing.id },
-        data: { lastAuthenticatedAt: input.authenticatedAt },
-      }),
-      prisma.user.update({
-        where: { id: existing.user.id },
-        data: { lastLoginAt: input.authenticatedAt },
-      }),
-    ]);
-    return { ...existing.user, lastLoginAt: input.authenticatedAt };
-  }
+  const authenticatedAt = new Date();
+  const user = await resolveUserById({
+    assertion: assertion.identity,
+    authenticatedAt,
+  });
 
-  const candidate = await findUnlinkedCandidate(input.assertion);
-  assertUserCanEnterEnrollPro(candidate);
-
-  try {
-    await prisma.$transaction([
-      prisma.companionIdentityLink.create({
-        data: {
-          companion: input.system,
-          externalSubject: input.assertion.subject,
-          userId: candidate.id,
-          lastAuthenticatedAt: input.authenticatedAt,
-        },
-      }),
-      prisma.user.update({
-        where: { id: candidate.id },
-        data: { lastLoginAt: input.authenticatedAt },
-      }),
-    ]);
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new AppError(
-        409,
-        "The companion identity conflicts with an existing EnrollPro link.",
-        "COMPANION_REVERSE_SSO_IDENTITY_CONFLICT",
-      );
-    }
-    throw error;
-  }
-
-  return { ...candidate, lastLoginAt: input.authenticatedAt };
+  await auditLog({
+    userId: user.id,
+    actionType: "COMPANION_REVERSE_SSO_LOGIN",
+    description: `${input.system} authenticated a user into EnrollPro.`,
+    subjectType: "CompanionSystem",
+    metadata: {
+      companion: input.system,
+      assertedUserId: assertion.identity.userId,
+    },
+    req: input.req,
+  });
+  return user;
 }
 
 export async function completeCompanionReverseSso(input: {
@@ -592,51 +504,6 @@ export async function completeCompanionReverseSso(input: {
 }): Promise<ReverseSsoUser> {
   try {
     verifyStateToken(input);
-    const assertion = await exchangeCodeWithCompanion({
-      system: input.system,
-      code: input.code,
-    });
-
-    const activeSchoolYear = await resolveActiveSchoolYearState(prisma);
-    if (activeSchoolYear.state === "INVALID") {
-      throw new AppError(409, activeSchoolYear.message, activeSchoolYear.code);
-    }
-    if (activeSchoolYear.state === "UNINITIALIZED") {
-      throw new AppError(
-        409,
-        "An active school year is required for reverse SSO.",
-        "ACTIVE_SCHOOL_YEAR_REQUIRED",
-      );
-    }
-    if (
-      assertion.activeSchoolYear.id !== activeSchoolYear.active.schoolYearId
-      || assertion.activeSchoolYear.yearLabel !== activeSchoolYear.active.yearLabel
-    ) {
-      throw new AppError(
-        409,
-        "The companion and EnrollPro active school years do not match.",
-        "COMPANION_REVERSE_SSO_SCHOOL_YEAR_MISMATCH",
-      );
-    }
-
-    const user = await resolveLinkedUser({
-      system: input.system,
-      assertion: assertion.identity,
-      authenticatedAt: new Date(),
-    });
-
-    await auditLog({
-      userId: user.id,
-      actionType: "COMPANION_REVERSE_SSO_LOGIN",
-      description: `${input.system} authenticated a user into EnrollPro.`,
-      subjectType: "CompanionSystem",
-      metadata: {
-        companion: input.system,
-        activeSchoolYearId: activeSchoolYear.active.schoolYearId,
-      },
-      req: input.req,
-    });
-    return user;
   } catch (error: unknown) {
     console.error(
       "[ReverseSSO] Callback failed for %s:",
@@ -660,14 +527,57 @@ export async function completeCompanionReverseSso(input: {
     });
     throw error;
   }
-}
 
-export function reverseSsoLandingPath(roles: readonly Role[]): string {
-  if (roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR")) {
-    return "/dashboard";
+  const completionKey = reverseCompletionKey(input);
+  const existing = reverseCompletions.get(completionKey);
+  if (existing && existing.expiresAt > Date.now()) {
+    console.info(
+      "[ReverseSSO] Coalesced duplicate %s callback into the active exchange.",
+      input.system,
+    );
+    return existing.promise;
   }
-  if (roles.includes("MRF")) {
-    return "/my-activity";
-  }
-  return "/teacher/advisory";
+  if (existing) reverseCompletions.delete(completionKey);
+
+  const promise = (async () => {
+    try {
+      return await completeCompanionReverseSsoOnce(input);
+    } catch (error: unknown) {
+      console.error(
+        "[ReverseSSO] Callback failed for %s:",
+        input.system,
+        error instanceof AppError
+          ? `${error.code}: ${error.message}`
+          : error,
+      );
+      if (!(error instanceof AppError) && error instanceof Error && error.stack) {
+        console.error("[ReverseSSO] Stack:", error.stack);
+      }
+      await auditLog({
+        actionType: "COMPANION_REVERSE_SSO_DENIED",
+        description: `${input.system} reverse SSO was denied.`,
+        subjectType: "CompanionSystem",
+        metadata: {
+          companion: input.system,
+          reason: error instanceof AppError ? error.code : "REVERSE_SSO_FAILED",
+        },
+        req: input.req,
+      });
+      throw error;
+    }
+  })();
+  const entry: ReverseCompletionEntry = {
+    promise,
+    expiresAt: Date.now() + REVERSE_COMPLETION_CACHE_TTL_MS,
+  };
+  reverseCompletions.set(completionKey, entry);
+
+  const cleanupTimer = setTimeout(() => {
+    if (reverseCompletions.get(completionKey) === entry) {
+      reverseCompletions.delete(completionKey);
+    }
+  }, REVERSE_COMPLETION_CACHE_TTL_MS);
+  cleanupTimer.unref();
+
+  return promise;
 }

@@ -54,7 +54,7 @@ Signing out of ATLAS ends only the ATLAS session. Coordinated logout is not part
 3. ATLAS validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
 4. ATLAS stores only the code hash, bound user, client, callback, expiry, and consumption state.
 5. EnrollPro exchanges the code once at `ATLAS_SSO_REVERSE_EXCHANGE_URL` using `ATLAS_SSO_REVERSE_CLIENT_SECRET`.
-6. ATLAS returns a stable ATLAS subject, canonical employee ID or LRN, matching names, roles, and mirrored EnrollPro school year.
-7. EnrollPro reconciles exactly one local account and creates an EnrollPro-owned session.
+6. ATLAS returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
+7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account.
 
-The stable subject and employee ID must not change with term, school year, schedule revision, teaching load, or adviser assignment.
+The reverse response must include `success`, `issuer: "ATLAS"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the ATLAS reverse Bearer secret remain mandatory.

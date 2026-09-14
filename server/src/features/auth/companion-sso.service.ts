@@ -396,6 +396,12 @@ export async function exchangeCompanionSsoCode(input: {
     !input.bearerSecret
     || !safeSecretMatches(input.bearerSecret, configuration.clientSecret)
   ) {
+    console.error("[CompanionSSO] Client authentication failed", {
+      companion: input.system,
+      bearerPresent: Boolean(input.bearerSecret),
+      presentedLength: input.bearerSecret?.length ?? 0,
+      configuredLength: configuration.clientSecret.length,
+    });
     await auditLog({
       actionType: "COMPANION_SSO_EXCHANGE_DENIED",
       description: `${input.system} presented invalid SSO client credentials.`,

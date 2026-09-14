@@ -41,4 +41,4 @@ Use a strict 2-column grid (`grid grid-cols-2 gap-4`) to keep the form compact a
 
 ### 4. Layout & Spacing Polish
 *   Use subtle horizontal dividers (`border-b border-gray-200`) with ample padding (`py-6`) between the Personal Details block and the Home Address block to establish clear visual sections.
-*   Ensure all required fields `*` feature a red asterisk to visually enforce completion before the "Save as Temporary" button becomes active.
+*   Ensure all required fields `*` feature a red asterisk to visually enforce completion before the "Save as Temporary" button becomes active.\

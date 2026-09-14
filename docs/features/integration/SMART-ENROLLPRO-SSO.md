@@ -11,7 +11,7 @@ This is not cross-domain cookie sharing. SMART must never receive an EnrollPro p
 ## EnrollPro Configuration
 
 ```text
-SMART_SSO_CALLBACK_URL=https://configured-smart-host/auth/enrollpro/callback
+SMART_SSO_CALLBACK_URL=https://configured-smart-host/api/auth/enrollpro/callback
 SMART_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
 SMART_SSO_REVERSE_AUTHORIZE_URL=https://configured-smart-host/auth/enrollpro/authorize
 SMART_SSO_REVERSE_EXCHANGE_URL=https://configured-smart-host/api/v1/auth/sso/exchange
@@ -25,7 +25,7 @@ The callback must use HTTPS outside local development. The secret must not be re
 
 ## SMART Callback Flow
 
-1. Accept `GET /auth/enrollpro/callback?code=<authorization-code>` on the SMART server.
+1. Accept `GET /api/auth/enrollpro/callback?code=<authorization-code>` on the SMART server.
 2. Read the code on the server. Do not exchange it from browser JavaScript.
 3. Send `POST <ENROLLPRO_BASE_URL>/api/auth/companion-sso/smart/exchange` with `Authorization: Bearer <SMART_SSO_CLIENT_SECRET>` and the JSON body `{ "code": "<authorization-code>" }`.
 4. Require `success: true`, `companion: "SMART"`, an active identity, at least one permitted role, and a valid active school-year object.
@@ -54,7 +54,15 @@ Signing out of SMART ends only the SMART session. Coordinated logout is not part
 3. SMART validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
 4. SMART stores only the code hash, bound user, client, callback, expiry, and consumption state.
 5. EnrollPro exchanges the code once at `SMART_SSO_REVERSE_EXCHANGE_URL` using `SMART_SSO_REVERSE_CLIENT_SECRET`.
-6. SMART returns a stable SMART subject, canonical employee ID or LRN, matching names, roles, and mirrored EnrollPro school year.
-7. EnrollPro reconciles exactly one local account and creates an EnrollPro-owned session.
+6. SMART returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
+7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account.
 
 Grade finalization, attendance, SF9, and EOSY data must not affect the SSO subject. SSO remains separate from the SMART grade API and SSE channel.
+
+The reverse response must include `success`, `issuer: "SMART"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the SMART reverse Bearer secret remain mandatory.
+
+The SMART reverse exchange endpoint is a server-to-server Bearer-authenticated route. SMART must exempt this exact route from browser CSRF middleware while retaining Bearer validation, request-schema validation, rate limiting, atomic code consumption, and audit logging. A response such as `Invalid or missing CSRF token` is an integration configuration failure, not a user-role denial.
+
+EnrollPro coalesces repeated SMART callbacks carrying the same signed state and authorization code for 30 seconds. SMART should navigate to the EnrollPro reverse callback only once, but accidental concurrent callback requests now share one backend exchange instead of consuming the code twice.
+
+`SMART_SSO_CLIENT_SECRET` and `SMART_SSO_REVERSE_CLIENT_SECRET` are different credentials. The first authenticates SMART when it exchanges an EnrollPro-issued code. The second authenticates EnrollPro when it exchanges a SMART-issued code. A SMART response with `COMPANION_SSO_CLIENT_INVALID` means the deployed `SMART_SSO_REVERSE_CLIENT_SECRET` values do not match; EnrollPro reports this as `COMPANION_REVERSE_SSO_CONFIGURATION_ERROR`, not as an expired authorization code.

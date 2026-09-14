@@ -182,7 +182,7 @@ function getCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     ...(maxAge ? { maxAge } : {}),
   };
@@ -200,6 +200,10 @@ function clearSessionCookie(res: Response, cookieName = AUTH_COOKIE_NAME): void 
     sameSite: options.sameSite,
     path: options.path,
   });
+}
+
+export function clearAuthSession(res: Response): void {
+  clearSessionCookie(res);
 }
 
 function toUserResponse(user: AuthUser) {
@@ -599,9 +603,9 @@ export async function verifyCredentials(
       });
 
       if (learner?.status === "JHS_COMPLETER") {
-        res.status(403).json({ 
-          valid: false, 
-          message: "JHS completers cannot access external portals like AIMS, SMART, or MRF." 
+        res.status(403).json({
+          valid: false,
+          message: "JHS completers cannot access external portals like AIMS, SMART, or MRF."
         });
         return;
       }

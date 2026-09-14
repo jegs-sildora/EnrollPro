@@ -341,7 +341,7 @@ The Prisma `CompanionSsoAuthorizationCode` model stores:
 
 The plaintext authorization code is never stored. Code rows are security records and should be removed later by an approved expiry-retention job without deleting audit logs.
 
-The Prisma `CompanionIdentityLink` model stores one stable external subject per companion and EnrollPro user. Both `(companion, externalSubject)` and `(companion, userId)` are unique. The model records the most recent successful reverse authentication without storing a companion token or session.
+The legacy Prisma `CompanionIdentityLink` model remains in the schema for compatibility and audit history, but reverse SSO no longer consults or creates these rows. Current reverse SSO maps directly from the trusted exchange assertion's `identity.userId` to `User.id`.
 
 ## EnrollPro SSO API Contract
 
@@ -495,6 +495,7 @@ The companion must atomically consume the code and validate the code, client, au
   "success": true,
   "issuer": "AIMS",
   "identity": {
+    "userId": 1,
     "subject": "AIMS_USER:42",
     "employeeId": "1234501",
     "lrn": null,
@@ -516,30 +517,32 @@ The companion must atomically consume the code and validate the code, client, au
 Rules:
 
 - `issuer` must exactly match the source route.
-- `identity.subject` is a stable, source-namespaced identifier and must never be recycled.
-- At least one exact EnrollPro identifier must be present for first-time reconciliation: employee ID for staff or LRN for learners.
-- `activeSchoolYear.id` is the mirrored EnrollPro school-year ID, not the companion's local database ID.
-- The year ID and label must both match EnrollPro's authoritative active year.
+- `identity.userId` is required and is the numeric EnrollPro user ID originally received in EnrollPro's outbound SSO assertion. It is not the companion's local user ID.
+- `identity.subject`, names, employee ID, LRN, email, roles, and `activeSchoolYear` are optional context in the reverse response. EnrollPro does not use them to select or authorize the account.
 - EnrollPro uses its local account roles for the resulting session. Companion roles cannot elevate EnrollPro permissions.
 
-### Identity linking
+### User ID resolution
 
-EnrollPro first looks up `(companion, externalSubject)` in `CompanionIdentityLink`.
+Reverse SSO resolves exactly one EnrollPro row with `User.id = identity.userId`. A successful, authenticated exchange for an existing active user creates an EnrollPro session immediately.
 
-For a first successful reverse login only, EnrollPro may create the link when:
+The reverse login does not consult or create `CompanionIdentityLink`, and it does not reconcile by:
 
-- the asserted employee ID or LRN resolves to exactly one EnrollPro user
-- a staff employee ID may resolve through either the EnrollPro user record or its linked teacher profile
-- first and last names match after whitespace and case normalization
-- all supplied identifiers match that same account
-- the EnrollPro account is active
-- the account does not require a default-password change
-- the learner is not a JHS completer
-- the account has an EnrollPro staff-workspace role
+- external subject
+- employee ID or LRN
+- name, email, or account name
+- companion roles
+- school-year ID or label
+- default-password state, learner status, or staff-role membership
 
-No match produces `COMPANION_REVERSE_SSO_LINK_REQUIRED`. Conflicting identifiers, names, subjects, or existing links produce `COMPANION_REVERSE_SSO_IDENTITY_CONFLICT`.
+An unknown `identity.userId` produces `COMPANION_REVERSE_SSO_USER_NOT_FOUND`. A deactivated EnrollPro account produces `COMPANION_REVERSE_SSO_ACCOUNT_UNAVAILABLE`. All authorization-code, state, issuer, secret, expiry, replay, and callback checks remain mandatory.
 
-After linking, every reverse login rechecks the current EnrollPro account and identifiers. EnrollPro creates its own session cookie and redirects according to its local roles.
+After resolving the user ID, EnrollPro creates its own session cookie and redirects according to the roles stored in EnrollPro.
+
+### Duplicate callback handling
+
+EnrollPro coalesces duplicate callback requests for the same companion, signed state, and authorization code into one in-flight completion. The deduplication key is SHA-256 hashed in memory and retained for 30 seconds; plaintext codes and state values are not stored in the cache or written to logs. Concurrent browser requests therefore produce one companion exchange and share the same successful EnrollPro result.
+
+The reverse state cookie remains available for the same 30-second window after success so a delayed duplicate remains bound to the originating browser. Callback failures do not clear an EnrollPro session that may already have been established by the successful request. The reverse start endpoint remains responsible for clearing any older EnrollPro session before beginning a new handoff.
 
 ## Authorization-Code Rules
 
@@ -844,12 +847,9 @@ The login page converts the stable code into a plain message and removes the que
 | `COMPANION_REVERSE_SSO_UNAVAILABLE` | Companion exchange could not complete; the same code is not retried |
 | `COMPANION_REVERSE_SSO_RESPONSE_INVALID` | Companion returned malformed data or the wrong issuer |
 | `COMPANION_REVERSE_SSO_ACCESS_DENIED` | Companion account cannot authenticate to EnrollPro |
-| `COMPANION_REVERSE_SSO_LINK_REQUIRED` | No unique EnrollPro account can be reconciled |
-| `COMPANION_REVERSE_SSO_IDENTITY_CONFLICT` | Subject, identifiers, names, or an existing link conflict |
-| `COMPANION_REVERSE_SSO_ACCOUNT_UNAVAILABLE` | Linked EnrollPro account is inactive or missing |
-| `COMPANION_REVERSE_SSO_ROLE_DENIED` | Linked user has no EnrollPro staff-workspace role |
-| `COMPANION_REVERSE_SSO_COMPLETER_BLOCKED` | Linked learner is a JHS completer |
-| `COMPANION_REVERSE_SSO_SCHOOL_YEAR_MISMATCH` | Companion's mirrored EnrollPro year does not exactly match the current EnrollPro year |
+| `COMPANION_REVERSE_SSO_CONFIGURATION_ERROR` | Companion rejected the Bearer-authenticated backend exchange through browser-only middleware such as CSRF protection |
+| `COMPANION_REVERSE_SSO_USER_NOT_FOUND` | `identity.userId` does not identify an EnrollPro user |
+| `COMPANION_REVERSE_SSO_ACCOUNT_UNAVAILABLE` | The identified EnrollPro account is inactive |
 
 ## School-Year Behavior
 

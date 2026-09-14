@@ -91,11 +91,11 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           intakePipeline: [],
           sectionSaturation: [],
           sf1Compliance: {
-            invalidLrn: 0,
-            missingBirthdate: 0,
-            missingMotherTongue: 0,
-            missingCurrentAddress: 0,
-            missingGuardianContact: 0,
+            invalidLrn: { count: 0, learners: [] },
+            missingBirthdate: { count: 0, learners: [] },
+            missingMotherTongue: { count: 0, learners: [] },
+            missingCurrentAddress: { count: 0, learners: [] },
+            missingGuardianContact: { count: 0, learners: [] },
             affectedLearners: 0,
           },
           activeTally: {
@@ -301,6 +301,8 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         learner: {
           select: {
             lrn: true,
+            firstName: true,
+            lastName: true,
             birthdate: true,
             motherTongue: true,
             hasPsaBirthCertificate: true,
@@ -388,11 +390,11 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           (application) => !terminalPipelineStatuses.has(application.status),
         );
 
-    const invalidLrnLearners = new Set<number>();
-    const missingBirthdateLearners = new Set<number>();
-    const missingMotherTongueLearners = new Set<number>();
-    const missingAddressLearners = new Set<number>();
-    const missingGuardianContactLearners = new Set<number>();
+    const invalidLrnLearners = new Map<number, { name: string, lrn: string }>();
+    const missingBirthdateLearners = new Map<number, { name: string, lrn: string }>();
+    const missingMotherTongueLearners = new Map<number, { name: string, lrn: string }>();
+    const missingAddressLearners = new Map<number, { name: string, lrn: string }>();
+    const missingGuardianContactLearners = new Map<number, { name: string, lrn: string }>();
     const documentFollowUpLearners = new Set<number>();
     const pendingValidationLearners = new Set<number>();
 
@@ -410,20 +412,25 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           hasText(member.contactNumber),
         );
 
+      const learnerInfo = {
+        name: `${application.learner.lastName}, ${application.learner.firstName}`,
+        lrn: application.learner.lrn ?? "No LRN",
+      };
+
       if (!isValidLrn(application.learner.lrn)) {
-        invalidLrnLearners.add(learnerId);
+        invalidLrnLearners.set(learnerId, learnerInfo);
       }
       if (!application.learner.birthdate) {
-        missingBirthdateLearners.add(learnerId);
+        missingBirthdateLearners.set(learnerId, learnerInfo);
       }
       if (!hasText(application.learner.motherTongue)) {
-        missingMotherTongueLearners.add(learnerId);
+        missingMotherTongueLearners.set(learnerId, learnerInfo);
       }
       if (!hasAddress) {
-        missingAddressLearners.add(learnerId);
+        missingAddressLearners.set(learnerId, learnerInfo);
       }
       if (!hasGuardianContact) {
-        missingGuardianContactLearners.add(learnerId);
+        missingGuardianContactLearners.set(learnerId, learnerInfo);
       }
 
       const hasSf1Gap =
@@ -596,17 +603,32 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     };
 
     const sf1Compliance = {
-      invalidLrn: invalidLrnLearners.size,
-      missingBirthdate: missingBirthdateLearners.size,
-      missingMotherTongue: missingMotherTongueLearners.size,
-      missingCurrentAddress: missingAddressLearners.size,
-      missingGuardianContact: missingGuardianContactLearners.size,
+      invalidLrn: {
+        count: invalidLrnLearners.size,
+        learners: Array.from(invalidLrnLearners.values()),
+      },
+      missingBirthdate: {
+        count: missingBirthdateLearners.size,
+        learners: Array.from(missingBirthdateLearners.values()),
+      },
+      missingMotherTongue: {
+        count: missingMotherTongueLearners.size,
+        learners: Array.from(missingMotherTongueLearners.values()),
+      },
+      missingCurrentAddress: {
+        count: missingAddressLearners.size,
+        learners: Array.from(missingAddressLearners.values()),
+      },
+      missingGuardianContact: {
+        count: missingGuardianContactLearners.size,
+        learners: Array.from(missingGuardianContactLearners.values()),
+      },
       affectedLearners: countDistinctLearners([
-        invalidLrnLearners,
-        missingBirthdateLearners,
-        missingMotherTongueLearners,
-        missingAddressLearners,
-        missingGuardianContactLearners,
+        new Set(invalidLrnLearners.keys()),
+        new Set(missingBirthdateLearners.keys()),
+        new Set(missingMotherTongueLearners.keys()),
+        new Set(missingAddressLearners.keys()),
+        new Set(missingGuardianContactLearners.keys()),
       ]),
     };
 

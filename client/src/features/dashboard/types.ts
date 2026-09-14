@@ -1,3 +1,13 @@
+export interface LearnerInfo {
+  name: string
+  lrn: string
+}
+
+export interface ComplianceItem {
+  count: number
+  learners: LearnerInfo[]
+}
+
 export interface GradeLevelBreakdown {
   id: number
   name: string
@@ -90,11 +100,11 @@ export interface DashboardStats {
     isOverCapacity: boolean
   }>
   sf1Compliance: {
-    invalidLrn: number
-    missingBirthdate: number
-    missingMotherTongue: number
-    missingCurrentAddress: number
-    missingGuardianContact: number
+    invalidLrn: ComplianceItem
+    missingBirthdate: ComplianceItem
+    missingMotherTongue: ComplianceItem
+    missingCurrentAddress: ComplianceItem
+    missingGuardianContact: ComplianceItem
     affectedLearners: number
   }
   activeTally: {
