@@ -49,6 +49,7 @@ Last reviewed: 2026-09-11
 | [MRF Student Authentication and API Catalog](features/integration/ENROLLPRO-MRF-STUDENT-AUTH-AND-API-CATALOG.md) | MRF/SORTv2 and EnrollPro Teams | Learner login, password lifecycle, integration feeds, errors, limitations, and synchronization contract |
 | [ATLAS EnrollPro SSO](features/integration/ATLAS-ENROLLPRO-SSO.md) | ATLAS and EnrollPro Teams | One-time identity handoff and ATLAS session creation |
 | [AIMS EnrollPro SSO](features/integration/AIMS-ENROLLPRO-SSO.md) | AIMS and EnrollPro Teams | One-time identity handoff and AIMS session creation |
+| [AIMS to EnrollPro SSO Link Diagnostic](features/integration/AIMS-TO-ENROLLPRO-SSO-LINK-DIAGNOSTIC-2026-09-14.md) | AIMS and EnrollPro Teams | Verified link-failure evidence, required AIMS identity assertion, credential purposes, and acceptance checks |
 | [Response to AIMS SSO Questions](features/integration/ENROLLPRO-RESPONSE-TO-AIMS-SSO.md) | AIMS and EnrollPro Teams | Canonical initiation, exchange, errors, roles, and federation roadmap |
 | [Integrated Systems Sidebar and SSO](features/integration/INTEGRATED-SYSTEMS-SIDEBAR-SSO.md) | All System Teams | Shared sidebar UX, SSO controllers, security, federation phases, and acceptance tests |
 | [SMART EnrollPro SSO](features/integration/SMART-ENROLLPRO-SSO.md) | SMART and EnrollPro Teams | One-time identity handoff and SMART session creation |

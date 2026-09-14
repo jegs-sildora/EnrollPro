@@ -1,6 +1,6 @@
 # Integrated Systems Sidebar and SSO Implementation Guide
 
-Last reviewed: 2026-09-11
+Last reviewed: 2026-09-14
 
 ## Purpose
 
@@ -471,7 +471,7 @@ EnrollPro verifies the callback state against both the signature and the HTTP-on
 Each companion must expose a backend exchange endpoint matching its configured reverse exchange URL. EnrollPro calls it exactly once:
 
 ```http
-POST /api/auth/enrollpro/exchange
+POST <configured *_SSO_REVERSE_EXCHANGE_URL>
 Authorization: Bearer <source-specific reverse client secret>
 Content-Type: application/json
 
@@ -481,6 +481,10 @@ Content-Type: application/json
   "redirectUri": "<exact registered EnrollPro callback>"
 }
 ```
+
+The path is companion-owned and must not be inferred by EnrollPro. For the current AIMS contract, `AIMS_SSO_REVERSE_EXCHANGE_URL` points to AIMS `/api/v1/auth/sso/exchange`. SMART, ATLAS, and MRF must publish their exact backend exchange URLs through their corresponding configuration keys.
+
+This is the same authorization-code pattern used by EnrollPro-to-AIMS SSO with the issuer and destination reversed: the source system authenticates its local user and issues a short-lived single-use code; the destination backend exchanges the code using a dedicated client secret, validates the minimized identity, and creates its own local session. Cookies, passwords, JWTs, and plaintext secrets are never shared between systems.
 
 The companion must atomically consume the code and validate the code, client, audience, redirect URI, expiry, account state, and role before returning identity. Unknown, expired, replayed, or mismatched codes must share one public error.
 
@@ -633,7 +637,7 @@ AIMS must route users to its own role-specific dashboard. SSO does not grant AIM
 
 The AIMS callback must retain its existing duplicate-exchange protection. A consumed code must produce a clean `Start again from EnrollPro` state.
 
-For AIMS-to-EnrollPro, AIMS must implement `/auth/enrollpro/authorize` and its backend `/api/auth/enrollpro/exchange`. Its Integrated Systems sidebar must use EnrollPro's `/aims/reverse/start` URL rather than linking directly to an EnrollPro dashboard.
+For AIMS-to-EnrollPro, AIMS must implement `/auth/enrollpro/authorize` and the backend exchange endpoint configured in `AIMS_SSO_REVERSE_EXCHANGE_URL` (currently AIMS `/api/v1/auth/sso/exchange`). Its Integrated Systems sidebar must use EnrollPro's `/aims/reverse/start` URL rather than linking directly to an EnrollPro dashboard.
 
 ### SMART
 
@@ -750,6 +754,22 @@ MRF_SSO_REVERSE_EXCHANGE_URL=<exact MRF backend exchange endpoint>
 MRF_SSO_REVERSE_CLIENT_ID=enrollpro
 MRF_SSO_REVERSE_CLIENT_SECRET=<distinct reverse secret, at least 32 characters>
 ```
+
+### Token and integration key purposes
+
+The following names identify server-side credentials. Documentation and logs may name the configuration key, but must never contain its actual value.
+
+| System | EnrollPro-issued code exchange | Companion-issued code exchange | Non-SSO integration key |
+| --- | --- | --- | --- |
+| AIMS | `AIMS_SSO_CLIENT_SECRET` | `AIMS_SSO_REVERSE_CLIENT_SECRET` | `AIMS_API_KEY` |
+| SMART | `SMART_SSO_CLIENT_SECRET` | `SMART_SSO_REVERSE_CLIENT_SECRET` | `SMART_API_KEY` |
+| ATLAS | `ATLAS_SSO_CLIENT_SECRET` | `ATLAS_SSO_REVERSE_CLIENT_SECRET` | `ATLAS_API_KEY` |
+| MRF | `MRF_SSO_CLIENT_SECRET` | `MRF_SSO_REVERSE_CLIENT_SECRET` | `MRF_INTEGRATION_API_KEY` |
+
+- `*_SSO_CLIENT_SECRET` authenticates a companion backend when it exchanges a code issued by EnrollPro.
+- `*_SSO_REVERSE_CLIENT_SECRET` authenticates EnrollPro when it exchanges a code issued by that companion.
+- The API keys authenticate non-SSO data feeds or domain integrations only. They must never authorize an SSO exchange.
+- Every outbound SSO secret, reverse SSO secret, and non-SSO API key must be independently generated and independently rotatable.
 
 `ENROLLPRO_PUBLIC_URL` is also required so EnrollPro can construct a fixed reverse callback. The reverse authorization and exchange URLs for one companion must use the same origin. Outbound and reverse secrets are different credentials.
 

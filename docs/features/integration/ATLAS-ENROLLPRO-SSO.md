@@ -1,6 +1,6 @@
 # ATLAS EnrollPro SSO
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-14
 
 ## Purpose
 
@@ -13,9 +13,15 @@ This is not cross-domain cookie sharing. ATLAS must never receive an EnrollPro p
 ```text
 ATLAS_SSO_CALLBACK_URL=https://configured-atlas-host/auth/enrollpro/callback
 ATLAS_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
+ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://configured-atlas-host/auth/enrollpro/authorize
+ATLAS_SSO_REVERSE_EXCHANGE_URL=https://configured-atlas-host/api/v1/auth/sso/exchange
+ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro
+ATLAS_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
 ```
 
 The callback must use HTTPS outside local development. The secret must not be reused for schedule feeds or any other integration.
+
+`ATLAS_SSO_CLIENT_SECRET` authenticates ATLAS to EnrollPro for an EnrollPro-issued code. `ATLAS_SSO_REVERSE_CLIENT_SECRET` authenticates EnrollPro to ATLAS for an ATLAS-issued code. `ATLAS_API_KEY` remains a data-feed credential and must never authorize SSO.
 
 ## ATLAS Callback Flow
 
@@ -40,3 +46,15 @@ ATLAS must reject expired, replayed, wrong-system, malformed, inactive, default-
 Do not log the callback query, authorization code, Bearer secret, identity payload, or session token. Security logs may retain the event result, EnrollPro subject, ATLAS account ID, time, and non-sensitive denial code.
 
 Signing out of ATLAS ends only the ATLAS session. Coordinated logout is not part of this contract.
+
+## ATLAS to EnrollPro Reverse Flow
+
+1. The authenticated ATLAS sidebar opens `GET <ENROLLPRO_PUBLIC_URL>/api/auth/companion-sso/atlas/reverse/start` in the same tab.
+2. EnrollPro creates signed state and redirects to `ATLAS_SSO_REVERSE_AUTHORIZE_URL`.
+3. ATLAS validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
+4. ATLAS stores only the code hash, bound user, client, callback, expiry, and consumption state.
+5. EnrollPro exchanges the code once at `ATLAS_SSO_REVERSE_EXCHANGE_URL` using `ATLAS_SSO_REVERSE_CLIENT_SECRET`.
+6. ATLAS returns a stable ATLAS subject, canonical employee ID or LRN, matching names, roles, and mirrored EnrollPro school year.
+7. EnrollPro reconciles exactly one local account and creates an EnrollPro-owned session.
+
+The stable subject and employee ID must not change with term, school year, schedule revision, teaching load, or adviser assignment.

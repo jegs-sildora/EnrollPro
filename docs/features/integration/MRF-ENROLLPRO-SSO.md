@@ -1,6 +1,6 @@
 # MRF EnrollPro SSO
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-14
 
 ## Status
 
@@ -13,9 +13,15 @@ This is not cross-domain cookie sharing. MRF must never receive an EnrollPro pas
 ```text
 MRF_SSO_CALLBACK_URL=https://configured-mrf-host/auth/enrollpro/callback
 MRF_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
+MRF_SSO_REVERSE_AUTHORIZE_URL=https://configured-mrf-host/auth/enrollpro/authorize
+MRF_SSO_REVERSE_EXCHANGE_URL=https://configured-mrf-host/api/v1/auth/sso/exchange
+MRF_SSO_REVERSE_CLIENT_ID=enrollpro
+MRF_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
 ```
 
 The callback must use HTTPS outside local development. The secret must not be reused for the MRF identity feed or any other integration.
+
+`MRF_SSO_CLIENT_SECRET` authenticates MRF to EnrollPro for an EnrollPro-issued code. `MRF_SSO_REVERSE_CLIENT_SECRET` authenticates EnrollPro to MRF for an MRF-issued code. `MRF_INTEGRATION_API_KEY` remains a minimized data-feed credential and must never authorize SSO.
 
 ## MRF Callback Flow
 
@@ -40,3 +46,15 @@ MRF must reject expired, replayed, wrong-system, malformed, inactive, default-pa
 Do not log the callback query, authorization code, Bearer secret, identity payload, or session token. Security logs may retain the event result, EnrollPro subject, MRF account ID, time, and non-sensitive denial code.
 
 Signing out of MRF ends only the MRF session. Coordinated logout is not part of this contract.
+
+## MRF to EnrollPro Reverse Flow
+
+1. The authenticated MRF sidebar opens `GET <ENROLLPRO_PUBLIC_URL>/api/auth/companion-sso/mrf/reverse/start` in the same tab.
+2. EnrollPro creates signed state and redirects to `MRF_SSO_REVERSE_AUTHORIZE_URL`.
+3. MRF validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
+4. MRF stores only the code hash, bound user, client, callback, expiry, and consumption state.
+5. EnrollPro exchanges the code once at `MRF_SSO_REVERSE_EXCHANGE_URL` using `MRF_SSO_REVERSE_CLIENT_SECRET`.
+6. MRF returns a stable MRF subject, canonical employee ID, matching names, roles, and mirrored EnrollPro school year.
+7. EnrollPro reconciles exactly one local account and creates an EnrollPro-owned session. `SYSTEM_ADMIN` lands on `/dashboard`; an `MRF` user lands on `/my-activity`.
+
+MRF must remain disabled until all outbound and reverse URLs and both distinct SSO secrets are configured.
