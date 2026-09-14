@@ -79,6 +79,7 @@ const MASTERLIST_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
 
 interface LearnerRecord {
   id: number;
+  learnerId?: number;
   enrollmentApplicationId: number;
   lrn: string | null;
   firstName: string;
@@ -453,7 +454,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                       <TableCell className="py-3 pl-4">
                         <div className="flex flex-col">
                           <span className="font-bold text-sm uppercase text-foreground leading-tight">
-                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
+                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""} [{learner.id ?? "NO_ID"}-{learner.learnerId ?? "NO_LID"}-{learner.enrollmentApplicationId ?? "NO_APPID"}]
                           </span>
                           <span className="text-sm font-bold uppercase text-foreground mt-0.5">
                             {learner.lrn || "NO LRN"}
@@ -480,7 +481,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                             variant="outline"
                             size="sm"
                             className="font-bold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                            onClick={() => setSelectedStudentId(learner.id)}
+                            onClick={() => setSelectedStudentId(learner.id || (learner as any).learnerId)}
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             Profile
@@ -879,10 +880,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           side="right"
           aria-describedby={undefined}
           className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
-          {retainedStudentId && (
+          {selectedStudentId ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
-                id={retainedStudentId}
+                id={selectedStudentId}
                 schoolYearId={section?.schoolYearId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={fetchMasterlistData}
@@ -890,6 +891,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                 onDropout={() => { }}
                 canEditProfile={false}
               />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
         </SheetContent>

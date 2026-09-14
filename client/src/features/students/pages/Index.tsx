@@ -1637,7 +1637,7 @@ export default function Students() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
+        <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
           {activeTab === "active" && (
             <motion.div
               key="active"

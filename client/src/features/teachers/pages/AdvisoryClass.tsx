@@ -359,14 +359,18 @@ export default function AdvisoryClass() {
           side="right"
           aria-describedby={undefined}
           className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
-          {retainedStudentId && (
+          {selectedStudentId ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
-                id={retainedStudentId}
+                id={selectedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={() => refetch()}
                 canEditProfile={false}
               />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
         </SheetContent>

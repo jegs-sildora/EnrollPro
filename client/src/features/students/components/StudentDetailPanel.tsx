@@ -1066,7 +1066,7 @@ export function StudentDetailPanel({
 
           <div className="mt-6 pt-5 border-t border-gray-200">
             {/* Bottom Row: Metadata Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Column 1: Grade Level & Section */}
               <div className="flex flex-col">
                 <p className="text-base font-extrabold mb-1 text-foreground">
@@ -1119,25 +1119,6 @@ export function StudentDetailPanel({
                 </div>
               </div>
 
-              {/* Column 3: Address */}
-              <div className="flex flex-col">
-                <p className="text-base font-extrabold mb-1.5 text-foreground">
-                  Address
-                </p>
-                <span className="text-base font-bold text-foreground leading-tight">
-                  {isEditing
-                    ? [
-                      profileForm.houseNoStreet,
-                      profileForm.sitioPurok,
-                      profileForm.barangay,
-                      profileForm.cityMunicipality,
-                      profileForm.province,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || "N/A"
-                    : student.address || "N/A"}
-                </span>
-              </div>
             </div>
           </div>
         </div>

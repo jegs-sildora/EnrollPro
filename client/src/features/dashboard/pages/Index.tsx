@@ -147,29 +147,26 @@ export default function DashboardIndex() {
   }
 
   return (
-    <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2 }}
-        className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 pb-6"
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 pb-6"
+    >
+      <DashboardPhaseBanner
+        phase={dashboardPhase}
+        isArchived={isArchived}
+        ayLabel={ayLabel}
       >
-        <DashboardPhaseBanner
-          phase={dashboardPhase}
-          isArchived={isArchived}
-          ayLabel={ayLabel}
-        >
-          <DashboardSummaryRibbon summary={stats.summaryRibbon} />
-        </DashboardPhaseBanner>
-        
-        <DashboardActionToolbar
-          phase={dashboardPhase}
-          isArchived={isArchived}
-        />
-        
-        <div className="min-w-0 flex-1">{content}</div>
-      </motion.div>
-    </AnimatePresence>
+        <DashboardSummaryRibbon summary={stats.summaryRibbon} />
+      </DashboardPhaseBanner>
+      
+      <DashboardActionToolbar
+        phase={dashboardPhase}
+        isArchived={isArchived}
+      />
+      
+      <div className="min-w-0 flex-1">{content}</div>
+    </motion.div>
   );
 }

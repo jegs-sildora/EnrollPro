@@ -1669,7 +1669,7 @@ export default function EosyUpdating() {
           </div>
 
           {activeTab ? (
-            <AnimatePresence mode="wait" onExitComplete={() => window.scrollTo(0, 0)}>
+            <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
               {!suppressEmptyState && (
                 <motion.div
                   key={activeTab}
