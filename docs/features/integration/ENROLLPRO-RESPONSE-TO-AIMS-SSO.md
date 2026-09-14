@@ -273,7 +273,7 @@ ENROLLPRO_USER:1
 
 ### Is AIMS to EnrollPro SSO supported now
 
-Yes on the EnrollPro side, subject to AIMS completing the reciprocal endpoints and deployment configuration. EnrollPro now provides `/api/auth/companion-sso/aims/reverse/start` and the source-bound reverse callback. It validates signed state, exchanges the AIMS-issued one-time code from the backend, maps a stable AIMS subject through `CompanionIdentityLink`, and creates an EnrollPro-owned session.
+Yes on the EnrollPro side, subject to AIMS completing the reciprocal endpoints and deployment configuration. EnrollPro provides `/api/auth/companion-sso/aims/reverse/start` and the source-bound reverse callback. It validates signed state, exchanges the AIMS-issued one-time code from the backend, resolves the returned numeric `identity.userId` directly to EnrollPro `User.id`, and creates an EnrollPro-owned session for an existing active account.
 
 AIMS must implement the authorization and exchange contract documented in [Integrated Systems Sidebar and SSO](INTEGRATED-SYSTEMS-SIDEBAR-SSO.md). Generic AIMS JWT login, cross-domain cookie sharing, and coordinated logout remain unsupported.
 
@@ -323,7 +323,7 @@ If a shared identity provider is not currently feasible, each reverse direction 
 
 EnrollPro must not accept a generic AIMS JWT or ATLAS JWT until issuer, audience, signature keys, key rotation, nonce handling, expiry, account status, role mapping, and revocation behavior are formally specified and implemented.
 
-Reverse identities use a source-owned, stable, namespaced subject such as `AIMS_USER:<id>` or `ATLAS_USER:<id>`. They must not copy `ENROLLPRO_USER:<id>`. EnrollPro stores the source and external subject in a unique account link and always uses current EnrollPro roles for the resulting session.
+Reverse identities must return the EnrollPro `identity.userId` captured during the original outbound handoff. EnrollPro does not use a source-owned subject, employee ID, LRN, names, asserted roles, or school-year context to choose the reverse-login account. It always uses the current roles stored on the resolved EnrollPro user.
 
 ## 6. Required AIMS Behavior
 

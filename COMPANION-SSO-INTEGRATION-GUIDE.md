@@ -250,6 +250,7 @@ Content-Type: application/json
   "success": true,
   "issuer": "AIMS",
   "identity": {
+    "userId": 1,
     "subject": "AIMS_USER:<stable-id>",
     "employeeId": "1234501",
     "lrn": null,
@@ -265,9 +266,10 @@ Content-Type: application/json
 
 Critical:
 - `issuer` must equal your system name exactly.
-- `identity.subject` is your stable, non-recycled identifier — **do not copy EnrollPro's subject**.
-- `activeSchoolYear.id` is **EnrollPro's** school-year id (mirrored), not your local PK. The id **and** label must match EnrollPro's current active year.
+- `identity.userId` is required. Return the numeric EnrollPro user ID that your system stored from the earlier EnrollPro-to-companion exchange. Do not return your local user primary key.
+- EnrollPro resolves reverse login only by `identity.userId`. Subject, employee ID, LRN, names, roles, and school year are optional context and are ignored for account selection.
 - EnrollPro uses its own roles for the resulting session; your roles cannot elevate it.
+- Signed state, exact callback binding, one-time code consumption, issuer validation, and the system-specific reverse Bearer secret remain mandatory.
 
 ---
 

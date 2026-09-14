@@ -2,7 +2,9 @@
 
 Date: 2026-09-14  
 Direction: AIMS -> EnrollPro  
-Status: Action required from AIMS
+Status: Superseded by user-ID-only reverse SSO
+
+> Historical diagnostic: EnrollPro no longer uses external-subject links or employee/LRN reconciliation for reverse SSO. AIMS must now return the numeric EnrollPro `identity.userId` it stored from the original EnrollPro-to-AIMS exchange. The older `COMPANION_REVERSE_SSO_LINK_REQUIRED` analysis below describes the superseded implementation and must not be used as the current contract.
 
 ## Reported Error
 

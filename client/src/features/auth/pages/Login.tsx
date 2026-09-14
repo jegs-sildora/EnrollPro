@@ -71,6 +71,9 @@ function reverseSsoErrorMessage(code: string, source: string | null): string {
   if (code === "COMPANION_REVERSE_SSO_LINK_REQUIRED") {
     return `Your ${system} identity is not linked to an EnrollPro account.`;
   }
+  if (code === "COMPANION_REVERSE_SSO_USER_NOT_FOUND") {
+    return `${system} did not provide a valid EnrollPro user ID for this account.`;
+  }
   if (code === "PASSWORD_CHANGE_REQUIRED") {
     return "Change the default password in EnrollPro before using integrated-system sign-in.";
   }
@@ -78,6 +81,9 @@ function reverseSsoErrorMessage(code: string, source: string | null): string {
   // New specific error mappings
   if (code === "COMPANION_REVERSE_SSO_UNAVAILABLE") {
     return `${system} could not complete the sign-in process. The ${system} server might be unreachable.`;
+  }
+  if (code === "COMPANION_REVERSE_SSO_CONFIGURATION_ERROR") {
+    return `${system} could not accept EnrollPro's secure sign-in request. Contact the system administrator.`;
   }
   if (code === "COMPANION_REVERSE_SSO_ACCESS_DENIED") {
     return `Your ${system} account is not authorized to sign in to EnrollPro.`;
@@ -257,24 +263,27 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reverseErrorShown = useRef(false);
-  const { user, sessionExpired, setAuth, setSessionExpired } =
+  const reverseSuccessHandled = useRef(false);
+  const { user, sessionExpired, setAuth, clearAuth, setSessionExpired } =
     useAuthStore();
+  const reverseSsoErrorCode = searchParams.get("ssoError");
+  const reverseSsoSucceeded = searchParams.get("ssoSuccess") === "1";
 
   const settings = useSettingsStore() as SchoolMetaSettings;
   const schoolName = settings.schoolName || "EnrollPro";
   const acronym = useMemo(() => getAcronym(settings.schoolName), [settings.schoolName]);
-  const isBosyEnrollmentOpen = settings.isBosyEnrollmentOpen;
 
   useEffect(() => {
-    const code = searchParams.get("ssoError");
+    const code = reverseSsoErrorCode;
     if (!code || reverseErrorShown.current) return;
     reverseErrorShown.current = true;
+    clearAuth();
     sileo.error({
       title: "Integrated Sign-In Failed",
       description: reverseSsoErrorMessage(code, searchParams.get("source")),
     });
     window.history.replaceState({}, "", "/personnel/login");
-  }, [searchParams]);
+  }, [clearAuth, reverseSsoErrorCode, searchParams]);
 
   const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -300,6 +309,31 @@ export default function Login() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const redirectTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!reverseSsoSucceeded || reverseSuccessHandled.current) return;
+    reverseSuccessHandled.current = true;
+    clearAuth();
+
+    void api.get<AuthResponsePayload>("/auth/me")
+      .then(({ data }) => {
+        setAuth(data.user);
+        const destination = data.user.roles?.includes("TEACHER")
+          ? "/teacher/advisory"
+          : data.user.roles?.includes("MRF")
+            ? "/my-activity"
+            : "/dashboard";
+        navigate(destination, { replace: true });
+      })
+      .catch(() => {
+        clearAuth();
+        window.history.replaceState({}, "", "/personnel/login");
+        sileo.error({
+          title: "Integrated Sign-In Failed",
+          description: "EnrollPro could not verify the new integrated-system session. Start again.",
+        });
+      });
+  }, [clearAuth, navigate, reverseSsoSucceeded, setAuth]);
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -382,7 +416,7 @@ export default function Login() {
         navigate(destination, { replace: true });
       }, 100);
     },
-    [navigate, setAuth, rememberMe, isBosyEnrollmentOpen],
+    [navigate, setAuth, rememberMe],
   );
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -411,7 +445,12 @@ export default function Login() {
     }
   };
 
-  if (user && !user.mustChangePassword) {
+  if (
+    user
+    && !user.mustChangePassword
+    && !reverseSsoErrorCode
+    && !reverseSsoSucceeded
+  ) {
     const homeRoute = user.roles?.includes("TEACHER")
       ? "/teacher/advisory"
       : user.roles?.includes("MRF")

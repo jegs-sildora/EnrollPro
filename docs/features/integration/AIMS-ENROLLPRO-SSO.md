@@ -57,7 +57,7 @@ The reverse direction mirrors the flow above:
 4. AIMS issues a 60-second single-use code, stores only its SHA-256 hash, and binds it to the AIMS user, client, and callback.
 5. AIMS redirects to the EnrollPro callback with the code and unchanged state.
 6. EnrollPro calls `AIMS_SSO_REVERSE_EXCHANGE_URL` once with `Authorization: Bearer <AIMS_SSO_REVERSE_CLIENT_SECRET>`.
-7. AIMS atomically consumes the code and returns a stable AIMS subject, canonical employee ID or LRN, matching names, roles, and mirrored EnrollPro school year.
-8. EnrollPro reconciles the assertion to exactly one local account, creates its own session, and routes by EnrollPro roles.
+7. AIMS atomically consumes the code and returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
+8. EnrollPro finds `User.id = identity.userId`, creates its own session for an existing active account, and routes by EnrollPro roles.
 
-For staff, `identity.employeeId` is required for first-time reconciliation. `identity.subject` must remain unchanged across logins and school years. See [AIMS to EnrollPro SSO Identity-Link Diagnostic](./AIMS-TO-ENROLLPRO-SSO-LINK-DIAGNOSTIC-2026-09-14.md).
+The reverse response must include `success`, `issuer: "AIMS"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the AIMS reverse Bearer secret remain mandatory.

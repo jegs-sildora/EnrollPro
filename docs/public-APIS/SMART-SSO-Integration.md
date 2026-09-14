@@ -9,7 +9,7 @@ SMART must configure the following environment variable to match EnrollPro's set
 
 ## 2. Implement the Callback Endpoint
 EnrollPro will redirect the user to your callback URL with an authorization code:
-`GET https://laptop-pfvh73qk.buru-degree.ts.net/auth/sso/callback?code=<AUTHORIZATION_CODE>`
+`GET https://laptop-pfvh73qk.buru-degree.ts.net/api/auth/enrollpro/callback?code=<AUTHORIZATION_CODE>`
 
 Your system must expose this endpoint to receive the code.
 

@@ -4,11 +4,11 @@ import type { CompanionSsoExchangeInput } from "@enrollpro/shared";
 import { companionSsoReverseCallbackSchema } from "@enrollpro/shared";
 
 import { AppError } from "../../lib/AppError.js";
-import { issueAuthSession } from "./auth.controller.js";
+import { clearAuthSession, issueAuthSession } from "./auth.controller.js";
 import {
+  REVERSE_COMPLETION_CACHE_TTL_MS,
   completeCompanionReverseSso,
   createCompanionReverseStart,
-  reverseSsoLandingPath,
   reverseStateCookieName,
 } from "./companion-sso-reverse.service.js";
 
@@ -85,6 +85,9 @@ export async function startCompanionReverseSso(
   req: Request,
   res: Response,
 ): Promise<void> {
+  // A reverse handoff is a fresh authentication attempt. Do not let a prior
+  // EnrollPro session survive an abandoned or rejected companion login.
+  clearAuthSession(res);
   let system: ReturnType<typeof parseCompanionSystem> | null = null;
   try {
     system = parseCompanionSystem(readSystemParameter(req.params.system));
@@ -151,14 +154,24 @@ export async function completeCompanionReverseSsoCallback(
       req,
     });
 
-    res.clearCookie(cookieName, reverseCookieOptions());
+    // Keep the state binding briefly so a duplicate browser callback can reuse
+    // the single-flight result without exchanging the one-time code again.
+    res.cookie(
+      cookieName,
+      parsed.data.state,
+      reverseCookieOptions(REVERSE_COMPLETION_CACHE_TTL_MS),
+    );
     issueAuthSession(res, user);
     console.log(
       "[ReverseSSO] Callback succeeded for %s — user %s signed in, landing redirect issued.",
       system,
       user.id,
     );
-    res.redirect(303, reverseSsoLandingPath(user.roles));
+    const query = new URLSearchParams({
+      ssoSuccess: "1",
+      source: system,
+    });
+    res.redirect(303, `/personnel/login?${query.toString()}`);
   } catch (error: unknown) {
     console.error(
       "[ReverseSSO] Callback redirect error for %s: %s",

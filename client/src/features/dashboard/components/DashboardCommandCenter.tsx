@@ -30,6 +30,7 @@ import {
 import { Progress } from "@/shared/ui/progress"
 import { Badge } from "@/shared/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils"
 import { useAuthStore } from "@/store/auth.slice"
 import { useSettingsStore } from "@/store/settings.slice"
@@ -630,22 +631,50 @@ export function Sf1CompliancePanel({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         <div className="flex flex-col space-y-2">
-          {items.map(([label, value]) => (
-            <div
-              key={label}
-              className="flex h-[76px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base"
-            >
-              <span className="font-bold text-foreground">{label}</span>
-              <span
+          {items.map(([label, value]) => {
+            const hasLearners = value.count > 0;
+            const ItemContent = (
+              <div
                 className={cn(
-                  "font-black text-2xl",
-                  value > 0 ? "text-destructive" : "text-primary",
+                  "flex h-[76px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base",
+                  hasLearners && "cursor-pointer hover:bg-slate-50 transition-colors"
                 )}
               >
-                {value}
-              </span>
-            </div>
-          ))}
+                <span className="font-bold text-foreground">{label}</span>
+                <span
+                  className={cn(
+                    "font-black text-2xl",
+                    hasLearners ? "text-destructive" : "text-primary",
+                  )}
+                >
+                  {value.count}
+                </span>
+              </div>
+            );
+
+            if (!hasLearners) {
+              return <div key={label}>{ItemContent}</div>;
+            }
+
+            return (
+              <Popover key={label}>
+                <PopoverTrigger asChild>
+                  {ItemContent}
+                </PopoverTrigger>
+                <PopoverContent className="w-80 max-h-[300px] overflow-y-auto p-4" align="start">
+                  <h4 className="font-bold mb-3">{label}</h4>
+                  <ul className="space-y-2">
+                    {value.learners.map((learner, idx) => (
+                      <li key={idx} className="flex flex-col text-sm border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <span className="font-bold text-foreground">{learner.name}</span>
+                        <span className="text-muted-foreground font-medium text-xs">LRN: {learner.lrn}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </PopoverContent>
+              </Popover>
+            );
+          })}
         </div>
         <div className="mt-auto pt-4">
           <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground" onClick={onReview}>

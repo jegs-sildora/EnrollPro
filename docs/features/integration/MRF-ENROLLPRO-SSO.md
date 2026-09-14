@@ -54,7 +54,9 @@ Signing out of MRF ends only the MRF session. Coordinated logout is not part of 
 3. MRF validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
 4. MRF stores only the code hash, bound user, client, callback, expiry, and consumption state.
 5. EnrollPro exchanges the code once at `MRF_SSO_REVERSE_EXCHANGE_URL` using `MRF_SSO_REVERSE_CLIENT_SECRET`.
-6. MRF returns a stable MRF subject, canonical employee ID, matching names, roles, and mirrored EnrollPro school year.
-7. EnrollPro reconciles exactly one local account and creates an EnrollPro-owned session. `SYSTEM_ADMIN` lands on `/dashboard`; an `MRF` user lands on `/my-activity`.
+6. MRF returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
+7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account. EnrollPro routes using its locally stored roles.
 
 MRF must remain disabled until all outbound and reverse URLs and both distinct SSO secrets are configured.
+
+The reverse response must include `success`, `issuer: "MRF"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the MRF reverse Bearer secret remain mandatory.
