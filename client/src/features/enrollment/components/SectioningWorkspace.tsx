@@ -192,7 +192,7 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
         </thead>
         <tbody className="divide-y">
           {data.learners.map((l) => (
-            <tr key={l.id} className="hover:bg-muted/50 transition-colors">
+            <tr key={l.id} className="even:bg-muted/50 hover:bg-muted/50 transition-colors">
               <td className="p-3">
                 <div className="flex flex-col">
                   <span className="font-extrabold text-foreground uppercase">
@@ -1744,7 +1744,7 @@ export function SectioningWorkspace() {
                       <div
                         key={group.title}
                         className={cn("space-y-3", groupIdx > 0 && "mt-6")}>
-                        <h3 className="text-center font-bold text-foreground uppercase tracking-wider">
+                        <h3 className="text-center font-extrabold text-foreground uppercase">
                           {group.title}
                         </h3>
                         {group.rosters.map((roster) => {
@@ -1893,7 +1893,7 @@ export function SectioningWorkspace() {
                                         </tr>
                                       ) : (
                                         roster.learners.map((learner) => (
-                                          <tr key={learner.applicationId}>
+                                          <tr key={learner.applicationId} className="even:bg-muted/50 hover:bg-muted/50 transition-colors">
                                             <td className="p-3">
                                               <div className="flex flex-col">
                                                 <span className="font-bold uppercase text-foreground">
@@ -2089,14 +2089,14 @@ export function SectioningWorkspace() {
         onOpenChange={(open) => !open && setNormalMoveAction(null)}
         title="Move Assigned Learner"
         description={
-          <div className="space-y-4 text-left">
-            <p className="text-foreground">
+          <div className="space-y-4 text-left w-full mt-4">
+            <p className="text-foreground text-center">
               Move the learner to another section in the current grade level.
             </p>
             <Select
               value={moveDestinationSectionId}
               onValueChange={setMoveDestinationSectionId}>
-              <SelectTrigger className="h-11 font-bold">
+              <SelectTrigger className="h-11 font-bold w-full">
                 <SelectValue placeholder="Select destination section" />
               </SelectTrigger>
               <SelectContent>
@@ -2312,7 +2312,7 @@ export function SectioningWorkspace() {
                     <tbody>
                       {draftPlacement?.rosters.flatMap((roster) =>
                         roster.learners.map((learner) => (
-                          <tr key={learner.applicationId} className="border-b last:border-0 bg-white hover:bg-gray-50/80 transition-colors">
+                          <tr key={learner.applicationId} className="border-b last:border-0 bg-background even:bg-muted/50 hover:bg-muted/50 transition-colors">
                             <td className="p-3 px-4">
                               <p className="font-extrabold uppercase text-foreground">
                                 {learner.lastName}, {learner.firstName}

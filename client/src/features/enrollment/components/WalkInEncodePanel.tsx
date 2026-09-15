@@ -600,7 +600,7 @@ export function WalkInEncodePanel() {
                                     onClick={(e) => { e.preventDefault(); form.setValue("studentPhoto", undefined, { shouldDirty: true }); }}
                                     type="button"
                                     className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
-                                    <X className="w-3 h-3" />
+                                    <X strokeWidth={3} className="w-3 h-3" />
                                   </button>
                                 )}
                               </UserPhoto>

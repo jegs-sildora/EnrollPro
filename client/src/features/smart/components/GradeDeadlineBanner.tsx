@@ -254,7 +254,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
               className="w-12 h-12 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
               title="Dismiss reminder"
             >
-              <X className="w-4 h-4" />
+              <X strokeWidth={3} className="w-4 h-4" />
             </button>
           </div>
         </div>

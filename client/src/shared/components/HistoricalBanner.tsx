@@ -151,7 +151,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
             className="h-7 px-3 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
             onClick={handleRelock}
           >
-            <X className="h-3 w-3 mr-1" />
+            <X strokeWidth={3} className="h-3 w-3 mr-1" />
             Relock Historical Records
           </Button>
         )}

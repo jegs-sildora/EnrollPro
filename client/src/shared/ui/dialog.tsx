@@ -46,7 +46,7 @@ const DialogContent = React.forwardRef<
         "absolute right-4 top-4 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none",
         motionClassNames.closeButton,
       )}>
-        <X className="h-5 w-5" />
+        <X strokeWidth={3} className="h-5 w-5" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

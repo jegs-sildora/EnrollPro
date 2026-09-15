@@ -895,13 +895,25 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               name="suffix"
                               control={control}
                               render={({ field }) => (
-                                <Input autoComplete="off" disabled={!isEditing}
-                                  {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  placeholder="JR., III"
-                                  className="font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
-                                />
+                                <Select
+                                  disabled={!isEditing}
+                                  value={field.value || "NONE"}
+                                  onValueChange={(val) => field.onChange(val === "NONE" ? "" : val)}
+                                >
+                                  <SelectTrigger className={cn("font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase", !field.value && "text-muted-foreground")}>
+                                    <SelectValue placeholder="Select Suffix" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="NONE" className="uppercase font-bold">None</SelectItem>
+                                    <SelectItem value="JR." className="uppercase font-bold">JR.</SelectItem>
+                                    <SelectItem value="SR." className="uppercase font-bold">SR.</SelectItem>
+                                    <SelectItem value="I" className="uppercase font-bold">I</SelectItem>
+                                    <SelectItem value="II" className="uppercase font-bold">II</SelectItem>
+                                    <SelectItem value="III" className="uppercase font-bold">III</SelectItem>
+                                    <SelectItem value="IV" className="uppercase font-bold">IV</SelectItem>
+                                    <SelectItem value="V" className="uppercase font-bold">V</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               )}
                             />
                           </div>

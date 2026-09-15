@@ -97,7 +97,7 @@ export function MultiSearchableCombobox({
               selectedItems.map((item) => (
                 <Badge
                   key={item.value}
-                  variant="secondary"
+                  variant="default"
                   className="font-bold text-base uppercase px-2 py-0.5"
                 >
                   {item.label}
@@ -112,7 +112,9 @@ export function MultiSearchableCombobox({
                       }
                     }}
                   >
-                    <X className="h-3 w-3" />
+                    <X 
+                    strokeWidth={3}
+                    className="ml-2 h-4 w-4 text-primary-foreground" />
                     <span className="sr-only">Remove {item.label}</span>
                   </div>
                 </Badge>

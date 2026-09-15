@@ -182,7 +182,7 @@ export default function TeacherLayout() {
             className="lg:hidden ml-auto p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="w-5 h-5" />
+            <X strokeWidth={3} className="w-5 h-5" />
           </button>
         </div>
 

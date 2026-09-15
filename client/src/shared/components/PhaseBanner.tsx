@@ -54,7 +54,7 @@ export function PhaseBanner() {
               className="absolute top-2 right-2 h-6 w-6 text-amber-600 hover:text-amber-800 hover:bg-amber-100/50"
               onClick={() => setIsDismissed(true)}
             >
-              <X className="h-4 w-4 mr-6" />
+              <X strokeWidth={3} className="h-4 w-4 mr-6" />
               <span className="sr-only">Dismiss</span>
             </Button>
           </Alert>

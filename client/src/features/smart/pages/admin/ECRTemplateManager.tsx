@@ -823,7 +823,7 @@ export default function ECRTemplateManager() {
                                 onClick={() => removeBulkUploadItem(index)}
                                 className="flex-shrink-0 p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600"
                               >
-                                <X className="w-4 h-4" />
+                                <X strokeWidth={3} className="w-4 h-4" />
                               </button>
                             )}
                           </div>

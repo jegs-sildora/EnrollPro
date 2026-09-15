@@ -71,7 +71,7 @@ const SheetContent = React.forwardRef<
 						'absolute right-6 top-3 rounded-full p-2 text-primary-foreground ring-offset-[hsl(var(--background))] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))]',
 						motionClassNames.closeButton,
 					)}>
-						<X className='h-5 w-5' />
+						<X strokeWidth={3} className='h-5 w-5' />
 						<span className='sr-only'>Close</span>
 					</DialogPrimitive.Close>
 				) : null}

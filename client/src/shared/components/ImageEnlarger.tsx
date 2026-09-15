@@ -26,7 +26,7 @@ export function ImageEnlarger({
 					onClick={onClose}
 					className='absolute right-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white transition-opacity hover:bg-black/70 focus:outline-none'
 				>
-					<X className='h-6 w-6' />
+					<X strokeWidth={3} className='h-6 w-6' />
 					<span className='sr-only'>Close</span>
 				</button>
 

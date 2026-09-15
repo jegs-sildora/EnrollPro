@@ -55,7 +55,7 @@ export function BulkConfirmBar({
             className="h-7 w-7 text-foreground hover:text-foreground hover:bg-muted/50"
             disabled={loading}
             onClick={onClear}>
-            <X className="h-4 w-4" />
+            <X strokeWidth={3} className="h-4 w-4" />
           </Button>
         </motion.div>
       )}
