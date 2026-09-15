@@ -195,20 +195,20 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
             <tr key={l.id} className="hover:bg-muted/50 transition-colors">
               <td className="p-3">
                 <div className="flex flex-col">
-                  <span className="font-bold text-foreground uppercase">
+                  <span className="font-extrabold text-foreground uppercase">
                     {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                   </span>
-                  <span className="text-sm font-bold uppercase mt-0.5">
-                    {l.lrn || "NO LRN"}
+                  <span className="text-sm mt-0.5">
+                    LRN:{l.lrn || "NO LRN"}
                   </span>
                 </div>
               </td>
               <td className="p-1 text-center">
                 <Badge className={cn(
-                  "text-sm uppercase font-bold",
+                  "px-2",
                   l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                 )}>
-                  {l.sex}
+                  {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
                 </Badge>
               </td>
               <td className="p-3 text-center font-bold text-foreground">
@@ -2084,55 +2084,40 @@ export function SectioningWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <ConfirmationModal
         open={!!normalMoveAction}
-        onOpenChange={(open) => !open && setNormalMoveAction(null)}>
-        <DialogContent className="w-full max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Move Assigned Learner</DialogTitle>
-            <DialogDescription>
+        onOpenChange={(open) => !open && setNormalMoveAction(null)}
+        title="Move Assigned Learner"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-foreground">
               Move the learner to another section in the current grade level.
-            </DialogDescription>
-          </DialogHeader>
-          <Select
-            value={moveDestinationSectionId}
-            onValueChange={setMoveDestinationSectionId}>
-            <SelectTrigger className="h-11 font-bold">
-              <SelectValue placeholder="Select destination section" />
-            </SelectTrigger>
-            <SelectContent>
-              {normalMoveDestinationSections.map((section) => (
-                <SelectItem
-                  key={section.id}
-                  value={String(section.id)}>
-                  {section.name} ({section.currentCount}/
-                  {section.maxCapacity})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setNormalMoveAction(null)}
-              disabled={processing}>
-              Cancel
-            </Button>
-            <Button
-              onClick={executeNormalMove}
-              disabled={!moveDestinationSectionId || processing}>
-              {processing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Moving...
-                </>
-              ) : (
-                "Move to Section"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </p>
+            <Select
+              value={moveDestinationSectionId}
+              onValueChange={setMoveDestinationSectionId}>
+              <SelectTrigger className="h-11 font-bold">
+                <SelectValue placeholder="Select destination section" />
+              </SelectTrigger>
+              <SelectContent>
+                {normalMoveDestinationSections.map((section) => (
+                  <SelectItem
+                    key={section.id}
+                    value={String(section.id)}>
+                    {section.name} ({section.currentCount}/
+                    {section.maxCapacity})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        confirmText="Move to Section"
+        onConfirm={executeNormalMove}
+        loading={processing}
+        confirmDisabled={!moveDestinationSectionId}
+        variant="primary"
+      />
 
       <ConfirmationModal
         open={!!normalRemoveAction}

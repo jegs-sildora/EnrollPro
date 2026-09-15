@@ -826,7 +826,7 @@ export function VerificationWorkspace() {
                           <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}`}>
                             {app.learner.lastName}, {app.learner.firstName}
                           </h4>
-                          <span className="text-sm font-bold uppercase text-foreground mt-0.5 truncate text-foreground">
+                          <span className="text-sm font-semibold uppercase text-foreground mt-0.5 truncate text-foreground">
                             LRN: {app.learner.lrn || "NO LRN"}
                           </span>
                         </div>
@@ -858,7 +858,7 @@ export function VerificationWorkspace() {
             {selectedApp ? (
               <>
                 {/* STICKY HEADER */}
-                <div className="shrink-0 px-6 md:px-12 pt-6 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
+                <div className="shrink-0 px-6 md:px-12 pt-4 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
                   <div className="flex items-center gap-3">
                     <UserPhoto
                       photo={selectedApp.learner.studentPhoto}
