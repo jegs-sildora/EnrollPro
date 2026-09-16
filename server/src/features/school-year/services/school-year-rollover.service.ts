@@ -961,8 +961,16 @@ export async function executeSchoolYearRollover({
         if (isScp && record.eosyStatus !== "PROMOTED") {
           effectiveProgram = "REGULAR";
         }
+        const programAcronym = effectiveProgram === "REGULAR" ? "BEC" : 
+                               effectiveProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
+                               effectiveProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
+                               effectiveProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
+        const paddedId = String(record.learnerId).padStart(7, '0');
+        const trackingNumber = `${programAcronym}${targetStartYear}${paddedId}`;
+
         const application = await tx.enrollmentApplication.create({
           data: {
+            trackingNumber,
             learnerId: record.learnerId,
             schoolYearId: targetYear.id,
             gradeLevelId: targetGradeLevelId,
@@ -1008,13 +1016,7 @@ export async function executeSchoolYearRollover({
           },
           select: { id: true },
         });
-        await tx.enrollmentApplication.update({
-          where: { id: application.id },
-          data: {
-            trackingNumber:
-              `REG-${targetStartYear}-${String(application.id).padStart(5, "0")}`,
-          },
-        });
+
         if (destination.kind === "REMEDIAL_HOLD") {
           remedialHolds += 1;
         } else {

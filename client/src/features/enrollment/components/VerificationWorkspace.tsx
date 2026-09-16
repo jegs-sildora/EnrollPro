@@ -253,24 +253,28 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
+  const [trackingNumberFilter, setTrackingNumberFilter] = useState("");
 
   const [localIntakeCategoryFilter, setLocalIntakeCategoryFilter] = useState<string>("ALL");
   const [localProgramFilter, setLocalProgramFilter] = useState<string>("ALL");
+  const [localTrackingNumberFilter, setLocalTrackingNumberFilter] = useState("");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
   useEffect(() => {
     if (isFilterPopoverOpen) {
       setLocalIntakeCategoryFilter(intakeCategoryFilter);
       setLocalProgramFilter(programFilter);
+      setLocalTrackingNumberFilter(trackingNumberFilter);
     }
-  }, [isFilterPopoverOpen, intakeCategoryFilter, programFilter]);
+  }, [isFilterPopoverOpen, intakeCategoryFilter, programFilter, trackingNumberFilter]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (intakeCategoryFilter !== "ALL") count++;
     if (programFilter !== "ALL") count++;
+    if (trackingNumberFilter.trim() !== "") count++;
     return count;
-  }, [intakeCategoryFilter, programFilter]);
+  }, [intakeCategoryFilter, programFilter, trackingNumberFilter]);
   type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
   const activeTab = useSettingsStore((s) => s.uiPreferences.verificationTab) as VerificationTab;
   const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
@@ -311,6 +315,11 @@ export function VerificationWorkspace() {
 
     if (programFilter !== "ALL") {
       // Future enhancement: when backend includes program preference in pending verification response
+    }
+
+    if (trackingNumberFilter.trim() !== "") {
+      const q = trackingNumberFilter.trim().toLowerCase();
+      result = result.filter((app) => app.trackingNumber?.toLowerCase().includes(q));
     }
 
     if (activeTab === "PENDING") {
@@ -674,6 +683,16 @@ export function VerificationWorkspace() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground uppercase">Application Tracking Number</Label>
+                    <Input
+                      placeholder="e.g. BEC20270000001"
+                      value={localTrackingNumberFilter}
+                      onChange={(e) => setLocalTrackingNumberFilter(e.target.value)}
+                      className="h-10 font-bold uppercase"
+                    />
+                  </div>
                 </div>
 
                 <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
@@ -682,11 +701,13 @@ export function VerificationWorkspace() {
                     onClick={() => {
                       setLocalIntakeCategoryFilter("ALL");
                       setLocalProgramFilter("ALL");
+                      setLocalTrackingNumberFilter("");
                       setIntakeCategoryFilter("ALL");
                       setProgramFilter("ALL");
+                      setTrackingNumberFilter("");
                       setIsFilterPopoverOpen(false);
                     }}
-                    className="font-bold text-gray-600 hover:text-gray-900"
+                    className="font-bold uppercase"
                   >
                     Clear All
                   </Button>
@@ -694,7 +715,39 @@ export function VerificationWorkspace() {
                     onClick={() => {
                       setIntakeCategoryFilter(localIntakeCategoryFilter);
                       setProgramFilter(localProgramFilter);
+                      setTrackingNumberFilter(localTrackingNumberFilter);
                       setIsFilterPopoverOpen(false);
+
+                      if (localTrackingNumberFilter.trim() !== "") {
+                        const q = localTrackingNumberFilter.trim().toLowerCase();
+                        const matchedApps = pendingVerifications.filter(app => app.trackingNumber?.toLowerCase().includes(q));
+                        let targetApp = null;
+
+                        if (matchedApps.length === 1) {
+                          targetApp = matchedApps[0];
+                        } else if (matchedApps.length > 1) {
+                          targetApp = matchedApps.find(app => app.trackingNumber?.toLowerCase() === q) || matchedApps[0];
+                        }
+
+                        if (targetApp) {
+                          let targetTab: VerificationTab | null = null;
+                          if (targetApp.status === "PENDING_VERIFICATION") {
+                            targetTab = "PENDING";
+                          } else if (targetApp.status === "WITHDRAWN") {
+                            targetTab = "CANCELLED";
+                          } else if (targetApp.status === "FOR_REVISION") {
+                            targetTab = "INCOMPLETE";
+                          } else if (targetApp.status === "READY_FOR_SECTIONING" || targetApp.status === "OFFICIALLY_ENROLLED") {
+                            const hasMissingDocs = targetApp.isMissingSf9 || !targetApp.learner?.hasPsaBirthCertificate;
+                            targetTab = hasMissingDocs ? "INCOMPLETE" : "READY";
+                          }
+
+                          if (targetTab && activeTab !== targetTab) {
+                            setActiveTab(targetTab);
+                          }
+                          setSelectedAppId(targetApp.id);
+                        }
+                      }
                     }}
                     className="font-bold bg-primary hover:bg-primary/90 text-white"
                   >

@@ -269,7 +269,7 @@ export default function Step4PreviousSchool() {
               />
             </div>
           )}
-          <div className="space-y-2">
+          <div className={cn("space-y-2", learnerType !== "TRANSFEREE" && "md:col-span-2")}>
             <Label
               htmlFor="lastSchoolAddress"
               className="text-base leading-tight font-bold text-foreground">

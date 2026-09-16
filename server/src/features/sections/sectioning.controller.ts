@@ -178,7 +178,8 @@ export async function getSectioningPool(req: Request, res: Response) {
       isBalikAral: app.learner.isBalikAral,
       applicantType: app.applicantType,
       assignedProgram: app.assignedProgram,
-      programType: app.assignedProgram ?? app.applicantType,
+      programType: app.assignedProgram || app.applicantType,
+      academicStatus: app.academicStatus,
     }));
 
     return res.json(pool);

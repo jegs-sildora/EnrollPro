@@ -423,16 +423,16 @@ export function IntakePipelinePanel({
                         {formatGradeLevel(row.gradeLevelName)}
                       </span>
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
                       {row.continuingLearners}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
                       {row.newEntrants}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
                       {row.transferee}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
                       {row.returningLearners}
                     </td>
                     <td className={cn("px-1 py-3 text-center font-bold bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground")}>
@@ -533,7 +533,10 @@ export function SectionSaturationPanel({
                           <TooltipTrigger>
                             <Badge
                               variant="outline"
-                              className="text-sm font-bold uppercase bg-background text-primary border-primary/30"
+                              className={cn(
+                                "text-sm font-bold uppercase",
+                                getGradeLevelBadgeStyles(section.gradeLevelName)
+                              )}
                             >
                               {SCP_SHORT_LABELS[section.programType] ?? section.programType}
                             </Badge>

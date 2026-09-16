@@ -21,6 +21,25 @@ async function seedGrade7() {
     process.exit(1);
   }
 
+  console.log(`🧹 Cleaning up existing test learners (LRN starting with ${BASE_YEAR}) for SY ${TARGET_SY_LABEL}...`);
+  const autoSectioningUsers = await prisma.user.findMany({
+    where: { accountName: { startsWith: BASE_YEAR.toString() } },
+    select: { id: true, learnerProfile: { select: { id: true, enrollmentApplications: { select: { id: true } }, enrollmentRecords: { select: { id: true } } } } }
+  });
+
+  if (autoSectioningUsers.length > 0) {
+    const userIds = autoSectioningUsers.map(u => u.id);
+    const learnerIds = autoSectioningUsers.map(u => u.learnerProfile?.id).filter(Boolean) as number[];
+    const applicationIds = autoSectioningUsers.flatMap(u => u.learnerProfile?.enrollmentApplications.map(a => a.id) || []);
+    const recordIds = autoSectioningUsers.flatMap(u => u.learnerProfile?.enrollmentRecords.map(r => r.id) || []);
+
+    if (applicationIds.length > 0) await prisma.enrollmentApplication.deleteMany({ where: { id: { in: applicationIds } } });
+    if (recordIds.length > 0) await prisma.enrollmentRecord.deleteMany({ where: { id: { in: recordIds } } });
+    if (learnerIds.length > 0) await prisma.learner.deleteMany({ where: { id: { in: learnerIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    console.log(`🧹 Wiped ${autoSectioningUsers.length} previous test learners.`);
+  }
+
   const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
   if (!grade7) {
     console.error("❌ Grade 7 not found.");
@@ -164,7 +183,9 @@ async function seedGrade7() {
           learnerType: randomLearnerType,
           admissionChannel: randomChannel,
           contactNumber: primaryContact.contactNumber,
-          guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
+          guardianFirstName: primaryContact.name.firstName,
+          guardianMiddleName: primaryContact.name.middleName,
+          guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
           addresses: {

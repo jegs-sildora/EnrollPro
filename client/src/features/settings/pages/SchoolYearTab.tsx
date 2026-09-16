@@ -1076,7 +1076,7 @@ export default function SchoolYearTab() {
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
-                            Official Enrollment Period (BOSY)
+                            Official Enrollment Period
                           </h4>
                           <TooltipProvider>
                             <Tooltip>

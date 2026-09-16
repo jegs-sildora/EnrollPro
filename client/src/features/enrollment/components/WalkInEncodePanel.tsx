@@ -876,10 +876,10 @@ export function WalkInEncodePanel() {
                           barangay: form.watch("addressBarangay") || "",
                         }}
                         onChange={(f, val) => {
-                          if (f === "cityMunicipality") form.setValue("addressCity", val, { shouldValidate: true, shouldDirty: true });
-                          else if (f === "region") form.setValue("addressRegion", val, { shouldValidate: true, shouldDirty: true });
-                          else if (f === "province") form.setValue("addressProvince", val, { shouldValidate: true, shouldDirty: true });
-                          else if (f === "barangay") form.setValue("addressBarangay", val, { shouldValidate: true, shouldDirty: true });
+                          if (f === "cityMunicipality") form.setValue("addressCity", val, { shouldValidate: val !== "", shouldDirty: true });
+                          else if (f === "region") form.setValue("addressRegion", val, { shouldValidate: val !== "", shouldDirty: true });
+                          else if (f === "province") form.setValue("addressProvince", val, { shouldValidate: val !== "", shouldDirty: true });
+                          else if (f === "barangay") form.setValue("addressBarangay", val, { shouldValidate: val !== "", shouldDirty: true });
                         }}
                         errors={{
                           region: form.formState.errors.addressRegion?.message as string,

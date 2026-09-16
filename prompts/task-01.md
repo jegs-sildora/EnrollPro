@@ -1,44 +1,43 @@
-# Prompt for UI/UX Implementation: Walk-In Modal Extended Demographics & Address
+# Prompt for Backend Fix: Automated Sectioning Engine - Cohort Ranking & Balancing
 
 ## Role & Context
-Act as a Frontend Developer. We are updating the "Walk-In Learner Enrollment" modal in EnrollPro. 
+Act as a Backend Developer. We are fixing a logical failure in the `Automated Sectioning Engine` for EnrollPro. 
 
-We need to restructure the top personal details section to accommodate a Learner's Photo upload, integrate the "Mother Tongue" field, and add a comprehensive, structured "Current Home Address" section mirroring the official DepEd SF1 requirements.
+The engine currently fails to properly identify top learners for the `TOP BEC` sections and is dumping all learners into the regular sections. We need to implement a true cohort-ranking algorithm that fills the Top BEC section(s) with the highest-ranking learners, and then rigorously balances the remaining learners across regular sections based on both Academic Performance (Gen Ave) and Sex.
 
-## UI Component Requirements
+## Diagnostic Checklist
+Before rewriting the logic, check for this common error:
+1.  **Rogue Capacity Constraints:** Ensure there are no conditional checks (e.g., `if total_learners >= 40`) blocking the execution of the Top BEC logic. The engine must attempt to isolate the top learners even if the testing database only has a handful of enrolled students.
 
-Please refactor the modal layout using the following specifications:
+## Bulletproof Algorithmic Implementation
 
-### 1. Section 1: Personal Details & Photo (Media Object Layout)
-Wrap the identity fields in a grid container with a fixed left column (for the photo) and a fluid right column (e.g., `grid grid-cols-[120px_1fr] gap-6`).
+Please rewrite the sectioning controller using the following strict sequential logic flow. Do not use code snippets; implement this architectural logic in your backend language:
 
-*   **Left Column (Learner's Photo):**
-    *   Create a 2x2 aspect ratio upload box (`border-dashed border-2 border-gray-300`).
-    *   Include a camera icon and the text `UPLOAD PHOTO`. Add the label `Learner's Photo` above it.
-*   **Right Column (Dense Data Grid):**
-    *   Use a 2-column internal grid for the text inputs.
-    *   **Row 1:** `Last Name *` (Span 1) | `First Name *` (Span 1)
-    *   **Row 2:** `Middle Name` (Span 1) | `Suffix (Extension)` (Span 1 - Dropdown)
-    *   **Row 3:** `Birthdate *` (Span 1 - Datepicker) | `Sex *` (Span 1 - Radio/Toggle)
-    *   **Row 4 (New):** `Mother Tongue *` (Span 2 - Full width of this column). Use a searchable dropdown (Combobox) containing standard Philippine languages/dialects (e.g., Hiligaynon, Tagalog, Cebuano).
+### Step 1: Database Setup & Query Split
+1. Fetch the system configuration. If the `Enable Top BEC Sections` flag is FALSE, skip immediately to Step 3 (Regular Section Draft).
+2. Fetch all sections for the targeted Grade Level.
+3. Split these sections into two distinct lists: 
+   * `Top Sections` (filtered by the top section database flag).
+   * `Regular Sections` (the remaining sections).
+4. Calculate the `Total Top Capacity` (e.g., if there is 1 Top Section with a capacity of 40, the total capacity is 40).
 
-### 2. Section 2: Current Home Address (Cascading Grid)
-Below the Personal Details and Curriculum sections, add a new section header: **`CURRENT HOME ADDRESS`**. 
-Use a strict 2-column grid (`grid grid-cols-2 gap-4`) to keep the form compact and prevent excessive vertical scrolling inside the modal.
+### Step 2: Cohort Ranking & Top BEC Fill
+Instead of a hardcoded grade threshold, we evaluate the learners relative to their cohort.
+1. Fetch the pool of all `Ready for Sectioning` learners.
+2. Sort the entire pool in strictly **descending** order based on their `Final Gen Ave`.
+3. Filter out any learners with a `Conditionally Promoted` status (back subjects are generally disqualified from Pilot sections, regardless of Gen Ave).
+4. **The Slice:** From this sorted, filtered list, extract the top $N$ learners, where $N$ is equal to the `Total Top Capacity` calculated in Step 1. 
+5. Distribute these top learners into the `Top Sections`.
+6. **Crucial:** Remove these assigned top learners from the master pool so they are not drafted again in Step 3.
 
-*   **Row 1 (Manual Entry):**
-    *   Input 1: `House No. / Street` (Placeholder: `e.g. 123 or Rizal Street`)
-    *   Input 2: `Sitio / Purok` (Placeholder: `e.g. Sitio Calambuga`)
-*   **Row 2 (Cascading Dropdowns - Level 1):**
-    *   Input 1: `Region *` (Dropdown: `Select Region...`)
-    *   Input 2: `Province *` (Dropdown: `Select Region First`). **Logic:** This field MUST be disabled until a Region is selected. Once selected, populate only the provinces within that region.
-*   **Row 3 (Cascading Dropdowns - Level 2):**
-    *   Input 1: `City / Municipality *` (Dropdown: `Select Province First`). **Logic:** Disabled until Province is selected.
-    *   Input 2: `Barangay *` (Dropdown: `Select City First`). **Logic:** Disabled until City is selected.
+### Step 3: Heterogeneous Balancing (Gen Ave + Sex)
+Take the *remaining* unassigned learners in the master pool. To ensure the regular sections are perfectly balanced by both academic weight and gender ratio, execute the following:
+1. **Split by Sex:** Divide the remaining master pool into two separate arrays: `Male Learners` and `Female Learners`.
+2. **Verify Sorting:** Ensure both arrays are still sorted descending by `Final Gen Ave`.
+3. **Male Snake Draft:** Execute a serpentine distribution (snake draft) of the `Male Learners` across all available `Regular Sections` (e.g., Section A -> Section B -> Section C -> Section C -> Section B -> Section A).
+4. **Female Snake Draft:** Execute the same serpentine distribution for the `Female Learners` across the `Regular Sections`, picking up exactly where the section index left off.
 
-### 3. Checkbox Action
-*   **Bottom of Address Section:** Add a full-width checkbox (`col-span-2`) labeled: **`Permanent Address is same as Current Address`**. Keep it checked by default to save the registrar time.
-
-### 4. Layout & Spacing Polish
-*   Use subtle horizontal dividers (`border-b border-gray-200`) with ample padding (`py-6`) between the Personal Details block and the Home Address block to establish clear visual sections.
-*   Ensure all required fields `*` feature a red asterisk to visually enforce completion before the "Save as Temporary" button becomes active.\
+## Expected Output for Testing
+Using a test payload with 2 learners:
+*   **Learner A (Gen Ave: 88.00):** As the highest-ranking learner in the cohort, they must be extracted and placed in `LUNA (TOP BEC)`.
+*   **Learner B (Gen Ave: 69.00):** As the remaining lower-ranking learner, they bypass the filled/assigned Top section and are placed into the `AGUINALDO (Regular)` snake draft.

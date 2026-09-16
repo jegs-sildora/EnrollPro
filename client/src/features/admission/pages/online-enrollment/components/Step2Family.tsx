@@ -148,7 +148,7 @@ export default function Step2Family() {
           }}
           onChange={(field, val) =>
             setValue(`currentAddress.${field}`, val, {
-              shouldValidate: true,
+              shouldValidate: val !== "",
               shouldDirty: true,
             })
           }
@@ -243,7 +243,7 @@ export default function Step2Family() {
                   }}
                   onChange={(field, val) =>
                     setValue(`permanentAddress.${field}`, val, {
-                      shouldValidate: true,
+                      shouldValidate: val !== "",
                       shouldDirty: true,
                     })
                   }

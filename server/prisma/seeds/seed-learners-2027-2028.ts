@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, Sex, AddressType, FamilyRelationship } from "../../src/generated/prisma/index.js";
+import { PrismaClient, Sex, AddressType, FamilyRelationship, AcademicStatus, LearnerType, AdmissionChannel } from "../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -12,8 +12,8 @@ const prisma = new PrismaClient({ adapter });
 const TARGET_SY_LABEL = "2027-2028";
 const BASE_YEAR = 2027;
 
-async function seedGrade7() {
-  console.log(`🌱 Seeding Grade 7 learners for SY ${TARGET_SY_LABEL}...`);
+async function seedLearners() {
+  console.log(`🌱 Seeding Auto-Sectioning learners (60 per G7-10) for SY ${TARGET_SY_LABEL}...`);
   
   const sy = await prisma.schoolYear.findUnique({ where: { yearLabel: TARGET_SY_LABEL } });
   if (!sy) {
@@ -21,45 +21,51 @@ async function seedGrade7() {
     process.exit(1);
   }
 
-  const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
-  if (!grade7) {
-    console.error("❌ Grade 7 not found.");
-    process.exit(1);
-  }
-
-  const sections = await prisma.section.findMany({
-    where: { schoolYearId: sy.id, gradeLevelId: grade7.id }
+  console.log(`🧹 Cleaning up existing Auto-Sectioning learners (LRN starting with 2127) for SY ${TARGET_SY_LABEL}...`);
+  const autoSectioningUsers = await prisma.user.findMany({
+    where: { accountName: { startsWith: "2127" } },
+    select: { id: true, learnerProfile: { select: { id: true, enrollmentApplications: { select: { id: true } } } } }
   });
 
-  if (sections.length === 0) {
-    console.error(`❌ No Grade 7 sections found for ${TARGET_SY_LABEL}.`);
+  if (autoSectioningUsers.length > 0) {
+    const userIds = autoSectioningUsers.map(u => u.id);
+    const learnerIds = autoSectioningUsers.map(u => u.learnerProfile?.id).filter(Boolean) as number[];
+    const applicationIds = autoSectioningUsers.flatMap(u => u.learnerProfile?.enrollmentApplications.map(a => a.id) || []);
+
+    if (applicationIds.length > 0) {
+      await prisma.enrollmentApplication.deleteMany({ where: { id: { in: applicationIds } } });
+    }
+    if (learnerIds.length > 0) {
+      await prisma.learner.deleteMany({ where: { id: { in: learnerIds } } });
+    }
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    console.log(`🧹 Wiped ${autoSectioningUsers.length} previous auto-sectioning test learners.`);
+  }
+
+  const gradeNames = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
+  const grades = await prisma.gradeLevel.findMany({
+    where: { name: { in: gradeNames } }
+  });
+
+  if (grades.length !== 4) {
+    console.error("❌ Some grade levels not found.");
     process.exit(1);
   }
 
   const defaultPassword = await bcrypt.hash("DepEd" + BASE_YEAR + "!", 10);
-  const generateLRN = createLRNGenerator(BASE_YEAR);
+  const generateLRN = createLRNGenerator(BASE_YEAR + 100); // offset to avoid LRN collision
 
-  let maleLearnerIndex = 137;
-  let femaleLearnerIndex = 137;
+  let maleLearnerIndex = 500;
+  let femaleLearnerIndex = 500;
   let totalSeeded = 0;
 
-  for (const section of sections) {
-    const sectionAdviser = await prisma.sectionAdviser.findFirst({
-      where: { sectionId: section.id, schoolYearId: sy.id },
-      include: { teacher: true }
-    });
-    
-    const enrolledById = sectionAdviser?.teacher?.userId || null;
-    if (!enrolledById) {
-      console.warn(`⚠️ No section adviser found for section ${section.name}. Skipping learners for this section.`);
-      continue;
-    }
-
-    for (let l = 0; l < 4; l++) {
-      const prismaLSex = l < 2 ? Sex.MALE : Sex.FEMALE;
+  for (const grade of grades) {
+    console.log(`Seeding 60 learners for ${grade.name}...`);
+    for (let l = 0; l < 60; l++) {
+      const prismaLSex = l % 2 === 0 ? Sex.MALE : Sex.FEMALE;
       const learnerNameIndex = prismaLSex === Sex.MALE ? maleLearnerIndex++ : femaleLearnerIndex++;
       
-      const baseAge = 12; // Grade 7
+      const baseAge = grade.name === "Grade 7" ? 12 : grade.name === "Grade 8" ? 13 : grade.name === "Grade 9" ? 14 : 15;
       const birthdate = new Date(BASE_YEAR - baseAge, l % 12, (l % 28) + 1);
 
       const learnerName = getFilipinoName(prismaLSex, learnerNameIndex);
@@ -96,7 +102,12 @@ async function seedGrade7() {
 
       const cities = ["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"];
       const placeOfBirth = `${cities[learnerNameIndex % cities.length]}, NEGROS OCCIDENTAL`;
-
+      
+      // Gen Ave distributed widely to test Top BEC vs Regular Snake Draft
+      // Top 5 learners will have 90-98, rest will be 75-89
+      let previousGenAve = 75 + ((learnerNameIndex * 3) % 15) + ((learnerNameIndex % 10) / 10);
+      if (l < 5) previousGenAve = 90 + l; // Guarantee some very high grades
+      
       const learner = await prisma.learner.create({
         data: {
           lrn,
@@ -114,7 +125,7 @@ async function seedGrade7() {
           placeOfBirth,
           hasPsaBirthCertificate: true,
           birthCertificateType: "PSA_BIRTH_CERTIFICATE",
-          previousGenAve: 75 + ((learnerNameIndex * 3) % 25) + ((learnerNameIndex % 10) / 10),
+          previousGenAve: previousGenAve,
           studentPhoto,
         }
       });
@@ -128,12 +139,6 @@ async function seedGrade7() {
       const fatherContactNumber = '091' + baseContact.toString().substring(1);
       const motherContactNumber = '092' + baseContact.toString().substring(1);
       const guardianContactNumber = '093' + baseContact.toString().substring(1);
-      const familyContacts = [
-        { relationship: FamilyRelationship.FATHER, name: fatherName, contactNumber: fatherContactNumber },
-        { relationship: FamilyRelationship.MOTHER, name: motherName, contactNumber: motherContactNumber },
-        { relationship: FamilyRelationship.GUARDIAN, name: guardianName, contactNumber: guardianContactNumber },
-      ] as const;
-      const primaryContact = familyContacts[l % familyContacts.length];
 
       const barangays = ["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"];
       const zips = ["6100", "6116", "6115", "6101"];
@@ -143,31 +148,26 @@ async function seedGrade7() {
       const currentCity = cities[learnerNameIndex % cities.length];
       const currentZip = zips[learnerNameIndex % zips.length];
 
-      const permanentPurok = "PUROK " + (((learnerNameIndex + 1) % 10) + 1).toString();
-      const permanentBarangay = barangays[(learnerNameIndex + 1) % barangays.length];
-      const permanentCity = cities[(learnerNameIndex + 1) % cities.length];
-      const permanentZip = zips[(learnerNameIndex + 1) % zips.length];
+      // Add a couple of Conditionally Promoted to test exclusion logic
+      const academicStatus = (l === 6 || l === 15) ? AcademicStatus.CONDITIONALLY_PROMOTED : AcademicStatus.PROMOTED;
 
-      const g7Types = ["NEW_ENROLLEE", "TRANSFEREE"] as const;
-      const randomLearnerType = g7Types[learnerNameIndex % g7Types.length];
-        
-      const channels = ["ONLINE", "F2F"] as const;
-      const randomChannel = channels[learnerNameIndex % channels.length];
+      const randomLearnerType = grade.name === "Grade 7" ? LearnerType.NEW_ENROLLEE : LearnerType.CONTINUING;
 
-      const app = await prisma.enrollmentApplication.create({
+      await prisma.enrollmentApplication.create({
         data: {
           learnerId: learner.id,
           schoolYearId: sy.id,
-          gradeLevelId: grade7.id,
-          applicantType: section.programType,
-          status: "OFFICIALLY_ENROLLED",
+          gradeLevelId: grade.id,
+          applicantType: "REGULAR",
+          status: "READY_FOR_SECTIONING", // Crucial for auto-assign pool
+          academicStatus: academicStatus,
           learnerType: randomLearnerType,
-          admissionChannel: randomChannel,
-          contactNumber: primaryContact.contactNumber,
-          guardianFirstName: primaryContact.name.firstName,
-          guardianMiddleName: primaryContact.name.middleName,
-          guardianLastName: primaryContact.name.lastName,
-          guardianRelationship: primaryContact.relationship,
+          admissionChannel: AdmissionChannel.ONLINE,
+          contactNumber: motherContactNumber,
+          guardianFirstName: motherName.firstName,
+          guardianMiddleName: motherName.middleName,
+          guardianLastName: motherName.lastName,
+          guardianRelationship: FamilyRelationship.MOTHER,
           isMissingSf9: false,
           addresses: {
             createMany: {
@@ -180,15 +180,6 @@ async function seedGrade7() {
                   province: "NEGROS OCCIDENTAL",
                   country: "PHILIPPINES",
                   zipCode: currentZip,
-                },
-                {
-                  addressType: AddressType.PERMANENT,
-                  houseNoStreet: permanentPurok,
-                  barangay: permanentBarangay,
-                  cityMunicipality: permanentCity,
-                  province: "NEGROS OCCIDENTAL",
-                  country: "PHILIPPINES",
-                  zipCode: permanentZip,
                 }
               ]
             }
@@ -197,26 +188,12 @@ async function seedGrade7() {
             createMany: {
               data: [
                 {
-                  relationship: FamilyRelationship.FATHER,
-                  firstName: fatherName.firstName,
-                  lastName: fatherName.lastName,
-                  middleName: fatherName.middleName,
-                  contactNumber: fatherContactNumber,
-                },
-                {
                   relationship: FamilyRelationship.MOTHER,
                   firstName: motherName.firstName,
                   lastName: motherName.lastName,
                   middleName: motherName.middleName,
                   maidenName: motherName.lastName,
                   contactNumber: motherContactNumber,
-                },
-                {
-                  relationship: FamilyRelationship.GUARDIAN,
-                  firstName: guardianName.firstName,
-                  lastName: guardianName.lastName,
-                  middleName: guardianName.middleName,
-                  contactNumber: guardianContactNumber,
                 }
               ]
             }
@@ -224,24 +201,14 @@ async function seedGrade7() {
         }
       });
 
-      await prisma.enrollmentRecord.create({
-        data: {
-          enrollmentApplicationId: app.id,
-          sectionId: section.id,
-          schoolYearId: sy.id,
-          learnerId: learner.id,
-          enrolledById: enrolledById,
-        }
-      });
-
       totalSeeded++;
     }
   }
 
-  console.log(`✅ Seeded ${totalSeeded} Grade 7 learners for SY ${TARGET_SY_LABEL}`);
+  console.log(`✅ Seeded ${totalSeeded} Auto-Sectioning learners for SY ${TARGET_SY_LABEL}`);
 }
 
-seedGrade7()
+seedLearners()
   .then(() => process.exit(0))
   .catch((e) => {
     console.error("❌ Seeding failed:", e);

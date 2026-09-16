@@ -39,14 +39,9 @@ export function BulkConfirmBar({
           <Button
             size="sm"
             variant="default"
-            className="rounded-md font-bold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="rounded-md font-bold uppercase  bg-primary text-primary-foreground px-6"
             disabled={loading}
             onClick={onConfirm}>
-            {loading ? (
-              <Loader2 className="h-3.5 w-3.5 mr-1.5 " />
-            ) : (
-              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-            )}
             Enroll Selected Learners
           </Button>
           <Button

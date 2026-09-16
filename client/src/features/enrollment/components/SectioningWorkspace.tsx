@@ -112,6 +112,7 @@ interface PoolLearner {
   applicantType: ApplicantType;
   assignedProgram: ApplicantType | null;
   programType: ApplicantType;
+  academicStatus: string;
   studentPhoto?: string | null;
 }
 
@@ -206,7 +207,7 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
               <td className="p-1 text-center">
                 <Badge className={cn(
                   "px-2",
-                  l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                  l.sex === "MALE" ? "px-1 bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "px-1 bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                 )}>
                   {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
                 </Badge>
@@ -399,160 +400,174 @@ const createDraftPlacement = (
   gradeLevelId: number,
   learners: PoolLearner[],
   sections: SectionSummary[],
+  enableHomogeneousSections: boolean,
   homogeneousSectionCount: number,
 ): DraftPlacement => {
   const rostersBySectionId = new Map<number, DraftLearnerPlacement[]>(
-    sections.map((section) => [section.id, []]),
+    sections.map((section) => [section.id, []])
   );
   const unplacedLearners: PoolLearner[] = [];
+
   const programTypes = Array.from(
-    new Set(learners.map((learner) => getAutoDraftProgramType(learner))),
+    new Set(learners.map((learner) => getAutoDraftProgramType(learner)))
   );
 
   for (const programType of programTypes) {
     const rawProgramLearners = learners.filter(
-      (learner) => getAutoDraftProgramType(learner) === programType,
+      (learner) => getAutoDraftProgramType(learner) === programType
     );
     const programSections = sections.filter(
-      (section) => section.programType === programType,
+      (section) => section.programType === programType
     );
 
-    let programLearners: PoolLearner[] = [];
-    let slots: number[] = [];
+    // Phase 1: Global Sorting & Preparation
+    // Strict Descending Sort: Highest Gen Ave first. Tie-breaker: Last Name, First Name.
+    const sortedLearners = [...rawProgramLearners].sort((a, b) => {
+      const aAve = a.genAve ?? -1;
+      const bAve = b.genAve ?? -1;
+      if (aAve !== bAve) return bAve - aAve;
+      
+      const nameA = `${a.lastName}, ${a.firstName}`;
+      const nameB = `${b.lastName}, ${b.firstName}`;
+      return nameA.localeCompare(nameB);
+    });
 
-    const sortedLearners = [...rawProgramLearners].sort(sortLearnersByAverage);
     const orderedSections = [...programSections].sort(
       (first, second) =>
         first.sortOrder - second.sortOrder ||
         first.name.localeCompare(second.name) ||
-        first.id - second.id,
+        first.id - second.id
     );
 
-    const totalLearners = sortedLearners.length;
-    if (totalLearners === 0 || orderedSections.length === 0) {
+    if (sortedLearners.length === 0 || orderedSections.length === 0) {
       unplacedLearners.push(...sortedLearners);
       continue;
     }
 
-    const males = sortedLearners.filter((l) => l.sex === "MALE");
-    const females = sortedLearners.filter((l) => l.sex === "FEMALE");
+    let remainingLearners = [...sortedLearners];
 
-    const allSlots = buildDraftSlots(orderedSections);
-    const activeSlots = allSlots.slice(0, totalLearners);
+    // Phase 2: Homogeneous Allocation (Pilot/Top Sections)
+    let topSections: SectionSummary[] = [];
+    let regularSections: SectionSummary[] = orderedSections;
 
-    const sectionTotalSlots = new Map<number, number>(
-      orderedSections.map((s) => [s.id, 0])
-    );
-    for (const id of activeSlots) {
-      sectionTotalSlots.set(id, sectionTotalSlots.get(id)! + 1);
+    if (programType === "REGULAR" && enableHomogeneousSections) {
+      topSections = orderedSections.filter(s => s.isHomogeneous).slice(0, homogeneousSectionCount);
+      const topSectionIds = new Set(topSections.map(s => s.id));
+      regularSections = orderedSections.filter(s => !topSectionIds.has(s.id));
     }
 
-    const sectionMaleSlots = new Map<number, number>();
-    const sectionFemaleSlots = new Map<number, number>();
+    if (topSections.length > 0) {
+      // Calculate Total Top Capacity
+      const totalTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
 
-    let allocatedMales = 0;
-    const maleFractions = new Map<number, number>();
+      // Filter out conditionally promoted learners
+      const eligibleForTop = remainingLearners.filter(
+        (l) => l.academicStatus !== "CONDITIONALLY_PROMOTED"
+      );
 
-    for (const section of orderedSections) {
-      const total = sectionTotalSlots.get(section.id)!;
-      if (total === 0) {
-        sectionMaleSlots.set(section.id, 0);
-        continue;
+      // The Slice: Extract top N learners
+      const topLearners = eligibleForTop.slice(0, totalTopCapacity);
+
+      // Distribute into Top Sections sequentially
+      let topLearnerIdx = 0;
+      for (const topSection of topSections) {
+        const capacity = topSection.maxCapacity - topSection.currentCount;
+        const roster = rostersBySectionId.get(topSection.id)!;
+        
+        let assignedCount = 0;
+        while (assignedCount < capacity && topLearnerIdx < topLearners.length) {
+          roster.push({ ...topLearners[topLearnerIdx], sectionId: topSection.id, isOverridden: false });
+          assignedCount++;
+          topLearnerIdx++;
+        }
       }
-      const exactMales = total * (males.length / totalLearners);
-      const baseMales = Math.floor(exactMales);
-      sectionMaleSlots.set(section.id, baseMales);
-      allocatedMales += baseMales;
-      maleFractions.set(section.id, exactMales - baseMales);
+
+      // Remove assigned top learners from the master pool
+      const assignedIds = new Set(topLearners.map((l) => l.applicationId));
+      remainingLearners = remainingLearners.filter((l) => !assignedIds.has(l.applicationId));
     }
 
-    const remainingMalesCount = males.length - allocatedMales;
-    const sortedByFraction = [...orderedSections].sort(
-      (a, b) =>
-        (maleFractions.get(b.id) ?? 0) - (maleFractions.get(a.id) ?? 0) ||
-        a.id - b.id
-    );
+    // Phase 3: Heterogeneous Allocation (Regular Sections - Snake Draft)
+    if (remainingLearners.length > 0 && regularSections.length > 0) {
+      const remainingCapacity = new Map(
+        regularSections.map(s => [s.id, Math.max(0, s.maxCapacity - s.currentCount)])
+      );
 
-    for (let i = 0; i < remainingMalesCount; i++) {
-      const section = sortedByFraction[i % sortedByFraction.length];
-      sectionMaleSlots.set(section.id, sectionMaleSlots.get(section.id)! + 1);
-    }
+      // Maintain a single state for the snake draft across both male and female lists
+      let sectionIndex = 0;
+      let forward = true;
 
-    for (const section of orderedSections) {
-      const total = sectionTotalSlots.get(section.id)!;
-      const mSlots = sectionMaleSlots.get(section.id)!;
-      sectionFemaleSlots.set(section.id, total - mSlots);
-    }
+      const getNextValidSection = () => {
+        const totalRemaining = Array.from(remainingCapacity.values()).reduce((sum, c) => sum + c, 0);
+        if (totalRemaining <= 0) return null;
+        
+        let startState = { idx: sectionIndex, fwd: forward };
+        let looped = false;
+        
+        while (true) {
+          const current = sectionIndex;
+          const section = regularSections[current];
+          
+          // Advance pointer for NEXT call
+          if (forward) {
+            if (sectionIndex >= regularSections.length - 1) {
+              forward = false;
+            } else {
+              sectionIndex++;
+            }
+          } else {
+            if (sectionIndex <= 0) {
+              forward = true;
+            } else {
+              sectionIndex--;
+            }
+          }
 
-    const activeHomoCount = programType === "REGULAR" ? homogeneousSectionCount : 0;
-    const topSections = orderedSections.slice(0, activeHomoCount);
-    const remainingSections = orderedSections.slice(activeHomoCount);
+          if (remainingCapacity.get(section.id)! > 0) {
+            return section;
+          }
+          
+          // Prevent infinite loops if capacity is not syncing
+          if (sectionIndex === startState.idx && forward === startState.fwd) {
+            if (looped) return null;
+            looped = true;
+          }
+        }
+      };
 
-    const maleSlotsArray: number[] = [];
-    const femaleSlotsArray: number[] = [];
-
-    for (const section of topSections) {
-      const mCount = sectionMaleSlots.get(section.id)!;
-      for (let i = 0; i < mCount; i++) maleSlotsArray.push(section.id);
+      const males = remainingLearners.filter(l => l.sex === "MALE");
+      const females = remainingLearners.filter(l => l.sex === "FEMALE");
       
-      const fCount = sectionFemaleSlots.get(section.id)!;
-      for (let i = 0; i < fCount; i++) femaleSlotsArray.push(section.id);
-    }
+      const unplaced: PoolLearner[] = [];
 
-    const remMaleCounts = new Map(remainingSections.map((s) => [s.id, sectionMaleSlots.get(s.id)!]));
-    const remFemaleCounts = new Map(remainingSections.map((s) => [s.id, sectionFemaleSlots.get(s.id)!]));
-
-    let forward = true;
-    while (Array.from(remMaleCounts.values()).some((c) => c > 0)) {
-      const pass = forward ? remainingSections : [...remainingSections].reverse();
-      for (const section of pass) {
-        if (remMaleCounts.get(section.id)! > 0) {
-          maleSlotsArray.push(section.id);
-          remMaleCounts.set(section.id, remMaleCounts.get(section.id)! - 1);
+      for (const learner of males) {
+        const targetSection = getNextValidSection();
+        if (targetSection) {
+          const roster = rostersBySectionId.get(targetSection.id)!;
+          roster.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
+          remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
+        } else {
+          unplaced.push(learner);
         }
       }
-      forward = !forward;
-    }
 
-    forward = true;
-    while (Array.from(remFemaleCounts.values()).some((c) => c > 0)) {
-      const pass = forward ? remainingSections : [...remainingSections].reverse();
-      for (const section of pass) {
-        if (remFemaleCounts.get(section.id)! > 0) {
-          femaleSlotsArray.push(section.id);
-          remFemaleCounts.set(section.id, remFemaleCounts.get(section.id)! - 1);
+      for (const learner of females) {
+        const targetSection = getNextValidSection();
+        if (targetSection) {
+          const roster = rostersBySectionId.get(targetSection.id)!;
+          roster.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
+          remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
+        } else {
+          unplaced.push(learner);
         }
       }
-      forward = !forward;
+      
+      remainingLearners = unplaced;
     }
 
-    const placedMales = males.slice(0, maleSlotsArray.length);
-    const unplacedMales = males.slice(maleSlotsArray.length);
-    
-    const placedFemales = females.slice(0, femaleSlotsArray.length);
-    const unplacedFemales = females.slice(femaleSlotsArray.length);
-
-    programLearners = [...placedMales, ...placedFemales, ...unplacedMales, ...unplacedFemales];
-    slots = [...maleSlotsArray, ...femaleSlotsArray];
-
-    for (const [index, learner] of programLearners.entries()) {
-      const sectionId = slots[index];
-      if (sectionId === undefined) {
-        unplacedLearners.push(learner);
-        continue;
-      }
-
-      const rosterLearners = rostersBySectionId.get(sectionId);
-      if (!rosterLearners) {
-        unplacedLearners.push(learner);
-        continue;
-      }
-
-      rosterLearners.push({
-        ...learner,
-        sectionId,
-        isOverridden: false,
-      });
+    // Any leftovers become unplaced
+    if (remainingLearners.length > 0) {
+      unplacedLearners.push(...remainingLearners);
     }
   }
 
@@ -560,7 +575,7 @@ const createDraftPlacement = (
     gradeLevelId,
     generatedAt: new Date().toISOString(),
     rosters: sections.map((section) =>
-      buildRoster(section, rostersBySectionId.get(section.id) ?? []),
+      buildRoster(section, rostersBySectionId.get(section.id) ?? [])
     ),
     unplacedLearners,
   };
@@ -602,6 +617,7 @@ export function SectioningWorkspace() {
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
   const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
+  const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
     queryKey: queryKeys.sectioningSections(),
@@ -832,6 +848,7 @@ export function SectioningWorkspace() {
       parsedGradeLevelId,
       currentGradePool,
       currentGradeSections,
+      enableHomogeneousSections,
       homogeneousSectionCount,
     );
     const populatedSectionIds = draft.rosters
@@ -1834,9 +1851,6 @@ export function SectioningWorkspace() {
                                         : "text-foreground",
                                     )}>
                                     {roster.totalCount} / {s.maxCapacity}{" "}
-                                    {isOverCapacity && (
-                                      <AlertTriangle className="inline h-3 w-3 ml-1" />
-                                    )}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-foreground">
@@ -2182,13 +2196,13 @@ export function SectioningWorkspace() {
           <div className="space-y-4 text-left">
             <p className="text-center">
               This will create temporary class lists for the selected grade
-              level. No official SF1 record will be saved yet.
+              level.
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4">
               <p className="font-bold text-foreground">
                 How the system will place learners:
               </p>
-              <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground">
+              <ul className="list-disc space-y-2 pl-5 leading-relaxed text-foreground">
                 {(() => {
                   const availableScp = Array.from(
                     new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))
@@ -2228,7 +2242,7 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary text-sm">
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary">
               Please review the temporary class lists carefully before
               finalizing because finalization creates the official section
               records.

@@ -164,7 +164,9 @@ async function seedGrade7() {
           learnerType: randomLearnerType,
           admissionChannel: randomChannel,
           contactNumber: primaryContact.contactNumber,
-          guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
+          guardianFirstName: primaryContact.name.firstName,
+          guardianMiddleName: primaryContact.name.middleName,
+          guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
           addresses: {

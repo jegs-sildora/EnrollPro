@@ -48,11 +48,6 @@ async function getOpenPublicEnrollmentSetting(
   };
 }
 
-function generateTrackingNumber(): string {
-  const year = new Date().getFullYear().toString().slice(-2);
-  const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `EN-${year}-${randomStr}`;
-}
 
 function buildTrackingState(
   status: ApplicationStatus,
@@ -272,8 +267,15 @@ export async function submitApplication(req: Request, res: Response) {
       }
     }
 
-    // Create EnrollmentApplication
-    const trackingNumber = generateTrackingNumber();
+    // Generate Application Tracking Number
+    const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split("-")[0] || new Date().getFullYear().toString();
+    const programType = data.scpType || "REGULAR";
+    const programAcronym = programType === "REGULAR" ? "BEC" : 
+                           programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
+                           programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
+                           programType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
+    const paddedId = String(learner.id).padStart(7, '0');
+    const trackingNumber = `${programAcronym}${yearPrefix}${paddedId}`;
 
     const application = await prisma.enrollmentApplication.create({
       data: {

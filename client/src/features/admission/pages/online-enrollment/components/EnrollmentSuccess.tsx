@@ -14,6 +14,8 @@ import {
 import { cn } from "@/shared/lib/utils";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { useSettingsStore } from "@/store/settings.slice";
+import { format } from "date-fns";
 
 type EnrollmentSuccessProps = Pick<
   ApplicationSubmitResponse,
@@ -34,6 +36,11 @@ export default function EnrollmentSuccess({
 }: EnrollmentSuccessProps) {
   const [copied, setCopied] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { enrollOpenDate, enrollCloseDate } = useSettingsStore();
+
+  const formattedDates = enrollOpenDate && enrollCloseDate
+    ? `${format(new Date(enrollOpenDate), "MMMM d")} and ${format(new Date(enrollCloseDate), "MMMM d, yyyy")}`
+    : "June 1 and June 5, 2026";
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -82,14 +89,7 @@ export default function EnrollmentSuccess({
           <div className="text-center text-lg text-foreground  mb-6">
             Your record is now <span className="font-bold text-primary">Pending Verification</span>.
             <br /><br />
-            Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">June 1 and June 5, 2026</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
-            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-base  leading-relaxed text-left">
-              Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar.
-            </p>
+            Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
           </div>
 
           <div
@@ -104,21 +104,28 @@ export default function EnrollmentSuccess({
               Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
-              <p className="text-xl sm:text-4xl font-bold text-primary">
+              <p className="text-xl sm:text-4xl font-extrabold text-primary">
                 {trackingNumber}
               </p>
             </div>
             {learnerName && (
-              <p className="text-base leading-tight font-bold text-foreground mt-2 uppercase">
+              <p className="text-base leading-tight font-extrabold text-foreground mt-2 uppercase">
                 Learner: {learnerName}
               </p>
             )}
             <p
               className={cn(
-                "text-base font-bold transition-all duration-200 mt-2 print:hidden",
-                copied ? "text-primary scale-110" : "text-foreground",
+                "text-sm transition-all duration-200 mt-2 print:hidden font-bold",
+                copied ? "text-primary scale-105" : "text-foreground",
               )}>
               {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
+            </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
+            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-base leading-relaxed text-left">
+              Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar.
             </p>
           </div>
 
@@ -127,7 +134,6 @@ export default function EnrollmentSuccess({
               type="button"
               className="w-full sm:w-full h-12 px-12 font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               onClick={() => setShowConfirmModal(true)}>
-              <Home className="w-4 h-4" />
               Back to Home
             </Button>
           </div>

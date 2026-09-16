@@ -545,7 +545,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   // View Mode: grid row helper
   const ViewRow = ({ label, value }: { label: string; value: string | null | undefined }) => (
     <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-      <div className="p-3 text-foreground bg-muted/30 uppercase">{label}</div>
+      <div className="p-3 text-foreground bg-muted/30 capitalize font-extrabold">{label}</div>
       <div className="p-3 uppercase">{value || "—"}</div>
     </div>
   );
@@ -598,70 +598,124 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 {/* ════════════════════════════════════════════════════════════ */}
                 {/* SUMMARY BLOCK (Matches StudentDetailPanel)                 */}
                 {/* ════════════════════════════════════════════════════════════ */}
-                <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
-                  <div className="flex flex-col items-center mb-6 pt-2">
-                    <UserPhoto
-                      photo={teacher?.photoPath}
-                      containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
-                      className="w-full h-full object-cover rounded-full"
-                      fallbackIcon={
-                        <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-3xl sm:text-4xl uppercase bg-primary">
-                          {isAdding ? (
-                            <UserIcon className="size-12" />
-                          ) : (
-                            <>
-                              {(formFirstName || teacher?.firstName || "N").charAt(0)}
-                              {(formLastName || teacher?.lastName || "N").charAt(0)}
-                            </>
+                {!isAdding && (
+                  <div className="bg-[hsl(var(--muted))] p-4 sm:p-6 rounded-md border">
+                    {/* Top Row: Identity & Actions */}
+                    <div className="flex justify-between items-start">
+                      {/* Left Side: Media Object */}
+                      <div className="flex items-start gap-4 sm:gap-6">
+                        <UserPhoto
+                          photo={teacher?.photoPath}
+                          containerClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
+                          className="w-full h-full object-cover rounded-full"
+                          fallbackIcon={
+                            <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl uppercase bg-primary">
+                              {isAdding ? (
+                                <UserIcon className="size-12" />
+                              ) : (
+                                <>
+                                  {(formFirstName || teacher?.firstName || "N").charAt(0)}
+                                  {(formLastName || teacher?.lastName || "N").charAt(0)}
+                                </>
+                              )}
+                            </div>
+                          }
+                        />
+                        <div className="flex flex-col mt-1">
+                          <h3 className="text-2xl font-extrabold text-foreground leading-tight uppercase break-words">
+                            {isAdding ? "New Personnel" : formatTeacherName({
+                              ...teacher!,
+                              firstName: formFirstName || teacher?.firstName || "",
+                              lastName: formLastName || teacher?.lastName || "",
+                              suffix: formSuffix ?? teacher?.suffix ?? null,
+                            } as Teacher)}
+                          </h3>
+                          {!isAdding && (
+                            <p className="font-bold uppercase mb-2 text-lg">
+                              Employee ID: {teacher?.employeeId || "—"}
+                            </p>
                           )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!isAdding && (
+                              (teacher?.userAccount?.roles || []).length > 0
+                                ? (teacher?.userAccount?.roles || []).map((role) => (
+                                  <Badge key={role} className="bg-primary text-primary-foreground rounded-full uppercase shadow-sm px-3 py-0.5 text-sm font-bold border-0">
+                                    {ROLE_LABEL_MAP[role] || role}
+                                  </Badge>
+                                ))
+                                : <Badge variant="outline" className="gap-1 px-3 py-1 rounded-full uppercase shadow-sm font-bold text-muted-foreground border-0">No roles</Badge>
+                            )}
+                          </div>
                         </div>
-                      }
-                    />
-                    <div className="text-center mt-4">
-                      <h3 className="font-bold text-lg sm:text-xl uppercase break-words">
-                        {isAdding ? "New Personnel" : formatTeacherName({
-                          ...teacher!,
-                          firstName: formFirstName || teacher?.firstName || "",
-                          lastName: formLastName || teacher?.lastName || "",
-                          suffix: formSuffix ?? teacher?.suffix ?? null,
-                        } as Teacher)}
-                      </h3>
-                      <div className="flex items-center justify-center gap-2 mt-1 font-bold flex-wrap">
-                        {!isAdding && (
-                          (teacher?.userAccount?.roles || []).length > 0
-                            ? (teacher?.userAccount?.roles || []).map((role) => (
-                              <Badge key={role} variant="outline" className="gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-bold border-primary text-primary bg-primary/5">
-                                {ROLE_LABEL_MAP[role] || role}
-                              </Badge>
-                            ))
-                            : <Badge variant="outline" className="gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-bold text-muted-foreground">No roles</Badge>
-                        )}
                       </div>
-                      {!isAdding && (
-                        <p className=" mt-2 uppercase text-foreground">
-                          Employee ID: <span>{teacher?.employeeId || "—"}</span>
-                        </p>
-                      )}
+
+                      {/* Right Side: Action Button */}
                       {!isEditing && !isAdding && (
-                        <div className="mt-4 flex justify-center w-full px-2">
+                        <div className="shrink-0 ml-4 hidden sm:block">
                           <Button
-                            variant="default"
-                            className="font-bold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
+                            variant="outline"
+                            className="font-bold text-sm h-9 px-4 uppercase border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-sm rounded-md transition-all active:scale-[0.98]"
                             onClick={(e) => {
                               e.preventDefault();
                               setIsEditing(true);
                             }}
                           >
-                            <UserRoundPen className="mr-2 h-5 w-5 shrink-0" />
+                            <UserRoundPen className="mr-2 h-4 w-4 shrink-0" />
                             Edit Profile
                           </Button>
                         </div>
                       )}
                     </div>
+                    
+                    {/* Mobile Edit Button */}
+                    {!isEditing && !isAdding && (
+                      <div className="mt-4 sm:hidden flex w-full">
+                          <Button
+                            variant="outline"
+                            className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setIsEditing(true);
+                            }}
+                          >
+                            <UserRoundPen className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+                            Edit Profile
+                          </Button>
+                      </div>
+                    )}
+
+                    {!isAdding && (
+                      <div className="mt-6 mb-4">
+                        <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                          <div className="text-base leading-tight font-bold divide-y divide-border">
+                            {/* Header Row */}
+                            <div className="grid grid-cols-2 divide-x divide-border">
+                              <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center capitalize">
+                                Position
+                              </div>
+                              <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center capitalize">
+                                Contact Number
+                              </div>
+                            </div>
+                            {/* Value Row */}
+                            <div className="grid grid-cols-2 divide-x divide-border">
+                              <div className="p-3 flex items-center justify-center uppercase min-w-0">
+                                <span className="text-base font-bold text-foreground text-center">
+                                  {teacher?.plantillaPosition || "—"}
+                                </span>
+                              </div>
+                              <div className="p-3 flex items-center justify-center uppercase min-w-0">
+                                <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums text-center">
+                                  {teacher?.contactNumber || "—"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-
-                </div>
+                )}
 
                 {/* ════════════════════════════════════════════════════════════ */}
                 {/* VIEW MODE — read-only grid tables                          */}
@@ -671,7 +725,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Personal Information */}
                     <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
                         <UserIcon className="h-4 w-4 text-primary" />
                         Personal Information
                       </div>
@@ -693,7 +747,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Employment Details */}
                     <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
                         <Briefcase className="h-4 w-4 text-primary" />
                         Employment Details
                       </div>
@@ -719,7 +773,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     {/* SF7 Profile */}
                     {showSF7 && (
                       <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                        <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center justify-between">
+                        <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center justify-between uppercase">
                           <span className="flex items-center gap-2">
                             <GraduationCap className="h-4 w-4 text-primary" />
                             SF7 Profile
@@ -739,7 +793,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Service Status */}
                     <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
                         <ShieldAlert className="h-4 w-4 text-primary" />
                         Service Status
                       </div>
@@ -756,13 +810,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Portal Access Status */}
                     <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
                         <Smartphone className="h-4 w-4 text-primary" />
                         Portal Access and Security
                       </div>
                       <div className="text-base leading-tight font-bold divide-y divide-border">
                         <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
-                          <div className="p-3 text-foreground bg-muted/30 uppercase">Portal</div>
+                          <div className="p-3 text-foreground bg-muted/30 capitalize font-extrabold">Portal</div>
                           <div className="p-3 uppercase flex items-center gap-2">
                             <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalIsActive ? "bg-emerald-500" : "bg-amber-500")} />
                             {portalIsActive ? "Active — Login Allowed" : "Disabled — Login Blocked"}
@@ -787,7 +841,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <>
                     {/* Card 1: Personal Information */}
                     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                      <div className="px-5 py-4 font-bold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                         <span className="flex items-center gap-2">
                           <UserIcon className="h-4 w-4 text-primary" />
                           Personal Information
@@ -796,7 +850,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       <div className="px-5 pb-5 pt-4 space-y-4">
                         <div className="space-y-2 mb-6">
                           <Label className="text-base font-bold uppercase text-foreground">
-                            SYSTEM ROLES *
+                            SYSTEM ROLES <span className="text-destructive">*</span>
                           </Label>
                           <Controller
                             name="roles"
@@ -817,9 +871,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                       checked={field.value.includes(roleOption.value)}
                                       onCheckedChange={(checked) => {
                                         const isChecked = checked === true;
-                                        const newRoles = isChecked
+                                        let newRoles = isChecked
                                           ? [...field.value, roleOption.value]
                                           : field.value.filter((r) => r !== roleOption.value);
+                                          
+                                        if (isChecked && roleOption.value === "CLASS_ADVISER" && !newRoles.includes("TEACHER")) {
+                                          newRoles.push("TEACHER");
+                                        }
+                                        
+                                        if (!isChecked && roleOption.value === "TEACHER") {
+                                          newRoles = newRoles.filter(r => r !== "CLASS_ADVISER");
+                                        }
+                                        
                                         field.onChange(newRoles);
                                       }}
                                       className="cursor-pointer"
@@ -836,7 +899,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">First Name *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
                             <Controller
                               name="firstName"
                               control={control}
@@ -871,7 +934,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Last Name *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">Last Name <span className="text-destructive">*</span></Label>
                             <Controller
                               name="lastName"
                               control={control}
@@ -921,7 +984,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Sex *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">Sex <span className="text-destructive">*</span></Label>
                             <Controller
                               name="sex"
                               control={control}
@@ -960,7 +1023,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Date of Birth *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">Date of Birth <span className="text-destructive">*</span></Label>
                             <Controller
                               name="birthdate"
                               control={control}
@@ -981,7 +1044,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground flex items-center gap-1 h-6">
                               <Smartphone className="size-3" />
-                              Mobile Number *
+                              Mobile Number <span className="text-destructive">*</span>
                             </Label>
                             <Controller
                               name="contactNumber"
@@ -1034,7 +1097,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Card 2: Employment Details */}
                     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                      <div className="px-5 py-4 font-bold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                         <span className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4 text-primary" />
                           Employment Details
@@ -1043,7 +1106,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       <div className="px-5 pb-5 pt-4 space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">DepEd Employee ID *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">DepEd Employee ID <span className="text-destructive">*</span></Label>
                             <Controller
                               name="employeeId"
                               control={control}
@@ -1065,7 +1128,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">DepEd Position (Plantilla) *</Label>
+                            <Label className="text-base font-bold uppercase text-foreground">DepEd Position (Plantilla) <span className="text-destructive">*</span></Label>
                             <Controller
                               name="plantillaPosition"
                               control={control}
@@ -1131,7 +1194,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                             <div className="grid gap-4 sm:grid-cols-2">
                               <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Undergraduate Degree *</Label>
+                                <Label className="text-base font-bold uppercase text-foreground">Undergraduate Degree <span className="text-destructive">*</span></Label>
                                 <Controller
                                   name="undergraduateDegree"
                                   control={control}
@@ -1207,7 +1270,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 />
                               </div>
                               <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment *</Label>
+                                <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment <span className="text-destructive">*</span></Label>
                                 <Controller
                                   name="natureOfAppointment"
                                   control={control}
@@ -1232,7 +1295,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 <AnimatedError error={errors.natureOfAppointment?.message as string} />
                               </div>
                               <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Fund Source *</Label>
+                                <Label className="text-base font-bold uppercase text-foreground">Fund Source <span className="text-destructive">*</span></Label>
                                 <Controller
                                   name="fundingSource"
                                   control={control}
@@ -1345,7 +1408,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     {/* Card 3: PORTAL ACCESS AND SECURITY */}
                     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                      <div className="px-5 py-4 font-bold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                         <span className="flex items-center gap-2">
                           <Smartphone className="h-4 w-4 text-primary" />
                           PORTAL ACCESS AND SECURITY
@@ -1469,7 +1532,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     )}
                     disabled={!isDirty || isSubmitting}
                   >
-                    {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
+                    {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Add Personnel Record" : "Save Profile Changes")}
                   </Button>
                 </div>
               )}

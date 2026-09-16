@@ -936,6 +936,7 @@ export default function BOSYPage() {
                                   <thead className="bg-gray-50 border-b">
                                     <tr>
                                       <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                      <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                       <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                     </tr>
                                   </thead>
@@ -949,6 +950,13 @@ export default function BOSYPage() {
                                         <p className="text-sm text-foreground">
                                           LRN: {item.lrn || "No LRN"}
                                         </p>
+                                      </td>
+                                      <td className="p-3 px-4 text-center font-bold uppercase">
+                                        {item.applicantType === "REGULAR" ? "BEC" :
+                                         item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
+                                         item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
+                                         item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
+                                         item.applicantType ?? "—"}
                                       </td>
                                       <td className="p-3 px-4 text-center">
                                         <Badge
@@ -976,6 +984,7 @@ export default function BOSYPage() {
                                 <thead className="sticky top-0 bg-gray-50 backdrop-blur-sm z-10 border-b shadow-sm">
                                   <tr>
                                     <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                    <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                     <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                   </tr>
                                 </thead>
@@ -993,6 +1002,13 @@ export default function BOSYPage() {
                                           <p className="text-sm text-foreground">
                                             LRN: {item.lrn || "No LRN"}
                                           </p>
+                                        </td>
+                                        <td className="p-3 px-4 text-center font-bold uppercase">
+                                          {item.applicantType === "REGULAR" ? "BEC" :
+                                           item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
+                                           item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
+                                           item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
+                                           item.applicantType ?? "—"}
                                         </td>
                                         <td className="p-3 px-4 text-center">
                                           <Badge
