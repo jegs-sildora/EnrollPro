@@ -62,6 +62,7 @@ export interface DataTableProps<TData, TValue> {
   skeletonRowCount?: number;
   isHeaderRow?: (row: TData) => boolean;
   renderHeaderRow?: (row: TData, columnsCount: number, style?: React.CSSProperties) => ReactNode;
+  striped?: boolean;
 }
 
 interface TableRowComponentProps<TData> {
@@ -75,6 +76,7 @@ interface TableRowComponentProps<TData> {
   isRowClickable?: (row: TData) => boolean;
   getRowAriaExpanded?: (row: TData) => boolean | undefined;
   getRowAriaLabel?: (row: TData) => string | undefined;
+  striped?: boolean;
 }
 
 function isInteractiveRowTarget(target: EventTarget | null): boolean {
@@ -109,6 +111,7 @@ function TableRowComponentInner<TData>(
     isRowClickable,
     getRowAriaExpanded,
     getRowAriaLabel,
+    striped,
   }: TableRowComponentProps<TData>,
   ref: React.ForwardedRef<HTMLTableRowElement>,
 ) {
@@ -141,7 +144,8 @@ function TableRowComponentInner<TData>(
         }
       }}
       className={cn(
-        "text-center text-sm transition-colors bg-background",
+        "text-center text-sm transition-colors",
+        striped ? (row.index % 2 === 0 ? "bg-background" : "bg-muted/30") : "bg-background",
         isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
         row.getIsSelected() ? "bg-muted/80 hover:bg-muted/80" : "",
         customClassName,
@@ -209,6 +213,7 @@ export function DataTable<TData, TValue>({
   skeletonRowCount = 50,
   isHeaderRow,
   renderHeaderRow,
+  striped = false,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -404,6 +409,7 @@ export function DataTable<TData, TValue>({
                         isRowClickable={isRowClickable}
                         getRowAriaExpanded={getRowAriaExpanded}
                         getRowAriaLabel={getRowAriaLabel}
+                        striped={striped}
                       />
                     );
                   }),
@@ -442,6 +448,7 @@ export function DataTable<TData, TValue>({
                         isRowClickable={isRowClickable}
                         getRowAriaExpanded={getRowAriaExpanded}
                         getRowAriaLabel={getRowAriaLabel}
+                        striped={striped}
                       />
                       {renderRowAfter?.(row.original, row.index)}
                     </React.Fragment>

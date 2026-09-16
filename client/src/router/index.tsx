@@ -142,11 +142,11 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 4. Protected routes for Head Registrar and System Admin
+      // 4. Protected routes for Head Registrar and System Admin (and strict class adviser)
       {
         element: (
           <ProtectedRoute
-            allowedRoles={["HEAD_REGISTRAR", "SYSTEM_ADMIN"]}
+            allowedRoles={["HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"]}
           />
         ),
         children: [

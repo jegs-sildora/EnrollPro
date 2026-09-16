@@ -1689,10 +1689,10 @@ export default function EosyUpdating() {
                           variant="outline"
                           size="sm"
                           onClick={() => setUnlockModalOpen(true)}
-                          className="font-bold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
+                          className="font-bold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase tracking-wider shadow-sm shrink-0"
                         >
                           <Unlock className="w-3 h-3 mr-1.5" />
-                          Override Lock
+                          UNLOCK
                         </Button>
                       )}
                     </div>
@@ -1964,6 +1964,7 @@ export default function EosyUpdating() {
                     <div className="flex flex-col bg-card h-full min-h-0 relative">
                       <div className="overflow-x-auto flex-1 min-h-0 relative">
                         <DataTable
+                          striped={true}
                           columns={columns}
                           data={filteredRecords}
                           loading={loadingRecords && isInitialLoad}

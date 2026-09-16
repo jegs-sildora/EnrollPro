@@ -318,11 +318,18 @@ export default function Login() {
     void api.get<AuthResponsePayload>("/auth/me")
       .then(({ data }) => {
         setAuth(data.user);
-        const destination = data.user.roles?.includes("TEACHER")
-          ? "/teacher/advisory"
-          : data.user.roles?.includes("MRF")
-            ? "/my-activity"
-            : "/dashboard";
+        const isStrictClassAdviser =
+          data.user.roles?.includes("CLASS_ADVISER") &&
+          !data.user.roles?.includes("SYSTEM_ADMIN") &&
+          !data.user.roles?.includes("HEAD_REGISTRAR");
+
+        const destination = isStrictClassAdviser
+          ? "/dashboard"
+          : data.user.roles?.includes("TEACHER")
+            ? "/teacher/advisory"
+            : data.user.roles?.includes("MRF")
+              ? "/my-activity"
+              : "/dashboard";
         navigate(destination, { replace: true });
       })
       .catch(() => {
@@ -406,11 +413,18 @@ export default function Login() {
         return;
       }
 
-      const destination = payload.user.roles?.includes("TEACHER")
-        ? "/teacher/advisory"
-        : payload.user.roles?.includes("MRF")
-          ? "/my-activity"
-          : "/dashboard";
+      const isStrictClassAdviser =
+        payload.user.roles?.includes("CLASS_ADVISER") &&
+        !payload.user.roles?.includes("SYSTEM_ADMIN") &&
+        !payload.user.roles?.includes("HEAD_REGISTRAR");
+
+      const destination = isStrictClassAdviser
+        ? "/dashboard"
+        : payload.user.roles?.includes("TEACHER")
+          ? "/teacher/advisory"
+          : payload.user.roles?.includes("MRF")
+            ? "/my-activity"
+            : "/dashboard";
 
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate(destination, { replace: true });
@@ -451,11 +465,18 @@ export default function Login() {
     && !reverseSsoErrorCode
     && !reverseSsoSucceeded
   ) {
-    const homeRoute = user.roles?.includes("TEACHER")
-      ? "/teacher/advisory"
-      : user.roles?.includes("MRF")
-        ? "/my-activity"
-        : "/dashboard";
+    const isStrictClassAdviser =
+      user.roles?.includes("CLASS_ADVISER") &&
+      !user.roles?.includes("SYSTEM_ADMIN") &&
+      !user.roles?.includes("HEAD_REGISTRAR");
+
+    const homeRoute = isStrictClassAdviser
+      ? "/dashboard"
+      : user.roles?.includes("TEACHER")
+        ? "/teacher/advisory"
+        : user.roles?.includes("MRF")
+          ? "/my-activity"
+          : "/dashboard";
     return (
       <Navigate
         to={homeRoute}
@@ -662,8 +683,10 @@ export default function Login() {
                       type="text"
                       placeholder="Employee ID or LR#"
                       value={accountName}
+                      maxLength={7}
                       onChange={(event) => {
-                        setAccountName(event.target.value);
+                        const val = event.target.value.replace(/\D/g, "");
+                        setAccountName(val);
                         if (error) {
                           setError(null);
                         }

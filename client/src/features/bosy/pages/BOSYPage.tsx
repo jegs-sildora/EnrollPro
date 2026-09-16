@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Users,
   SlidersHorizontal,
+  Lock,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
@@ -74,6 +75,9 @@ import { useGuardedTabChange } from "@/shared/hooks/useUnsavedChanges";
 import { useSearchParams } from "react-router";
 
 import { sileo } from "sileo";
+import { useAuthStore } from "@/store/auth.slice";
+import api from "@/shared/api/axiosInstance";
+import { useQuery } from "@tanstack/react-query";
 
 const BOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "bosy:queue",
@@ -94,7 +98,7 @@ export default function BOSYPage() {
   );
 
   const queryClient = useQueryClient();
-  const { activeSchoolYearId, viewingSchoolYearId } =
+  const { activeSchoolYearId, viewingSchoolYearId, systemPhase } =
     useSettingsStore();
   const { ayLabel } = useSchoolYearContext();
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
@@ -111,8 +115,30 @@ export default function BOSYPage() {
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
 
   const [queueState, setQueueState] = useState<BOSYQueueState>("PENDING");
+
+  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const isAdmin = userRoles.includes("SYSTEM_ADMIN");
+  const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar;
+
+  const { data: advisoryData } = useQuery({
+    queryKey: ["teacher", "advisory", syId],
+    queryFn: () => api.get<{ section?: { gradeLevelId?: number; gradeLevel?: { displayOrder: number } } }>("/teacher-advisory").then(res => res.data),
+    enabled: isStrictClassAdviser && !!syId,
+  });
+
+  const assignedTargetGradeOrder = isStrictClassAdviser && advisoryData?.section?.gradeLevel?.displayOrder
+    ? String(advisoryData.section.gradeLevel.displayOrder)
+    : null;
+
   const targetGrade = useSettingsStore((s) => s.uiPreferences.bosyGradeId);
   const setTargetGrade = (grade: string) => useSettingsStore.getState().updateUiPreference("bosyGradeId", grade);
+
+  useEffect(() => {
+    if (assignedTargetGradeOrder && targetGrade !== assignedTargetGradeOrder) {
+      setTargetGrade(assignedTargetGradeOrder);
+    }
+  }, [assignedTargetGradeOrder, targetGrade]);
   const {
     inputValue: queueSearch,
     setInputValue: setQueueSearch,
@@ -436,6 +462,18 @@ export default function BOSYPage() {
     return () => setTitle(null);
   }, [setTitle]);
 
+  if (isStrictClassAdviser && systemPhase !== "OFFICIAL_ENROLLMENT") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center space-y-4 text-foreground">
+        <Lock className="w-16 h-16 text-muted-foreground" />
+        <h2 className="text-2xl font-bold">Enrollment is currently closed</h2>
+        <p className="text-muted-foreground max-w-md">
+          Access will resume during the next official encoding period.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
@@ -467,7 +505,9 @@ export default function BOSYPage() {
               />
             )}
             <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
-              Incoming Grade 7 and Transferees
+              {assignedTargetGradeOrder && assignedTargetGradeOrder !== "7"
+                ? `Transferees (Grade ${assignedTargetGradeOrder})`
+                : "Incoming Grade 7 and Transferees"}
             </span>
           </TabsTrigger>
         </TabsList>
@@ -605,6 +645,7 @@ export default function BOSYPage() {
                                   isFilter
                                   value={localTargetGrade}
                                   onValueChange={setLocalTargetGrade}
+                                  disabled={isStrictClassAdviser}
                                 >
                                   <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
                                     <SelectValue placeholder="All Incoming Grades" />

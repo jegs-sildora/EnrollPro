@@ -19,28 +19,28 @@ const router: Router = Router();
 router.get(
   "/readiness",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
   getBosyReadiness,
 );
 
 router.get(
   "/queue",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
   getBosyQueue,
 );
 
 router.get(
   "/previous-sections",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
   getPreviousSectionsHandler,
 );
 
 router.post(
   "/confirm-return/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER", "CLASS_ADVISER"),
   staffIntakePhaseGuard,
   confirmReturnHandler,
 );

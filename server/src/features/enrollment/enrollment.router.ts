@@ -70,7 +70,7 @@ router.patch(
 router.post(
   "/walk-in",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
   validate(directEncodeWalkInSchema),
   directEncodeWalkIn,
 );
@@ -78,7 +78,7 @@ router.post(
 router.get(
   "/walk-in/atlas-subjects",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
   getWalkInAtlasSubjects,
 );
 

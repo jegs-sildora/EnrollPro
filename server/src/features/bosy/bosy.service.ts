@@ -473,7 +473,7 @@ function getQueueStateWhere(
   }
 }
 
-export async function getPreviousSections(schoolYearId: number): Promise<string[]> {
+export async function getPreviousSections(schoolYearId: number, targetGradeOrder?: number): Promise<string[]> {
   const schoolYear = await prisma.schoolYear.findUnique({
     where: { id: schoolYearId },
     select: { clonedFromId: true },
@@ -482,7 +482,10 @@ export async function getPreviousSections(schoolYearId: number): Promise<string[
   if (!schoolYear?.clonedFromId) return [];
 
   const sections = await prisma.section.findMany({
-    where: { schoolYearId: schoolYear.clonedFromId },
+    where: { 
+      schoolYearId: schoolYear.clonedFromId,
+      ...(targetGradeOrder ? { gradeLevel: { displayOrder: targetGradeOrder - 1 } } : {})
+    },
     select: { name: true },
     orderBy: { name: "asc" },
   });

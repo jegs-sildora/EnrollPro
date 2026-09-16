@@ -56,6 +56,10 @@ export async function checkSmartRemedialRolloverBlock(schoolYear: string): Promi
       return error.response.data as SmartRolloverBlockResponse;
     }
     
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Ignoring SMART API connection error during development/mock testing.");
+      return { blocked: false };
+    }
     // For other errors (like 502, network issues), we throw an error so the rollover doesn't silently proceed if SMART is down
     throw new AppError(502, "Failed to connect to SMART API to verify remedial records.");
   }

@@ -116,6 +116,8 @@ async function resolveWalkInSubjectCatalog(
   };
 }
 
+import { getAdviserGradeLevelId } from "../teachers/adviser-scope.service.js";
+
 export async function getWalkInAtlasSubjects(
   req: Request,
   res: Response,
@@ -126,6 +128,24 @@ export async function getWalkInAtlasSubjects(
     const gradeLevelId = Number(req.query.gradeLevelId);
     if (!Number.isInteger(gradeLevelId) || gradeLevelId <= 0) {
       throw new AppError(400, "A valid gradeLevelId is required.");
+    }
+
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const activeResolution = await resolveActiveSchoolYearState();
+      const adviserGradeId = activeResolution.state === "VALID" 
+        ? await getAdviserGradeLevelId(req.user!.userId, activeResolution.active.schoolYearId)
+        : null;
+      if (gradeLevelId !== adviserGradeId) {
+        throw new AppError(
+          403,
+          "You can only access subjects for your assigned advisory grade level.",
+        );
+      }
     }
 
     const programType = parseWalkInProgramType(req.query.programType);
@@ -330,6 +350,24 @@ export async function getPendingVerifications(req: Request, res: Response) {
     return res.status(400).json({ message: "Active school year not found." });
   }
 
+  const isStrictClassAdviser =
+    req.user!.roles.includes("CLASS_ADVISER") &&
+    !req.user!.roles.includes("SYSTEM_ADMIN") &&
+    !req.user!.roles.includes("HEAD_REGISTRAR");
+
+  let finalGradeLevelId: number | undefined;
+
+  if (isStrictClassAdviser) {
+    const adviserGradeId = await getAdviserGradeLevelId(
+      req.user!.userId,
+      schoolYearId,
+    );
+    if (!adviserGradeId) {
+      return res.status(403).json({ message: "You do not have an active advisory class assigned." });
+    }
+    finalGradeLevelId = adviserGradeId;
+  }
+
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
@@ -339,6 +377,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
       learnerType: {
         in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
       },
+      ...(finalGradeLevelId ? { gradeLevelId: finalGradeLevelId } : {}),
     },
     include: {
       learner: {
@@ -640,6 +679,21 @@ export async function directEncodeWalkIn(
     } = payload;
 
     const schoolYearId = intakeContext.schoolYearId;
+
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const adviserGradeId = await getAdviserGradeLevelId(req.user!.userId, schoolYearId);
+      if (gradeLevelId !== adviserGradeId) {
+        throw new AppError(
+          403,
+          "You can only encode walk-in applications for your assigned advisory grade level.",
+        );
+      }
+    }
     const applicantType = parseWalkInProgramType(assignedProgram);
     let backSubjectSelection: {
       gradeLevelId: number;

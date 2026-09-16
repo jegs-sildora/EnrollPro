@@ -288,7 +288,6 @@ export function VerificationWorkspace() {
     queryFn: () =>
       api.get<PendingVerification[]>("/enrollment/pending-verifications").then((r) => r.data),
     enabled: !isHistoricalReadOnly,
-    refetchInterval: 10_000,
   });
 
   const { data: publicSettings } = useQuery({

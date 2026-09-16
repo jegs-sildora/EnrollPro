@@ -405,11 +405,18 @@ export default function ChangePassword() {
         });
 
         const roles = res.data.user?.roles ?? [];
-        const finalHome = roles.includes("TEACHER")
-          ? "/teacher/advisory"
-          : roles.includes("MRF")
-            ? "/my-activity"
-            : "/dashboard";
+        const isStrictClassAdviser =
+          roles.includes("CLASS_ADVISER") &&
+          !roles.includes("SYSTEM_ADMIN") &&
+          !roles.includes("HEAD_REGISTRAR");
+
+        const finalHome = isStrictClassAdviser
+          ? "/dashboard"
+          : roles.includes("TEACHER")
+            ? "/teacher/advisory"
+            : roles.includes("MRF")
+              ? "/my-activity"
+              : "/dashboard";
         setTimeout(() => {
           window.location.replace(finalHome);
         }, 500);

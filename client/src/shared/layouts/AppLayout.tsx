@@ -610,6 +610,7 @@ function AppSidebar() {
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
   );
   const isRegistrar = isHeadRegistrar;
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar;
   const isTeacher = useAuthStore(
     (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
@@ -739,13 +740,13 @@ function AppSidebar() {
 
       <SidebarSeparator />
 
-      {/* ΓöÇΓöÇ Navigation ΓöÇΓöÇ */}
+      {/* ── Navigation ── */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Items 1ΓÇô7: shared between registrar role and SYSTEM_ADMIN */}
-              {(isRegistrar || isAdmin) && (
+              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, and strict class adviser */}
+              {(isRegistrar || isAdmin || isStrictClassAdviser) && (
                 <>
                   <NavDivider
                     label={
@@ -771,16 +772,18 @@ function AppSidebar() {
                         label="Learner Enrollment"
                         pathname={pathname}
                       />
-                      <NavItem
-                        to="/section-assignment"
-                        icon={Calendar}
-                        label="Section Assignment"
-                        pathname={pathname}
-                      />
+                      {!isStrictClassAdviser && (
+                        <NavItem
+                          to="/section-assignment"
+                          icon={Calendar}
+                          label="Section Assignment"
+                          pathname={pathname}
+                        />
+                      )}
                     </>
                   )}
 
-                  {systemPhase === "EOSY_CLOSING" && (
+                  {!isStrictClassAdviser && systemPhase === "EOSY_CLOSING" && (
                     <>
 
                       <NavItem
@@ -796,31 +799,35 @@ function AppSidebar() {
                     </>
                   )}
 
-                  <NavDivider label="School Records" />
-                  <NavItem
-                    to="/learners"
-                    icon={Users}
-                    label="Learner Directory"
-                    pathname={pathname}
-                  />
-                  {isAdmin && (
-                    <NavItem
-                      to="/personnel"
-                      icon={Presentation}
-                      label="Personnel Directory"
-                      pathname={pathname}
-                    />
+                  {!isStrictClassAdviser && (
+                    <>
+                      <NavDivider label="School Records" />
+                      <NavItem
+                        to="/learners"
+                        icon={Users}
+                        label="Learner Directory"
+                        pathname={pathname}
+                      />
+                      {isAdmin && (
+                        <NavItem
+                          to="/personnel"
+                          icon={Presentation}
+                          label="Personnel Directory"
+                          pathname={pathname}
+                        />
+                      )}
+                      <NavItem
+                        to="/sections"
+                        icon={List}
+                        label="Class Sections"
+                        pathname={pathname}
+                      />
+                    </>
                   )}
-                  <NavItem
-                    to="/sections"
-                    icon={List}
-                    label="Class Sections"
-                    pathname={pathname}
-                  />
                 </>
               )}
 
-              {hasCompanionNavigation && (
+              {!isStrictClassAdviser && hasCompanionNavigation && (
                 <>
                   <NavDivider label="Integrated Systems" />
                   {canSeeCompanion("AIMS", userRoles) && (
@@ -896,7 +903,7 @@ function AppSidebar() {
                 </>
               )}
 
-              {isTeacher && (
+              {!isStrictClassAdviser && isTeacher && (
                 <>
                   <NavDivider label="Management" />
                   <NavItem

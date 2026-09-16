@@ -1,43 +1,36 @@
-# Prompt for Backend Fix: Automated Sectioning Engine - Cohort Ranking & Balancing
+# Prompt for UI/UX & Logic Implementation: Class Adviser RBAC and Enrollment Scoping
 
 ## Role & Context
-Act as a Backend Developer. We are fixing a logical failure in the `Automated Sectioning Engine` for EnrollPro. 
+Act as a Full-Stack Developer. We are implementing Role-Based Access Control (RBAC) and Data Scoping for the `CLASS_ADVISER` system role in EnrollPro (a DepEd Junior High School system). 
 
-The engine currently fails to properly identify top learners for the `TOP BEC` sections and is dumping all learners into the regular sections. We need to implement a true cohort-ranking algorithm that fills the Top BEC section(s) with the highest-ranking learners, and then rigorously balances the remaining learners across regular sections based on both Academic Performance (Gen Ave) and Sex.
+During the official enrollment period, teachers designated as Class Advisers act as front-line encoders. However, to prevent data leaks and reduce cognitive load, their UI and data access must be strictly limited compared to a System Administrator or Principal.
 
-## Diagnostic Checklist
-Before rewriting the logic, check for this common error:
-1.  **Rogue Capacity Constraints:** Ensure there are no conditional checks (e.g., `if total_learners >= 40`) blocking the execution of the Top BEC logic. The engine must attempt to isolate the top learners even if the testing database only has a handful of enrolled students.
+## The Objective
+Restrict the Class Adviser's sidebar navigation strictly to the Enrollment modules. Furthermore, enforce strict data scoping so that an adviser can only view, search, and enroll learners corresponding to their officially assigned Grade Level (e.g., a Grade 7 adviser cannot see or encode Grade 8 learners).
 
-## Bulletproof Algorithmic Implementation
+## UI & Frontend Implementation Requirements
 
-Please rewrite the sectioning controller using the following strict sequential logic flow. Do not use code snippets; implement this architectural logic in your backend language:
+Please implement the following layout and state changes when the active user has the `CLASS_ADVISER` role:
 
-### Step 1: Database Setup & Query Split
-1. Fetch the system configuration. If the `Enable Top BEC Sections` flag is FALSE, skip immediately to Step 3 (Regular Section Draft).
-2. Fetch all sections for the targeted Grade Level.
-3. Split these sections into two distinct lists: 
-   * `Top Sections` (filtered by the top section database flag).
-   * `Regular Sections` (the remaining sections).
-4. Calculate the `Total Top Capacity` (e.g., if there is 1 Top Section with a capacity of 40, the total capacity is 40).
+### 1. Sidebar Navigation Restriction
+Hide all administrative and school record modules. The sidebar should only render the following standard components:
+*   **Section Header:** `ENROLLMENT` (or `ENROLLMENT AND SECTIONING`)
+*   **Menu Item 1:** `Dashboard`
+*   **Menu Item 2:** `Learner Enrollment`
+*   *(Crucial: Hide `Section Assignment`, `Learner Directory`, `Personnel Directory`, `System Administration`, etc.)*
 
-### Step 2: Cohort Ranking & Top BEC Fill
-Instead of a hardcoded grade threshold, we evaluate the learners relative to their cohort.
-1. Fetch the pool of all `Ready for Sectioning` learners.
-2. Sort the entire pool in strictly **descending** order based on their `Final Gen Ave`.
-3. Filter out any learners with a `Conditionally Promoted` status (back subjects are generally disqualified from Pilot sections, regardless of Gen Ave).
-4. **The Slice:** From this sorted, filtered list, extract the top $N$ learners, where $N$ is equal to the `Total Top Capacity` calculated in Step 1. 
-5. Distribute these top learners into the `Top Sections`.
-6. **Crucial:** Remove these assigned top learners from the master pool so they are not drafted again in Step 3.
+### 2. Time-Bound Access (Enrollment Period)
+The system must check the `Enrollment Period` dates set in the System Configuration.
+*   **Active Period:** Render the modules normally.
+*   **Inactive/Closed Period:** If the adviser logs in outside the official BOSY (Beginning of School Year) enrollment period, change the `Learner Enrollment` page to an Empty State / Locked component with a message: *"Enrollment is currently closed. Access will resume during the next official encoding period."* Hide all action buttons and data tables.
 
-### Step 3: Heterogeneous Balancing (Gen Ave + Sex)
-Take the *remaining* unassigned learners in the master pool. To ensure the regular sections are perfectly balanced by both academic weight and gender ratio, execute the following:
-1. **Split by Sex:** Divide the remaining master pool into two separate arrays: `Male Learners` and `Female Learners`.
-2. **Verify Sorting:** Ensure both arrays are still sorted descending by `Final Gen Ave`.
-3. **Male Snake Draft:** Execute a serpentine distribution (snake draft) of the `Male Learners` across all available `Regular Sections` (e.g., Section A -> Section B -> Section C -> Section C -> Section B -> Section A).
-4. **Female Snake Draft:** Execute the same serpentine distribution for the `Female Learners` across the `Regular Sections`, picking up exactly where the section index left off.
+### 3. "Learner Enrollment" UI Data Scoping
+When the adviser opens the `Learner Enrollment` page, the UI must dynamically adapt to their assigned grade level (derived from their user profile/personnel record).
+*   **Pre-Applied Filters:** The "Grade Level" filter or tab must be pre-set to their assigned grade (e.g., `Grade 7`).
+*   **Locked State:** Disable or completely hide the other Grade Level options in the dropdown/tabs. The adviser should not even have the option to click "Grade 8", "Grade 9", or "Grade 10".
+*   **Walk-In Modal Constraint:** If they click the `+ Encode Walk-In` button, the "Incoming Grade Level" field inside the modal must be locked/disabled and pre-filled with their assigned grade level to prevent accidental encoding into the wrong cohort.
 
-## Expected Output for Testing
-Using a test payload with 2 learners:
-*   **Learner A (Gen Ave: 88.00):** As the highest-ranking learner in the cohort, they must be extracted and placed in `LUNA (TOP BEC)`.
-*   **Learner B (Gen Ave: 69.00):** As the remaining lower-ranking learner, they bypass the filled/assigned Top section and are placed into the `AGUINALDO (Regular)` snake draft.
+## Backend & API Security (Critical)
+Do not rely solely on the frontend to hide data. 
+*   **API Interception:** Update the learner fetch endpoints. If the requesting user is a `CLASS_ADVISER`, the backend must automatically inject a `WHERE grade_level = [Adviser's Assigned Grade]` clause into the database query.
+*   **Validation:** If an adviser attempts a POST request to enroll a student into Grade 8, but they are a Grade 7 adviser, the backend must reject the request with a `403 Forbidden` error.

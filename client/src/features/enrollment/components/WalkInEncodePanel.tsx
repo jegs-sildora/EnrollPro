@@ -41,6 +41,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
+import { useAuthStore } from "@/store/auth.slice";
 
 const MOTHER_TONGUE_OPTIONS = [
   { value: "Tagalog", label: "Tagalog" },
@@ -137,12 +138,10 @@ export function WalkInEncodePanel() {
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
   const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
 
-  const programOptions = [
-    { val: "REGULAR", label: "BEC" },
-    ...(steEnabled ? [{ val: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" }] : []),
-    ...(spaEnabled ? [{ val: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" }] : []),
-    ...(spsEnabled ? [{ val: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" }] : []),
-  ];
+  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const isAdmin = userRoles.includes("SYSTEM_ADMIN");
+  const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar;
 
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
@@ -151,6 +150,24 @@ export function WalkInEncodePanel() {
       return res.data;
     },
   });
+
+  const activeSyId = useSettingsStore((s) => s.activeSchoolYearId);
+  const { data: advisoryData } = useQuery({
+    queryKey: ["teacher", "advisory", activeSyId],
+    queryFn: () => api.get("/teacher-advisory").then(res => res.data),
+    enabled: isStrictClassAdviser && !!activeSyId,
+  });
+
+  const assignedGradeLevelId = isStrictClassAdviser && advisoryData?.section?.gradeLevelId
+    ? advisoryData.section.gradeLevelId
+    : null;
+
+  const programOptions = [
+    { val: "REGULAR", label: "BEC" },
+    ...(steEnabled ? [{ val: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" }] : []),
+    ...(spaEnabled ? [{ val: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" }] : []),
+    ...(spsEnabled ? [{ val: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" }] : []),
+  ];
 
   const form = useForm<DirectEncodeWalkInPayload>({
     resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
@@ -234,6 +251,12 @@ export function WalkInEncodePanel() {
       setOpen(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (assignedGradeLevelId && gradeLevelId !== assignedGradeLevelId) {
+      form.setValue("gradeLevelId", assignedGradeLevelId, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [assignedGradeLevelId, gradeLevelId, form]);
 
   const handleLrnLookup = async (lrn: string) => {
     if (lrn.length !== 12) return;
@@ -422,7 +445,7 @@ export function WalkInEncodePanel() {
                 <div className="space-y-4">
                   {/* LEARNER PROFILE BLOCK */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                       <span className="flex items-center gap-2">
                         <User className="h-4 w-4 text-primary" />
                         Learner Profile
@@ -579,7 +602,7 @@ export function WalkInEncodePanel() {
                         <div className="grid grid-cols-[120px_1fr] gap-6">
                           {/* LEFT COLUMN: Photo */}
                           <div className="flex flex-col space-y-2 items-center">
-                            <FormLabel className="font-bold whitespace-nowrap">Learner's Photo</FormLabel>
+                            <FormLabel className="font-bold capitalize whitespace-nowrap">Learner's Photo</FormLabel>
                             <div className="relative group w-[120px]">
                               <UserPhoto
                                 photo={form.watch("studentPhoto")}
@@ -638,7 +661,7 @@ export function WalkInEncodePanel() {
                                 name="lastName"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="font-bold">Last Name <span className="text-destructive">*</span></FormLabel>
+                                    <FormLabel className="font-bold capitalize">Last Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -649,7 +672,7 @@ export function WalkInEncodePanel() {
                                 name="firstName"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="font-bold">First Name <span className="text-destructive">*</span></FormLabel>
+                                    <FormLabel className="font-bold capitalize">First Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl><Input placeholder="e.g. JUAN" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -663,7 +686,7 @@ export function WalkInEncodePanel() {
                                 name="middleName"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="font-bold">Middle Name</FormLabel>
+                                    <FormLabel className="font-bold capitalize">Middle Name</FormLabel>
                                     <FormControl><Input placeholder="e.g. PEREZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                                   </FormItem>
                                 )}
@@ -673,7 +696,7 @@ export function WalkInEncodePanel() {
                                 name="extensionName"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="font-bold">Suffix (Extension)</FormLabel>
+                                    <FormLabel className="font-bold capitalize">Suffix (Extension)</FormLabel>
                                     <Select
                                       onValueChange={(val) => field.onChange(val === "NONE" ? "" : val)}
                                       value={field.value || "NONE"}>
@@ -702,7 +725,7 @@ export function WalkInEncodePanel() {
                             name="birthdate"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Birthdate <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Birthdate <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                   <HybridDatePicker value={field.value} onChange={field.onChange} />
                                 </FormControl>
@@ -715,7 +738,7 @@ export function WalkInEncodePanel() {
                             name="sex"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Sex <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Sex <span className="text-destructive">*</span></FormLabel>
                                 <div className="flex gap-4">
                                   {(
                                     [
@@ -755,7 +778,7 @@ export function WalkInEncodePanel() {
                             name="motherTongue"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Mother Tongue <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Mother Tongue <span className="text-destructive">*</span></FormLabel>
                                 <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
                                   <FormControl>
                                     <SearchableCombobox
@@ -803,13 +826,14 @@ export function WalkInEncodePanel() {
                           name="gradeLevelId"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold">Incoming Grade Level <span className="text-destructive">*</span></FormLabel>
+                              <FormLabel className="font-bold capitalize">Incoming Grade Level <span className="text-destructive">*</span></FormLabel>
                               <div className="grid grid-cols-4 gap-4">
                                 {activeSchoolYear?.gradeLevels?.map((gl) => (
                                   <button
                                     key={gl.id}
                                     type="button"
                                     onClick={() => {
+                                      if (isStrictClassAdviser) return;
                                       field.onChange(gl.id);
                                       replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                                     }}
@@ -817,7 +841,8 @@ export function WalkInEncodePanel() {
                                       "flex items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase",
                                       field.value === gl.id
                                         ? getGradeLevelBadgeStyles(gl.name) + " border-current"
-                                        : "border-border hover:bg-muted/50 text-foreground"
+                                        : "border-border hover:bg-muted/50 text-foreground",
+                                      isStrictClassAdviser && field.value !== gl.id && "opacity-50 cursor-not-allowed"
                                     )}>
                                     {gl.name}
                                   </button>
@@ -832,7 +857,7 @@ export function WalkInEncodePanel() {
                           name="assignedProgram"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold">Curriculum Type <span className="text-destructive">*</span></FormLabel>
+                              <FormLabel className="font-bold capitalize">Curriculum Type <span className="text-destructive">*</span></FormLabel>
                               <div className="flex gap-4">
                                 {programOptions.map((prog) => (
                                   <button
@@ -861,7 +886,7 @@ export function WalkInEncodePanel() {
                   
                   {/* CURRENT HOME ADDRESS BLOCK */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                       <span className="flex items-center gap-2">
                         CURRENT HOME ADDRESS
                       </span>
@@ -890,13 +915,13 @@ export function WalkInEncodePanel() {
                         required={true}
                       />
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4 mt-4">
                         <FormField
                           control={form.control}
                           name="addressSitio"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold uppercase">Sitio / Purok</FormLabel>
+                              <FormLabel className="font-bold capitalize">Sitio / Purok</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g. Sitio Calambuga" className="uppercase font-bold" {...field} value={field.value || ""} />
                               </FormControl>
@@ -909,7 +934,7 @@ export function WalkInEncodePanel() {
                           name="addressStreet"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold uppercase">House No. / Street</FormLabel>
+                              <FormLabel className="font-bold capitalize">House No. / Street</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g. 123 or Rizal Street" className="uppercase font-bold" {...field} value={field.value || ""} />
                               </FormControl>
@@ -924,7 +949,7 @@ export function WalkInEncodePanel() {
 
                   {/* PREVIOUS SCHOOL BLOCK */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                       <span className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
                         Previous School Data
@@ -937,7 +962,7 @@ export function WalkInEncodePanel() {
                           name="previousSchoolName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold">
+                              <FormLabel className="font-bold capitalize">
                                 {form.watch('learnerType') === "TRANSFEREE" ? "Transferred From (Previous School)" : "School Name"}
                                 <span className="text-destructive"> *</span>
                               </FormLabel>
@@ -953,7 +978,7 @@ export function WalkInEncodePanel() {
                             name="originatingSchoolId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Originating School ID <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Originating School ID <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="e.g. 123456"
@@ -979,7 +1004,7 @@ export function WalkInEncodePanel() {
                               name="transferCertificateNo"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="font-bold">Transfer Certificate No.</FormLabel>
+                                  <FormLabel className="font-bold capitalize">Transfer Certificate No.</FormLabel>
                                   <FormControl>
                                     <Input
                                       placeholder="e.g. 98765"
@@ -999,7 +1024,7 @@ export function WalkInEncodePanel() {
                             name="previousGenAve"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Final Gen Ave</FormLabel>
+                                <FormLabel className="font-bold capitalize">Final Gen Ave</FormLabel>
                                 <FormControl>
                                   <Input
                                     className="font-bold"
@@ -1034,7 +1059,7 @@ export function WalkInEncodePanel() {
                           name="sf9EligibilityStatus"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold">SF9 Eligibility Status <span className="text-destructive">*</span></FormLabel>
+                              <FormLabel className="font-bold capitalize">SF9 Eligibility Status <span className="text-destructive">*</span></FormLabel>
                               <div className="flex gap-4">
                                 {[
                                   { val: "PROMOTED", label: "Promoted" },
@@ -1241,7 +1266,7 @@ export function WalkInEncodePanel() {
 
                   {/* EMERGENCY CONTACT BLOCK */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                       <span className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-primary" />
                         Emergency Contact
@@ -1255,7 +1280,7 @@ export function WalkInEncodePanel() {
                             name="guardianFirstName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">First Name <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">First Name <span className="text-destructive">*</span></FormLabel>
                                 <FormControl><Input placeholder="e.g. MARIA" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1266,7 +1291,7 @@ export function WalkInEncodePanel() {
                             name="guardianMiddleName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Middle Name</FormLabel>
+                                <FormLabel className="font-bold capitalize">Middle Name</FormLabel>
                                 <FormControl><Input placeholder="e.g. SANTOS" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                               </FormItem>
                             )}
@@ -1276,7 +1301,7 @@ export function WalkInEncodePanel() {
                             name="guardianLastName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Last Name <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Last Name <span className="text-destructive">*</span></FormLabel>
                                 <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-bold" {...field} value={field.value || ""} /></FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1289,7 +1314,7 @@ export function WalkInEncodePanel() {
                             name="guardianContact"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Contact Number <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Contact Number <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                   <Input
                                     className="font-bold"
@@ -1311,7 +1336,7 @@ export function WalkInEncodePanel() {
                             name="guardianRelationship"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="font-bold">Relationship to Learner <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel className="font-bold capitalize">Relationship to Learner <span className="text-destructive">*</span></FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value ?? ""}>
                                   <FormControl>
                                     <SelectTrigger className="font-bold uppercase">

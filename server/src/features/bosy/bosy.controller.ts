@@ -13,6 +13,8 @@ import {
   type BOSYQueueState,
 } from "./bosy.service.js";
 import { broadcastBosyInvalidation } from "../../lib/realtime-events.js";
+import { getAdviserGradeLevelId } from "../teachers/adviser-scope.service.js";
+import { prisma } from "../../lib/prisma.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -108,10 +110,30 @@ export async function getBosyQueue(
     const page = parsePositiveInt(req.query.page, 1);
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
 
+    let finalGradeLevelId = gradeLevelId;
+    let finalTargetGradeOrder = targetGradeOrder;
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const adviserGradeId = await getAdviserGradeLevelId(
+        req.user!.userId,
+        schoolYearId,
+      );
+      if (!adviserGradeId) {
+        res.status(403).json({ message: "You do not have an active advisory class assigned." });
+        return;
+      }
+      finalGradeLevelId = adviserGradeId;
+      finalTargetGradeOrder = undefined;
+    }
+
     const result = await getBOSYQueue({
       schoolYearId,
-      gradeLevelId,
-      targetGradeOrder,
+      gradeLevelId: finalGradeLevelId,
+      targetGradeOrder: finalTargetGradeOrder,
       queueState,
       status,
       search,
@@ -136,6 +158,32 @@ export async function confirmReturnHandler(
     if (!applicationId) {
       res.status(400).json({ message: "Invalid applicationId." });
       return;
+    }
+
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const application = await prisma.enrollmentApplication.findUnique({
+        where: { id: applicationId },
+        select: { gradeLevelId: true, schoolYearId: true },
+      });
+      if (!application) {
+        res.status(404).json({ message: "Application not found." });
+        return;
+      }
+      const adviserGradeId = await getAdviserGradeLevelId(
+        req.user!.userId,
+        application.schoolYearId,
+      );
+      if (application.gradeLevelId !== adviserGradeId) {
+        res.status(403).json({
+          message: "You can only confirm applications for your assigned grade level.",
+        });
+        return;
+      }
     }
 
     const result = await confirmReturn(
@@ -296,6 +344,32 @@ export async function bulkConfirmReturnHandler(
       return;
     }
 
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const adviserGradeId = await getAdviserGradeLevelId(
+        req.user!.userId,
+        parsedSchoolYearId,
+      );
+      
+      const invalidApps = await prisma.enrollmentApplication.count({
+        where: {
+          id: { in: parsedIds },
+          gradeLevelId: { not: adviserGradeId ?? -1 },
+        }
+      });
+
+      if (invalidApps > 0) {
+        res.status(403).json({
+          message: "You can only confirm applications for your assigned grade level.",
+        });
+        return;
+      }
+    }
+
     const result = await bulkConfirmReturn(
       parsedIds,
       parsedSchoolYearId,
@@ -349,7 +423,28 @@ export async function getPreviousSectionsHandler(
       res.status(400).json({ message: "schoolYearId query param is required." });
       return;
     }
-    const sections = await getPreviousSections(schoolYearId);
+
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    let targetGradeOrder: number | undefined;
+
+    if (isStrictClassAdviser) {
+      const adviserGradeId = await getAdviserGradeLevelId(
+        req.user!.userId,
+        schoolYearId,
+      );
+      if (adviserGradeId) {
+        const adviserGrade = await prisma.gradeLevel.findUnique({ where: { id: adviserGradeId } });
+        if (adviserGrade) {
+          targetGradeOrder = adviserGrade.displayOrder;
+        }
+      }
+    }
+
+    const sections = await getPreviousSections(schoolYearId, targetGradeOrder);
     res.json(sections);
   } catch (error) {
     next(error);
