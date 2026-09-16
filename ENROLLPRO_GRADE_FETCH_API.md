@@ -38,7 +38,6 @@ curl -X POST \
 ```
 
 ---
-
 ## Response Schema
 
 ### Top-Level Response (`200 OK`)

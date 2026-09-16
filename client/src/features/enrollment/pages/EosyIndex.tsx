@@ -227,7 +227,7 @@ interface SmartConnectionStatus {
 }
 
 const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolean = false) => {
-  const normalized = status ?? "PROMOTED";
+  const normalized = status ?? "ACTION_REQUIRED";
 
   switch (normalized as string) {
     case "PROMOTED":
@@ -245,7 +245,7 @@ const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolea
     case "ACTION_REQUIRED":
       return "ACTION REQUIRED";
     default:
-      return "PROMOTED";
+      return "ACTION REQUIRED";
   }
 };
 

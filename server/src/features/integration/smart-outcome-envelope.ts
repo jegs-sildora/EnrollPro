@@ -134,6 +134,9 @@ export function readSmartOutcomeEnvelope(value: unknown): SmartOutcomeEnvelope |
     || typeof candidate.synchronizedAt !== "string"
     || typeof candidate.checksum !== "string"
     || !subjects
+    || Object.keys(subjects).some(
+      (subjectName) => subjectName.trim().toLocaleLowerCase("en-US") === "mock subject",
+    )
   ) {
     return null;
   }

@@ -1,6 +1,8 @@
 import axios from "axios";
 import { AppError } from "../../lib/AppError.js";
 
+let warnedAboutMissingRegistrarToken = false;
+
 export interface SmartRolloverBlockResponse {
   blocked: boolean;
   count?: number;
@@ -25,14 +27,26 @@ export function getPreviousSchoolYearLabel(schoolYear: string): string | null {
 
 export async function checkSmartRemedialRolloverBlock(schoolYear: string): Promise<SmartRolloverBlockResponse> {
   const baseUrl = process.env.SMART_API_BASE_URL?.trim();
-  const smartToken = process.env.SMART_API_KEY?.trim();
+  const smartToken = process.env.SMART_REGISTRAR_API_TOKEN?.trim();
 
   if (!baseUrl) {
     throw new AppError(500, "SMART API base URL is not configured.");
   }
   
   if (!smartToken) {
-    throw new AppError(500, "SMART bearer token is not configured.");
+    if (process.env.NODE_ENV !== "production") {
+      if (!warnedAboutMissingRegistrarToken) {
+        console.warn(
+          "[SMART remedial] Check skipped in development. SMART's registrar remedial route requires a SMART user JWT and does not accept the grade-sync service key.",
+        );
+        warnedAboutMissingRegistrarToken = true;
+      }
+      return { blocked: false };
+    }
+    throw new AppError(
+      500,
+      "SMART remedial verification is not configured. Set SMART_REGISTRAR_API_TOKEN or expose a service-authenticated remedial integration endpoint.",
+    );
   }
 
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
@@ -57,7 +71,12 @@ export async function checkSmartRemedialRolloverBlock(schoolYear: string): Promi
     }
     
     if (process.env.NODE_ENV !== "production") {
-      console.warn("Ignoring SMART API connection error during development/mock testing.");
+      if (!warnedAboutMissingRegistrarToken) {
+        console.warn(
+          "[SMART remedial] SMART rejected or could not complete the registrar remedial check. The grade-sync service key is not used for this route.",
+        );
+        warnedAboutMissingRegistrarToken = true;
+      }
       return { blocked: false };
     }
     // For other errors (like 502, network issues), we throw an error so the rollover doesn't silently proceed if SMART is down

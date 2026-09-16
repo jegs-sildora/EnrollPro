@@ -31,6 +31,13 @@ interface SmartSyncResult {
 
 const sectionSyncLocks = new Map<number, Promise<SmartSyncResult>>();
 const SMART_TRANSPORT_ATTEMPTS = 3;
+const SMART_TOKEN_PLACEHOLDER_PATTERNS = [
+  /^server_only_/i,
+  /^your[_-]/i,
+  /^replace[_-]/i,
+  /^change[_-]?me/i,
+  /^example[_-]/i,
+];
 
 function isRetryableSmartTransportError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) {
@@ -180,6 +187,18 @@ function assertUniqueSubjects(
 }
 
 function assertFinalSubjectGrade(subject: SmartEosyLearnerOutcome["subjectGrades"][number]): void {
+  if (
+    subject.status !== "GRADED"
+    || subject.T1 === null
+    || subject.T2 === null
+    || subject.T3 === null
+  ) {
+    throw new SmartOutcomeValidationError(
+      "INCOMPLETE_SUBJECT_GRADES",
+      `Subject ${subject.subjectName} does not have complete finalized T1, T2, and T3 grades.`,
+    );
+  }
+
   if (subject.finalRating === null) {
     throw new SmartOutcomeValidationError(
       "INCOMPLETE_SUBJECT_GRADES",
@@ -374,11 +393,23 @@ async function syncFinalSmartSectionOutcomesInternal(
 
   try {
     if (!baseUrl) {
-      throw new Error("SMART is not configured.");
+      throw new AppError(
+        502,
+        "SMART grade synchronization is not configured. Set SMART_API_BASE_URL in server/.env.",
+      );
     }
     const smartToken = process.env.SMART_API_KEY?.trim();
     if (!smartToken) {
-      throw new Error("SMART bearer token is not configured.");
+      throw new AppError(
+        502,
+        "SMART grade synchronization is not configured. Set the SMART-issued SMART_API_KEY in server/.env.",
+      );
+    }
+    if (SMART_TOKEN_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(smartToken))) {
+      throw new AppError(
+        502,
+        "SMART_API_KEY is still a placeholder. Configure the matching SMART-issued grade-sync credential in server/.env.",
+      );
     }
     const cleanBaseUrl = baseUrl.replace(/\/$/, "");
     // SMART's section registry is keyed by the shared DepEd section name.
@@ -394,7 +425,10 @@ async function syncFinalSmartSectionOutcomesInternal(
           undefined,
           {
             params: { schoolYear: section.schoolYear.yearLabel },
-            headers: { 'X-EnrollPro-API-Key': smartToken },
+            headers: {
+              Authorization: `Bearer ${smartToken}`,
+              "X-EnrollPro-API-Key": smartToken,
+            },
             timeout: 10_000,
           },
         );
@@ -422,44 +456,18 @@ async function syncFinalSmartSectionOutcomesInternal(
       throw error;
     }
     
-    if (process.env.NODE_ENV !== "production") {
-      rawResponse = {
-        success: true,
-        ready: true,
-        sectionName: section.name,
-        gradeLevel: section.gradeLevel.name,
-        schoolYear: section.schoolYear.yearLabel,
-        outcomesSynced: section.enrollmentRecords.length,
-        outcomes: section.enrollmentRecords.map((r) => ({
-          lrn: r.learner.lrn || "000000000000",
-          studentName: `${r.learner.lastName}, ${r.learner.firstName}`,
-          subjectGrades: [
-            {
-              subjectCode: "MOCK",
-              subjectName: "Mock Subject",
-              T1: 90,
-              T2: 90,
-              T3: 90,
-              finalRating: 90,
-              remarks: "Passed",
-              status: "GRADED",
-            },
-          ],
-          generalAverage: 90,
-          finalGeneralAverage: 90,
-          remarks: "Passed",
-          promotionStatus: "Promoted",
-          finalOutcome: "PROMOTED",
-        })),
-      };
-    } else {
-      if (
-        axios.isAxiosError(error)
-        && (error.response?.status === 401 || error.response?.status === 403)
-      ) {
+      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+        const smartError = typeof error.response.data === "object"
+          && error.response.data !== null
+          && "error" in error.response.data
+          ? String(error.response.data.error)
+          : "";
+        const configurationHint = smartError.toLowerCase().includes("not configured")
+          ? " SMART must configure the matching EnrollPro integration credential."
+          : "";
         throw new AppError(
           502,
-          "SMART rejected the configured Bearer token. Configure the valid SMART-issued token in server/.env.",
+          `SMART rejected the grade-sync credential.${configurationHint} Configure the matching SMART-issued token in server/.env.`,
         );
       }
       let reason = "Unknown connection failure";
@@ -492,23 +500,16 @@ async function syncFinalSmartSectionOutcomesInternal(
       }
       
       if (axios.isAxiosError(error) && error.response?.status === 429) {
-        return {
-          schoolYearId: section.schoolYearId,
-          sectionId,
-          sectionName: section.name,
-          syncedCount: 0,
-          unmatchedSmartLrns: [],
-          missingSmartLrns: [],
-          unresolvedOutcomes: [],
-          learnerIds: [],
-        };
+        throw new AppError(
+          503,
+          "SMART grade synchronization is temporarily rate limited. Try again shortly.",
+        );
       }
 
       throw new AppError(
         503,
         `SMART final-result synchronization failed: ${reason}`,
       );
-    }
   }
 
   const parsed = smartEosySectionResponseSchema.safeParse(rawResponse);
@@ -522,15 +523,65 @@ async function syncFinalSmartSectionOutcomesInternal(
   }
 
   if (!parsed.data.ready) {
+    const notReadyReason = parsed.data.message?.trim()
+      || "SMART has not published complete finalized grades for this section.";
+    const unresolvedOutcomes = section.enrollmentRecords.flatMap((record) => {
+      if (
+        record.eosyStatus === "DROPPED_OUT"
+        || record.eosyStatus === "TRANSFERRED_OUT"
+        || !record.learner.lrn
+      ) {
+        return [];
+      }
+      return [{
+        lrn: record.learner.lrn,
+        status: "WAITING_FOR_SMART_FINALIZATION" as const,
+        reason: notReadyReason,
+      }];
+    });
+
+    await prisma.$transaction(
+      async (tx) => {
+        for (const unresolved of unresolvedOutcomes) {
+          const record = section.enrollmentRecords.find(
+            (candidate) => candidate.learner.lrn === unresolved.lrn,
+          );
+          if (!record) continue;
+
+          await tx.enrollmentRecord.update({
+            where: { id: record.id },
+            data: {
+              finalAverage: null,
+              eosyStatus: null,
+              academicDeficiencyNote: null,
+            },
+          });
+          await tx.enrollmentApplication.update({
+            where: { id: record.enrollmentApplicationId },
+            data: {
+              reportedGrades: replaceSmartOutcomeWithIssue(
+                record.enrollmentApplication.reportedGrades,
+                unresolved,
+              ),
+            },
+          });
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 30_000,
+      },
+    );
+
     return {
       syncedCount: 0,
-      unresolvedOutcomes: [],
+      unresolvedOutcomes,
       unmatchedSmartLrns: [],
-      missingSmartLrns: [],
+      missingSmartLrns: unresolvedOutcomes.map((outcome) => outcome.lrn),
       schoolYearId: section.schoolYearId,
       sectionId: section.id,
       sectionName: section.name,
-      learnerIds: [],
+      learnerIds: section.enrollmentRecords.map((record) => record.learner.id),
     };
   }
 

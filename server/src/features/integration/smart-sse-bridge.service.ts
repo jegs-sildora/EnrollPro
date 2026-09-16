@@ -35,6 +35,8 @@ interface ResolvedSection {
   name: string;
 }
 
+let warnedAboutUnavailableSseCredential = false;
+
 export type SmartSseConnectionState =
   | "DISABLED"
   | "CONNECTING"
@@ -66,14 +68,19 @@ function getErrorMessage(error: unknown): string {
 
 function getSmartConnectionConfig(): SmartConnectionConfig | null {
   const baseUrl = process.env.SMART_API_BASE_URL?.trim();
-  const token = process.env.SMART_API_KEY?.trim();
+  const token = process.env.SMART_SSE_BEARER_TOKEN?.trim();
 
   if (!baseUrl) {
     console.warn("[SMART SSE] Bridge disabled. SMART_API_BASE_URL is not configured.");
     return null;
   }
   if (!token) {
-    console.warn("[SMART SSE] Bridge disabled. SMART_API_KEY is not configured.");
+    if (!warnedAboutUnavailableSseCredential) {
+      console.warn(
+        "[SMART SSE] Bridge disabled. SMART's sync stream requires a SMART user JWT and does not accept the EnrollPro service key. Manual Sync Grades remains available.",
+      );
+      warnedAboutUnavailableSseCredential = true;
+    }
     return null;
   }
   if (SMART_TOKEN_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(token))) {
@@ -169,7 +176,7 @@ class SmartSseBridge {
         {
           headers: {
             Accept: "text/event-stream",
-            'X-EnrollPro-API-Key': config.token,
+            Authorization: `Bearer ${config.token}`,
           },
           signal: controller.signal,
         },
@@ -181,7 +188,7 @@ class SmartSseBridge {
         this.stopped = true;
         this.connectionState = "AUTHENTICATION_FAILED";
         console.error(
-          `[SMART SSE] Authentication rejected by SMART (HTTP ${response.status}). Configure the valid SMART-issued Bearer token in server/.env.`,
+          `[SMART SSE] Authentication rejected by SMART (HTTP ${response.status}). Configure a valid SMART user JWT as SMART_SSE_BEARER_TOKEN or update SMART's stream route to accept serviceAuth.`,
         );
         return;
       }

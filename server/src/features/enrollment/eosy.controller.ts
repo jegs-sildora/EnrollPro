@@ -123,6 +123,16 @@ function asJsonObject(
     : {};
 }
 
+function sanitizeUnverifiedReportedGrades(
+  value: Prisma.JsonValue | null,
+): Prisma.JsonObject | null {
+  const root = asJsonObject(value);
+  const safeEntries = Object.entries(root).filter(([key]) => (
+    key === "__smartSyncIssue" || key === "geofencing"
+  ));
+  return safeEntries.length > 0 ? Object.fromEntries(safeEntries) : null;
+}
+
 /**
  * Maps an internal EosyStatus value to the DepEd-canonical SF5 "Remarks"
  * label. IRREGULAR is an internal state for conditionally promoted learners
@@ -561,11 +571,20 @@ async function loadEosyGradeRecords(
     const isLocalDeparture =
       record.eosyStatus === "DROPPED_OUT"
       || record.eosyStatus === "TRANSFERRED_OUT";
+    const authoritativeFinalAverage = hasMatchingSmartOutcome
+      ? finalAverage
+      : null;
+    const authoritativeEosyStatus = hasMatchingSmartOutcome || isLocalDeparture
+      ? record.eosyStatus
+      : null;
+    const reportedGrades = hasMatchingSmartOutcome
+      ? record.enrollmentApplication.reportedGrades
+      : sanitizeUnverifiedReportedGrades(record.enrollmentApplication.reportedGrades);
     const scpMetadata = buildScpMetadata(
       record.section.programType,
-      record.nextYearCurriculum,
-      finalAverage,
-      smartOutcome,
+      hasMatchingSmartOutcome ? record.nextYearCurriculum : null,
+      authoritativeFinalAverage,
+      hasMatchingSmartOutcome ? smartOutcome : null,
     );
 
     const lrn = record.enrollmentApplication.learner.lrn;
@@ -573,16 +592,21 @@ async function loadEosyGradeRecords(
 
     return {
       id: record.id,
-      eosyStatus: record.eosyStatus,
-      academicDeficiencyNote: record.academicDeficiencyNote,
+      eosyStatus: authoritativeEosyStatus,
+      academicDeficiencyNote: hasMatchingSmartOutcome
+        ? record.academicDeficiencyNote
+        : null,
       dropOutReason: record.dropOutReason,
-      finalAverage,
-      nextYearCurriculum: record.nextYearCurriculum,
+      finalAverage: authoritativeFinalAverage,
+      nextYearCurriculum: hasMatchingSmartOutcome
+        ? record.nextYearCurriculum
+        : null,
       transferOutDate: record.transferOutDate,
       sectionId: record.sectionId,
       section: record.section,
       enrollmentApplication: {
         ...record.enrollmentApplication,
+        reportedGrades,
         trackingNumber: record.enrollmentApplication.trackingNumber ?? "",
       },
       smartSyncStatus: isLocalDeparture
@@ -1105,8 +1129,8 @@ export async function downloadFinalLisExport(
       toDateOnly(record.enrollmentApplication.learner.birthdate),
       record.section.gradeLevel.name,
       record.section.name,
-      record.finalAverage?.toFixed(2) || "0.00",
-      record.eosyStatus ?? "PROMOTED",
+      record.finalAverage?.toFixed(2) ?? "",
+      record.eosyStatus ?? "",
       record.dropOutReason,
       toDateOnly(record.transferOutDate),
       record.enrollmentApplication.applicantType,
