@@ -156,6 +156,7 @@ export default function BOSYPage() {
   const [localCurricularProgram, setLocalCurricularProgram] = useState<string>("ALL");
   const [localPreviousSectionName, setLocalPreviousSectionName] = useState<string>("ALL");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [processedIds, setProcessedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (isFilterPopoverOpen) {
@@ -292,16 +293,24 @@ export default function BOSYPage() {
               "The learner's enrollment and school requirements are confirmed.",
           },
       );
-      setQueueItems((prev) =>
-        prev.filter((item) => item.applicationId !== applicationId),
-      );
-      setQueueTotal((prev) => Math.max(0, prev - 1));
-      setConfirmSingleTarget(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({ queryKey: ["students"] });
-      void fetchReadiness();
+      setProcessedIds((prev) => new Set(prev).add(applicationId));
+      setTimeout(() => {
+        setQueueItems((prev) =>
+          prev.filter((item) => item.applicationId !== applicationId),
+        );
+        setQueueTotal((prev) => Math.max(0, prev - 1));
+        setProcessedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(applicationId);
+          return next;
+        });
+        setConfirmSingleTarget(null);
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningPool(),
+        });
+        void queryClient.invalidateQueries({ queryKey: ["students"] });
+        void fetchReadiness();
+      }, 300);
     } catch (e) {
       toastApiError(e as never);
     } finally {
@@ -334,18 +343,26 @@ export default function BOSYPage() {
             ? `${transferTarget.firstName} ${transferTarget.lastName} was removed from the sectioning queue and marked for transfer out.`
             : `${transferTarget.firstName} ${transferTarget.lastName} was cleared from the learner enrollment queue.`,
       });
-      setQueueItems((current) =>
-        current.filter(
-          (item) => item.applicationId !== transferTarget.applicationId,
-        ),
-      );
-      setQueueTotal((current) => Math.max(0, current - 1));
-      setTransferTarget(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({ queryKey: ["students"] });
-      void fetchReadiness();
+      setProcessedIds((prev) => new Set(prev).add(transferTarget.applicationId));
+      setTimeout(() => {
+        setQueueItems((current) =>
+          current.filter(
+            (item) => item.applicationId !== transferTarget.applicationId,
+          ),
+        );
+        setQueueTotal((current) => Math.max(0, current - 1));
+        setProcessedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(transferTarget.applicationId);
+          return next;
+        });
+        setTransferTarget(null);
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningPool(),
+        });
+        void queryClient.invalidateQueries({ queryKey: ["students"] });
+        void fetchReadiness();
+      }, 300);
     } catch (error: unknown) {
       toastApiError(error as Parameters<typeof toastApiError>[0]);
     } finally {
@@ -369,18 +386,26 @@ export default function BOSYPage() {
         description:
           `${revokeTarget.firstName} ${revokeTarget.lastName} was returned to Pending Enrollment.`,
       });
-      setQueueItems((current) =>
-        current.filter(
-          (item) => item.applicationId !== revokeTarget.applicationId,
-        ),
-      );
-      setQueueTotal((current) => Math.max(0, current - 1));
-      setRevokeTarget(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({ queryKey: ["students"] });
-      void fetchReadiness();
+      setProcessedIds((prev) => new Set(prev).add(revokeTarget.applicationId));
+      setTimeout(() => {
+        setQueueItems((current) =>
+          current.filter(
+            (item) => item.applicationId !== revokeTarget.applicationId,
+          ),
+        );
+        setQueueTotal((current) => Math.max(0, current - 1));
+        setProcessedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(revokeTarget.applicationId);
+          return next;
+        });
+        setRevokeTarget(null);
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.sectioningPool(),
+        });
+        void queryClient.invalidateQueries({ queryKey: ["students"] });
+        void fetchReadiness();
+      }, 300);
     } catch (error: unknown) {
       toastApiError(error as Parameters<typeof toastApiError>[0]);
     } finally {
@@ -418,10 +443,24 @@ export default function BOSYPage() {
             `${result.readyForSectioning.length} ready for section assignment; ` +
             `${result.temporarilyEnrolled.length} temporarily enrolled.`,
         });
-        setQueueItems((prev) =>
-          prev.filter((item) => !result.confirmed.includes(item.applicationId)),
-        );
-        setQueueTotal((prev) => Math.max(0, prev - result.confirmed.length));
+        setProcessedIds((prev) => new Set([...prev, ...result.confirmed]));
+        setTimeout(() => {
+          setQueueItems((prev) =>
+            prev.filter((item) => !result.confirmed.includes(item.applicationId)),
+          );
+          setQueueTotal((prev) => Math.max(0, prev - result.confirmed.length));
+          setProcessedIds((prev) => {
+            const next = new Set(prev);
+            result.confirmed.forEach(id => next.delete(id));
+            return next;
+          });
+          setRowSelection({});
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.sectioningPool(),
+          });
+          void queryClient.invalidateQueries({ queryKey: ["students"] });
+          void fetchReadiness();
+        }, 300);
       }
       if (result.failed.length > 0) {
         sileo.warning({
@@ -429,12 +468,6 @@ export default function BOSYPage() {
           description: `${result.failed.length} application(s) could not be confirmed.`,
         });
       }
-      setRowSelection({});
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.sectioningPool(),
-      });
-      void queryClient.invalidateQueries({ queryKey: ["students"] });
-      void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
     } finally {
@@ -775,6 +808,7 @@ export default function BOSYPage() {
                           }}
                           confirmingIds={confirmingIds}
                           busyActionIds={busyActionIds}
+                          processedIds={processedIds}
                         />
                       </div>
                       <PaginationBar

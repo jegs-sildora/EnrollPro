@@ -53,6 +53,7 @@ interface QueueTableProps {
   onMarkConfirmedTransferOut: (item: BOSYQueueItem) => void;
   confirmingIds: Set<number>;
   busyActionIds: Set<number>;
+  processedIds: Set<number>;
 }
 
 function buildLearnerDisplayName(item: BOSYQueueItem): string {
@@ -507,6 +508,7 @@ export function QueueTable({
   onMarkConfirmedTransferOut,
   confirmingIds,
   busyActionIds,
+  processedIds,
 }: QueueTableProps) {
   const motionPreferences = useMotionPreferences();
   const fadeVariants = createFadeShiftVariants(
@@ -850,6 +852,11 @@ export function QueueTable({
               forceEmptyState={Boolean(isSearching)}
               rowSelection={rowSelection}
               onRowSelectionChange={onRowSelectionChange}
+              getRowClassName={(row) =>
+                processedIds.has(row.applicationId)
+                  ? "opacity-0 scale-[0.98] transition-all duration-300 pointer-events-none"
+                  : "transition-all duration-300 ease-out"
+              }
               prependBodyRow={
                 isSearching ? (
                   <TableSearchIndicator colSpan={4} />
