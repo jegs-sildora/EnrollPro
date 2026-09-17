@@ -1,6 +1,6 @@
 # SMART EnrollPro SSO
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-17
 
 ## Purpose
 
@@ -8,16 +8,34 @@ This contract lets an eligible EnrollPro user open SMART without entering anothe
 
 This is not cross-domain cookie sharing. SMART must never receive an EnrollPro password, JWT, or session cookie.
 
-## EnrollPro Configuration
+## Effective EnrollPro Configuration
 
 ```text
-SMART_SSO_CALLBACK_URL=https://configured-smart-host/api/auth/enrollpro/callback
-SMART_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
-SMART_SSO_REVERSE_AUTHORIZE_URL=https://configured-smart-host/auth/enrollpro/authorize
-SMART_SSO_REVERSE_EXCHANGE_URL=https://configured-smart-host/api/v1/auth/sso/exchange
+ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
+SMART_SSO_CALLBACK_URL=https://laptop-pfvh73qk.buru-degree.ts.net/api/auth/enrollpro/callback
+SMART_SSO_CLIENT_SECRET=<read from server/.env; server-only>
+SMART_SSO_REVERSE_AUTHORIZE_URL=https://laptop-pfvh73qk.buru-degree.ts.net/auth/enrollpro/authorize
+SMART_SSO_REVERSE_EXCHANGE_URL=https://laptop-pfvh73qk.buru-degree.ts.net/api/v1/auth/sso/exchange
 SMART_SSO_REVERSE_CLIENT_ID=enrollpro
-SMART_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
+SMART_SSO_REVERSE_CLIENT_SECRET=<read from server/.env; server-only>
 ```
+
+The EnrollPro reverse callback registered by SMART must be exactly:
+
+```text
+https://dev-jegs.buru-degree.ts.net/api/auth/companion-sso/smart/reverse/callback
+```
+
+These are the effective non-secret values currently present in `server/.env`.
+Secrets are intentionally not duplicated in this tracked document. SMART must
+receive the matching values through a secure out-of-band channel.
+
+`server/.env` currently contains two different
+`SMART_SSO_REVERSE_CLIENT_SECRET` declarations. Remove the obsolete declaration
+and retain only the value that is byte-identical to SMART's deployed reverse
+exchange secret, then restart EnrollPro. Until this is reconciled, the reverse
+flow is not configuration-safe even though both declarations satisfy the length
+requirement.
 
 The callback must use HTTPS outside local development. The secret must not be reused for grade synchronization, SMART SSE, or any other integration.
 

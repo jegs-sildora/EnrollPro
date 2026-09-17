@@ -1,6 +1,6 @@
 # ATLAS EnrollPro SSO
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-17
 
 ## Purpose
 
@@ -8,16 +8,35 @@ This contract lets an eligible EnrollPro user open ATLAS without entering anothe
 
 This is not cross-domain cookie sharing. ATLAS must never receive an EnrollPro password, JWT, or session cookie.
 
-## EnrollPro Configuration
+## Effective EnrollPro Configuration
 
 ```text
-ATLAS_SSO_CALLBACK_URL=https://configured-atlas-host/auth/enrollpro/callback
-ATLAS_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
-ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://configured-atlas-host/auth/enrollpro/authorize
-ATLAS_SSO_REVERSE_EXCHANGE_URL=https://configured-atlas-host/api/v1/auth/sso/exchange
-ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro
-ATLAS_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
+ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
+ATLAS_SSO_CALLBACK_URL=https://njgrm.buru-degree.ts.net/auth/sso/callback
+ATLAS_SSO_CLIENT_SECRET=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/auth/sso/authorize
+ATLAS_SSO_REVERSE_EXCHANGE_URL=https://njgrm.buru-degree.ts.net/auth/sso/exchange
+ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro_client_id
+ATLAS_SSO_REVERSE_CLIENT_SECRET=4661849a647bbd9435b8014529ec96c342f5efb581b2a92c454e9bc3532cc4b4
 ```
+
+The EnrollPro reverse callback registered by ATLAS must be exactly:
+
+```text
+https://dev-jegs.buru-degree.ts.net/api/auth/companion-sso/atlas/reverse/callback
+```
+
+These are the effective values currently present in `server/.env`.
+
+### ATLAS Route Verification Required
+
+The current EnrollPro environment points reverse authorization and exchange to
+`/auth/sso/authorize` and `/auth/sso/exchange`. The ATLAS handoff dated
+2026-09-17 reports mounted server routes at `/api/v1/auth/sso/authorize` and
+`/api/v1/auth/sso/exchange`. Before joint testing, ATLAS must confirm which pair
+is canonical. If the `/api/v1` routes are canonical, update the two EnrollPro
+environment values and restart EnrollPro; do not implement an unverified client
+fallback between paths.
 
 The callback must use HTTPS outside local development. The secret must not be reused for schedule feeds or any other integration.
 

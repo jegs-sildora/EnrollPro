@@ -1,23 +1,34 @@
 # MRF EnrollPro SSO
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-17
 
 ## Status
 
-MRF SSO is intentionally unavailable until its browser callback and landing routes are supplied. EnrollPro keeps the MRF sidebar item visible to eligible users and displays `MRF login is not configured` while either SSO setting is absent.
+MRF now has callback, reverse-flow URLs, client IDs, and both SSO secret variables configured in EnrollPro. This makes the EnrollPro catalog configuration-complete. Operational availability still requires MRF to expose the documented routes, use byte-identical paired secrets, and return a role-appropriate landing session.
 
 This is not cross-domain cookie sharing. MRF must never receive an EnrollPro password, JWT, or session cookie.
 
-## Required EnrollPro Configuration
+## Effective EnrollPro Configuration
 
 ```text
-MRF_SSO_CALLBACK_URL=https://configured-mrf-host/auth/enrollpro/callback
-MRF_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
-MRF_SSO_REVERSE_AUTHORIZE_URL=https://configured-mrf-host/auth/enrollpro/authorize
-MRF_SSO_REVERSE_EXCHANGE_URL=https://configured-mrf-host/api/v1/auth/sso/exchange
-MRF_SSO_REVERSE_CLIENT_ID=enrollpro
-MRF_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
+ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
+MRF_SSO_CALLBACK_URL=https://mrf.buru-degree.ts.net/auth/sso/callback
+MRF_SSO_CLIENT_SECRET=<read from server/.env; server-only>
+MRF_SSO_REVERSE_AUTHORIZE_URL=https://mrf.buru-degree.ts.net/auth/sso/authorize
+MRF_SSO_REVERSE_EXCHANGE_URL=https://mrf.buru-degree.ts.net/auth/sso/exchange
+MRF_SSO_REVERSE_CLIENT_ID=enrollpro_client_id
+MRF_SSO_REVERSE_CLIENT_SECRET=<read from server/.env; server-only>
 ```
+
+The EnrollPro reverse callback registered by MRF must be exactly:
+
+```text
+https://dev-jegs.buru-degree.ts.net/api/auth/companion-sso/mrf/reverse/callback
+```
+
+These are the effective non-secret values currently present in `server/.env`.
+Secrets are intentionally not duplicated in this tracked document. MRF must
+receive the matching values through a secure out-of-band channel.
 
 The callback must use HTTPS outside local development. The secret must not be reused for the MRF identity feed or any other integration.
 
@@ -57,6 +68,6 @@ Signing out of MRF ends only the MRF session. Coordinated logout is not part of 
 6. MRF returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
 7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account. EnrollPro routes using its locally stored roles.
 
-MRF must remain disabled until all outbound and reverse URLs and both distinct SSO secrets are configured.
+MRF must fail closed if its deployed callback, reverse routes, client ID, or paired secrets do not match the effective EnrollPro configuration above.
 
 The reverse response must include `success`, `issuer: "MRF"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the MRF reverse Bearer secret remain mandatory.

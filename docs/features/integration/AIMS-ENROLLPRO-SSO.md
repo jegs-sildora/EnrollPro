@@ -1,6 +1,6 @@
 # AIMS EnrollPro SSO
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-17
 
 ## Purpose
 
@@ -8,16 +8,27 @@ This contract lets an eligible EnrollPro user open AIMS without entering another
 
 This is not cross-domain cookie sharing. AIMS must never receive an EnrollPro password, JWT, or session cookie.
 
-## EnrollPro Configuration
+## Effective EnrollPro Configuration
 
 ```text
-AIMS_SSO_CALLBACK_URL=https://configured-aims-host/auth/enrollpro/callback
-AIMS_SSO_CLIENT_SECRET=<distinct random secret of at least 32 characters>
-AIMS_SSO_REVERSE_AUTHORIZE_URL=https://configured-aims-host/auth/enrollpro/authorize
-AIMS_SSO_REVERSE_EXCHANGE_URL=https://configured-aims-host/api/v1/auth/sso/exchange
+ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
+AIMS_SSO_CALLBACK_URL=https://tfrog.buru-degree.ts.net/auth/sso/callback
+AIMS_SSO_CLIENT_SECRET=<read from server/.env; server-only>
+AIMS_SSO_REVERSE_AUTHORIZE_URL=https://tfrog.buru-degree.ts.net/auth/enrollpro/authorize
+AIMS_SSO_REVERSE_EXCHANGE_URL=https://tfrog.buru-degree.ts.net/api/v1/auth/sso/exchange
 AIMS_SSO_REVERSE_CLIENT_ID=enrollpro
-AIMS_SSO_REVERSE_CLIENT_SECRET=<different random secret of at least 32 characters>
+AIMS_SSO_REVERSE_CLIENT_SECRET=<read from server/.env; server-only>
 ```
+
+The EnrollPro reverse callback registered by AIMS must be exactly:
+
+```text
+https://dev-jegs.buru-degree.ts.net/api/auth/companion-sso/aims/reverse/callback
+```
+
+These are the effective non-secret values currently present in `server/.env`.
+Secrets are intentionally not duplicated in this tracked document. AIMS must
+receive the matching values through a secure out-of-band channel.
 
 The callback must use HTTPS outside local development. The secret must not be reused for AIMS feeds or any other integration.
 
