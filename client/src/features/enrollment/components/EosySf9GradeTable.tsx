@@ -113,48 +113,48 @@ export function EosySf9GradeTable({
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead className="bg-muted text-foreground uppercase">
               <tr>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle text-base">
                   Learning Areas
                 </th>
-                <th colSpan={3} className="border border-border px-4 py-2 text-center font-bold">
+                <th colSpan={3} className="border border-border px-4 py-2 text-center font-bold text-base">
                   Term
                 </th>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle text-base">
                   Final Grading
                 </th>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle text-base">
                   Remarks
                 </th>
               </tr>
               <tr>
                 {[1, 2, 3].map((term) => (
-                  <th key={term} className="border border-border px-4 py-2 text-center font-bold">
+                  <th key={term} className="border border-border px-4 py-2 text-center font-bold text-base">
                     {term}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {subjects.map((subject) => {
+              {subjects.map((subject, index) => {
                 const remarks = subject.remarks ?? "--";
                 return (
-                  <tr key={subject.name} className="bg-card">
-                    <td className="border border-border px-4 py-3 text-center font-bold text-foreground">
+                  <tr key={subject.name} className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}>
+                    <td className="border border-border px-4 py-3 text-center font-bold text-foreground text-base">
                       {subject.name}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums text-base">
                       {formatGrade(subject.T1)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums text-base">
                       {formatGrade(subject.T2)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums text-base">
                       {formatGrade(subject.T3)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums text-base">
                       {formatGrade(subject.Final)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-bold uppercase">
+                    <td className="border border-border px-4 py-3 text-center font-bold uppercase text-base">
                       {remarks}
                     </td>
                   </tr>
@@ -166,10 +166,10 @@ export function EosySf9GradeTable({
                 <td colSpan={4} className="border border-border bg-muted px-4 py-3 text-right text-base font-bold uppercase">
                   General Average:
                 </td>
-                <td className="border border-border bg-card px-4 py-3 text-center text-base font-bold tabular-nums">
+                <td className="border border-border bg-card px-4 py-3 text-center text-base font-bold tabular-nums text-base">
                   {displayedAverage === null ? "--" : displayedAverage.toFixed(2)}
                 </td>
-                <td className="border border-border bg-card px-4 py-3 text-center text-sm font-bold text-primary">
+                <td className="border border-border bg-card px-4 py-3 text-center font-bold text-primary text-base">
                   {getAcademicStanding(displayedAverage)}
                 </td>
               </tr>

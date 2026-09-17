@@ -1168,7 +1168,7 @@ export default function Teachers() {
         </div>
 
         {/* DataTable */}
-        <div className="flex-1 overflow-auto relative">
+        <div className="flex-1 overflow-auto bg-muted/5 relative">
           <DataTable
             columns={columns}
             data={paginatedTeachers}

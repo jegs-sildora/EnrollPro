@@ -145,8 +145,8 @@ function TableRowComponentInner<TData>(
       }}
       className={cn(
         "text-center text-sm transition-colors",
-        striped ? (row.index % 2 === 0 ? "bg-background" : "bg-muted/30") : "bg-background",
-        isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
+        striped ? ((dataIndex ?? row.index) % 2 === 0 ? "bg-background" : "bg-muted/50") : "bg-background",
+        isClickable ? "hover:bg-muted/60 cursor-pointer" : "",
         row.getIsSelected() ? "bg-muted/80 hover:bg-muted/80" : "",
         customClassName,
         className,
@@ -213,7 +213,7 @@ export function DataTable<TData, TValue>({
   skeletonRowCount = 50,
   isHeaderRow,
   renderHeaderRow,
-  striped = false,
+  striped = true,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -427,7 +427,7 @@ export function DataTable<TData, TValue>({
                     </TableRow>
                   ),
                 ]
-                : rows.map((row) => {
+                : rows.map((row, index) => {
                   const isHeader = isHeaderRow?.(row.original);
 
                   if (isHeader && renderHeaderRow) {
@@ -441,6 +441,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <React.Fragment key={row.id}>
                       <TableRowComponent
+                        data-index={index}
                         row={row}
                         onRowClick={onRowClick}
                         getRowClassName={getRowClassName}

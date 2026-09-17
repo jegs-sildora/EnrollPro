@@ -192,8 +192,8 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
           </tr>
         </thead>
         <tbody className="divide-y">
-          {data.learners.map((l) => (
-            <tr key={l.id} className="even:bg-muted/50 hover:bg-muted/50 transition-colors">
+          {data.learners.map((l, index) => (
+            <tr key={l.id} className={cn("hover:bg-muted/60 transition-colors", index % 2 === 0 ? "bg-background" : "bg-muted/50")}>
               <td className="p-3">
                 <div className="flex flex-col">
                   <span className="font-extrabold text-foreground uppercase">
@@ -1906,8 +1906,8 @@ export function SectioningWorkspace() {
                                           </td>
                                         </tr>
                                       ) : (
-                                        roster.learners.map((learner) => (
-                                          <tr key={learner.applicationId} className="even:bg-muted/50 hover:bg-muted/50 transition-colors">
+                                        roster.learners.map((learner, index) => (
+                                          <tr key={learner.applicationId} className={cn("hover:bg-muted/60 transition-colors", index % 2 === 0 ? "bg-background" : "bg-muted/50")}>
                                             <td className="p-3">
                                               <div className="flex flex-col">
                                                 <span className="font-bold uppercase text-foreground">
@@ -2325,8 +2325,8 @@ export function SectioningWorkspace() {
                     </thead>
                     <tbody>
                       {draftPlacement?.rosters.flatMap((roster) =>
-                        roster.learners.map((learner) => (
-                          <tr key={learner.applicationId} className="border-b last:border-0 bg-background even:bg-muted/50 hover:bg-muted/50 transition-colors">
+                        roster.learners.map((learner, index) => (
+                          <tr key={learner.applicationId} className={cn("border-b last:border-0 hover:bg-muted/60 transition-colors", index % 2 === 0 ? "bg-background" : "bg-muted/50")}>
                             <td className="p-3 px-4">
                               <p className="font-extrabold uppercase text-foreground">
                                 {learner.lastName}, {learner.firstName}

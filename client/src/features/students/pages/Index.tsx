@@ -1126,10 +1126,10 @@ export default function Students() {
   ]);
 
   const renderContent = () => (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col min-h-0 h-full w-full">
 
       {/* Student List */}
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+      <Card className="border-none shadow-sm flex-1 flex flex-col min-h-0 overflow-hidden bg-[hsl(var(--card))]">
         {/* Control Bar (Filters) */}
         <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
           <div className="flex flex-col items-center justify-between w-full">
@@ -1353,7 +1353,7 @@ export default function Students() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="flex-1 flex flex-col overflow-hidden">
+            className="flex-1 flex flex-col overflow-hidden min-h-0">
             <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
               {students.length === 0 ? (
                 <div className="rounded-xl border p-6 text-center leading-tight font-bold">
@@ -1512,7 +1512,7 @@ export default function Students() {
               )}
             </div>
 
-            <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+            <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative min-h-0">
               <DataTable<Student, unknown>
                 columns={columns}
                 data={students}
@@ -1581,15 +1581,15 @@ export default function Students() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+    <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)]">
 
 
       {/* Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="w-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
+        className="w-full flex-1 flex flex-col min-h-0">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm shrink-0">
           <TabsTrigger
             value="active"
             className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
@@ -1645,11 +1645,11 @@ export default function Students() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="w-full">
+              className="w-full flex-1 flex flex-col min-h-0">
               <TabsContent
                 value="active"
                 forceMount
-                className="mt-0 focus-visible:outline-none ring-0">
+                className="mt-0 focus-visible:outline-none ring-0 flex-1 flex flex-col min-h-0">
                 {renderContent()}
               </TabsContent>
             </motion.div>
@@ -1661,11 +1661,11 @@ export default function Students() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="w-full">
+              className="w-full flex-1 flex flex-col min-h-0">
               <TabsContent
                 value="completers"
                 forceMount
-                className="mt-0 focus-visible:outline-none ring-0">
+                className="mt-0 focus-visible:outline-none ring-0 flex-1 flex flex-col min-h-0">
                 {renderContent()}
               </TabsContent>
             </motion.div>
@@ -1677,11 +1677,11 @@ export default function Students() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="w-full">
+              className="w-full flex-1 flex flex-col min-h-0">
               <TabsContent
                 value="inactive"
                 forceMount
-                className="mt-0 focus-visible:outline-none ring-0">
+                className="mt-0 focus-visible:outline-none ring-0 flex-1 flex flex-col min-h-0">
                 {renderContent()}
               </TabsContent>
             </motion.div>

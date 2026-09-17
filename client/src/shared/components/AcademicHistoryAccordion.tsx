@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/shared/lib/utils";
 
 export interface SubjectGrades {
   T1?: number | null;
@@ -215,7 +216,7 @@ export function AcademicHistoryAccordion({
                     </tr>
                   </thead>
                   <tbody>
-                    {subjectsToRender.map((subject) => {
+                    {subjectsToRender.map((subject, index) => {
                       const subjectGrades = getSubjectGrades(subject);
                       const term1 = formatVal(isTrimester ? (subjectGrades?.T1 ?? subjectGrades?.term1 ?? subjectGrades?.Q1) : (subjectGrades?.Q1 ?? subjectGrades?.T1));
                       const term2 = formatVal(isTrimester ? (subjectGrades?.T2 ?? subjectGrades?.term2 ?? subjectGrades?.Q2) : (subjectGrades?.Q2 ?? subjectGrades?.T2));
@@ -225,7 +226,7 @@ export function AcademicHistoryAccordion({
                       const remarks = subjectGrades?.remarks || (subjectGrades?.Final !== null && subjectGrades?.Final !== undefined ? (Number(subjectGrades.Final) >= 75 ? "Passed" : "Failed") : "—");
 
                       return (
-                        <tr key={subject} className="bg-card hover:bg-muted/50 transition-colors">
+                        <tr key={subject} className={cn("hover:bg-muted/60 transition-colors", index % 2 === 0 ? "bg-background" : "bg-muted/50")}>
                           <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{subject}</td>
                           <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term1}</td>
                           <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term2}</td>

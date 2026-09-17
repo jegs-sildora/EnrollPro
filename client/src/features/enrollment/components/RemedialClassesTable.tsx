@@ -141,7 +141,7 @@ export function RemedialClassesTable({
                       const outcome = remedialClass.outcome?.toUpperCase()
 
                       return (
-                        <tr key={`${record.schoolYear}-${remedialClass.learningAreas}-${index}`} className="bg-card">
+                        <tr key={`${record.schoolYear}-${remedialClass.learningAreas}-${index}`} className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}>
                           <td className="border border-border px-4 py-3 text-center font-bold text-foreground">
                             {remedialClass.learningAreas}
                           </td>
