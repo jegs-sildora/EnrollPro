@@ -318,11 +318,13 @@ export default function Students() {
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [promotionStatusFilter, setPromotionStatusFilter] = useState<string>("all");
+  const [completionYearFilter, setCompletionYearFilter] = useState<string>("all");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [localGradeFilter, setLocalGradeFilter] = useState<string>("all");
   const [localProgramFilter, setLocalProgramFilter] = useState<string>("all");
   const [localSectionFilter, setLocalSectionFilter] = useState<string>("all");
   const [localPromotionStatusFilter, setLocalPromotionStatusFilter] = useState<string>("all");
+  const [localCompletionYearFilter, setLocalCompletionYearFilter] = useState<string>("all");
 
   useEffect(() => {
     if (isFilterPopoverOpen) {
@@ -330,14 +332,16 @@ export default function Students() {
       setLocalProgramFilter(programFilter);
       setLocalSectionFilter(sectionFilter);
       setLocalPromotionStatusFilter(promotionStatusFilter);
+      setLocalCompletionYearFilter(completionYearFilter);
     }
-  }, [isFilterPopoverOpen, gradeLevelFilter, programFilter, sectionFilter, promotionStatusFilter]);
+  }, [isFilterPopoverOpen, gradeLevelFilter, programFilter, sectionFilter, promotionStatusFilter, completionYearFilter]);
 
   const activeFilterCount =
-    (gradeLevelFilter !== "all" ? 1 : 0) +
+    (gradeLevelFilter !== "all" && activeTab !== "completers" ? 1 : 0) +
     (programFilter !== "all" ? 1 : 0) +
     (sectionFilter !== "all" ? 1 : 0) +
-    (promotionStatusFilter !== "all" ? 1 : 0);
+    (promotionStatusFilter !== "all" && activeTab !== "completers" ? 1 : 0) +
+    (completionYearFilter !== "all" && activeTab === "completers" ? 1 : 0);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
@@ -416,12 +420,15 @@ export default function Students() {
 
     if (activeTab === "completers") {
       params.learnerStatus = "JHS_COMPLETER";
+      if (completionYearFilter !== "all") {
+        params.completionYearId = completionYearFilter;
+      }
     } else if (activeTab === "inactive") {
       params.learnerStatus = statusFilter !== "all" ? statusFilter : "DROPPED,TRANSFERRED_OUT";
     }
 
     if (debouncedSearch) params.search = debouncedSearch;
-    if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
+    if (activeTab !== "completers" && gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
     if (sectionFilter !== "all") params.sectionId = sectionFilter;
 
     if (programFilter !== "all") {
@@ -435,7 +442,7 @@ export default function Students() {
       }
     }
 
-    if (promotionStatusFilter !== "all") {
+    if (activeTab !== "completers" && promotionStatusFilter !== "all") {
       params.hasBackSubjects = promotionStatusFilter === "conditional" ? "true" : "false";
     }
 
@@ -449,10 +456,11 @@ export default function Students() {
     ayId,
     debouncedSearch,
     gradeLevelFilter,
-    programFilter,
     sectionFilter,
+    programFilter,
     statusFilter,
     promotionStatusFilter,
+    completionYearFilter,
   ]);
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -493,6 +501,33 @@ export default function Students() {
       return response.data;
     },
     enabled: Boolean(ayId),
+  });
+
+  const schoolYearsQuery = useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: async () => {
+      const res = await api.get("/school-years");
+      return res.data.years;
+    },
+  });
+
+  const completerSectionsQuery = useQuery({
+    queryKey: ["sections", localCompletionYearFilter],
+    queryFn: async () => {
+      if (localCompletionYearFilter === "all") return [];
+      const res = await api.get(`/sections/${localCompletionYearFilter}`);
+      const allSections = (res.data.gradeLevels || []).flatMap(
+        (gl: ApiGradeLevelGroup) =>
+          (gl.sections || []).map((s: ApiSection) => ({
+            ...s,
+            gradeLevelId: gl.gradeLevelId,
+          })),
+      );
+      const g10 = gradeLevels.find(gl => gl.name.toUpperCase().includes("GRADE 10"));
+      if (!g10) return [];
+      return allSections.filter((s: any) => s.gradeLevelId === g10.id);
+    },
+    enabled: activeTab === "completers" && localCompletionYearFilter !== "all" && gradeLevels.length > 0,
   });
 
   // Fetch grade levels and sections
@@ -1170,32 +1205,62 @@ export default function Students() {
                     <h4 className="text-lg font-bold">Filter Learners</h4>
                   </div>
                   <div className="p-4 space-y-4 flex flex-col">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground uppercase">Grade Level</Label>
-                      <Select
-                        isFilter
-                        value={localGradeFilter}
-                        onValueChange={setLocalGradeFilter}>
-                        <SelectTrigger className="h-10 w-full leading-tight font-bold">
-                          <SelectValue placeholder="All Grades" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all" className="leading-tight font-bold">
-                            All Grades
-                          </SelectItem>
-                          {gradeLevels.map((gl) => (
-                            <SelectItem
-                              key={gl.id}
-                              value={gl.id.toString()}
-                              className="leading-tight font-bold">
-                              <div className="flex items-center gap-2">
-                                <span>{gl.name}</span>
-                              </div>
+                    {activeTab === "completers" ? (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm text-muted-foreground uppercase">Completion Year</Label>
+                        <Select
+                          isFilter
+                          value={localCompletionYearFilter}
+                          onValueChange={(val) => {
+                            setLocalCompletionYearFilter(val);
+                            setLocalSectionFilter("all");
+                          }}>
+                          <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                            <SelectValue placeholder="All Batches" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all" className="leading-tight font-bold">
+                              All Batches
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                            {schoolYearsQuery.data?.map((sy: any) => (
+                              <SelectItem
+                                key={sy.id}
+                                value={sy.id.toString()}
+                                className="leading-tight font-bold">
+                                {sy.yearLabel}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm text-muted-foreground uppercase">Grade Level</Label>
+                        <Select
+                          isFilter
+                          value={localGradeFilter}
+                          onValueChange={setLocalGradeFilter}>
+                          <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                            <SelectValue placeholder="All Grades" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all" className="leading-tight font-bold">
+                              All Grades
+                            </SelectItem>
+                            {gradeLevels.map((gl) => (
+                              <SelectItem
+                                key={gl.id}
+                                value={gl.id.toString()}
+                                className="leading-tight font-bold">
+                                <div className="flex items-center gap-2">
+                                  <span>{gl.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     <div className="space-y-1.5">
                       <Label className="text-sm text-muted-foreground uppercase">Program</Label>
@@ -1233,11 +1298,12 @@ export default function Students() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground uppercase">Section</Label>
+                      <Label className="text-sm text-muted-foreground uppercase">{activeTab === "completers" ? "G10 Section" : "Section"}</Label>
                       <Select
                         isFilter
                         value={localSectionFilter}
-                        onValueChange={setLocalSectionFilter}>
+                        onValueChange={setLocalSectionFilter}
+                        disabled={activeTab === "completers" && localCompletionYearFilter === "all"}>
                         <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
                           <SelectValue placeholder="All Sections" />
                         </SelectTrigger>
@@ -1245,7 +1311,16 @@ export default function Students() {
                           <SelectItem value="all" className="leading-tight font-bold">
                             All Sections
                           </SelectItem>
-                          {localGradeFilter === "all" ? (
+                          {activeTab === "completers" ? (
+                            completerSectionsQuery.data?.map((sec: any) => (
+                              <SelectItem
+                                key={sec.id}
+                                value={sec.id.toString()}
+                                className="leading-tight font-bold">
+                                {formatSectionLabel(sec.name)}
+                              </SelectItem>
+                            ))
+                          ) : localGradeFilter === "all" ? (
                             gradeLevels.map((gl) => {
                               const glSections = filteredSections.filter((s) => s.gradeLevelId === gl.id);
                               if (glSections.length === 0) return null;
@@ -1277,28 +1352,30 @@ export default function Students() {
                       </Select>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground uppercase">EOSY Promotion Status</Label>
-                      <Select
-                        isFilter
-                        value={localPromotionStatusFilter}
-                        onValueChange={setLocalPromotionStatusFilter}>
-                        <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
-                          <SelectValue placeholder="All Statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all" className="leading-tight font-bold">
-                            All Statuses
-                          </SelectItem>
-                          <SelectItem value="regular" className="leading-tight font-bold">
-                            Regular (Promoted)
-                          </SelectItem>
-                          <SelectItem value="conditional" className="leading-tight font-bold">
-                            With Back Subjects
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {activeTab !== "completers" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm text-muted-foreground uppercase">EOSY Promotion Status</Label>
+                        <Select
+                          isFilter
+                          value={localPromotionStatusFilter}
+                          onValueChange={setLocalPromotionStatusFilter}>
+                          <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                            <SelectValue placeholder="All Statuses" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all" className="leading-tight font-bold">
+                              All Statuses
+                            </SelectItem>
+                            <SelectItem value="regular" className="leading-tight font-bold">
+                              Regular (Promoted)
+                            </SelectItem>
+                            <SelectItem value="conditional" className="leading-tight font-bold">
+                              With Back Subjects
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     {activeTab === "inactive" && (
                       <div className="space-y-1.5">
@@ -1336,6 +1413,7 @@ export default function Students() {
                         setLocalProgramFilter("all");
                         setLocalSectionFilter("all");
                         setLocalPromotionStatusFilter("all");
+                        setLocalCompletionYearFilter("all");
                         if (activeTab === "inactive") setStatusFilter("all");
                         clearSearch();
                     }}>
@@ -1347,6 +1425,7 @@ export default function Students() {
                            setProgramFilter(localProgramFilter);
                            setSectionFilter(localSectionFilter);
                            setPromotionStatusFilter(localPromotionStatusFilter);
+                           setCompletionYearFilter(localCompletionYearFilter);
                            setPage(1);
                            setIsFilterPopoverOpen(false);
                         });

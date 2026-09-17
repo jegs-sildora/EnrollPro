@@ -230,6 +230,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         sortBy: parseQueryString(req.query.sortBy),
         sortOrder: parseSortOrder(req.query.sortOrder),
         hasBackSubjects: parseQueryString(req.query.hasBackSubjects),
+        completionYearId: parseQueryString(req.query.completionYearId),
       });
 
       const students = applications.map((applicant: StudentSearchItem) => {

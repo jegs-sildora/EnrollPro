@@ -164,6 +164,7 @@ export async function findStudents(query: {
   sortBy?: string;
   sortOrder?: StudentSortOrder;
   hasBackSubjects?: string | boolean;
+  completionYearId?: number | string;
 }) {
   const {
     schoolYearId,
@@ -181,9 +182,11 @@ export async function findStudents(query: {
     sortBy,
     sortOrder,
     hasBackSubjects,
+    completionYearId,
   } = query;
 
   const resolvedSchoolYearId = parsePositiveInt(schoolYearId);
+  const resolvedCompletionYearId = parsePositiveInt(completionYearId);
   const resolvedLearnerId = parsePositiveInt(learnerId);
   const resolvedPage = parsePositiveInt(page) ?? 1;
   const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 1000000);
@@ -247,25 +250,47 @@ export async function findStudents(query: {
   if (!resolvedSchoolYearId && learnerStatus) {
     // For global search, we still want to filter by grade/section if provided
     // but since we are searching Learners, we look at their LATEST enrollment application
-    const applicationWhere: Prisma.EnrollmentApplicationWhereInput = {};
-    if (resolvedGradeLevelId) applicationWhere.gradeLevelId = resolvedGradeLevelId;
+    const appWhere: Prisma.EnrollmentApplicationWhereInput = {};
+    const historyWhere: Prisma.EnrollmentHistoryWhereInput = {};
+    
+    if (resolvedGradeLevelId) {
+      appWhere.gradeLevelId = resolvedGradeLevelId;
+      historyWhere.gradeLevelId = resolvedGradeLevelId;
+    }
+    if (resolvedCompletionYearId) {
+      appWhere.schoolYearId = resolvedCompletionYearId;
+      historyWhere.schoolYearId = resolvedCompletionYearId;
+    }
     
     const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
-    if (resolvedSectionId) enrollmentRecordFilters.sectionId = resolvedSectionId;
-    if (resolvedSectionIds && resolvedSectionIds.length > 0) enrollmentRecordFilters.sectionId = { in: resolvedSectionIds };
+    const historySectionFilters: Prisma.SectionWhereInput = {};
+    
+    if (resolvedSectionId) {
+      enrollmentRecordFilters.sectionId = resolvedSectionId;
+      historyWhere.sectionId = resolvedSectionId;
+    }
+    if (resolvedSectionIds && resolvedSectionIds.length > 0) {
+      enrollmentRecordFilters.sectionId = { in: resolvedSectionIds };
+      historyWhere.sectionId = { in: resolvedSectionIds };
+    }
     if (resolvedSectionFilter) {
       enrollmentRecordFilters.section = resolvedSectionFilter;
+      if (resolvedSectionFilter.programType) historySectionFilters.programType = resolvedSectionFilter.programType;
+      if (resolvedSectionFilter.isHomogeneous !== undefined) historySectionFilters.isHomogeneous = resolvedSectionFilter.isHomogeneous;
     }
     
     if (Object.keys(enrollmentRecordFilters).length > 0) {
-      applicationWhere.enrollmentRecord = enrollmentRecordFilters;
+      appWhere.enrollmentRecord = enrollmentRecordFilters;
+      if (Object.keys(historySectionFilters).length > 0) {
+        historyWhere.section = historySectionFilters;
+      }
     }
 
-    // If application filters are present, we must join with enrollmentApplications
-    if (Object.keys(applicationWhere).length > 0) {
-      learnerWhere.enrollmentApplications = {
-        some: applicationWhere
-      };
+    if (Object.keys(appWhere).length > 0 || Object.keys(historyWhere).length > 0) {
+      learnerWhere.OR = [
+        { enrollmentApplications: { some: appWhere } },
+        { enrollmentHistories: { some: historyWhere } }
+      ];
     }
 
     const total = await prisma.learner.count({ where: learnerWhere });
