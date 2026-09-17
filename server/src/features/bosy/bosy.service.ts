@@ -151,9 +151,15 @@ function extractDeficiencyNote(
   return null;
 }
 
-export async function getBOSYReadiness(
-  schoolYearId: number,
-): Promise<BOSYReadiness> {
+export async function getBOSYReadiness(params: {
+  schoolYearId: number;
+  gradeLevelId?: number;
+  targetGradeOrder?: number;
+  search?: string;
+  previousSectionName?: string;
+  curricularProgram?: string;
+}): Promise<BOSYReadiness> {
+  const { schoolYearId } = params;
   const schoolYear = await prisma.schoolYear.findUnique({
     where: { id: schoolYearId },
     select: {
@@ -168,6 +174,19 @@ export async function getBOSYReadiness(
     throw Object.assign(new Error("School year not found."), { status: 404 });
   }
 
+  const previousSchoolYearId = schoolYear.clonedFromId ?? null;
+  const baseWhere = await buildBOSYQueueWhereClause(
+    {
+      schoolYearId: params.schoolYearId,
+      gradeLevelId: params.gradeLevelId,
+      targetGradeOrder: params.targetGradeOrder,
+      search: params.search,
+      previousSectionName: params.previousSectionName,
+      curricularProgram: params.curricularProgram,
+    },
+    previousSchoolYearId,
+  );
+
   const [
     irregularBlockerCount,
     existingPendingCount,
@@ -181,44 +200,30 @@ export async function getBOSYReadiness(
       where: { schoolYearId, eosyStatus: "CONDITIONALLY_PROMOTED" },
     }),
     prisma.enrollmentApplication.count({
-      where: {
-        schoolYearId,
-        learnerType: "CONTINUING",
-        status: "PENDING_CONFIRMATION",
-      },
+      where: { ...baseWhere, status: "PENDING_CONFIRMATION" },
     }),
     prisma.enrollmentApplication.count({
       where: {
-        schoolYearId,
-        learnerType: "CONTINUING",
+        ...baseWhere,
         status: "READY_FOR_SECTIONING",
         isTemporarilyEnrolled: false,
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
-        schoolYearId,
-        learnerType: "CONTINUING",
+        ...baseWhere,
         status: "READY_FOR_SECTIONING",
         isTemporarilyEnrolled: true,
       },
     }),
     prisma.enrollmentApplication.count({
-      where: {
-        schoolYearId,
-        learnerType: "CONTINUING",
-        status: "OFFICIALLY_ENROLLED",
-      },
+      where: { ...baseWhere, status: "OFFICIALLY_ENROLLED" },
     }),
     prisma.learner.count({
       where: { status: "JHS_COMPLETER" },
     }),
     prisma.enrollmentApplication.count({
-      where: {
-        schoolYearId,
-        learnerType: "CONTINUING",
-        status: "TRANSFERRING_OUT",
-      },
+      where: { ...baseWhere, status: "TRANSFERRING_OUT" },
     }),
   ]);
 
@@ -238,18 +243,19 @@ export async function getBOSYReadiness(
   };
 }
 
-export async function getBOSYQueue(params: {
-  schoolYearId: number;
-  gradeLevelId?: number;
-  targetGradeOrder?: number;
-  queueState?: BOSYQueueState;
-  status?: string;
-  search?: string;
-  previousSectionName?: string;
-  curricularProgram?: string;
-  page: number;
-  limit: number;
-}): Promise<BOSYQueuePage> {
+export async function buildBOSYQueueWhereClause(
+  params: {
+    schoolYearId: number;
+    gradeLevelId?: number;
+    targetGradeOrder?: number;
+    queueState?: BOSYQueueState;
+    status?: string;
+    search?: string;
+    previousSectionName?: string;
+    curricularProgram?: string;
+  },
+  previousSchoolYearId: number | null
+): Promise<Prisma.EnrollmentApplicationWhereInput> {
   const {
     schoolYearId,
     gradeLevelId,
@@ -259,15 +265,8 @@ export async function getBOSYQueue(params: {
     search,
     previousSectionName,
     curricularProgram,
-    page,
-    limit,
   } = params;
-  const skip = (page - 1) * limit;
-  const schoolYear = await prisma.schoolYear.findUnique({
-    where: { id: schoolYearId },
-    select: { clonedFromId: true },
-  });
-  const previousSchoolYearId = schoolYear?.clonedFromId ?? null;
+
   const learnerConditions: Prisma.LearnerWhereInput[] = [];
 
   if (search) {
@@ -292,7 +291,7 @@ export async function getBOSYQueue(params: {
     });
   }
 
-  const where: Prisma.EnrollmentApplicationWhereInput = {
+  return {
     schoolYearId,
     learnerType: "CONTINUING" as const,
     ...(gradeLevelId ? { gradeLevelId } : {}),
@@ -313,14 +312,36 @@ export async function getBOSYQueue(params: {
       }
       : status
         ? {
-          status:
-            status.trim() as ApplicationStatus,
+          status: status.trim() as ApplicationStatus,
         }
         : {}),
     ...(learnerConditions.length > 0
       ? { learner: { AND: learnerConditions } }
       : {}),
   };
+}
+
+export async function getBOSYQueue(params: {
+  schoolYearId: number;
+  gradeLevelId?: number;
+  targetGradeOrder?: number;
+  queueState?: BOSYQueueState;
+  status?: string;
+  search?: string;
+  previousSectionName?: string;
+  curricularProgram?: string;
+  page: number;
+  limit: number;
+}): Promise<BOSYQueuePage> {
+  const { page, limit } = params;
+  const skip = (page - 1) * limit;
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: params.schoolYearId },
+    select: { clonedFromId: true },
+  });
+  const previousSchoolYearId = schoolYear?.clonedFromId ?? null;
+
+  const where = await buildBOSYQueueWhereClause(params, previousSchoolYearId);
 
   const [applicationsRaw, total] = await Promise.all([
     prisma.enrollmentApplication.findMany({

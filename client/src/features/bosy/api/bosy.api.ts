@@ -7,12 +7,19 @@ import type {
   ConfirmReturnResult,
 } from "../types";
 
+export interface BOSYReadinessParams {
+  schoolYearId: number;
+  gradeLevelId?: number;
+  targetGradeOrder?: number;
+  search?: string;
+  previousSectionName?: string;
+  curricularProgram?: string;
+}
+
 export async function getBOSYReadiness(
-  schoolYearId: number,
+  params: BOSYReadinessParams,
 ): Promise<BOSYReadiness> {
-  const res = await api.get<BOSYReadiness>(`/bosy/readiness`, {
-    params: { schoolYearId },
-  });
+  const res = await api.get<BOSYReadiness>(`/bosy/readiness`, { params });
   return res.data;
 }
 

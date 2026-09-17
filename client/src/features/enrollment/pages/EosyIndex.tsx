@@ -615,7 +615,7 @@ export default function EosyUpdating() {
 
   useEffect(() => {
     if (!ayId) return;
-    getBOSYReadiness(ayId).catch(() => { });
+    getBOSYReadiness({ schoolYearId: ayId }).catch(() => { });
   }, [ayId]);
 
   const fetchSectionsAndGrades = useCallback(async () => {

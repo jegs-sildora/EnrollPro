@@ -199,13 +199,19 @@ export default function BOSYPage() {
     if (!syId) return;
     try {
       await Promise.all([
-        getBOSYReadiness(syId).then(setReadiness),
+        getBOSYReadiness({
+          schoolYearId: syId,
+          targetGradeOrder: targetGrade === "ALL" ? undefined : Number(targetGrade),
+          search: activeQueueSearch || undefined,
+          previousSectionName: previousSectionName !== "ALL" ? previousSectionName : undefined,
+          curricularProgram: curricularProgram !== "ALL" ? curricularProgram : undefined,
+        }).then(setReadiness),
         getPreviousSections(syId).then(setPreviousSections),
       ]);
     } catch (e) {
       toastApiError(e as never);
     }
-  }, [syId]);
+  }, [syId, targetGrade, activeQueueSearch, previousSectionName, curricularProgram]);
 
 
 
@@ -523,7 +529,7 @@ export default function BOSYPage() {
               />
             )}
             <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
-              Continuing Learners
+              {targetGrade !== "ALL" ? `Continuing Learners (Grade ${targetGrade})` : "Continuing Learners"}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -538,8 +544,8 @@ export default function BOSYPage() {
               />
             )}
             <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
-              {assignedTargetGradeOrder && assignedTargetGradeOrder !== "7"
-                ? `Transferees (Grade ${assignedTargetGradeOrder})`
+              {targetGrade !== "ALL" && targetGrade !== "7"
+                ? `Transferees (Grade ${targetGrade})`
                 : "Incoming Grade 7 and Transferees"}
             </span>
           </TabsTrigger>

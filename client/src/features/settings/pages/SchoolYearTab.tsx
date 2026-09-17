@@ -1003,51 +1003,69 @@ export default function SchoolYearTab() {
                               <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
                             )}
                           </div>
-                          <DualPaneDateRangePicker
-                            startValue={term.start || ""}
-                            endValue={term.end || ""}
-                            popoverAlign="center"
-                            onApply={(start, end) => {
-                              setLocalCalendarState(prev => ({
-                                ...prev,
-                                [term.startField]: start,
-                                [term.endField]: end,
-                              }));
-                            }}
-                            customTrigger={
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-                                <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
-                                  <div className="font-bold text-foreground uppercase mb-0.5">Start Date</div>
-                                  <div className="relative w-full flex items-center">
-                                    <input
-                                      readOnly
-                                      value={term.start ? new Date(term.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
-                                      placeholder="MM/DD/YYYY"
-                                      className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
-                                    />
-                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50">
+                              <div className="font-bold text-foreground uppercase mb-0.5">Start Date</div>
+                              <div className="relative w-full flex items-center">
+                                <HybridDatePicker
+                                  value={term.start || ""}
+                                  onChange={(val) => {
+                                    setLocalCalendarState(prev => ({ ...prev, [term.startField]: val }));
+                                  }}
+                                  hideCalendarIcon
+                                  className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground"
+                                />
+                                <DualPaneDateRangePicker
+                                  startValue={term.start || ""}
+                                  endValue={term.end || ""}
+                                  popoverAlign="start"
+                                  onApply={(start, end) => {
+                                    setLocalCalendarState(prev => ({
+                                      ...prev,
+                                      [term.startField]: start,
+                                      [term.endField]: end,
+                                    }));
+                                  }}
+                                  customTrigger={
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted-foreground/10 flex items-center justify-center shrink-0 text-foreground cursor-pointer z-10">
                                       <CalendarIcon className="h-4 w-4" />
                                     </div>
-                                  </div>
-                                </div>
-                                <span className="text-foreground font-bold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
-                                <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
-                                  <div className="font-bold text-foreground uppercase mb-0.5">End Date</div>
-                                  <div className="relative w-full flex items-center">
-                                    <input
-                                      readOnly
-                                      value={term.end ? new Date(term.end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
-                                      placeholder="MM/DD/YYYY"
-                                      className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
-                                    />
-                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
-                                      <CalendarIcon className="h-4 w-4" />
-                                    </div>
-                                  </div>
-                                </div>
+                                  }
+                                />
                               </div>
-                            }
-                          />
+                            </div>
+                            <span className="text-foreground font-bold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
+                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50">
+                              <div className="font-bold text-foreground uppercase mb-0.5">End Date</div>
+                              <div className="relative w-full flex items-center">
+                                <HybridDatePicker
+                                  value={term.end || ""}
+                                  onChange={(val) => {
+                                    setLocalCalendarState(prev => ({ ...prev, [term.endField]: val }));
+                                  }}
+                                  hideCalendarIcon
+                                  className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground"
+                                />
+                                <DualPaneDateRangePicker
+                                  startValue={term.start || ""}
+                                  endValue={term.end || ""}
+                                  popoverAlign="end"
+                                  onApply={(start, end) => {
+                                    setLocalCalendarState(prev => ({
+                                      ...prev,
+                                      [term.startField]: start,
+                                      [term.endField]: end,
+                                    }));
+                                  }}
+                                  customTrigger={
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted-foreground/10 flex items-center justify-center shrink-0 text-foreground cursor-pointer z-10">
+                                      <CalendarIcon className="h-4 w-4" />
+                                    </div>
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
                           {!isActiveTerm && activeYear && !isArchived && (
                             <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
                               <Button

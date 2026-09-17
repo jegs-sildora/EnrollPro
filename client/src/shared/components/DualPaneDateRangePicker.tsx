@@ -116,9 +116,7 @@ export function DualPaneDateRangePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {customTrigger ? (
-          <div className="cursor-pointer w-full flex-1">
-            {customTrigger}
-          </div>
+          customTrigger
         ) : (
           <Button
             id="date"

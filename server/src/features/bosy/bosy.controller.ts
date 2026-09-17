@@ -49,7 +49,62 @@ export async function getBosyReadiness(
       return;
     }
 
-    const data = await getBOSYReadiness(schoolYearId);
+    const gradeLevelId = req.query.gradeLevelId
+      ? parsePositiveInt(req.query.gradeLevelId, 0) || undefined
+      : undefined;
+    const targetGradeOrder = req.query.targetGradeOrder
+      ? parsePositiveInt(req.query.targetGradeOrder, 0) || undefined
+      : undefined;
+    if (
+      targetGradeOrder !== undefined &&
+      (targetGradeOrder < 7 || targetGradeOrder > 10)
+    ) {
+      res.status(400).json({
+        message: "targetGradeOrder must be from Grade 7 to Grade 10.",
+      });
+      return;
+    }
+    const search =
+      typeof req.query.search === "string" && req.query.search.length > 0
+        ? req.query.search
+        : undefined;
+    const previousSectionName =
+      typeof req.query.previousSectionName === "string" && req.query.previousSectionName.length > 0
+        ? req.query.previousSectionName
+        : undefined;
+    const curricularProgram =
+      typeof req.query.curricularProgram === "string" && req.query.curricularProgram.length > 0
+        ? req.query.curricularProgram
+        : undefined;
+
+    let finalGradeLevelId = gradeLevelId;
+    let finalTargetGradeOrder = targetGradeOrder;
+    const isStrictClassAdviser =
+      req.user!.roles.includes("CLASS_ADVISER") &&
+      !req.user!.roles.includes("SYSTEM_ADMIN") &&
+      !req.user!.roles.includes("HEAD_REGISTRAR");
+
+    if (isStrictClassAdviser) {
+      const adviserGradeId = await getAdviserGradeLevelId(
+        req.user!.userId,
+        schoolYearId,
+      );
+      if (!adviserGradeId) {
+        res.status(403).json({ message: "You do not have an active advisory class assigned." });
+        return;
+      }
+      finalGradeLevelId = adviserGradeId;
+      finalTargetGradeOrder = undefined;
+    }
+
+    const data = await getBOSYReadiness({
+      schoolYearId,
+      gradeLevelId: finalGradeLevelId,
+      targetGradeOrder: finalTargetGradeOrder,
+      search,
+      previousSectionName,
+      curricularProgram,
+    });
     res.json(data);
   } catch (error) {
     next(error);

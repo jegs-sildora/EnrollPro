@@ -13,6 +13,7 @@ export interface HybridDatePickerProps {
   className?: string;
   minDate?: Date;
   disabled?: boolean;
+  hideCalendarIcon?: boolean;
 }
 
 export function HybridDatePicker({
@@ -22,6 +23,7 @@ export function HybridDatePicker({
   className,
   minDate,
   disabled,
+  hideCalendarIcon,
 }: HybridDatePickerProps) {
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -173,37 +175,39 @@ export function HybridDatePicker({
         disabled={disabled}
         className={cn("font-extrabold text-base pr-10 disabled:opacity-100 disabled:!text-foreground uppercase", className)}
       />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={disabled}
-            className="absolute right-1 top-1/2 -translate-y-1/2 active:-translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted flex items-center justify-center shrink-0 cursor-pointer text-foreground disabled:opacity-100 disabled:!text-foreground"
-          >
-            <CalendarIcon className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-background" align="end">
-          <Calendar
-            mode="single"
-            month={month}
-            onMonthChange={setMonth}
-            defaultMonth={selectedDate}
-            selected={selectedDate}
-            onSelect={handleCalendarSelect}
-            captionLayout="dropdown"
-            startMonth={new Date(1900, 0, 1)}
-            endMonth={new Date(2100, 11, 31)}
-            disabled={minDate ? (date) => {
-              const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-              const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
-              return dateOnly < minDateOnly;
-            } : undefined}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
+      {!hideCalendarIcon && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={disabled}
+              className="absolute right-1 top-1/2 -translate-y-1/2 active:-translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted flex items-center justify-center shrink-0 cursor-pointer text-foreground disabled:opacity-100 disabled:!text-foreground"
+            >
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 bg-background" align="end">
+            <Calendar
+              mode="single"
+              month={month}
+              onMonthChange={setMonth}
+              defaultMonth={selectedDate}
+              selected={selectedDate}
+              onSelect={handleCalendarSelect}
+              captionLayout="dropdown"
+              startMonth={new Date(1900, 0, 1)}
+              endMonth={new Date(2100, 11, 31)}
+              disabled={minDate ? (date) => {
+                const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+                return dateOnly < minDateOnly;
+              } : undefined}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }
