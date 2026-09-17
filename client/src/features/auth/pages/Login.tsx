@@ -194,7 +194,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
         <div className="space-y-6 mb-12">
           {/* Sovereign Header */}
           <div>
-            <span className="text-xl font-bold tracking-widest text-primary-foreground uppercase">{schoolName}</span>
+            <span className="text-xl font-extrabold tracking-widest text-primary-foreground uppercase">{schoolName}</span>
             <p className="text-white/70 text-base mt-1">
               Integrated School Information Management Systems
             </p>
@@ -202,10 +202,10 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
 
           {/* Main System Title */}
           <div>
-            <h1 className="text-4xl xl:text-5xl font-bold leading-tight text-white mb-2">
+            <h1 className="text-4xl xl:text-5xl font-extrabold leading-tight text-white mb-2">
               {acronym}
             </h1>
-            <p className="text-white/90 text-lg ">
+            <p className="text-white/70 text-lg ">
               Junior High School Information Management Portal
             </p>
           </div>

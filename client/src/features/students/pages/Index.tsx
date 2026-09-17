@@ -1118,7 +1118,9 @@ export default function Students() {
           ),
         },
       ];
-      return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
+      if (activeTab === "active") return allColumns.filter(col => col.id !== "status");
+      if (activeTab === "completers") return allColumns.filter(col => col.id !== "gradeLevel");
+      return allColumns;
     }, [
     activeTab,
     enableHomogeneousSections,
