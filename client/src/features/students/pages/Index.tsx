@@ -1036,8 +1036,17 @@ export default function Students() {
             />
           ),
           cell: ({ row }) => (
-            <div className="flex w-full justify-center py-3">
+            <div className="flex flex-col items-center justify-center py-2 w-full gap-1">
               {renderLearnerStatus(row.original)}
+              {activeTab === "completers" && (() => {
+                const sy = row.original.schoolYear;
+                const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel;
+                return label ? (
+                  <span className="text-sm text-foreground font-bold leading-tight">
+                    {label}
+                  </span>
+                ) : null;
+              })()}
             </div>
           ),
         },

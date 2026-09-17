@@ -1064,24 +1064,24 @@ export function StudentDetailPanel({
             </div>
           )}
 
-          <div className="mt-6 mb-4">
-            <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-              <div className="text-base leading-tight font-bold divide-y divide-border">
-                
-                {/* Header Row */}
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
-                    Grade Level & Section
+          {!isJhsCompleter && (
+            <div className="mt-6 mb-4">
+              <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                <div className="text-base leading-tight font-bold divide-y divide-border">
+                  
+                  {/* Header Row */}
+                  <div className="grid grid-cols-2 divide-x divide-border">
+                    <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
+                      Grade Level & Section
+                    </div>
+                    <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
+                      Primary Contact
+                    </div>
                   </div>
-                  <div className="p-3 text-foreground bg-muted/30 font-extrabold text-center uppercase">
-                    Primary Contact
-                  </div>
-                </div>
 
-                {/* Value Row */}
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="p-3 flex items-center justify-center uppercase min-w-0">
-                    {!isJhsCompleter ? (
+                  {/* Value Row */}
+                  <div className="grid grid-cols-2 divide-x divide-border">
+                    <div className="p-3 flex items-center justify-center uppercase min-w-0">
                       <div className="flex items-center gap-2 flex-wrap justify-center">
                         <TooltipProvider>
                           <Tooltip>
@@ -1103,52 +1103,31 @@ export function StudentDetailPanel({
                           {student.enrollment?.section ? ` - ${student.enrollment.section}` : " - UNASSIGNED"}
                         </span>
                       </div>
-                    ) : (
-                      <span className="text-base font-bold text-foreground uppercase">N/A</span>
-                    )}
+                    </div>
+                    
+                    <div className="p-3 flex items-center justify-center uppercase min-w-0">
+                      <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums text-center">
+                        {isEditing
+                          ? (profileForm.primaryContact === "MOTHER"
+                            ? profileForm.motherContactNumber
+                            : profileForm.primaryContact === "FATHER"
+                              ? profileForm.fatherContactNumber
+                              : profileForm.guardianContactNumber) || "N/A"
+                          : student.contactNumber ||
+                          student.parentGuardianContact ||
+                          "N/A"}
+                      </span>
+                    </div>
                   </div>
-                  
-                  <div className="p-3 flex items-center justify-center uppercase min-w-0">
-                    <span className="text-base font-bold text-foreground leading-tight uppercase tabular-nums text-center">
-                      {isEditing
-                        ? (profileForm.primaryContact === "MOTHER"
-                          ? profileForm.motherContactNumber
-                          : profileForm.primaryContact === "FATHER"
-                            ? profileForm.fatherContactNumber
-                            : profileForm.guardianContactNumber) || "N/A"
-                        : student.contactNumber ||
-                        student.parentGuardianContact ||
-                        "N/A"}
-                    </span>
-                  </div>
-                </div>
 
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Enrollment Information Section */}
-        {isJhsCompleter ? (
-          <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden border-amber-200">
-            <div className="p-3 font-bold text-base leading-tight bg-amber-50 text-amber-700 border-b border-amber-200 flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-amber-700" />
-              Completion Record
-            </div>
-            <div className="text-base leading-tight font-bold divide-y divide-amber-200">
-              <div className="grid grid-cols-[180px_1fr] divide-x divide-amber-200">
-                <div className="p-3 text-foreground bg-amber-50/50">School Year:</div>
-                <div className="p-3 bg-amber-50/50">{displaySchoolYear}</div>
-              </div>
-              <div className="grid grid-cols-[180px_1fr] divide-x divide-amber-200">
-                <div className="p-3 text-foreground bg-amber-50/50">Date of Graduation:</div>
-                <div className="p-3 bg-amber-50/50">
-                  {displayGraduationDate}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
+        {!isJhsCompleter && (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
             <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
               <GraduationCap className="h-4 w-4 text-primary" />

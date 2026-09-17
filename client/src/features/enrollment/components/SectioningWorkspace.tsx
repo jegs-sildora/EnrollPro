@@ -396,6 +396,72 @@ const rebuildDraftPlacement = (draft: DraftPlacement): DraftPlacement => ({
   ),
 });
 
+const snakeDraftLearners = (
+  sections: SectionSummary[],
+  males: PoolLearner[],
+  females: PoolLearner[],
+  rostersBySectionId: Map<number, DraftLearnerPlacement[]>,
+  remainingCapacity: Map<number, number>
+): PoolLearner[] => {
+  const unplaced: PoolLearner[] = [];
+  let sectionIndex = 0;
+  let forward = true;
+
+  const getNextValidSection = () => {
+    const totalRemaining = Array.from(remainingCapacity.values()).reduce((sum, c) => sum + c, 0);
+    if (totalRemaining <= 0) return null;
+    
+    let startState = { idx: sectionIndex, fwd: forward };
+    let looped = false;
+    
+    while (true) {
+      const current = sectionIndex;
+      const section = sections[current];
+      
+      if (forward) {
+        if (sectionIndex >= sections.length - 1) forward = false;
+        else sectionIndex++;
+      } else {
+        if (sectionIndex <= 0) forward = true;
+        else sectionIndex--;
+      }
+
+      if (remainingCapacity.get(section.id)! > 0) return section;
+      
+      if (sectionIndex === startState.idx && forward === startState.fwd) {
+        if (looped) return null;
+        looped = true;
+      }
+    }
+  };
+
+  for (const learner of males) {
+    const targetSection = getNextValidSection();
+    if (targetSection) {
+      rostersBySectionId.get(targetSection.id)!.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
+      remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
+    } else {
+      unplaced.push(learner);
+    }
+  }
+
+  // Reset pointer for females to ensure perfectly symmetric academic parity
+  sectionIndex = 0;
+  forward = true;
+
+  for (const learner of females) {
+    const targetSection = getNextValidSection();
+    if (targetSection) {
+      rostersBySectionId.get(targetSection.id)!.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
+      remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
+    } else {
+      unplaced.push(learner);
+    }
+  }
+
+  return unplaced;
+};
+
 const createDraftPlacement = (
   gradeLevelId: number,
   learners: PoolLearner[],
@@ -457,8 +523,12 @@ const createDraftPlacement = (
     }
 
     if (topSections.length > 0) {
-      // Calculate Total Top Capacity
-      const totalTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+      // Calculate Balanced Total Top Capacity
+      const totalSections = topSections.length + regularSections.length;
+      const targetPerSection = Math.ceil(remainingLearners.length / totalSections);
+      const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+      const balancedTopCapacity = targetPerSection * topSections.length;
+      const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
 
       // Filter out conditionally promoted learners
       const eligibleForTop = remainingLearners.filter(
@@ -468,19 +538,15 @@ const createDraftPlacement = (
       // The Slice: Extract top N learners
       const topLearners = eligibleForTop.slice(0, totalTopCapacity);
 
-      // Distribute into Top Sections sequentially
-      let topLearnerIdx = 0;
-      for (const topSection of topSections) {
-        const capacity = topSection.maxCapacity - topSection.currentCount;
-        const roster = rostersBySectionId.get(topSection.id)!;
-        
-        let assignedCount = 0;
-        while (assignedCount < capacity && topLearnerIdx < topLearners.length) {
-          roster.push({ ...topLearners[topLearnerIdx], sectionId: topSection.id, isOverridden: false });
-          assignedCount++;
-          topLearnerIdx++;
-        }
-      }
+      // Apply snake draft balancing to Top Sections as well
+      const topRemainingCapacity = new Map(
+        topSections.map(s => [s.id, Math.max(0, s.maxCapacity - s.currentCount)])
+      );
+      
+      const topMales = topLearners.filter(l => l.sex === "MALE");
+      const topFemales = topLearners.filter(l => l.sex === "FEMALE");
+      
+      snakeDraftLearners(topSections, topMales, topFemales, rostersBySectionId, topRemainingCapacity);
 
       // Remove assigned top learners from the master pool
       const assignedIds = new Set(topLearners.map((l) => l.applicationId));
@@ -493,75 +559,10 @@ const createDraftPlacement = (
         regularSections.map(s => [s.id, Math.max(0, s.maxCapacity - s.currentCount)])
       );
 
-      // Maintain a single state for the snake draft across both male and female lists
-      let sectionIndex = 0;
-      let forward = true;
-
-      const getNextValidSection = () => {
-        const totalRemaining = Array.from(remainingCapacity.values()).reduce((sum, c) => sum + c, 0);
-        if (totalRemaining <= 0) return null;
-        
-        let startState = { idx: sectionIndex, fwd: forward };
-        let looped = false;
-        
-        while (true) {
-          const current = sectionIndex;
-          const section = regularSections[current];
-          
-          // Advance pointer for NEXT call
-          if (forward) {
-            if (sectionIndex >= regularSections.length - 1) {
-              forward = false;
-            } else {
-              sectionIndex++;
-            }
-          } else {
-            if (sectionIndex <= 0) {
-              forward = true;
-            } else {
-              sectionIndex--;
-            }
-          }
-
-          if (remainingCapacity.get(section.id)! > 0) {
-            return section;
-          }
-          
-          // Prevent infinite loops if capacity is not syncing
-          if (sectionIndex === startState.idx && forward === startState.fwd) {
-            if (looped) return null;
-            looped = true;
-          }
-        }
-      };
-
       const males = remainingLearners.filter(l => l.sex === "MALE");
       const females = remainingLearners.filter(l => l.sex === "FEMALE");
       
-      const unplaced: PoolLearner[] = [];
-
-      for (const learner of males) {
-        const targetSection = getNextValidSection();
-        if (targetSection) {
-          const roster = rostersBySectionId.get(targetSection.id)!;
-          roster.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
-          remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
-        } else {
-          unplaced.push(learner);
-        }
-      }
-
-      for (const learner of females) {
-        const targetSection = getNextValidSection();
-        if (targetSection) {
-          const roster = rostersBySectionId.get(targetSection.id)!;
-          roster.push({ ...learner, sectionId: targetSection.id, isOverridden: false });
-          remainingCapacity.set(targetSection.id, remainingCapacity.get(targetSection.id)! - 1);
-        } else {
-          unplaced.push(learner);
-        }
-      }
-      
+      const unplaced = snakeDraftLearners(regularSections, males, females, rostersBySectionId, remainingCapacity);
       remainingLearners = unplaced;
     }
 
