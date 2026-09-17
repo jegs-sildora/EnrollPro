@@ -420,7 +420,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         actualLearnerId = fallbackLearner.id;
 
         // Fetch history for the specific selected school year to populate the dummy applicant
-        const historyForYear = await prisma.enrollmentHistory.findFirst({
+        let historyForYear = await prisma.enrollmentHistory.findFirst({
           where: { learnerId: actualLearnerId, schoolYearId },
           include: {
             gradeLevel: true,
@@ -447,10 +447,48 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         });
 
         // Fetch application for the selected school year (if it somehow still exists)
-        const appForYear = await prisma.enrollmentApplication.findFirst({
+        let appForYear = await prisma.enrollmentApplication.findFirst({
           where: { learnerId: actualLearnerId, schoolYearId },
-          include: { addresses: true, familyMembers: true, previousSchool: true, backSubjects: { include: { gradeLevel: true } } }
+          include: { addresses: true, familyMembers: true, previousSchool: true, backSubjects: { include: { gradeLevel: true } }, gradeLevel: true, schoolYear: true }
         });
+
+        // If neither exist for the requested year, the student is likely an alumni/inactive from a previous year. Let's fetch their latest.
+        if (!historyForYear && !appForYear) {
+          historyForYear = await prisma.enrollmentHistory.findFirst({
+            where: { learnerId: actualLearnerId },
+            orderBy: { schoolYearId: "desc" },
+            include: {
+              gradeLevel: true,
+              schoolYear: true,
+              adviser: true,
+              section: {
+                include: {
+                  advisers: {
+                    where: { status: "ACTIVE" },
+                    include: {
+                      teacher: {
+                        select: {
+                          id: true,
+                          firstName: true,
+                          lastName: true,
+                          middleName: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            }
+          });
+
+          if (!historyForYear) {
+            appForYear = await prisma.enrollmentApplication.findFirst({
+              where: { learnerId: actualLearnerId },
+              orderBy: { schoolYearId: "desc" },
+              include: { addresses: true, familyMembers: true, previousSchool: true, backSubjects: { include: { gradeLevel: true } }, gradeLevel: true, schoolYear: true }
+            });
+          }
+        }
 
         const snapshotData = asRecord(historyForYear?.learnerProfileSnapshot);
         const snapshotAddresses = Array.isArray(snapshotData?.addresses)
@@ -481,8 +519,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           status: historyForYear?.eosyStatus === "DROPPED_OUT" ? "DROPPED" : historyForYear?.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "OFFICIALLY_ENROLLED",
           applicantType: snapshotApplicantType,
           contactNumber: snapshotContactNumber ?? appForYear?.contactNumber ?? null,
-          gradeLevelId: historyForYear?.gradeLevelId || 0,
-          schoolYearId,
+          gradeLevelId: historyForYear?.gradeLevelId || appForYear?.gradeLevelId || 0,
+          schoolYearId: historyForYear?.schoolYearId || appForYear?.schoolYearId || schoolYearId,
           addresses: addressesToUse,
           familyMembers: familyMembersToUse,
           previousSchool: previousSchoolToUse,
@@ -492,8 +530,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
             eosyStatus: historyForYear.eosyStatus,
             enrolledBy: null,
           } : null,
-          gradeLevel: historyForYear?.gradeLevel || null,
-          schoolYear: historyForYear?.schoolYear || null,
+          gradeLevel: historyForYear?.gradeLevel || (appForYear as any)?.gradeLevel || null,
+          schoolYear: historyForYear?.schoolYear || (appForYear as any)?.schoolYear || null,
           createdAt: historyForYear?.createdAt || fallbackLearner.createdAt,
           updatedAt: fallbackLearner.updatedAt,
         } as unknown as StudentDetailApplication;

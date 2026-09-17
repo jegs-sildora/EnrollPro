@@ -267,6 +267,7 @@ function SectionCard({
   onDraftAdviserChange,
   onDraftAdviserCancel,
   allDraftTeacherIds,
+  hasAnyPendingChanges,
 }: {
   section: SectionItem;
   onEdit: () => void;
@@ -280,6 +281,7 @@ function SectionCard({
   onDraftAdviserChange?: (val: string, initialVal: string) => void;
   onDraftAdviserCancel?: () => void;
   allDraftTeacherIds?: Set<string>;
+  hasAnyPendingChanges?: boolean;
 }) {
   const pct =
     section.fillPercent ??
@@ -301,15 +303,21 @@ function SectionCard({
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
   );
+  const isCardDisabled = hasAnyPendingChanges && !hasPendingAdviserChange;
+
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full hover:border-primary/40 transition-colors cursor-pointer group"
+        "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full transition-colors group",
+        isCardDisabled
+          ? ""
+          : "hover:border-primary/40 cursor-pointer"
       )}
-      onClick={onViewMasterlist}
-      role="button"
-      tabIndex={0}
+      onClick={isCardDisabled ? undefined : onViewMasterlist}
+      role={isCardDisabled ? "presentation" : "button"}
+      tabIndex={isCardDisabled ? -1 : 0}
       onKeyDown={(e) => {
+        if (isCardDisabled) return;
         if (e.key === "Enter" || e.key === " ") {
           onViewMasterlist();
         }
@@ -362,6 +370,7 @@ function SectionCard({
               className="h-8 px-2 text-sm font-bold"
               onClick={(e) => {
                 e.stopPropagation();
+                if (isCardDisabled) return;
                 onEdit();
               }}>
               Edit
@@ -372,6 +381,7 @@ function SectionCard({
               className="h-8 px-2 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
+                if (isCardDisabled) return;
                 onDelete();
               }}>
               Remove
@@ -477,6 +487,7 @@ function SectionCard({
               variant="default"
               onClick={(e) => {
                 e.stopPropagation();
+                if (isCardDisabled) return;
                 onViewMasterlist();
               }}>
               Open SF1 Masterlist →
@@ -523,6 +534,7 @@ export default function Homerooms() {
               onDraftAdviserChange={(val, initialVal) => handleDraftAdviserChange(s.id, val, initialVal)}
               onDraftAdviserCancel={() => handleDraftAdviserCancel(s.id)}
               allDraftTeacherIds={allDraftTeacherIds}
+              hasAnyPendingChanges={Object.keys(draftAdvisers).length > 0}
               scpTypeLabels={offeredScpTypeLabels}
               onEdit={() => handleOpenEdit(s, glName, glDisplayOrder)}
               onDelete={() => {

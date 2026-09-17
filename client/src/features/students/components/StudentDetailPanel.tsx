@@ -1008,7 +1008,7 @@ export function StudentDetailPanel({
                 <div className="flex flex-wrap items-center gap-2">
                   {isJhsCompleter ? (
                     <Badge className="bg-primary text-primary-foreground rounded-full uppercase shadow-sm px-3 py-0.5 text-sm font-bold border-0">
-                      JHS Completer
+                      JHS Completer {displaySchoolYear ? `| S.Y. ${displaySchoolYear}` : ''}
                     </Badge>
                   ) : student.enrollment?.eosyStatus === "TRANSFERRED_OUT" ? (
                     <Badge className="bg-red-800 hover:bg-red-900 text-white px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0">
@@ -1168,54 +1168,57 @@ export function StudentDetailPanel({
 
         {/* Lifecycle Outcome (if any) */}
         {student.enrollment?.eosyStatus && (
-          <div className="border rounded-md mb-4 border-dashed bg-muted/30 overflow-hidden">
-            <div className="p-3 font-extrabold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
-              <BadgeAlert className="h-4 w-4" />
-              Lifecycle Outcome
+          <div className="border rounded-md mb-4 bg-card overflow-hidden">
+            <div className="p-3 font-extrabold text-base leading-tight bg-muted/50 border-b flex items-center gap-2">
+              <BadgeAlert className="h-4 w-4 text-primary" />
+              <span className="uppercase text-primary">Lifecycle Outcome</span>
             </div>
-            <div className="p-4 text-base leading-tight space-y-2">
-              <p className="font-extrabold text-primary uppercase">
-                {formatEosyStatus(student.enrollment.eosyStatus)}
-              </p>
+            <div className="text-base leading-tight font-bold divide-y divide-border border-b-0">
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                <div className="p-3 text-foreground bg-muted/30 font-extrabold">Final Outcome:</div>
+                <div className="p-3 flex items-center uppercase text-primary font-extrabold">
+                  {formatEosyStatus(student.enrollment.eosyStatus)}
+                </div>
+              </div>
               {student.enrollment.transferOutDate && (
-                <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
-                    Date:
-                  </span>
-                  {formatDate(student.enrollment.transferOutDate)}
-                </p>
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">Date:</div>
+                  <div className="p-3 flex items-center uppercase">
+                    {formatDate(student.enrollment.transferOutDate)}
+                  </div>
+                </div>
               )}
               {student.enrollment.transferOutSchoolName && (
-                <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
-                    To:
-                  </span>
-                  {student.enrollment.transferOutSchoolName}
-                </p>
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">To:</div>
+                  <div className="p-3 flex items-center uppercase">
+                    {student.enrollment.transferOutSchoolName}
+                  </div>
+                </div>
               )}
               {student.enrollment.transferOutReason && (
-                <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
-                    Reason:
-                  </span>
-                  {student.enrollment.transferOutReason}
-                </p>
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">Reason:</div>
+                  <div className="p-3 flex items-center uppercase">
+                    {student.enrollment.transferOutReason}
+                  </div>
+                </div>
               )}
               {student.enrollment.dropOutDate && (
-                <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
-                    Date:
-                  </span>
-                  {formatDate(student.enrollment.dropOutDate)}
-                </p>
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">Date:</div>
+                  <div className="p-3 flex items-center uppercase">
+                    {formatDate(student.enrollment.dropOutDate)}
+                  </div>
+                </div>
               )}
               {student.enrollment.dropOutReason && (
-                <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
-                    Reason:
-                  </span>
-                  {student.enrollment.dropOutReason}
-                </p>
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30 font-extrabold">Reason:</div>
+                  <div className="p-3 flex items-center uppercase">
+                    {student.enrollment.dropOutReason}
+                  </div>
+                </div>
               )}
             </div>
           </div>

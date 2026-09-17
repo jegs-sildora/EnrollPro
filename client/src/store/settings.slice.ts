@@ -153,7 +153,7 @@ export const useSettingsStore = create<SettingsState>()(
         bosyGradeId: "ALL",
         sectioningGradeId: "",
         eosyTab: "eosypanel",
-        verificationTab: "summary",
+        verificationTab: "PENDING",
         studentProfileTab: "record",
       },
       updateUiPreference: (key, value) => 

@@ -8,9 +8,17 @@ import {
   Loader2,
   Venus,
   Mars,
-  Eye
+  Eye,
+  ChevronDown,
+  FileSpreadsheet
 } from "lucide-react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -31,6 +39,7 @@ import { StudentDetailPanel } from "@/features/students/components/StudentDetail
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { useHeaderStore } from "@/store/header.slice";
+import { PageTransition } from "@/shared/components/PageTransition";
 
 interface AdvisoryLearner {
   id: number;
@@ -267,32 +276,11 @@ export default function AdvisoryClass() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Unified Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">
-          <div className="flex justify-end items-center gap-6 text-base font-bold text-foreground tracking-wide">
-            <span className="text-foreground">
-              Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
-            </span>
-            <div className="w-px h-4 bg-border" />
-            <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
-              <Mars className="h-4 w-4" />: {maleLearners.length}
-            </Badge>
-            <div className="w-px h-4 bg-border" />
-            <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
-              <Venus className="h-4 w-4" />: {femaleLearners.length}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <hr className="border-border" />
-
-        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
-          <div className="flex flex-col gap-2">
-            <CardTitle className="text-base sm:text-lg font-bold">
-              Enrolled Learner Records
-            </CardTitle>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-base font-bold text-foreground whitespace-nowrap">
                 Class Adviser:
@@ -301,28 +289,65 @@ export default function AdvisoryClass() {
                 {section.advisingTeacher ? section.advisingTeacher.name : "ASSIGNED (YOU)"}
               </span>
             </div>
+
+            <div className="flex items-center gap-6 text-base font-bold text-foreground tracking-wide">
+              <span className="text-foreground">
+                Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
+              </span>
+              <div className="w-px h-4 bg-border" />
+              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
+                <Mars className="h-4 w-4" />: {maleLearners.length}
+              </Badge>
+              <div className="w-px h-4 bg-border" />
+              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
+                <Venus className="h-4 w-4" />: {femaleLearners.length}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+
+        <hr className="border-border" />
+
+        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
+          <div>
+            <CardTitle className="text-base sm:text-lg font-bold">
+              Enrolled Learner Records
+            </CardTitle>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleDownloadSf1}
-              disabled={exportingSf1 || loading}
-              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
-            >
-              {exportingSf1 ? (
-                <Loader2 className="h-4 w-4 mr-2 " />
-              ) : (
-                <FileDown className="h-4 w-4 mr-2" />
-              )}
-              Export SF1
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+                >
+                  {exportingSf1 ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  )}
+                  SF1 Roster
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuItem
+                  disabled={exportingSf1 || loading || records.length === 0}
+                  onClick={handleDownloadSf1}
+                  className="cursor-pointer"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export Form 1 (Excel)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
           {records.length === 0 ? (
-            <div className="flex py-16 w-full items-center justify-center">
-              <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+            <div className="flex py-38 w-full items-center justify-center">
+              <Card className="w-full border-none shadow-none">
                 <CardContent className="pt-10 pb-10 text-center space-y-3">
                   <div className="mx-auto w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center mb-2">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -331,7 +356,7 @@ export default function AdvisoryClass() {
                     <p className="font-bold text-foreground text-lg">
                       No Enrolled Learners
                     </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                    <p className="text-sm text-foreground leading-relaxed px-4">
                       This class section has no enrolled learners yet.
                     </p>
                   </div>
@@ -375,6 +400,6 @@ export default function AdvisoryClass() {
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </PageTransition>
   );
 }

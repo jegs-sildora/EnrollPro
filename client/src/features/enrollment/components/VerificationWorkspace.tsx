@@ -276,7 +276,8 @@ export function VerificationWorkspace() {
     return count;
   }, [intakeCategoryFilter, programFilter, trackingNumberFilter]);
   type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
-  const activeTab = useSettingsStore((s) => s.uiPreferences.verificationTab) as VerificationTab;
+  const activeTabRaw = useSettingsStore((s) => s.uiPreferences.verificationTab);
+  const activeTab = (["PENDING", "READY", "INCOMPLETE", "CANCELLED"].includes(activeTabRaw) ? activeTabRaw : "PENDING") as VerificationTab;
   const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
 
   const {

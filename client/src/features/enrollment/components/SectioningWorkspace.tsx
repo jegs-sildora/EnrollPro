@@ -2200,10 +2200,10 @@ export function SectioningWorkspace() {
               level.
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4">
-              <p className="font-bold text-foreground">
+              <p className="font-bold text-foreground text-sm">
                 How the system will place learners:
               </p>
-              <ul className="list-disc space-y-2 pl-5 leading-relaxed text-foreground">
+              <ul className="list-disc space-y-2 pl-5 leading-relaxed text-foreground text-sm">
                 {(() => {
                   const availableScp = Array.from(
                     new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))

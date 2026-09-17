@@ -1043,7 +1043,7 @@ export default function Students() {
                 const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel;
                 return label ? (
                   <span className="text-sm text-foreground font-bold leading-tight">
-                    {label}
+                    S.Y. {label}
                   </span>
                 ) : null;
               })()}

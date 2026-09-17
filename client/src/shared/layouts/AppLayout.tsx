@@ -754,7 +754,9 @@ function AppSidebar() {
                         ? "ACTIVE SCHOOL OPERATIONS"
                         : systemPhase === "EOSY_CLOSING"
                           ? "END OF SCHOOL YEAR PROCESSING"
-                          : "ENROLLMENT AND SECTIONING"
+                          : isStrictClassAdviser
+                            ? "ENROLLMENT"
+                            : "ENROLLMENT AND SECTIONING"
                     }
                   />
                   <NavItem
@@ -827,7 +829,19 @@ function AppSidebar() {
                 </>
               )}
 
-              {!isStrictClassAdviser && hasCompanionNavigation && (
+              {userRoles.includes("CLASS_ADVISER") && (
+                <>
+                  <NavDivider label="Teaching & Advisory" />
+                  <NavItem
+                    to="/teacher/advisory"
+                    icon={BookOpen}
+                    label="Advisory Class"
+                    pathname={pathname}
+                  />
+                </>
+              )}
+
+              {hasCompanionNavigation && (
                 <>
                   <NavDivider label="Integrated Systems" />
                   {canSeeCompanion("AIMS", userRoles) && (

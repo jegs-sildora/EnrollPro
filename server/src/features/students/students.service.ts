@@ -300,6 +300,26 @@ export async function findStudents(query: {
             backSubjects: { select: { id: true } },
           },
         },
+        enrollmentHistories: {
+          orderBy: { schoolYear: { yearLabel: "desc" } },
+          take: 1,
+          include: {
+            schoolYear: { select: { yearLabel: true } },
+            gradeLevel: true,
+            section: {
+              select: {
+                id: true,
+                name: true,
+                programType: true,
+                isHomogeneous: true,
+                advisers: {
+                  where: { status: "ACTIVE" },
+                  select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+                }
+              }
+            }
+          }
+        },
       },
       skip,
       take: resolvedLimit,
@@ -308,18 +328,35 @@ export async function findStudents(query: {
 
     const mappedApplications = learners.map((l) => {
       const latestApp = l.enrollmentApplications[0];
+      const latestHistory = l.enrollmentHistories[0];
+      
+      const app = latestApp || (latestHistory ? {
+        id: latestHistory.id,
+        createdAt: latestHistory.createdAt,
+        status: latestHistory.eosyStatus === "DROPPED_OUT" ? "DROPPED" : latestHistory.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "ALUMNI",
+        gradeLevel: latestHistory.gradeLevel,
+        enrollmentRecord: {
+          section: latestHistory.section,
+          sectionId: latestHistory.sectionId,
+          enrolledAt: latestHistory.createdAt,
+          eosyStatus: latestHistory.eosyStatus,
+        },
+        schoolYear: latestHistory.schoolYear,
+        backSubjects: [],
+      } : null);
+
       return {
-        ...latestApp,
-        id: latestApp?.id || l.id,
+        ...app,
+        id: app?.id || l.id,
         learnerId: l.id,
-        createdAt: latestApp?.createdAt || l.createdAt,
+        createdAt: app?.createdAt || l.createdAt,
         learner: l,
         // Ensure status reflects the learner's actual status if no application status matches
-        status: latestApp?.status || (l.status === "JHS_COMPLETER" ? "ALUMNI" : "INACTIVE"),
-        gradeLevel: latestApp?.gradeLevel,
-        enrollmentRecord: latestApp?.enrollmentRecord,
-        schoolYear: latestApp?.schoolYear,
-        backSubjects: latestApp?.backSubjects ?? [],
+        status: app?.status || (l.status === "JHS_COMPLETER" ? "ALUMNI" : "INACTIVE"),
+        gradeLevel: app?.gradeLevel,
+        enrollmentRecord: app?.enrollmentRecord,
+        schoolYear: app?.schoolYear,
+        backSubjects: app?.backSubjects ?? [],
       };
     });
 
@@ -600,6 +637,7 @@ export async function findStudents(query: {
         },
       },
       gradeLevel: true,
+      schoolYear: { select: { yearLabel: true } },
       enrollmentRecord: {
         include: {
           section: {
