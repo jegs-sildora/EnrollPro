@@ -14,7 +14,7 @@ This is not cross-domain cookie sharing. ATLAS must never receive an EnrollPro p
 ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
 ATLAS_SSO_CALLBACK_URL=https://njgrm.buru-degree.ts.net/auth/sso/callback
 ATLAS_SSO_CLIENT_SECRET=<securely-provisioned-random-secret>
-ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/sso/authorize
+ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/auth/enrollpro/authorize
 ATLAS_SSO_REVERSE_EXCHANGE_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/sso/exchange
 ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro
 ATLAS_SSO_REVERSE_CLIENT_SECRET=<securely-provisioned-distinct-random-secret>
@@ -30,21 +30,20 @@ The URLs and client ID above are the effective non-secret values in
 `server/.env`. Secret values are intentionally omitted from this document and
 must be transferred through an approved secure channel.
 
-### ATLAS Authorization Transport Requirement
+### ATLAS Authorization Transport
 
-ATLAS confirmed that `/api/v1/auth/sso/authorize` and
-`/api/v1/auth/sso/exchange` are the canonical server routes. Direct checks on
-2026-09-17 verified that both POST routes are mounted and reject missing
-authorization with HTTP 401 rather than 404. The authorize route does not accept
-GET requests.
+ATLAS exposes two different endpoints for reverse authorization:
 
-EnrollPro's reverse-start route is browser-facing. Therefore ATLAS must provide
-an authenticated browser mediator that receives EnrollPro's `client_id`,
-`redirect_uri`, and signed `state`, calls the POST authorize route with the
-current ATLAS user session token, and then navigates once to the returned
-EnrollPro callback URL. A browser must not be redirected directly by GET to the
-POST-only API endpoint. Until that mediator is deployed, the canonical API pair
-is reachable but ATLAS-to-EnrollPro interactive SSO is not end-to-end ready.
+- Browser mediator: `GET /auth/enrollpro/authorize`
+- Authenticated API used by that mediator: `POST /api/v1/auth/sso/authorize`
+
+EnrollPro must redirect the browser to the mediator, not directly to the
+POST-only API. The mediator receives `response_type`, `client_id`,
+`redirect_uri`, and signed `state`, authenticates the current ATLAS user, calls
+the API with the ATLAS session token, and navigates once to the returned
+EnrollPro callback URL. Direct checks on 2026-09-17 verified that the mediator
+returns HTTP 200 and that the exchange API is mounted at
+`POST /api/v1/auth/sso/exchange`.
 
 The callback must use HTTPS outside local development. The secret must not be reused for schedule feeds or any other integration.
 
@@ -89,3 +88,20 @@ Signing out of ATLAS ends only the ATLAS session. Coordinated logout is not part
 7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account.
 
 The reverse response must include `success`, `issuer: "ATLAS"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the ATLAS reverse Bearer secret remain mandatory.
+
+## Implementation Verification
+
+Verified on 2026-09-17:
+
+- A fresh EnrollPro process redirects `/atlas/reverse/start` to the live ATLAS
+  mediator at `/auth/enrollpro/authorize`.
+- The redirect contains `response_type=code`, `client_id=enrollpro`, the exact
+  registered EnrollPro callback, and signed state.
+- The ATLAS mediator returns HTTP 200.
+- EnrollPro resolves a valid authoritative active school year for S.Y.
+  2030–2031. Active-year validity is based on the settings pointer and the
+  unique `ACTIVE` row, not the host calendar date.
+- ATLAS currently returns `COMPANION_SSO_CLIENT_INVALID` when EnrollPro presents
+  the rotated reverse secret. ATLAS-to-EnrollPro SSO cannot complete until ATLAS
+  securely installs the current EnrollPro `ATLAS_SSO_REVERSE_CLIENT_SECRET` as
+  its `ATLAS_SSO_REVERSE_CLIENT_SECRET` and deploys that configuration.
