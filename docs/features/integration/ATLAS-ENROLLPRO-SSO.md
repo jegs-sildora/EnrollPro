@@ -13,11 +13,11 @@ This is not cross-domain cookie sharing. ATLAS must never receive an EnrollPro p
 ```text
 ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
 ATLAS_SSO_CALLBACK_URL=https://njgrm.buru-degree.ts.net/auth/sso/callback
-ATLAS_SSO_CLIENT_SECRET=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
-ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/auth/sso/authorize
-ATLAS_SSO_REVERSE_EXCHANGE_URL=https://njgrm.buru-degree.ts.net/auth/sso/exchange
-ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro_client_id
-ATLAS_SSO_REVERSE_CLIENT_SECRET=4661849a647bbd9435b8014529ec96c342f5efb581b2a92c454e9bc3532cc4b4
+ATLAS_SSO_CLIENT_SECRET=<securely-provisioned-random-secret>
+ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/sso/authorize
+ATLAS_SSO_REVERSE_EXCHANGE_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/sso/exchange
+ATLAS_SSO_REVERSE_CLIENT_ID=enrollpro
+ATLAS_SSO_REVERSE_CLIENT_SECRET=<securely-provisioned-distinct-random-secret>
 ```
 
 The EnrollPro reverse callback registered by ATLAS must be exactly:
@@ -26,21 +26,33 @@ The EnrollPro reverse callback registered by ATLAS must be exactly:
 https://dev-jegs.buru-degree.ts.net/api/auth/companion-sso/atlas/reverse/callback
 ```
 
-These are the effective values currently present in `server/.env`.
+The URLs and client ID above are the effective non-secret values in
+`server/.env`. Secret values are intentionally omitted from this document and
+must be transferred through an approved secure channel.
 
-### ATLAS Route Verification Required
+### ATLAS Authorization Transport Requirement
 
-The current EnrollPro environment points reverse authorization and exchange to
-`/auth/sso/authorize` and `/auth/sso/exchange`. The ATLAS handoff dated
-2026-09-17 reports mounted server routes at `/api/v1/auth/sso/authorize` and
-`/api/v1/auth/sso/exchange`. Before joint testing, ATLAS must confirm which pair
-is canonical. If the `/api/v1` routes are canonical, update the two EnrollPro
-environment values and restart EnrollPro; do not implement an unverified client
-fallback between paths.
+ATLAS confirmed that `/api/v1/auth/sso/authorize` and
+`/api/v1/auth/sso/exchange` are the canonical server routes. Direct checks on
+2026-09-17 verified that both POST routes are mounted and reject missing
+authorization with HTTP 401 rather than 404. The authorize route does not accept
+GET requests.
+
+EnrollPro's reverse-start route is browser-facing. Therefore ATLAS must provide
+an authenticated browser mediator that receives EnrollPro's `client_id`,
+`redirect_uri`, and signed `state`, calls the POST authorize route with the
+current ATLAS user session token, and then navigates once to the returned
+EnrollPro callback URL. A browser must not be redirected directly by GET to the
+POST-only API endpoint. Until that mediator is deployed, the canonical API pair
+is reachable but ATLAS-to-EnrollPro interactive SSO is not end-to-end ready.
 
 The callback must use HTTPS outside local development. The secret must not be reused for schedule feeds or any other integration.
 
-`ATLAS_SSO_CLIENT_SECRET` authenticates ATLAS to EnrollPro for an EnrollPro-issued code. `ATLAS_SSO_REVERSE_CLIENT_SECRET` authenticates EnrollPro to ATLAS for an ATLAS-issued code. `ATLAS_API_KEY` remains a data-feed credential and must never authorize SSO.
+`ATLAS_SSO_CLIENT_SECRET` authenticates ATLAS to EnrollPro for an EnrollPro-issued code. It must be installed in ATLAS as `ENROLLPRO_SSO_CLIENT_SECRET`. `ATLAS_SSO_REVERSE_CLIENT_SECRET` authenticates EnrollPro to ATLAS for an ATLAS-issued code and must use the same value as ATLAS's `ATLAS_SSO_REVERSE_CLIENT_SECRET`. The two secrets must be different. `ATLAS_API_KEY` remains a data-feed credential and must never authorize SSO.
+
+The values exposed in the earlier plaintext handoff are revoked. Do not keep
+them as fallback values. EnrollPro generated replacements on 2026-09-17; ATLAS
+must receive and install both replacements out of band before joint testing.
 
 ## ATLAS Callback Flow
 
