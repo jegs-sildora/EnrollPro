@@ -48,8 +48,20 @@ export const selectAccentSchema = z.object({
 
 export const updateProgramsSchema = z.object({
   steEnabled: z.boolean(),
+  steCapacity: z.number().int().min(1, "STE Capacity must be at least 1").nullable().optional(),
   spaEnabled: z.boolean(),
+  spaCapacity: z.number().int().min(1, "SPA Capacity must be at least 1").nullable().optional(),
   spsEnabled: z.boolean(),
+  spsCapacity: z.number().int().min(1, "SPS Capacity must be at least 1").nullable().optional(),
+}).refine(data => !data.steEnabled || (data.steEnabled && data.steCapacity != null && data.steCapacity >= 1), {
+  message: "STE Capacity is required when STE is enabled",
+  path: ["steCapacity"]
+}).refine(data => !data.spaEnabled || (data.spaEnabled && data.spaCapacity != null && data.spaCapacity >= 1), {
+  message: "SPA Capacity is required when SPA is enabled",
+  path: ["spaCapacity"]
+}).refine(data => !data.spsEnabled || (data.spsEnabled && data.spsCapacity != null && data.spsCapacity >= 1), {
+  message: "SPS Capacity is required when SPS is enabled",
+  path: ["spsCapacity"]
 });
 
 export const updateAlgorithmSchema = z.object({

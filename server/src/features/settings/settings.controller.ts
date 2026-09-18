@@ -500,7 +500,7 @@ export async function getActiveAcademicPrograms(
 }
 
 export async function updatePrograms(req: Request, res: Response): Promise<void> {
-  const { steEnabled, spaEnabled, spsEnabled } = req.body;
+  const { steEnabled, spaEnabled, spsEnabled, steCapacity, spaCapacity, spsCapacity } = req.body;
 
   const settings = await getOrCreateSettings();
 
@@ -508,8 +508,11 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
     where: { id: settings.id },
     data: {
       steEnabled,
+      steCapacity: steEnabled ? steCapacity : null,
       spaEnabled,
+      spaCapacity: spaEnabled ? spaCapacity : null,
       spsEnabled,
+      spsCapacity: spsEnabled ? spsCapacity : null,
     },
   });
 

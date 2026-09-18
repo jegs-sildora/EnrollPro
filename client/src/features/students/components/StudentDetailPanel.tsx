@@ -46,7 +46,7 @@ import {
 } from "@/shared/ui/select";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { getImageUrl, formatEosyStatus, cn, formatGradeLevel } from "@/shared/lib/utils";
+import { getImageUrl, formatEosyStatus, cn, formatGradeLevel, formatApplicationStatus, getApplicationStatusColorClasses } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/types/application-detail";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -1021,8 +1021,8 @@ export function StudentDetailPanel({
                       Dropped Out
                     </Badge>
                   ) : (
-                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0">
-                      Officially Enrolled
+                    <Badge className={cn("px-3 py-0.5 rounded-full uppercase shadow-sm text-sm font-bold border-0", getApplicationStatusColorClasses(student.status))}>
+                      {formatApplicationStatus(student.status)}
                     </Badge>
                   )}
                   {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
@@ -1984,7 +1984,7 @@ export function StudentDetailPanel({
               </div>
             </div>
             {/* V: Portal Access and Security */}
-            {!isJhsCompleter && (
+            {!isJhsCompleter && student.status !== "PENDING_VERIFICATION" && student.status !== "FOR_REVISION" && (
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
@@ -2071,7 +2071,7 @@ export function StudentDetailPanel({
               <GuardianContact applicant={typedStudentShim} />
             </div>
             <Classifications applicant={typedStudentShim} />
-            {!isJhsCompleter && (
+            {!isJhsCompleter && student.status !== "PENDING_VERIFICATION" && student.status !== "FOR_REVISION" && (
               <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden mb-4">
                 <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
                   <FileBadge2 className="h-4 w-4 text-primary" />

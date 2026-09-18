@@ -402,6 +402,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
     include: {
       learner: {
         select: {
+          id: true,
           firstName: true,
           lastName: true,
           middleName: true,

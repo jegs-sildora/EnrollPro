@@ -46,6 +46,14 @@ export const SCP_ACRONYMS: Record<string, string> = {
   LATE_ENROLLEE: "Late",
 };
 
+export function formatSectionProgramLabel(programType: string | null | undefined, isHomogeneous?: boolean): string {
+  if (!programType) return "";
+  if (programType === "REGULAR") {
+    return isHomogeneous ? "TOP BEC" : "BEC";
+  }
+  return SCP_ACRONYMS[programType] || programType;
+}
+
 /**
  * Formats a date string or object to a human-readable format in Manila timezone.
  */
@@ -389,6 +397,42 @@ export function formatApplicationStatus(
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+export function getApplicationStatusColorClasses(
+  status: string | null | undefined,
+): string {
+  if (!status) return "bg-slate-100 text-slate-600 border-slate-300";
+
+  const s = status.toUpperCase();
+
+  switch (s) {
+    case "PENDING_VERIFICATION":
+      return "bg-blue-600 text-white hover:bg-blue-700 shadow-sm border-0";
+    case "PENDING_CONFIRMATION":
+    case "READY_FOR_SECTIONING":
+      return "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm border-0";
+    case "FOR_REVISION":
+      return "bg-amber-600 text-white hover:bg-amber-700 shadow-sm border-0";
+    case "OFFICIALLY_ENROLLED":
+      return "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm border-0";
+    case "WITHDRAWN":
+      return "bg-slate-600 text-white hover:bg-slate-700 shadow-sm border-0";
+    case "CANCELLED":
+    case "DROPPED":
+      return "bg-red-700 text-white hover:bg-red-800 shadow-sm border-0";
+    case "TRANSFERRING_OUT":
+    case "TRANSFERRED_OUT":
+      return "bg-orange-600 text-white hover:bg-orange-700 shadow-sm border-0";
+    case "ARCHIVED_NO_SHOW":
+      return "bg-slate-800 text-white hover:bg-slate-900 shadow-sm border-0";
+    case "REMEDIAL_HOLD":
+      return "bg-yellow-600 text-white hover:bg-yellow-700 shadow-sm border-0";
+    case "REMEDIAL_RESOLVED":
+      return "bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm border-0";
+    default:
+      return "bg-slate-600 text-white hover:bg-slate-700 shadow-sm border-0";
+  }
 }
 
 /**

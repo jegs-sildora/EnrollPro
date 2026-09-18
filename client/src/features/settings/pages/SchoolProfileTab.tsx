@@ -34,7 +34,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
-import { updateIdentitySchema } from "@enrollpro/shared/schemas";
+import { updateIdentitySchema, updateProgramsSchema } from "@enrollpro/shared/schemas";
 
 import { Switch } from "@/shared/ui/switch";
 import {
@@ -68,8 +68,11 @@ export default function SchoolProfileTab() {
     schoolHeadName,
     schoolHeadTitle,
     steEnabled,
+    steCapacity,
     spaEnabled,
+    spaCapacity,
     spsEnabled,
+    spsCapacity,
     globalDefaultPassword,
     setSettings,
     systemStatus,
@@ -85,11 +88,7 @@ export default function SchoolProfileTab() {
   const [showRemoveLogoConfirm, setShowRemoveLogoConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const profileFormSchema = updateIdentitySchema.extend({
-    steEnabled: z.boolean(),
-    spaEnabled: z.boolean(),
-    spsEnabled: z.boolean(),
-  });
+  const profileFormSchema = updateIdentitySchema.merge(updateProgramsSchema);
 
   type FormValues = z.infer<typeof profileFormSchema>;
 
@@ -107,8 +106,11 @@ export default function SchoolProfileTab() {
       schoolWebsite: schoolWebsite || "",
       globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
       steEnabled: steEnabled ?? false,
+      steCapacity: steCapacity ?? null,
       spaEnabled: spaEnabled ?? false,
+      spaCapacity: spaCapacity ?? null,
       spsEnabled: spsEnabled ?? false,
+      spsCapacity: spsCapacity ?? null,
     },
   });
 
@@ -126,8 +128,11 @@ export default function SchoolProfileTab() {
     schoolWebsite: "Official School Website",
     globalDefaultPassword: "Default User Password",
     steEnabled: "STE Program",
+    steCapacity: "STE Capacity",
     spaEnabled: "SPA Program",
+    spaCapacity: "SPA Capacity",
     spsEnabled: "SPS Program",
+    spsCapacity: "SPS Capacity",
   };
 
   const unsavedChangesList = Object.keys(fieldLabels)
@@ -147,8 +152,11 @@ export default function SchoolProfileTab() {
       schoolWebsite: schoolWebsite || "",
       globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
       steEnabled: steEnabled ?? false,
+      steCapacity: steCapacity ?? null,
       spaEnabled: spaEnabled ?? false,
+      spaCapacity: spaCapacity ?? null,
       spsEnabled: spsEnabled ?? false,
+      spsCapacity: spsCapacity ?? null,
     });
   }, [
     schoolName,
@@ -162,8 +170,11 @@ export default function SchoolProfileTab() {
     schoolWebsite,
     globalDefaultPassword,
     steEnabled,
+    steCapacity,
     spaEnabled,
+    spaCapacity,
     spsEnabled,
+    spsCapacity,
     form.reset,
   ]);
 
@@ -188,8 +199,11 @@ export default function SchoolProfileTab() {
 
       const programsPayload = {
         steEnabled: values.steEnabled,
+        steCapacity: values.steCapacity,
         spaEnabled: values.spaEnabled,
+        spaCapacity: values.spaCapacity,
         spsEnabled: values.spsEnabled,
+        spsCapacity: values.spsCapacity,
       };
 
       await Promise.all([
@@ -319,6 +333,11 @@ export default function SchoolProfileTab() {
 
   const handleToggleProgram = (key: "steEnabled" | "spaEnabled" | "spsEnabled", value: boolean) => {
     form.setValue(key, value, { shouldDirty: true, shouldValidate: true });
+    if (!value) {
+      if (key === "steEnabled") form.setValue("steCapacity", null, { shouldDirty: true, shouldValidate: true });
+      if (key === "spaEnabled") form.setValue("spaCapacity", null, { shouldDirty: true, shouldValidate: true });
+      if (key === "spsEnabled") form.setValue("spsCapacity", null, { shouldDirty: true, shouldValidate: true });
+    }
   };
   return (
     <div className="space-y-6">
@@ -447,7 +466,7 @@ export default function SchoolProfileTab() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
+                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
                       <TooltipProvider>
                         <Tooltip>
@@ -465,9 +484,34 @@ export default function SchoolProfileTab() {
                         disabled={isArchived || isSubmitting}
                       />
                     </div>
+                    {form.watch("steEnabled") && (
+                      <div className="pt-2">
+                        <FormField
+                          control={form.control}
+                          name="steCapacity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Learner Slots</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="e.g. 100"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                  disabled={isArchived || isSubmitting}
+                                />
+                              </FormControl>
+                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
+                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
                       <TooltipProvider>
                         <Tooltip>
@@ -485,9 +529,34 @@ export default function SchoolProfileTab() {
                         disabled={isArchived || isSubmitting}
                       />
                     </div>
+                    {form.watch("spaEnabled") && (
+                      <div className="pt-2">
+                        <FormField
+                          control={form.control}
+                          name="spaCapacity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Learner Slots</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="e.g. 100"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                  disabled={isArchived || isSubmitting}
+                                />
+                              </FormControl>
+                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
+                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
                       <TooltipProvider>
                         <Tooltip>
@@ -505,6 +574,31 @@ export default function SchoolProfileTab() {
                         disabled={isArchived || isSubmitting}
                       />
                     </div>
+                    {form.watch("spsEnabled") && (
+                      <div className="pt-2">
+                        <FormField
+                          control={form.control}
+                          name="spsCapacity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Learner Slots</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="e.g. 100"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                  disabled={isArchived || isSubmitting}
+                                />
+                              </FormControl>
+                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

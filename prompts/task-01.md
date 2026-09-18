@@ -1,41 +1,35 @@
-# Prompt for UI/UX & Logic Implementation: JHS Completers Filter Refactor
+# Prompt for UI/UX Implementation: SCP Maximum Learner Capacity Settings
 
 ## Role & Context
-Act as a Frontend Developer. We are refining the "Filter Learners" popover in the Learner Directory of EnrollPro. 
+Act as a Frontend Developer. We are updating the `System Configuration` module in EnrollPro. 
 
-Currently, when a registrar navigates to the `COMPLETERS / ALUMNI` tab, the filter popover displays generic fields (`GRADE LEVEL`, `EOSY PROMOTION STATUS`) that do not apply to alumni. By DepEd definition, all Completers are Grade 10 students who were successfully promoted. We need to swap these irrelevant filters for alumni-specific search criteria, utilizing our existing design system components.
+Specifically, we are targeting the `Active Special Curricular Programs (SCP)` card located under the `SCHOOL PROFILE` tab. Currently, this card only allows the admin to toggle programs (STE, SPA, SPS) ON or OFF. 
 
-## The Objective
-Dynamically render a different set of filter dropdowns inside the popover when the active tab is `COMPLETERS / ALUMNI`. The primary filtering mechanism must pivot from "Current Grade" to "Completion Year (Batch)".
+In DepEd public schools, these specialized programs have strict enrollment caps. We need to add a "Maximum Learner Slots" numeric input that conditionally appears when a program is activated, ensuring the system knows exactly when to cut off enrollment for that specific SCP.
+
+## Critical Directive
+Strictly utilize the existing design system components, form layouts, and spacing tokens. Do not write custom CSS or introduce new wrapper styles.
 
 ## UI Component Requirements
 
-When the `COMPLETERS / ALUMNI` tab is active, implement the following specific filter configuration inside the popover using existing design system select/dropdown components:
+Please refactor the `Active Special Curricular Programs (SCP)` card using the following specifications:
 
-### 1. Remove Irrelevant Filters
-*   **Hide `GRADE LEVEL`:** All learners in this tab are Grade 10 Completers. Do not render this dropdown.
-*   **Hide `EOSY PROMOTION STATUS`:** All learners in this tab are successfully promoted/completed. Do not render this dropdown.
+### 1. Refactor the SCP Item Layout
+Currently, the programs (STE, SPA, SPS) are likely mapped in a simple flex or grid row. Refactor each program's UI into a distinct vertical group or sub-container.
+*   **Top Row of Group:** Keep the existing Program Label (e.g., `STE`) and the existing Toggle component aligned to the right.
+*   **Bottom Row of Group (Conditional):** Introduce an existing Numeric Input component directly below the toggle.
+*   **Labeling:** Label this input `Max Learner Slots`. Include a standard system helper text below it (e.g., `Set the enrollment cap for this program`).
 
-### 2. Implement Alumni-Specific Filters
-*   **Filter 1: `COMPLETION YEAR (BATCH)` (New Primary Filter)**
-    *   **Component:** Existing select/dropdown component.
-    *   **Label:** `COMPLETION YEAR`
-    *   **Default State:** `All Batches`
-    *   **Options:** Populate with historical school years (e.g., `S.Y. 2029-2030`, `S.Y. 2028-2029`).
-*   **Filter 2: `CURRICULAR PROGRAM` (Keep Existing)**
-    *   **Component:** Existing select/dropdown component.
-    *   **Label:** `PROGRAM`
-    *   **Default State:** `All Programs`
-*   **Filter 3: `GRADE 10 SECTION` (Keep but Rename)**
-    *   **Component:** Existing select/dropdown component.
-    *   **Label:** `G10 SECTION` (Clarify that this searches the section they belonged to when they completed).
-    *   **Default State:** `All Sections`
+### 2. Progressive Disclosure (Conditional Rendering)
+*   **If Toggle is OFF:** The `Max Learner Slots` input field must be completely hidden or removed from the DOM.
+*   **If Toggle is ON:** Smoothly reveal the `Max Learner Slots` numeric input field. 
 
-### 3. Cascading Logic (Data Scoping)
-*   The `G10 SECTION` dropdown must be dependent on the `COMPLETION YEAR` dropdown. 
-*   If a registrar selects `S.Y. 2029-2030`, the Section dropdown should only populate with the Grade 10 sections that existed during that specific school year.
+### 3. Validation & Constraints
+*   **Input Type:** Ensure the input is restricted to numbers only (`type="number"`).
+*   **Minimum Value:** Set a minimum threshold (`min="1"`). An active program cannot have 0 slots.
+*   **Required State:** If a toggle is ON, the corresponding numeric input becomes a required field. The system configuration form should not submit if a program is active but the slot capacity is left blank.
+*   **State Reset:** If the user toggles a program from ON back to OFF, the local state for that program's `max_slots` should automatically clear/reset to null.
 
-### 4. Layout & Actions
-*   Maintain the existing vertical stacking layout for the dropdowns.
-*   Maintain the existing sticky footer with the `Clear All` ghost button and the `Apply Filters` primary button.
-*   Clicking `Clear All` should reset these specific alumni dropdowns back to their "All" states.
+### 4. Layout & Spacing Polish
+*   Use the design system's standard grid component (e.g., a 3-column grid) to distribute the STE, SPA, and SPS blocks evenly across the card.
+*   Ensure standard system padding is applied between the toggle and the conditional input field so the sub-container does not feel cramped when expanded.

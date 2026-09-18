@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
@@ -1097,8 +1097,7 @@ export function VerificationWorkspace() {
                         </VerificationRow>
                       )}
                       <VerificationRow label="Official Program">
-                        {selectedApp.admissionChannel === "F2F" ||
-                        (selectedApp.status !== "PENDING_VERIFICATION" && selectedApp.status !== "FOR_REVISION") ? (
+                        {selectedApp.status !== "PENDING_VERIFICATION" && selectedApp.status !== "FOR_REVISION" ? (
                           <span className="font-bold text-foreground">
                             {SCP_LABELS[assignedProgram] || assignedProgram.replace(/_/g, " ")}
                           </span>
@@ -1144,7 +1143,7 @@ export function VerificationWorkspace() {
                                 <SelectItem value="UNASSIGNED">AUTO-ASSIGN SECTION (UNSECTIONED POOL)</SelectItem>
                                 {sectionsQuery.data?.map((sec) => (
                                   <SelectItem key={sec.id} value={String(sec.id)} disabled={sec.enrolledCount >= sec.maxCapacity} className="font-bold uppercase">
-                                    {sec.name} {sec.enrolledCount >= sec.maxCapacity ? "(FULL)" : `(${sec.enrolledCount}/${sec.maxCapacity})`}
+                                    {sec.name} - {formatSectionProgramLabel(sec.programType, sec.isHomogeneous)} {sec.enrolledCount >= sec.maxCapacity ? "(FULL)" : `(${sec.enrolledCount}/${sec.maxCapacity})`}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

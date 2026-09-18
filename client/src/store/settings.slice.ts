@@ -35,8 +35,11 @@ export interface SettingsState {
   schoolHeadName: string | null;
   schoolHeadTitle: string | null;
   steEnabled: boolean;
+  steCapacity: number | null;
   spaEnabled: boolean;
+  spaCapacity: number | null;
   spsEnabled: boolean;
+  spsCapacity: number | null;
   enableHomogeneousSections: boolean;
   homogeneousSectionCount: number;
   heterogeneousRoundRobin: boolean;
@@ -122,8 +125,11 @@ export const useSettingsStore = create<SettingsState>()(
       schoolHeadName: null,
       schoolHeadTitle: null,
       steEnabled: false,
+      steCapacity: null,
       spaEnabled: false,
+      spaCapacity: null,
       spsEnabled: false,
+      spsCapacity: null,
       enableHomogeneousSections: true,
       homogeneousSectionCount: 5,
       heterogeneousRoundRobin: true,
