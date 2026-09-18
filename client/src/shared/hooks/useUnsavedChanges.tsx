@@ -400,7 +400,7 @@ export function useUnsavedChanges(source: UnsavedChangeSource) {
       sourceIdRef.current = source.id;
     }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     registerSource(source);
   }, [
     registerSource,

@@ -871,15 +871,14 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
       )}
 
       {/* Student Detail Panel */}
-      <Sheet
+      <Dialog
         open={selectedStudentId !== null}
         onOpenChange={(open) => {
           if (!open) setSelectedStudentId(null);
         }}>
-        <SheetContent
-          side="right"
+        <DialogContent
           aria-describedby={undefined}
-          className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
+          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
           {selectedStudentId ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
@@ -897,8 +896,8 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </PageTransition>
   );
 }

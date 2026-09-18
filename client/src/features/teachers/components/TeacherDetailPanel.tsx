@@ -18,12 +18,12 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/shared/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/shared/ui/dialog";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -212,7 +212,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   onOpenChange,
   onSaveSuccess,
 }: TeacherDetailPanelProps) {
-  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, { centered: true });
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { ayId } = useSchoolYearContext();
 
@@ -554,9 +554,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={handleCloseAttempt}>
-        <SheetContent
-          side="right"
+      <Dialog open={open} onOpenChange={handleCloseAttempt}>
+        <DialogContent
           aria-describedby={undefined}
           onPointerDownOutside={(e) => {
             if (isDirty) {
@@ -570,27 +569,34 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               confirmOrRun(closePanel);
             }
           }}
-          className="p-0 flex flex-col h-full border-l overflow-visible w-full sm:w-auto sm:max-w-none"
+          className="p-0 flex flex-col h-[90vh] md:h-[95vh] border overflow-visible w-full sm:w-auto sm:max-w-none max-w-[95vw]"
           style={
             isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
           }
         >
-          {/* Resize Handle — hidden on mobile */}
+          {/* Left Resize Handle */}
           <div
             onMouseDown={startResizing}
-            className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+            className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group rounded-l-md">
             <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
           </div>
 
-          <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+          {/* Right Resize Handle */}
+          <div
+            onMouseDown={startResizingRight}
+            className="absolute right-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group rounded-r-md">
+            <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+          </div>
+
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-background rounded-md">
             {/* ─── Header ─── */}
-            <SheetHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold text-left space-y-0 mt-0">
+            <DialogHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold text-left space-y-0 mt-0">
               <div>
-                <SheetTitle className="text-base sm:text-lg text-primary-foreground font-bold uppercase flex items-center gap-2">
+                <DialogTitle className="text-base sm:text-lg text-primary-foreground font-bold uppercase flex items-center gap-2">
                   {isAdding ? "New Personnel Profile" : "Personnel Profile"}
-                </SheetTitle>
+                </DialogTitle>
               </div>
-            </SheetHeader>
+            </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
@@ -1538,8 +1544,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               )}
             </form>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationModal
         open={showResetPasswordConfirm}

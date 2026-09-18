@@ -196,6 +196,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     assignedProgram,
     sf9EligibilityStatus,
     conditionalSubjects = [],
+    sectionId,
   }: {
     applicationId: number;
     heightCm?: number;
@@ -209,6 +210,7 @@ export async function finalizeIntake(req: Request, res: Response) {
       subjectCode: string;
       grade: number;
     }>;
+    sectionId?: number;
   } = req.body;
 
   if (!applicationId) {
@@ -284,7 +286,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     await tx.enrollmentApplication.update({
       where: { id: applicationId },
       data: {
-        status: "READY_FOR_SECTIONING",
+        status: sectionId ? "OFFICIALLY_ENROLLED" : "READY_FOR_SECTIONING",
         intakeHeightCm: heightCm ?? undefined,
         intakeWeightKg: weightKg ?? undefined,
         confirmationConsent: checklistVerified,
@@ -304,6 +306,24 @@ export async function finalizeIntake(req: Request, res: Response) {
         } : undefined,
       },
     });
+
+    if (sectionId) {
+      const section = await tx.section.findUnique({ where: { id: sectionId } });
+      if (!section || section.schoolYearId !== application.schoolYearId || section.gradeLevelId !== application.gradeLevelId) {
+        throw new AppError(422, "Selected section is invalid or does not match the grade level.");
+      }
+      await tx.enrollmentRecord.create({
+        data: {
+          enrollmentApplicationId: application.id,
+          sectionId: section.id,
+          learnerId: application.learnerId,
+          schoolYearId: application.schoolYearId,
+          enrolledById: req.user!.userId,
+          dateSectioned: new Date(),
+          isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+        }
+      });
+    }
 
     if (isMissingPsa) {
        await tx.learner.update({
@@ -399,6 +419,13 @@ export async function getPendingVerifications(req: Request, res: Response) {
       backSubjects: {
         select: { subjectCode: true, subjectName: true },
         orderBy: { subjectName: "asc" },
+      },
+      enrollmentRecord: {
+        include: {
+          section: {
+            select: { name: true }
+          }
+        }
       },
     },
     orderBy: { createdAt: "desc" },
@@ -675,7 +702,8 @@ export async function directEncodeWalkIn(
       hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjects,
       motherTongue, 
       addressStreet, addressSitio, addressRegion, addressProvince, addressCity, addressBarangay,
-      studentPhoto, permanentAddressSameAsCurrent, extensionName
+      studentPhoto, permanentAddressSameAsCurrent, extensionName,
+      sectionId
     } = payload;
 
     const schoolYearId = intakeContext.schoolYearId;
@@ -785,7 +813,7 @@ export async function directEncodeWalkIn(
           isTemporarilyEnrolled,
           isMissingSf9: !hasSf9,
           encodedById: req.user!.userId,
-          status: "READY_FOR_SECTIONING",
+          status: sectionId ? "OFFICIALLY_ENROLLED" : "READY_FOR_SECTIONING",
           academicStatus: sf9EligibilityStatus,
           isRemedialRequired: backSubjectSelection !== null,
           guardianFirstName,
@@ -830,6 +858,24 @@ export async function directEncodeWalkIn(
           } : undefined,
         }
       });
+
+      if (sectionId) {
+        const section = await tx.section.findUnique({ where: { id: sectionId } });
+        if (!section || section.schoolYearId !== schoolYearId || section.gradeLevelId !== gradeLevelId) {
+          throw new AppError(422, "Selected section is invalid or does not match the grade level.");
+        }
+        await tx.enrollmentRecord.create({
+          data: {
+            enrollmentApplicationId: application.id,
+            sectionId: section.id,
+            learnerId: learner.id,
+            schoolYearId: schoolYearId,
+            enrolledById: req.user!.userId,
+            dateSectioned: new Date(),
+            isLateEnrollee: intakeContext.systemPhase === "CLASSES_ONGOING",
+          }
+        });
+      }
 
       return application;
     });

@@ -5,7 +5,7 @@ import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { 
   FileText, CheckCircle2, XCircle, AlertCircle, Trash2, ShieldAlert,
-  Loader2, Phone, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, FileCheck
+  Loader2, Phone, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, FileCheck, Eye
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -24,6 +24,8 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
+import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
+import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
@@ -67,6 +69,7 @@ interface PendingVerification {
     hasPsaBirthCertificate?: boolean;
   };
   gradeLevelId: number;
+  schoolYearId: number;
   gradeLevel: {
     name: string;
   };
@@ -91,6 +94,11 @@ interface PendingVerification {
   isMissingSf9: boolean;
   isMissingPsa: boolean;
   admissionChannel?: string;
+  enrollmentRecord?: {
+    section?: {
+      name: string;
+    } | null;
+  } | null;
 }
 
 interface ApiErrorResponse {
@@ -146,10 +154,12 @@ export function VerificationWorkspace() {
 
   const [processing, setProcessing] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
+  const [viewStudentId, setViewStudentId] = useState<number | null>(null);
 
   const [sf9Verified, setSf9Verified] = useState(false);
   const [psaVerified, setPsaVerified] = useState(false);
   const [assignedProgram, setAssignedProgram] = useState<string>("REGULAR");
+  const [assignedSectionId, setAssignedSectionId] = useState<number | undefined>(undefined);
   const [confirmModalState, setConfirmModalState] = useState<"TEMPORARY" | "OFFICIAL" | null>(null);
 
   const [sf9EligibilityStatus, setSf9EligibilityStatus] = useState<"PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED" | "">("PROMOTED");
@@ -291,6 +301,22 @@ export function VerificationWorkspace() {
     enabled: !isHistoricalReadOnly,
   });
 
+  const selectedApp = useMemo(() => {
+    return pendingVerifications.find((app) => app.id === selectedAppId);
+  }, [pendingVerifications, selectedAppId]);
+
+  const sectionsQuery = useQuery({
+    queryKey: ["sections", "filtered", selectedApp?.schoolYearId, selectedApp?.gradeLevelId, assignedProgram],
+    queryFn: async () => {
+      const response = await api.get(`/sections/${selectedApp?.schoolYearId}`, {
+        params: { gradeLevelId: selectedApp?.gradeLevelId, programType: assignedProgram },
+      });
+      return response.data.sections as Array<{ id: number; name: string; maxCapacity: number; enrolledCount: number; isHomogeneous: boolean; programType: string; }>;
+    },
+    enabled: !!selectedApp?.schoolYearId && !!selectedApp?.gradeLevelId && !!assignedProgram,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: publicSettings } = useQuery({
     queryKey: queryKeys.publicSettings,
     queryFn: () => api.get("/settings/public").then((res) => res.data),
@@ -338,9 +364,6 @@ export function VerificationWorkspace() {
     return result;
   }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, activeTab]);
 
-  const selectedApp = useMemo(() => {
-    return filteredVerifications.find((app) => app.id === selectedAppId) || null;
-  }, [filteredVerifications, selectedAppId]);
 
   const atlasSubjectsQuery = useQuery({
     queryKey: ["enrollment", "walk-in", "atlas-subjects", selectedApp?.gradeLevelId, assignedProgram],
@@ -475,6 +498,7 @@ export function VerificationWorkspace() {
 
   const handleSelect = (appId: number) => {
     setSelectedAppId(appId);
+    setAssignedSectionId(undefined);
     setSf9EligibilityStatus("PROMOTED");
     setConditionalSubjects([]);
   };
@@ -499,6 +523,7 @@ export function VerificationWorkspace() {
         applicationId: selectedAppId,
         checklistVerified: true,
         assignedProgram,
+        sectionId: assignedSectionId,
         sf9EligibilityStatus: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F") ? sf9EligibilityStatus : undefined,
         conditionalSubjects: (selectedApp?.learnerType === "TRANSFEREE" && selectedApp?.admissionChannel !== "F2F" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED") ? conditionalSubjects.filter(s => s.subjectCode.trim() !== "").map(s => ({ subjectCode: s.subjectCode, grade: s.grade ? Number(s.grade) : undefined })) : [],
       });
@@ -933,6 +958,17 @@ export function VerificationWorkspace() {
                       <span className="font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                     </div>
                   </div>
+                  
+                  {/* ADD PROFILE BUTTON HERE */}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer shrink-0" 
+                    onClick={() => setViewStudentId(selectedApp.learner.id)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Profile
+                  </Button>
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
@@ -1093,6 +1129,34 @@ export function VerificationWorkspace() {
                         )}
                       </VerificationRow>
                       
+                      <VerificationRow label="Assigned Section">
+                        {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? (
+                          <div className="flex flex-col w-full py-1">
+                            <Select 
+                              value={assignedSectionId ? String(assignedSectionId) : "UNASSIGNED"} 
+                              onValueChange={(val) => setAssignedSectionId(val === "UNASSIGNED" ? undefined : Number(val))}
+                              disabled={sectionsQuery.isLoading}
+                            >
+                              <SelectTrigger className="w-full font-bold h-10 bg-white uppercase">
+                                <SelectValue placeholder={sectionsQuery.isLoading ? "LOADING SECTIONS..." : "AUTO-ASSIGN SECTION (UNSECTIONED POOL)"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="UNASSIGNED">AUTO-ASSIGN SECTION (UNSECTIONED POOL)</SelectItem>
+                                {sectionsQuery.data?.map((sec) => (
+                                  <SelectItem key={sec.id} value={String(sec.id)} disabled={sec.enrolledCount >= sec.maxCapacity} className="font-bold uppercase">
+                                    {sec.name} {sec.enrolledCount >= sec.maxCapacity ? "(FULL)" : `(${sec.enrolledCount}/${sec.maxCapacity})`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : (
+                          <span className={selectedApp.enrollmentRecord?.section?.name ? "font-bold text-foreground" : "font-bold text-muted-foreground italic"}>
+                            {selectedApp.enrollmentRecord?.section?.name || "UNASSIGNED"}
+                          </span>
+                        )}
+                      </VerificationRow>
+
                       {selectedApp.learnerType === "TRANSFEREE" && selectedApp.admissionChannel !== "F2F" && (
                         <VerificationRow label="SF9 Eligibility Status">
                           {selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED" ? (
@@ -1609,6 +1673,28 @@ export function VerificationWorkspace() {
         loading={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate()}
       />
+
+      <Dialog
+        open={viewStudentId !== null}
+        onOpenChange={(open) => !open && setViewStudentId(null)}>
+        <DialogContent
+          aria-describedby={undefined}
+          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
+          {viewStudentId ? (
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              <StudentDetailPanel
+                id={viewStudentId}
+                onClose={() => setViewStudentId(null)}
+                hideEnrollmentInfo={true}
+              />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationModal
         open={restoreModalOpen}

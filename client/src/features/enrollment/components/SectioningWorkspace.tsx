@@ -411,7 +411,7 @@ const snakeDraftLearners = (
     const totalRemaining = Array.from(remainingCapacity.values()).reduce((sum, c) => sum + c, 0);
     if (totalRemaining <= 0) return null;
     
-    let startState = { idx: sectionIndex, fwd: forward };
+    const startState = { idx: sectionIndex, fwd: forward };
     let looped = false;
     
     while (true) {

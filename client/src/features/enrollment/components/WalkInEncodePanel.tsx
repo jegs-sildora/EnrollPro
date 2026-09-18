@@ -204,6 +204,7 @@ export function WalkInEncodePanel() {
       originatingSchoolId: "",
       sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
       conditionalSubjects: [],
+      sectionId: undefined,
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
@@ -220,6 +221,19 @@ export function WalkInEncodePanel() {
     learnerType === "TRANSFEREE" &&
     sf9EligibilityStatus === "CONDITIONALLY_PROMOTED";
 
+  
+  const sectionsQuery = useQuery({
+    queryKey: ["sections", "filtered", activeSyId, gradeLevelId, assignedProgram],
+    queryFn: async () => {
+      const response = await api.get(`/sections/${activeSyId}`, {
+        params: { gradeLevelId, programType: assignedProgram },
+      });
+      return response.data.sections as Array<{ id: number; name: string; maxCapacity: number; enrolledCount: number; isHomogeneous: boolean; programType: string; }>;
+    },
+    enabled: !!activeSyId && gradeLevelId > 0 && !!assignedProgram,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const atlasSubjectsQuery = useQuery({
     queryKey: ["enrollment", "walk-in", "atlas-subjects", gradeLevelId, assignedProgram],
     queryFn: async () => {
@@ -233,6 +247,11 @@ export function WalkInEncodePanel() {
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
+
+  
+  useEffect(() => {
+    form.setValue("sectionId", undefined, { shouldDirty: true, shouldValidate: true });
+  }, [gradeLevelId, assignedProgram, form]);
 
   useEffect(() => {
     if (!requiresBackSubjects) {
@@ -329,6 +348,7 @@ export function WalkInEncodePanel() {
           originatingSchoolId: "",
           sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
           conditionalSubjects: [],
+          sectionId: undefined,
         });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
@@ -1411,6 +1431,47 @@ export function WalkInEncodePanel() {
                               Clear copy of Philippine Statistics Authority issued certificate.
                             </span>
                           </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* SECTION ASSIGNMENT BLOCK */}
+                  <div className="w-full p-4 sm:p-5 border border-border rounded-xl flex flex-col gap-5 bg-card shadow-sm">
+                    <h4 className="flex items-center gap-2 text-base font-bold uppercase tracking-wide">
+                      <FileCheck className="w-4 h-4 text-primary" />
+                      Section Assignment
+                    </h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="sectionId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-bold capitalize">Section (Optional)</FormLabel>
+                          <Select
+                            onValueChange={(val) => field.onChange(val === "UNASSIGNED" ? undefined : Number(val))}
+                            value={field.value ? String(field.value) : "UNASSIGNED"}
+                            disabled={!gradeLevelId || !assignedProgram || sectionsQuery.isLoading}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="font-bold uppercase">
+                                <SelectValue placeholder={!gradeLevelId || !assignedProgram ? "SELECT GRADE LEVEL FIRST" : sectionsQuery.isLoading ? "LOADING SECTIONS..." : "AUTO-ASSIGN SECTION (UNSECTIONED POOL)"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="UNASSIGNED">AUTO-ASSIGN SECTION (UNSECTIONED POOL)</SelectItem>
+                              {sectionsQuery.data?.map((sec) => (
+                                <SelectItem key={sec.id} value={String(sec.id)} disabled={sec.enrolledCount >= sec.maxCapacity} className="font-bold uppercase">
+                                  {sec.name} {sec.enrolledCount >= sec.maxCapacity ? "(FULL)" : `(${sec.enrolledCount}/${sec.maxCapacity})`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-foreground leading-snug">
+                            Selecting a section will immediately enroll this learner in that section.
+                          </p>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />

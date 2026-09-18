@@ -1780,27 +1780,16 @@ export default function Students() {
       </Tabs>
 
       {/* Student Detail Panel */}
-      <Sheet
+      <Dialog
         open={selectedStudentId !== null}
         onOpenChange={(open) => {
           if (!open) {
             confirmOrRun(() => setSelectedStudentId(null));
           }
         }}>
-        <SheetContent
-          side="right"
+        <DialogContent
           aria-describedby={undefined}
-          className="p-0 flex flex-row border-l overflow-visible w-full sm:w-auto sm:max-w-none"
-          style={
-            isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
-          }>
-          {/* Resize Handle — hidden on mobile */}
-          <div
-            onMouseDown={startResizing}
-            className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
-            <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
-          </div>
-
+          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
           {selectedStudentId !== null && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
@@ -1815,8 +1804,8 @@ export default function Students() {
               />
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={showTransferOutDialog}

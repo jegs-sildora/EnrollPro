@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-export function useResizablePanel(initialPercentage: number = 50) {
+export function useResizablePanel(initialPercentage: number = 50, options?: { centered?: boolean }) {
   const [panelPercentage, setPanelPercentage] = useState(initialPercentage);
   const [isDesktopViewport, setIsDesktopViewport] = useState(false);
+  const percentageRef = useRef(initialPercentage);
+
+  useEffect(() => {
+    percentageRef.current = panelPercentage;
+  }, [panelPercentage]);
 
   useEffect(() => {
     const checkViewport = () => {
@@ -13,27 +18,45 @@ export function useResizablePanel(initialPercentage: number = 50) {
     return () => window.removeEventListener("resize", checkViewport);
   }, []);
 
-  const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
-    mouseDownEvent.preventDefault();
-    
-    const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-      const percentage = ((window.innerWidth - mouseMoveEvent.clientX) / window.innerWidth) * 100;
-      // Constraint between 20vw and 80vw
-      setPanelPercentage(Math.max(20, Math.min(80, percentage)));
-    };
+  const createResizeHandler = useCallback((side: "left" | "right") => {
+    return (mouseDownEvent: React.MouseEvent) => {
+      mouseDownEvent.preventDefault();
+      const startX = mouseDownEvent.clientX;
+      const startPercentage = percentageRef.current;
 
-    const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+      const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+        const deltaX = mouseMoveEvent.clientX - startX;
+        let percentageDelta = (deltaX / window.innerWidth) * 100;
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  }, []);
+        if (side === "left") {
+          percentageDelta = -percentageDelta;
+        }
+
+        if (options?.centered) {
+          percentageDelta *= 2;
+        }
+
+        const nextPercentage = Math.max(20, Math.min(95, startPercentage + percentageDelta));
+        setPanelPercentage(nextPercentage);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    };
+  }, [options?.centered]);
+
+  const startResizing = createResizeHandler("left");
+  const startResizingRight = createResizeHandler("right");
 
   return {
     panelPercentage,
     isDesktopViewport,
     startResizing,
+    startResizingRight,
   };
 }

@@ -181,7 +181,7 @@ export interface StudentDetail {
 }
 
 interface Props {
-  id: number;
+  id: number | null;
   schoolYearId?: number | null;
   onClose: () => void;
   onRefreshData?: () => void;
@@ -191,6 +191,7 @@ interface Props {
   onStudentLoaded?: (student: StudentDetail) => void;
   canEditProfile?: boolean;
   showHeader?: boolean;
+  hideEnrollmentInfo?: boolean;
 }
 
 export interface StudentTransferOutPayload {
@@ -218,6 +219,7 @@ export function StudentDetailPanel({
   onStudentLoaded,
   canEditProfile = true,
   showHeader = true,
+  hideEnrollmentInfo = false,
 }: Props) {
   const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1064,7 +1066,7 @@ export function StudentDetailPanel({
             </div>
           )}
 
-          {!isJhsCompleter && (
+          {!isJhsCompleter && !hideEnrollmentInfo && (
             <div className="mt-6 mb-4">
               <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
                 <div className="text-base leading-tight font-bold divide-y divide-border">
@@ -1127,7 +1129,7 @@ export function StudentDetailPanel({
         </div>
 
         {/* Enrollment Information Section */}
-        {!isJhsCompleter && (
+        {!isJhsCompleter && !hideEnrollmentInfo && (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
             <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
               <GraduationCap className="h-4 w-4 text-primary" />
