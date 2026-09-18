@@ -393,6 +393,7 @@ model EnrollmentApplication {
   previousSchool             EnrollmentPreviousSchool?
   enrollmentRecord           EnrollmentRecord?
   backSubjects               EnrollmentBackSubject[]
+  scpProfile                 EnrollmentScpProfile?
 
   @@unique([learnerId, schoolYearId], name: "uq_enrollment_learner_sy")
   @@index([status, schoolYearId], map: "idx_enrollment_apps_status_sy")
@@ -430,6 +431,19 @@ model EnrollmentPreviousSchool {
   application           EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("enrollment_previous_schools")
+}
+
+/// Special Curricular Program online admission details
+model EnrollmentScpProfile {
+  id                            Int                   @id @default(autoincrement())
+  applicationId                 Int                   @unique(map: "uq_enrollment_scp_app_id") @map("application_id")
+  grade5GeneralAverage          Float                 @map("grade_5_general_average")
+  underSpecialScienceCurriculum Boolean               @default(false) @map("under_special_science_curriculum")
+  artsSpecialization            String?               @map("arts_specialization")
+  chosenSport                   String?               @map("chosen_sport")
+  application                   EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("enrollment_scp_profiles")
 }
 
 /// Address linked to an application

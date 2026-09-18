@@ -8,7 +8,9 @@ import type {
 import {
   APPLICATION_STATUS_TO_TRACKING_STATUS,
   applicationSubmitSchema,
+  scpAdmissionSubmitSchema,
   isSpecialCurricularProgramType,
+  type ScpAdmissionSubmit,
   type TrackingCurrentStep,
 } from "@enrollpro/shared";
 import { isPublicEnrollmentOpen } from "../settings/enrollment-gate.service.js";
@@ -164,7 +166,9 @@ export async function validateLrn(req: Request, res: Response) {
 
 export async function submitApplication(req: Request, res: Response) {
   try {
-    const parsed = applicationSubmitSchema.safeParse(req.body);
+    const isScp = req.body.isScpApplication === true;
+    const schema = isScp ? scpAdmissionSubmitSchema : applicationSubmitSchema;
+    const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
       console.error("VALIDATION ERRORS:", JSON.stringify(parsed.error.format(), null, 2));
       res.status(400).json({
@@ -175,6 +179,7 @@ export async function submitApplication(req: Request, res: Response) {
     }
 
     const data = parsed.data;
+    const scpData = isScp ? (data as ScpAdmissionSubmit) : null;
 
     // Get active school year
     const schoolSetting = await getOpenPublicEnrollmentSetting(res);
@@ -322,22 +327,26 @@ export async function submitApplication(req: Request, res: Response) {
         },
         familyMembers: {
           create: [
-            {
-              relationship: "MOTHER",
-              firstName: data.mother.firstName,
-              lastName: data.mother.lastName,
-              middleName: data.mother.middleName || null,
-              contactNumber: data.mother.contactNumber || null,
-              email: data.mother.email || null,
-            },
-            {
-              relationship: "FATHER",
-              firstName: data.father.firstName,
-              lastName: data.father.lastName,
-              middleName: data.father.middleName || null,
-              contactNumber: data.father.contactNumber || null,
-              email: data.father.email || null,
-            },
+            ...(data.mother.firstName && data.mother.lastName
+              ? [{
+                  relationship: "MOTHER" as const,
+                  firstName: data.mother.firstName,
+                  lastName: data.mother.lastName,
+                  middleName: data.mother.middleName || null,
+                  contactNumber: data.mother.contactNumber || null,
+                  email: data.mother.email || null,
+                }]
+              : []),
+            ...(data.father.firstName && data.father.lastName
+              ? [{
+                  relationship: "FATHER" as const,
+                  firstName: data.father.firstName,
+                  lastName: data.father.lastName,
+                  middleName: data.father.middleName || null,
+                  contactNumber: data.father.contactNumber || null,
+                  email: data.father.email || null,
+                }]
+              : []),
             ...(data.guardian?.firstName
               ? [
                   {
@@ -362,6 +371,19 @@ export async function submitApplication(req: Request, res: Response) {
             transferCertificateNo: data.transferCertificateNo || null,
           },
         },
+        ...(scpData
+          ? {
+              scpProfile: {
+                create: {
+                  grade5GeneralAverage: scpData.grade5GeneralAverage,
+                  underSpecialScienceCurriculum:
+                    scpData.underSpecialScienceCurriculum,
+                  artsSpecialization: scpData.artsSpecialization || null,
+                  chosenSport: scpData.chosenSport || null,
+                },
+              },
+            }
+          : {}),
       },
     });
 

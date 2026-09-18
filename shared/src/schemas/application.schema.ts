@@ -43,6 +43,11 @@ export const familyMemberSchema = z.object({
   occupation: z.string().optional().nullable(),
 });
 
+const applicationFamilyMemberSchema = familyMemberSchema.extend({
+  lastName: z.string(),
+  firstName: z.string(),
+});
+
 const optionalGeneralAverageSchema = z.preprocess(
   (value) => {
     if (value == null || value === "") {
@@ -99,6 +104,7 @@ export const applicationSubmitSchema = z
     lrn: z
       .string()
       .regex(/^\d{12}$/, "LRN must be exactly 12 numeric digits")
+      .or(z.literal(""))
       .optional()
       .nullable(),
     psaBirthCertNumber: z.string().trim().toUpperCase().optional().nullable(),
@@ -133,8 +139,8 @@ export const applicationSubmitSchema = z
     currentAddress: addressSchema,
     permanentAddress: optionalAddressSchema,
 
-    mother: familyMemberSchema,
-    father: familyMemberSchema,
+    mother: applicationFamilyMemberSchema,
+    father: applicationFamilyMemberSchema,
     guardian: z
       .object({
         lastName: z.string().optional().nullable(),
@@ -213,6 +219,25 @@ export const applicationSubmitSchema = z
         message: "Select an SCP track to continue.",
       });
     }
+
+    if (!data.isScpApplication) {
+      (["mother", "father"] as const).forEach((relationship) => {
+        if (!data[relationship].lastName.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [relationship, "lastName"],
+            message: "Last name is required",
+          });
+        }
+        if (!data[relationship].firstName.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [relationship, "firstName"],
+            message: "First name is required",
+          });
+        }
+      });
+    }
   });
 
 export const applicationTrackingStateSchema = z.object({
@@ -236,3 +261,34 @@ export const applicationTrackResponseSchema = z
   })
   .merge(applicationTrackingStateSchema)
   .passthrough();
+
+export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
+  birthdate: z.string().min(1, "Birthdate is required").or(z.date()),
+  grade5GeneralAverage: z.number().min(0, "Must be at least 0").max(100, "Must not exceed 100"),
+  underSpecialScienceCurriculum: z.boolean().default(false),
+  artsSpecialization: z.enum([
+    "CREATIVE_WRITING",
+    "MEDIA_AND_VISUAL_ARTS",
+    "MUSIC",
+    "DANCE",
+  ]).optional().nullable(),
+  chosenSport: z.string().trim().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !data.artsSpecialization) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["artsSpecialization"],
+      message: "Arts specialization is required for SPA applicants.",
+    });
+  }
+
+  if (data.scpType === "SPECIAL_PROGRAM_IN_SPORTS" && !data.chosenSport) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["chosenSport"],
+      message: "Chosen sport is required for SPS applicants.",
+    });
+  }
+});
+
+export type ScpAdmissionSubmit = z.infer<typeof scpAdmissionSubmitSchema>;

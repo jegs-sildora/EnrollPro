@@ -837,20 +837,20 @@ export default function Homerooms() {
       const opts = [];
 
       if (enableHomogeneousSections) {
-        opts.push({ value: "REGULAR_HOMO", label: "Basic Education Curriculum (BEC) — Top 5" });
-        opts.push({ value: "REGULAR_HETERO", label: "Basic Education Curriculum (BEC) —  Heterogeneous" });
+        opts.push({ value: "REGULAR_HOMO", label: "TOP BEC" });
+        opts.push({ value: "REGULAR_HETERO", label: "BEC" });
       } else {
-        opts.push({ value: "REGULAR", label: "Basic Education Curriculum (BEC)" });
+        opts.push({ value: "REGULAR", label: "BEC" });
       }
 
       if (steEnabled) {
-        opts.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" });
+        opts.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" });
       }
       if (spaEnabled) {
-        opts.push({ value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" });
+        opts.push({ value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" });
       }
       if (spsEnabled) {
-        opts.push({ value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in the Sports (SPS)" });
+        opts.push({ value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" });
       }
 
       setProgramOptions(opts);

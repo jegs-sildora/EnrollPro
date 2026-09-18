@@ -15,10 +15,12 @@ import { useSettingsStore } from "@/store/settings.slice";
 
 interface PrivacyNoticeProps {
   onAccept: () => void;
+  formType?: "enrollment" | "admission";
 }
 
 export default function PrivacyNotice({
   onAccept,
+  formType = "enrollment",
 }: PrivacyNoticeProps) {
   const [agreed, setAgreed] = useState(false);
   const [hasScrolledNotice, setHasScrolledNotice] = useState(false);
@@ -29,6 +31,8 @@ export default function PrivacyNotice({
   }, []);
 
   const { schoolName } = useSettingsStore();
+  const isAdmission = formType === "admission";
+  const processName = isAdmission ? "admission" : "enrollment";
 
   const handleNoticeScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -68,7 +72,7 @@ export default function PrivacyNotice({
                 <p className="text-foreground text-base mb-2">
                   The Department of Education (DepEd) and <span className="capitalize">{schoolName?.toLowerCase()}</span>{" "}
                   collect personal and academic information for the purpose of{" "}
-                  <span className="font-bold">official enrollment</span>. This information is
+                  <span className="font-bold">official {processName}</span>. This information is
                   required to establish the learner's official record in the
                   Learner Information System (LIS) and for the issuance of
                   official school documents.
@@ -84,8 +88,8 @@ export default function PrivacyNotice({
                 </h4>
                 <ul className="list-disc pl-5 space-y-2 text-foreground text-base">
                   <li>
-                    To facilitate official enrollment and sectioning for the
-                    current School Year.
+                    To facilitate official {processName} and learner processing
+                    for the current School Year.
                   </li>
                   <li>
                     To maintain accurate permanent records (SF10) in the LIS.
@@ -192,7 +196,7 @@ export default function PrivacyNotice({
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               <span className="capitalize">{schoolName?.toLowerCase()}</span> and DepEd for the purpose of{" "}
-              Official Enrollment.
+              Official {isAdmission ? "Admission" : "Enrollment"}.
               <span className="text-destructive ml-1">*</span>
             </Label>
           </div>
@@ -200,7 +204,7 @@ export default function PrivacyNotice({
             onClick={onAccept}
             disabled={!agreed}
             className="w-full h-12 text-base font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
-            Continue to Enrollment Form
+            Continue to {isAdmission ? "Admission" : "Enrollment"} Form
           </Button>
         </CardFooter>
       </Card>
