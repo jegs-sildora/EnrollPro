@@ -1036,7 +1036,7 @@ export async function saveScpAssessment(req: Request, res: Response, next: NextF
       throw new AppError(400, "Valid applicationId is required.");
     }
 
-    const { hasWrittenExam, writtenExamScore, hasInterview, assessmentResult } = req.body;
+    const { requirementsStatus, writtenExamStatus, writtenExamScore, interviewStatus, assessmentResult } = req.body;
 
     const application = await prisma.enrollmentApplication.findUnique({
       where: { id: applicationId },
@@ -1050,9 +1050,10 @@ export async function saveScpAssessment(req: Request, res: Response, next: NextF
     const updatedProfile = await prisma.enrollmentScpProfile.update({
       where: { applicationId },
       data: {
-        hasWrittenExam,
+        requirementsStatus,
+        writtenExamStatus,
         writtenExamScore: writtenExamScore ?? null,
-        hasInterview,
+        interviewStatus,
         assessmentResult,
       },
     });

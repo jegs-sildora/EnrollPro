@@ -1,30 +1,56 @@
-# Prompt for UI/UX Implementation: SCP Admission Period Configuration
+# Prompt for UI/UX & Logic Refactor: Context-Aware Application Tracker
 
 ## Role & Context
-Act as a Frontend Developer. We are updating the `System Configuration` module under the `School Year Management` tab.
+Act as a Full-Stack Developer. We are refactoring the (Monitor Portal) page. 
 
-Currently, the system only has a date controller for the `OFFICIAL ENROLLMENT PERIOD`. Because Special Curricular Programs (STE, SPA, SPS) conduct their screening and admissions months prior to regular enrollment, we need a dedicated date controller for the `SCP ADMISSION PERIOD`. This new controller will dictate when the public-facing SCP Online Admission Form is accessible.
+Currently, the portal renders a static "Enrollment Progress" stepper for every queried tracking number. This is a critical UX flaw because in DepEd systems, SCP Admission (Screening/Exams) and Official Enrollment (Sectioning/LIS Encoding) are two distinct administrative phases. 
+
+We need the portal to dynamically adapt its UI stepper based on the *type* of application associated with the tracking number, and smoothly hand off qualified SCP applicants to the actual enrollment phase.
 
 ## Critical Directive
-Strictly utilize the existing design system components (cards, date pickers, status badges). Do not write custom CSS or introduce new wrapper styles.
+Utilize the existing design system cards, text elements, and vertical stepper components. The backend must now return an `application_type` parameter (e.g., `ADMISSION` vs `ENROLLMENT`) alongside the status data to dictate which frontend component to render.
 
-## UI Component Requirements
+## UI Component & State Logic Requirements
 
-Please implement the following layout additions:
+Please implement the following context-aware logic:
 
-### 1. New Configuration Card: SCP Admission Period
-Duplicate the UI layout of the existing `OFFICIAL ENROLLMENT PERIOD` card and place it directly above or below it.
+### 1. The Dynamic Header Card
+*   **Update:** Keep the existing 3-column information grid (`LEARNER NAME`, `INCOMING GRADE`, `CURRICULAR PROGRAM`). 
+*   **Addition:** Add a status badge next to the `CURRENT STATUS` text at the top of the card that explicitly labels the phase: e.g., a blue badge reading `[ADMISSION PHASE]` or a green badge reading `[ENROLLMENT PHASE]`.
 
-*   **Card Title:** `SCP ADMISSION PERIOD`
-*   **Tooltip/Helper Icon:** Include a small info icon `(?)` next to the title. On hover, display: *Controls the automated opening and closing of the public-facing SCP Online Admission Form.*
-*   **Status Badge:** Reuse the existing pill badge component in the top-right corner of the card. It should dynamically compute its state based on the current system date versus the selected date range (e.g., render a green `ADMISSION OPEN` badge or a muted `ADMISSION CLOSED` badge).
+### 2. Layout A: The "Admission Phase" Stepper
+If the tracking number belongs to an SCP Admission Form (e.g., `STE...`, `SPA...`), render this 3-step timeline:
 
-### 2. Date Picker Grid
-Inside the new card, replicate the 2-column grid layout used for the official enrollment dates.
-*   **Left Column (`OPENS ON`):** Render the existing Date Picker component.
-*   **Right Column (`CLOSES ON`):** Render the existing Date Picker component. 
-*   **Validation:** Ensure standard date validation is applied (the `CLOSES ON` date cannot be prior to the `OPENS ON` date).
+*   **Step 1: Document Verification**
+    *   *Pending:* "Awaiting physical submission of SF9 and requirements."
+    *   *Passed:* "Requirements verified by Registrar."
+*   **Step 2: Screening & Assessment**
+    *   *Pending:* "Awaiting exam and/or interview results."
+    *   *Passed:* "Screening completed."
+*   **Step 3: Final Admission Result (The Handoff)**
+    *   *Pending:* (Muted)
+    *   *Failed (Red):* "Did not meet program requirements."
+    *   *Qualified (Green):* "Congratulations! You are qualified for [Program Name]."
+    *   **CRITICAL UX HANDOFF:** If Step 3 is `Qualified`, render a prominent primary button directly inside the Step 3 container: `Proceed to Official Enrollment`. Clicking this button must route the user to the Online Enrollment form and auto-fill their LRN so they don't have to start from scratch.
 
-### 3. Backend Integration Hook
-*   Ensure that the `OPENS ON` and `CLOSES ON` values for this new card are saved to a separate database column (e.g., `scp_admission_start_date` and `scp_admission_end_date`) in the school year configuration table, completely independent of the `official_enrollment` dates.
-*   The public-facing SCP Admission Form page must query these new specific dates to determine whether to render the application form or a "Screening Period Closed" empty state.
+### 3. Layout B: The "Enrollment Phase" Stepper
+If the tracking number belongs to a standard Online Enrollment Form (or a Qualified SCP learner who has proceeded to enroll), render the existing 3-step timeline:
+
+*   **Step 1: Registrar Review**
+    *   "The Registrar's Office is verifying your official enrollment records."
+*   **Step 2: Ready for Sectioning**
+    *   "Learner is queued for automated class sectioning."
+*   **Step 3: Officially Enrolled**
+    *   "Section finalized. Welcome to S.Y. [School Year]."
+
+### 4. Waitlist & Disqualified Error States
+Ensure the timeline gracefully halts if an applicant does not proceed:
+*   **Waitlisted (Admission):** Change Step 3 to a Yellow warning state. "Passed screening, but placed on the waitlist due to limited program slots."
+*   **Disqualified (Admission):** Change Step 3 to a Red error state. "Please proceed to the registrar to explore Regular BEC enrollment options."
+
+### 5. Backend Payload Requirement
+Update the tracking API endpoint (`GET /api/track/:tracking_number`). It must return:
+1. `application_type`: ENUM ('ADMISSION', 'ENROLLMENT')
+2. `current_step`: Integer/String mapping to the active step.
+3. `status`: ENUM ('PENDING', 'PASSED', 'FAILED', 'WAITLISTED')
+The frontend will switch between `<AdmissionTimeline />` and `<EnrollmentTimeline />` components based strictly on `application_type`.

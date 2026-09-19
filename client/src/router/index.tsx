@@ -42,6 +42,7 @@ const ScpApply = lazy(() => import("@/features/admission/pages/online-admission/
 const LearnerAdmissionIndex = lazy(() => import("@/features/admission/pages/learner-admission/LearnerAdmissionIndex"));
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
+const TrackApplicationPage = lazy(() => import("@/features/admission/pages/online-admission/Track"));
 
 function getFallbackVariant(pathname: string): SkeletonPageVariant {
   if (pathname === "/dashboard") return "dashboard";
@@ -133,6 +134,10 @@ export const router = createBrowserRouter([
           {
             path: "/change-password",
             element: renderLazyPage(ChangePassword),
+          },
+          {
+            path: "/track-application",
+            element: renderLazyPage(TrackApplicationPage),
           },
         ],
       },

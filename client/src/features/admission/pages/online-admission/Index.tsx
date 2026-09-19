@@ -1,16 +1,19 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import ScpAdmissionForm, { SCP_FORM_STATE_KEY } from "./ScpAdmissionForm";
 import EnrollmentSuccess from "../online-enrollment/components/EnrollmentSuccess";
+import { AdmissionChoice } from "./components/AdmissionChoice";
 
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
 const CONSENT_KEY = "enrollpro_admission_consent";
+const ACTION_KEY = "enrollpro_admission_action_choice";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 type EnrollmentSubmitSuccessPayload = Pick<
@@ -25,6 +28,12 @@ type EnrollmentSubmitSuccessPayload = Pick<
 };
 
 export default function Apply() {
+  const navigate = useNavigate();
+  const [actionChoice, setActionChoice] = useState<"APPLY" | "TRACK" | null>(
+    () => {
+      return sessionStorage.getItem(ACTION_KEY) as "APPLY" | "TRACK" | null;
+    }
+  );
   const [hasConsented, setHasConsented] = useState(() => {
     return sessionStorage.getItem(CONSENT_KEY) === "true";
   });
@@ -42,6 +51,16 @@ export default function Apply() {
   const isClassesOngoing = systemPhase === "CLASSES_ONGOING";
   const isClosed = !isScpAdmissionOpen;
 
+  const handleActionChoice = (choice: "APPLY" | "TRACK") => {
+    if (choice === "TRACK") {
+      navigate("/track-application");
+      return;
+    }
+    sessionStorage.setItem(ACTION_KEY, choice);
+    setActionChoice(choice);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
     setHasConsented(true);
@@ -49,8 +68,10 @@ export default function Apply() {
   };
 
   const handleReset = () => {
+    sessionStorage.removeItem(ACTION_KEY);
     sessionStorage.removeItem(CONSENT_KEY);
     sessionStorage.removeItem(SCP_FORM_STATE_KEY);
+    setActionChoice(null);
     setHasConsented(false);
     setSubmittedSuccessData(null);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -285,6 +306,15 @@ export default function Apply() {
                         learnerName={submittedSuccessData.learnerName}
                         onBackHome={handleBackHome}
                       />
+                    </motion.div>
+                  ) : !actionChoice ? (
+                    <motion.div
+                      key="intake-choice"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}>
+                      <AdmissionChoice onChoice={handleActionChoice} />
                     </motion.div>
                   ) : !hasConsented ? (
                     <motion.div

@@ -438,7 +438,7 @@ export default function Teachers() {
         lastName: user.lastName ?? "",
         middleName: "",
         suffix: "",
-        sex: "MALE",
+        sex: undefined as unknown as "MALE",
         email: user.email ?? "",
         contactNumber: "",
         designationTitle: "",

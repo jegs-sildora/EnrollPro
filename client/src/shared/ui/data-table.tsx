@@ -34,6 +34,7 @@ interface DataTableColumnMeta {
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  meta?: any;
   getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
   onRowClick?: (row: TData) => void;
   loading?: boolean;
@@ -214,6 +215,7 @@ export function DataTable<TData, TValue>({
   isHeaderRow,
   renderHeaderRow,
   striped = true,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -230,6 +232,7 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    meta,
     getRowId,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

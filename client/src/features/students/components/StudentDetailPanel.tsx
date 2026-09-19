@@ -371,7 +371,7 @@ export function StudentDetailPanel({
     lastName: "",
     middleName: "",
     suffix: "",
-    sex: "FEMALE",
+    sex: undefined as unknown as "MALE" | "FEMALE",
     birthDate: "",
     contactNumber: "",
     motherFirstName: "",
@@ -457,7 +457,7 @@ export function StudentDetailPanel({
       lastName: student.lastName || "",
       middleName: student.middleName || "",
       suffix: student.suffix || "",
-      sex: student.sex || "FEMALE",
+      sex: (student.sex as "MALE" | "FEMALE") || (undefined as unknown as "MALE" | "FEMALE"),
       birthDate: student.birthDate
         ? format(new Date(student.birthDate), "yyyy-MM-dd")
         : "",
@@ -518,7 +518,7 @@ export function StudentDetailPanel({
       lastName: student.lastName || "",
       middleName: student.middleName || "",
       suffix: student.suffix || "",
-      sex: student.sex || "FEMALE",
+      sex: (student.sex as "MALE" | "FEMALE") || (undefined as unknown as "MALE" | "FEMALE"),
       birthDate: student.birthDate
         ? format(new Date(student.birthDate), "yyyy-MM-dd")
         : "",
@@ -592,7 +592,7 @@ export function StudentDetailPanel({
       lastName: student.lastName || "",
       middleName: student.middleName || "",
       suffix: student.suffix || "",
-      sex: student.sex || "FEMALE",
+      sex: (student.sex as "MALE" | "FEMALE") || (undefined as unknown as "MALE" | "FEMALE"),
       birthDate: student.birthDate
         ? format(new Date(student.birthDate), "yyyy-MM-dd")
         : "",
@@ -1372,7 +1372,7 @@ export function StudentDetailPanel({
                   <Select
                     value={profileForm.sex}
                     onValueChange={(val) =>
-                      setProfileForm((p) => ({ ...p, sex: val }))
+                      setProfileForm((p) => ({ ...p, sex: val as "MALE" | "FEMALE" }))
                     }>
                     <SelectTrigger
                       className={`bg-background font-bold text-base leading-tight ${errors.sex ? "border-destructive focus-visible:ring-destructive" : ""}`}>

@@ -242,6 +242,7 @@ export const applicationSubmitSchema = z
 
 export const applicationTrackingStateSchema = z.object({
   programType: TrackingProgramTypeEnum,
+
   status: TrackingStatusEnum,
   rawStatus: ApplicationStatusEnum,
   currentStep: TrackingCurrentStepEnum,
@@ -254,12 +255,16 @@ export const applicationSubmitResponseSchema = z
   })
   .merge(applicationTrackingStateSchema);
 
-export const applicationTrackResponseSchema = z
-  .object({
-    trackingNumber: z.string().min(1),
-    applicantType: ApplicantTypeEnum,
-  })
-  .merge(applicationTrackingStateSchema)
+export const applicationTrackResponseSchema = applicationTrackingStateSchema.partial()
+  .merge(
+    z.object({
+      trackingNumber: z.string().min(1),
+      applicantType: ApplicantTypeEnum,
+      application_type: z.enum(["ADMISSION", "ENROLLMENT"]),
+      current_step: z.number(),
+      status: z.enum(["PENDING", "PASSED", "FAILED", "WAITLISTED"]),
+    })
+  )
   .passthrough();
 
 export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({

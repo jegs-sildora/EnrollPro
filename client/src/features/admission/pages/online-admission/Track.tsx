@@ -14,11 +14,14 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import api from "@/shared/api/axiosInstance";
+import AdmissionHeader from "@/features/admission/components/AdmissionHeader";
+import { useSettingsStore } from "@/store/settings.slice";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -30,7 +33,8 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/lib/utils";
-import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
+import AdmissionTimeline from "../../components/AdmissionTimeline";
+import EnrollmentTimeline from "../../components/EnrollmentTimeline";
 import { normalizeTrackingStatus } from "@/features/admission/components/trackingState";
 
 const trackSchema = z.object({
@@ -48,6 +52,8 @@ interface ApplicationStatus extends ApplicationTrackResponse {
   firstName: string;
   middleName: string | null;
   lastName: string;
+  complianceStatus: string;
+  scpAssessmentResult: string | null;
   createdAt: string;
   gradeLevel: { name: string };
   enrollment: {
@@ -127,14 +133,15 @@ const LEARNING_PROGRAM_LABELS: Record<string, string> = {
     "Special Program in Technical-Vocational Education",
 };
 
-interface TrackApplicationProps {
-  onResultsFetched?: (hasResults: boolean) => void;
-}
-
 export default function TrackApplication({
   onResultsFetched,
-}: TrackApplicationProps) {
-  const [application, setApplication] = useState<ApplicationStatus | null>(null);
+}: {
+  onResultsFetched?: (hasResults: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const [application, setApplication] = useState<ApplicationStatus | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -198,157 +205,198 @@ export default function TrackApplication({
     application.applicantType.replaceAll("_", " ")
     : "";
 
+  const { schoolName, logoUrl } = useSettingsStore();
+
   return (
-    <div className="mx-auto max-w-4xl p-4 md:p-8">
-      <Card className="w-full overflow-hidden rounded-lg border-2 border-primary/5 shadow-xl">
-        <CardHeader className="bg-primary p-8 text-center text-primary-foreground">
-          <CardTitle className="text-2xl font-bold uppercase">
-            Enrollment Application Status
-          </CardTitle>
-          <CardDescription className="font-bold text-primary-foreground/90">
-            Enter the tracking number issued after submitting the enrollment
-            form
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-8">
-          <form onSubmit={handleSubmit(onTrack)} className="space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="trackingNumber"
-                className="text-base font-bold uppercase"
-              >
-                Tracking Number
-              </Label>
-              <div className="relative">
-                <Input
-                  id="trackingNumber"
-                  {...register("trackingNumber")}
-                  placeholder="EN-26-ABC123"
-                  className="h-14 border-2 pl-12 text-lg font-bold uppercase"
-                  autoComplete="off"
-                />
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              </div>
-              <AnimatedError error={errors.trackingNumber?.message} />
-            </div>
-            <Button
-              type="submit"
-              className="h-14 w-full text-lg font-bold uppercase"
-              disabled={isLoading}
-            >
-              {isLoading ? "Checking..." : "Check Status"}
-            </Button>
-          </form>
+    <div className="relative min-h-screen flex flex-col">
+      <div className="fixed inset-0 -z-10" style={{ background: "hsl(var(--sidebar-background)/0.5)" }}>
+        {/* Pixel grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="pixel-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+        </svg>
+        {/* Radial glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)" }} />
+      </div>
 
-          <AnimatePresence mode="wait">
-            {error ? (
-              <motion.div
-                key="tracking-error"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="mt-8 flex items-start gap-4 rounded-lg border-2 border-primary/20 bg-primary/5 p-6"
-              >
-                <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
-                <div>
-                  <h4 className="font-bold uppercase text-primary">
-                    Application Not Found
-                  </h4>
-                  <p className="mt-1 text-base font-bold text-primary/80">
-                    {error}
-                  </p>
-                </div>
-              </motion.div>
-            ) : null}
+      <AdmissionHeader
+        isClosed={false}
+        logoUrl={logoUrl}
+        schoolName={schoolName}
+        title="TRACK APPLICATION STATUS"
+      />
 
-            {application ? (
-              <motion.div
-                key={application.trackingNumber}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="mt-10 space-y-8"
-              >
-                <div
-                  className={cn(
-                    "flex flex-col items-center gap-4 rounded-lg border-2 p-8 text-center",
-                    presentation.color,
-                  )}
-                >
-                  <StatusIcon className="h-10 w-10" />
-                  <div>
-                    <p className="text-sm font-bold uppercase">
-                      Current Status
-                    </p>
-                    <h3 className="mt-1 text-2xl font-bold uppercase">
-                      {presentation.label}
-                    </h3>
-                  </div>
-                  <p className="max-w-lg text-base ">
-                    {presentation.description}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
-                  <InfoBlock
-                    icon={User}
-                    label="Learner Name"
-                    value={`${application.lastName}, ${application.firstName} ${application.middleName ?? ""}`}
-                  />
-                  <InfoBlock
-                    icon={FileText}
-                    label="Incoming Grade"
-                    value={application.gradeLevel.name}
-                  />
-                  <InfoBlock
-                    icon={BookOpen}
-                    label="Curricular Program"
-                    value={programLabel}
-                  />
-                  {application.enrollment?.section ? (
-                    <InfoBlock
-                      icon={CheckCircle2}
-                      label="Class Section"
-                      value={application.enrollment.section.name}
-                      className="md:col-span-3"
-                    />
-                  ) : null}
-                  <InfoBlock
-                    icon={Clock}
-                    label="Date Submitted"
-                    value={format(
-                      new Date(application.createdAt),
-                      "MMMM dd, yyyy",
-                    )}
-                    className="md:col-span-3"
-                  />
-                </div>
-
-                <div className="space-y-4 rounded-lg border bg-muted p-6">
-                  <h4 className="text-base font-bold uppercase">
-                    Enrollment Progress
-                  </h4>
-                  <TrackingNextSteps
-                    applicantType={application.applicantType}
-                    programType={application.programType}
-                    status={application.status}
-                    currentStep={application.currentStep}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full font-bold sm:w-auto"
-                    onClick={handleBackToSearch}
+      <main className="flex-1 flex flex-col justify-center">
+        <div className="mx-auto w-full max-w-4xl p-4 md:p-8">
+          <Button
+            onClick={() => {
+              navigate("/online-admission");
+            }}
+            className="mb-6 group font-bold uppercase bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all px-6">
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Selection
+          </Button>
+          <Card className="w-full overflow-hidden rounded-lg border-2 border-emerald-100 shadow-xl">
+            <CardHeader className="bg-emerald-600 p-8 text-center text-white">
+              <CardTitle className="text-2xl font-bold uppercase">
+                Enrollment Application Status
+              </CardTitle>
+              <CardDescription className="font-bold text-white/90">
+                Enter the tracking number issued after submitting the enrollment
+                form
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit(onTrack)} className="space-y-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="trackingNumber"
+                    className="text-base font-bold uppercase"
                   >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Check Another Tracking Number
-                  </Button>
+                    Tracking Number
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="trackingNumber"
+                      {...register("trackingNumber")}
+                      placeholder="e.g., STE20260000001"
+                      className="h-14 border-2 pl-12 text-lg font-bold uppercase"
+                      autoComplete="off"
+                    />
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                  <AnimatedError error={errors.trackingNumber?.message} />
                 </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+                <Button
+                  type="submit"
+                  className="h-14 w-full text-lg font-bold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Checking..." : "Check Status"}
+                </Button>
+              </form>
+
+              <AnimatePresence mode="wait">
+                {error ? (
+                  <motion.div
+                    key="tracking-error"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="mt-8 flex items-start gap-4 rounded-lg border-2 border-emerald-600/20 bg-emerald-50 p-6"
+                  >
+                    <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
+                    <div>
+                      <h4 className="font-bold uppercase text-emerald-600">
+                        Application Not Found
+                      </h4>
+                      <p className="mt-1 text-base font-bold text-emerald-600/80">
+                        {error}
+                      </p>
+                    </div>
+                  </motion.div>
+                ) : null}
+
+                {application ? (
+                  <motion.div
+                    key={application.trackingNumber}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="mt-10 space-y-8"
+                  >
+                    <div
+                      className={cn(
+                        "flex flex-col items-center gap-4 rounded-lg border-2 p-8 text-center",
+                        presentation.color,
+                      )}
+                    >
+                      <StatusIcon className="h-10 w-10" />
+                      <div>
+                        <p className="text-sm font-bold uppercase">
+                          Current Status
+                        </p>
+                        <h3 className="mt-1 text-2xl font-bold uppercase">
+                          {presentation.label}
+                        </h3>
+                      </div>
+                      <p className="max-w-lg text-base ">
+                        {presentation.description}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
+                      <InfoBlock
+                        icon={User}
+                        label="Learner Name"
+                        value={`${application.lastName}, ${application.firstName} ${application.middleName ?? ""}`}
+                      />
+                      <InfoBlock
+                        icon={FileText}
+                        label="Incoming Grade"
+                        value={application.gradeLevel.name}
+                      />
+                      <InfoBlock
+                        icon={BookOpen}
+                        label="Curricular Program"
+                        value={programLabel}
+                      />
+                      {application.enrollment?.section ? (
+                        <InfoBlock
+                          icon={CheckCircle2}
+                          label="Class Section"
+                          value={application.enrollment.section.name}
+                          className="md:col-span-3"
+                        />
+                      ) : null}
+                      <InfoBlock
+                        icon={Clock}
+                        label="Date Submitted"
+                        value={format(
+                          new Date(application.createdAt),
+                          "MMMM dd, yyyy",
+                        )}
+                        className="md:col-span-3"
+                      />
+                    </div>
+
+                    <div className="space-y-4 rounded-lg border bg-muted p-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-base font-bold uppercase">
+                          {application.application_type === "ADMISSION"
+                            ? "Admission Progress"
+                            : "Enrollment Progress"}
+                        </h4>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase text-emerald-700">
+                          {application.application_type} Phase
+                        </span>
+                      </div>
+                      {application.application_type === "ADMISSION" ? (
+                        <AdmissionTimeline
+                          application={application}
+                          onBack={handleBackToSearch}
+                        />
+                      ) : (
+                        <EnrollmentTimeline
+                          application={application}
+                          onBack={handleBackToSearch}
+                        />
+                      )}
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

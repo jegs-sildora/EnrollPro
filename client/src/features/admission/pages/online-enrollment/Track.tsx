@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -133,8 +134,13 @@ interface TrackApplicationProps {
 
 export default function TrackApplication({
   onResultsFetched,
-}: TrackApplicationProps) {
-  const [application, setApplication] = useState<ApplicationStatus | null>(null);
+}: {
+  onResultsFetched?: (hasResults: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const [application, setApplication] = useState<ApplicationStatus | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -200,6 +206,14 @@ export default function TrackApplication({
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
+      <Button
+        onClick={() => {
+          navigate("/enrollment");
+        }}
+        className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
+        <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+        Back to Selection
+      </Button>
       <Card className="w-full overflow-hidden rounded-lg border-2 border-primary/5 shadow-xl">
         <CardHeader className="bg-primary p-8 text-center text-primary-foreground">
           <CardTitle className="text-2xl font-bold uppercase">
@@ -223,7 +237,7 @@ export default function TrackApplication({
                 <Input
                   id="trackingNumber"
                   {...register("trackingNumber")}
-                  placeholder="EN-26-ABC123"
+                  placeholder="e.g., STE20260000001"
                   className="h-14 border-2 pl-12 text-lg font-bold uppercase"
                   autoComplete="off"
                 />

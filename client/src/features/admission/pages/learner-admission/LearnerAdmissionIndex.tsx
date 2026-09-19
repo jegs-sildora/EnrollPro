@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ClipboardCheck, Loader2, Search, SlidersHorizontal } from "lucide-react"
+import { ClipboardCheck, Loader2, Search, SlidersHorizontal, Info, Lock } from "lucide-react"
 import { motion } from "motion/react"
 import { sileo } from "sileo"
 
@@ -9,7 +9,9 @@ import api from "@/shared/api/axiosInstance"
 import { PaginationBar } from "@/shared/components/PaginationBar"
 import { UserPhoto } from "@/shared/components/UserPhoto"
 import { cn } from "@/shared/lib/utils"
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Badge } from "@/shared/ui/badge"
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Checkbox } from "@/shared/ui/checkbox"
@@ -23,7 +25,7 @@ import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 
 type ScpProgram = "SCIENCE_TECHNOLOGY_AND_ENGINEERING" | "SPECIAL_PROGRAM_IN_THE_ARTS" | "SPECIAL_PROGRAM_IN_SPORTS"
-type AssessmentResult = "PENDING" | "QUALIFIED" | "DISQUALIFIED"
+type AssessmentResult = "PENDING" | "QUALIFIED" | "WAITLISTED" | "DISQUALIFIED"
 
 interface ProgramTab { id: ScpProgram; label: string }
 interface Learner {
@@ -34,13 +36,16 @@ interface Learner {
   middleName: string | null
   studentPhoto: string | null
 }
+type ScpAssessmentState = "PENDING" | "PASSED" | "FAILED"
+
 interface ScpProfile {
   id: number
-  hasPassedRequirements: boolean
-  hasWrittenExam: boolean
+  requirementsStatus: ScpAssessmentState
+  writtenExamStatus: ScpAssessmentState
   writtenExamScore: number | null
-  hasInterview: boolean
+  interviewStatus: ScpAssessmentState
   assessmentResult: AssessmentResult
+  grade5GeneralAverage: number
 }
 interface Application {
   id: number
@@ -52,39 +57,49 @@ interface Application {
   scpProfile: ScpProfile | null
 }
 interface EditState {
-  hasPassedRequirements: boolean
-  hasWrittenExam: boolean
+  requirementsStatus: ScpAssessmentState
+  writtenExamStatus: ScpAssessmentState
   writtenExamScore: string
-  hasInterview: boolean
+  interviewStatus: ScpAssessmentState
 }
 interface AssessmentUpdate {
   applicationId: number
-  hasPassedRequirements: boolean
-  hasWrittenExam: boolean
+  requirementsStatus: ScpAssessmentState
+  writtenExamStatus: ScpAssessmentState
   writtenExamScore: number | null
-  hasInterview: boolean
+  interviewStatus: ScpAssessmentState
   assessmentResult: AssessmentResult
 }
-interface BulkAssessmentPayload { updates: AssessmentUpdate[] }
+interface BulkAssessmentPayload {
+  program: ScpProgram
+  updates: AssessmentUpdate[]
+}
 
 function getInitialEdit(application: Application): EditState {
   return {
-    hasPassedRequirements: application.scpProfile?.hasPassedRequirements ?? false,
-    hasWrittenExam: application.scpProfile?.hasWrittenExam ?? false,
+    requirementsStatus: application.scpProfile?.requirementsStatus ?? "PENDING",
+    writtenExamStatus: application.scpProfile?.writtenExamStatus ?? "PENDING",
     writtenExamScore: application.scpProfile?.writtenExamScore?.toString() ?? "",
-    hasInterview: application.scpProfile?.hasInterview ?? false,
+    interviewStatus: application.scpProfile?.interviewStatus ?? "PENDING",
   }
 }
 
-function getComputedResult(hasPassedRequirements: boolean, hasWrittenExam: boolean, hasInterview: boolean): AssessmentResult {
-  if (!hasPassedRequirements) return "DISQUALIFIED"
-  if (!hasWrittenExam) return "PENDING"
-  return hasInterview ? "QUALIFIED" : "DISQUALIFIED"
+function getComputedResult(
+  requirementsStatus: ScpAssessmentState,
+  writtenExamStatus: ScpAssessmentState,
+  interviewStatus: ScpAssessmentState
+): AssessmentResult {
+  if (requirementsStatus === "FAILED" || writtenExamStatus === "FAILED" || interviewStatus === "FAILED") return "DISQUALIFIED"
+  if (requirementsStatus === "PENDING" || writtenExamStatus === "PENDING" || interviewStatus === "PENDING") return "PENDING"
+  return "QUALIFIED"
 }
 
 function ResultBadge({ result }: { result: AssessmentResult }) {
   if (result === "QUALIFIED") {
     return <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">Qualified</Badge>
+  }
+  if (result === "WAITLISTED") {
+    return <Badge className="border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50">Waitlisted</Badge>
   }
   if (result === "DISQUALIFIED") return <Badge variant="destructive">Disqualified</Badge>
   return <Badge variant="secondary" className="bg-muted text-muted-foreground">Pending</Badge>
@@ -93,7 +108,7 @@ function ResultBadge({ result }: { result: AssessmentResult }) {
 export default function LearnerAdmissionIndex() {
   const queryClient = useQueryClient()
   const setTitle = useHeaderStore((state) => state.setTitle)
-  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore()
+  const { steEnabled, spaEnabled, spsEnabled, steCapacity, spaCapacity, spsCapacity, steRosterLocked, spaRosterLocked, spsRosterLocked } = useSettingsStore()
   const [selectedTab, setSelectedTab] = useState<ScpProgram | "">("")
   const [searchTerm, setSearchTerm] = useState("")
   const [page, setPage] = useState(1)
@@ -102,6 +117,7 @@ export default function LearnerAdmissionIndex() {
   const [assessmentFilter, setAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [localAssessmentFilter, setLocalAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false)
 
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
@@ -115,6 +131,16 @@ export default function LearnerAdmissionIndex() {
     ? selectedTab
     : activePrograms[0]?.id ?? ""
 
+  const isRosterLocked = 
+    (activeTab === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && steRosterLocked) ||
+    (activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" && spaRosterLocked) ||
+    (activeTab === "SPECIAL_PROGRAM_IN_SPORTS" && spsRosterLocked) || false
+
+  const maxSlots = 
+    activeTab === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? steCapacity :
+    activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" ? spaCapacity :
+    activeTab === "SPECIAL_PROGRAM_IN_SPORTS" ? spsCapacity : null
+
   useEffect(() => {
     setTitle("Learner Admission")
     return () => setTitle(null)
@@ -127,6 +153,22 @@ export default function LearnerAdmissionIndex() {
       return data
     },
     enabled: activeTab !== "",
+  })
+
+  const lockMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/enrollment/scp-applicants/lock-roster", { program: activeTab })
+      return data
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings:public"] })
+      await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
+      sileo.success({ title: "Roster Locked", description: "The roster has been finalized and locked." })
+      setIsLockModalOpen(false)
+    },
+    onError: () => {
+      sileo.error({ title: "Locking Failed", description: "Could not finalize the roster." })
+    }
   })
 
   const updateMutation = useMutation({
@@ -149,15 +191,32 @@ export default function LearnerAdmissionIndex() {
 
   const filteredApplicants = useMemo(() => {
     const search = searchTerm.trim().toLocaleLowerCase()
-    return applicants.filter((application) => {
+    const result = applicants.filter((application) => {
       const fullName = [application.learner.firstName, application.learner.middleName, application.learner.lastName]
         .filter(Boolean).join(" ").toLocaleLowerCase()
       const matchesSearch = !search || fullName.includes(search) || application.learner.lrn?.includes(search) === true
       const edit = edits[application.id]
-      const result = edit
-        ? getComputedResult(edit.hasPassedRequirements, edit.hasWrittenExam, edit.hasInterview)
+      const res = edit
+        ? getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus)
         : application.scpProfile?.assessmentResult ?? "PENDING"
-      return matchesSearch && (assessmentFilter === "all" || result === assessmentFilter)
+      return matchesSearch && (assessmentFilter === "all" || res === assessmentFilter)
+    })
+    
+    const statusOrder: Record<AssessmentResult, number> = { QUALIFIED: 1, WAITLISTED: 2, PENDING: 3, DISQUALIFIED: 4 }
+    return result.sort((a, b) => {
+      const statusA = (a.scpProfile?.assessmentResult as AssessmentResult) ?? "PENDING"
+      const statusB = (b.scpProfile?.assessmentResult as AssessmentResult) ?? "PENDING"
+      if (statusOrder[statusA] !== statusOrder[statusB]) {
+        return statusOrder[statusA] - statusOrder[statusB]
+      }
+      const scoreA = a.scpProfile?.writtenExamScore ?? 0
+      const scoreB = b.scpProfile?.writtenExamScore ?? 0
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA
+      }
+      const gwaA = a.scpProfile?.grade5GeneralAverage ?? 0
+      const gwaB = b.scpProfile?.grade5GeneralAverage ?? 0
+      return gwaB - gwaA
     })
   }, [applicants, assessmentFilter, edits, searchTerm])
 
@@ -173,9 +232,10 @@ export default function LearnerAdmissionIndex() {
       if (!app) return false
       const initial = getInitialEdit(app)
       return (
-        edit.hasWrittenExam !== initial.hasWrittenExam ||
+        edit.requirementsStatus !== initial.requirementsStatus ||
+        edit.writtenExamStatus !== initial.writtenExamStatus ||
         edit.writtenExamScore !== initial.writtenExamScore ||
-        edit.hasInterview !== initial.hasInterview
+        edit.interviewStatus !== initial.interviewStatus
       )
     })
   }, [edits, applicants])
@@ -183,15 +243,19 @@ export default function LearnerAdmissionIndex() {
   const updateEdit = (application: Application, patch: Partial<EditState>) => {
     setEdits((current) => {
       const nextEdit = { ...(current[application.id] ?? getInitialEdit(application)), ...patch }
-      if (!nextEdit.hasWrittenExam) {
+      if (nextEdit.requirementsStatus !== "PASSED") {
+        nextEdit.writtenExamStatus = "PENDING"
         nextEdit.writtenExamScore = ""
-        nextEdit.hasInterview = false
+        nextEdit.interviewStatus = "PENDING"
+      } else if (nextEdit.writtenExamStatus === "PENDING") {
+        nextEdit.writtenExamScore = ""
+        nextEdit.interviewStatus = "PENDING"
       }
       return { ...current, [application.id]: nextEdit }
     })
   }
 
-  const columns: ColumnDef<Application>[] = [
+  const columns: ColumnDef<Application>[] = useMemo(() => [
     {
       id: "rowNumber",
       size: 70,
@@ -233,17 +297,26 @@ export default function LearnerAdmissionIndex() {
       minSize: 220,
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "PASSED REQUIREMENTS",
-      cell: ({ row }) => {
+      cell: ({ row, table }) => {
         const application = row.original
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
+        if (isRosterLocked) return <div className="text-center font-semibold py-2">{currentState.requirementsStatus === "PASSED" ? "Passed" : currentState.requirementsStatus === "FAILED" ? "Failed" : "Pending"}</div>
         return (
-          <div className="flex items-center justify-center gap-2 py-2">
-            <Checkbox
-              id={`reqs-${application.id}`}
-              checked={currentState.hasPassedRequirements}
-              onCheckedChange={(checked) => updateEdit(application, { hasPassedRequirements: checked === true })}
-            />
-            <Label htmlFor={`reqs-${application.id}`} className="cursor-pointer font-bold">Passed</Label>
+          <div className="flex justify-center py-2">
+            <Select
+              value={currentState.requirementsStatus}
+              onValueChange={(val: ScpAssessmentState) => updateEdit(application, { requirementsStatus: val })}
+            >
+              <SelectTrigger className="w-36 font-semibold shadow-none">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="PASSED">Passed</SelectItem>
+                <SelectItem value="FAILED">Incomplete / Failed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )
       },
@@ -254,37 +327,45 @@ export default function LearnerAdmissionIndex() {
       minSize: 280,
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "WRITTEN EXAM",
-      cell: ({ row }) => {
+      cell: ({ row, table }) => {
         const application = row.original
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
+        if (isRosterLocked) return (
+          <div className="flex items-center justify-center gap-2 py-2 font-semibold">
+            <span>{currentState.writtenExamStatus === "PASSED" ? "Passed" : currentState.writtenExamStatus === "FAILED" ? "Failed" : "Pending"}</span>
+            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && <span className="text-muted-foreground ml-2">Score: {currentState.writtenExamScore}</span>}
+          </div>
+        )
         return (
-          <div className="flex items-center justify-center gap-4 py-2">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={`exam-${application.id}`}
-                checked={currentState.hasWrittenExam}
-                disabled={!currentState.hasPassedRequirements}
-                onCheckedChange={(checked) => updateEdit(application, { hasWrittenExam: checked === true })}
-              />
-              <Label
-                htmlFor={`exam-${application.id}`}
-                className={cn("cursor-pointer font-bold", !currentState.hasPassedRequirements && "opacity-50")}
-              >
-                Taken
-              </Label>
-            </div>
-            {currentState.hasPassedRequirements && currentState.hasWrittenExam && (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <Select
+              value={currentState.writtenExamStatus}
+              disabled={currentState.requirementsStatus !== "PASSED"}
+              onValueChange={(val: ScpAssessmentState) => updateEdit(application, { writtenExamStatus: val })}
+            >
+              <SelectTrigger className="w-28 font-semibold shadow-none">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="PASSED">Passed</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            {currentState.requirementsStatus === "PASSED" && currentState.writtenExamStatus !== "PENDING" && (
               <Input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                max={100}
-                step="0.01"
+                type="text"
+                inputMode="numeric"
+                maxLength={3}
                 aria-label={`Written exam score for ${application.learner.firstName} ${application.learner.lastName}`}
-                className="h-9 w-24 bg-background text-center font-bold"
+                className="h-9 w-20 bg-background text-center font-bold shadow-none"
                 placeholder="Score"
                 value={currentState.writtenExamScore}
-                onChange={(event) => updateEdit(application, { writtenExamScore: event.target.value })}
+                onChange={(event) => {
+                  const val = event.target.value.replace(/[^0-9]/g, "").slice(0, 3)
+                  updateEdit(application, { writtenExamScore: val })
+                }}
               />
             )}
           </div>
@@ -297,23 +378,27 @@ export default function LearnerAdmissionIndex() {
       minSize: 200,
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "INTERVIEW",
-      cell: ({ row }) => {
+      cell: ({ row, table }) => {
         const application = row.original
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
+        if (isRosterLocked) return <div className="text-center font-semibold py-2">{currentState.interviewStatus === "PASSED" ? "Passed" : currentState.interviewStatus === "FAILED" ? "Failed" : "Pending"}</div>
         return (
-          <div className="flex items-center justify-center gap-2 py-2">
-            <Checkbox
-              id={`interview-${application.id}`}
-              checked={currentState.hasInterview}
-              disabled={!currentState.hasPassedRequirements || !currentState.hasWrittenExam}
-              onCheckedChange={(checked) => updateEdit(application, { hasInterview: checked === true })}
-            />
-            <Label
-              htmlFor={`interview-${application.id}`}
-              className={cn("cursor-pointer font-bold", (!currentState.hasPassedRequirements || !currentState.hasWrittenExam) && "opacity-50")}
+          <div className="flex justify-center py-2">
+            <Select
+              value={currentState.interviewStatus}
+              disabled={currentState.writtenExamStatus !== "PASSED"}
+              onValueChange={(val: ScpAssessmentState) => updateEdit(application, { interviewStatus: val })}
             >
-              Completed
-            </Label>
+              <SelectTrigger className="w-28 font-semibold shadow-none">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="PASSED">Passed</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )
       },
@@ -324,25 +409,26 @@ export default function LearnerAdmissionIndex() {
       minSize: 170,
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "FINAL RESULT",
-      cell: ({ row }) => {
+      cell: ({ row, table }) => {
         const application = row.original
+        const { edits } = table.options.meta as { edits: Record<number, EditState> }
         const edit = edits[application.id]
         const result = edit
-          ? getComputedResult(edit.hasPassedRequirements, edit.hasWrittenExam, edit.hasInterview)
+          ? getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus)
           : application.scpProfile?.assessmentResult ?? "PENDING"
         return <div className="flex justify-center py-2"><ResultBadge result={result} /></div>
       },
     },
-  ]
+  ], [page, limit])
 
   const handleSaveBulk = () => {
     const updates = Object.entries(edits).map(([applicationId, edit]) => ({
       applicationId: Number(applicationId),
-      hasPassedRequirements: edit.hasPassedRequirements,
-      hasWrittenExam: edit.hasWrittenExam,
+      requirementsStatus: edit.requirementsStatus,
+      writtenExamStatus: edit.writtenExamStatus,
       writtenExamScore: edit.writtenExamScore === "" ? null : Number(edit.writtenExamScore),
-      hasInterview: edit.hasInterview,
-      assessmentResult: getComputedResult(edit.hasPassedRequirements, edit.hasWrittenExam, edit.hasInterview),
+      interviewStatus: edit.interviewStatus,
+      assessmentResult: getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus),
     } satisfies AssessmentUpdate))
 
     const hasInvalidScore = updates.some(({ writtenExamScore }) =>
@@ -352,7 +438,7 @@ export default function LearnerAdmissionIndex() {
       sileo.error({ title: "Check written exam scores", description: "Scores must be between 0 and 100." })
       return
     }
-    if (updates.length > 0) updateMutation.mutate({ updates })
+    if (updates.length > 0) updateMutation.mutate({ program: activeTab as ScpProgram, updates })
   }
 
   const handleTabChange = (value: string) => {
@@ -391,7 +477,16 @@ export default function LearnerAdmissionIndex() {
           })}
         </TabsList>
 
-        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-none bg-card shadow-sm">
+        {isRosterLocked && (
+        <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
+          <Info className="h-4 w-4 text-emerald-600" />
+          <AlertTitle>Official Roster Finalized and Locked</AlertTitle>
+          <AlertDescription>
+            {applicants.filter(a => a.scpProfile?.assessmentResult === "QUALIFIED").length} out of {maxSlots || "N/A"} filled. This roster is sealed.
+          </AlertDescription>
+        </Alert>
+      )}
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-none bg-card shadow-sm">
           <div className="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-gray-50 p-2 sm:p-3">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -456,11 +551,29 @@ export default function LearnerAdmissionIndex() {
               </Popover>
             </div>
             
-            {hasChanges && (
-              <Button onClick={handleSaveBulk} disabled={updateMutation.isPending} className="h-12 whitespace-nowrap font-bold shrink-0">
-                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Assessment Results
-              </Button>
+            {isRosterLocked ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="secondary" className="h-12 whitespace-nowrap font-bold" onClick={() => sileo.info({ title: "Export Qualified List", description: "This feature is not yet available in the demo." })}>
+                  Export Qualified List
+                </Button>
+                <Button className="h-12 whitespace-nowrap font-bold" onClick={() => sileo.info({ title: "Push to Ready for Sectioning", description: "This feature is not yet available in the demo." })}>
+                  Push to Ready for Sectioning
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 shrink-0">
+                {hasChanges ? (
+                  <Button onClick={handleSaveBulk} disabled={updateMutation.isPending} className="h-12 whitespace-nowrap font-bold shrink-0">
+                    {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Results
+                  </Button>
+                ) : applicants.length > 0 && (
+                  <Button onClick={() => setIsLockModalOpen(true)} className="h-12 whitespace-nowrap font-bold shrink-0 bg-red-600 hover:bg-red-700 text-white">
+                    <Lock className="mr-2 h-4 w-4" />
+                    Finalize & Lock Roster
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 
@@ -469,11 +582,13 @@ export default function LearnerAdmissionIndex() {
               <DataTable<Application, unknown>
                 columns={columns}
                 data={paginatedApplicants}
+                getRowId={(row) => row.id.toString()}
+                meta={{ edits, updateEdit, isRosterLocked }}
                 loading={isFetching}
                 loadingBehavior="delayed"
                 virtualize={false}
                 className="h-full rounded-md border-none"
-                tableClassName="min-w-[1160px] table-fixed"
+                tableClassName="min-w-[1450px] table-fixed"
                 containerHeight="100%"
                 noResultsMessage="No applicants found for the selected filters."
                 striped={false}
@@ -483,6 +598,15 @@ export default function LearnerAdmissionIndex() {
           </CardContent>
         </Card>
       </Tabs>
+      <ConfirmationModal
+        open={isLockModalOpen}
+        onOpenChange={setIsLockModalOpen}
+        title="Finalize Official Roster?"
+        description="You are about to lock the admission results for this program. This action will seal the assessment table and prevent further modifications."
+        confirmText="Confirm & Lock"
+        onConfirm={() => lockMutation.mutate()}
+        variant="danger"
+      />
     </div>
   )
 }

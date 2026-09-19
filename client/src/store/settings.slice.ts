@@ -42,6 +42,9 @@ export interface SettingsState {
   spaCapacity: number | null;
   spsEnabled: boolean;
   spsCapacity: number | null;
+  steRosterLocked: boolean;
+  spaRosterLocked: boolean;
+  spsRosterLocked: boolean;
   enableHomogeneousSections: boolean;
   homogeneousSectionCount: number;
   heterogeneousRoundRobin: boolean;
@@ -135,6 +138,9 @@ export const useSettingsStore = create<SettingsState>()(
       spaCapacity: null,
       spsEnabled: false,
       spsCapacity: null,
+      steRosterLocked: false,
+      spaRosterLocked: false,
+      spsRosterLocked: false,
       enableHomogeneousSections: true,
       homogeneousSectionCount: 5,
       heterogeneousRoundRobin: true,

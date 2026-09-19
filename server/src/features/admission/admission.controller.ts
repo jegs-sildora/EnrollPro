@@ -106,6 +106,11 @@ export async function trackApplication(req: Request, res: Response) {
         applicantType: true,
         status: true,
         createdAt: true,
+        complianceStatus: true,
+        learnerType: true,
+        scpProfile: {
+          select: { assessmentResult: true },
+        },
         learner: {
           select: {
             firstName: true,
@@ -134,9 +139,53 @@ export async function trackApplication(req: Request, res: Response) {
       return;
     }
 
+    const isScp = isSpecialCurricularProgramType(application.applicantType);
+    const application_type = (isScp && !application.learnerType) ? "ADMISSION" : "ENROLLMENT";
+    
+    let current_step = 1;
+    let status = "PENDING";
+    
+    if (application_type === "ADMISSION") {
+      if (application.complianceStatus === "COMPLIED") {
+        if (application.scpProfile?.assessmentResult === "QUALIFIED") {
+          current_step = 3;
+          status = "PASSED";
+        } else if (application.scpProfile?.assessmentResult === "WAITLISTED") {
+          current_step = 3;
+          status = "WAITLISTED";
+        } else if (application.scpProfile?.assessmentResult === "DISQUALIFIED") {
+          current_step = 3;
+          status = "FAILED";
+        } else {
+          // COMPLIED but no final result -> Step 2
+          current_step = 2;
+          status = "PENDING";
+        }
+      }
+    } else {
+      if (application.status === "OFFICIALLY_ENROLLED") {
+        current_step = 3;
+        status = "PASSED";
+      } else if (
+        application.status === "READY_FOR_SECTIONING" ||
+        application.status === "PENDING_CONFIRMATION" ||
+        application.status === "REMEDIAL_RESOLVED"
+      ) {
+        current_step = 2;
+        status = "PENDING";
+      }
+    }
+
     res.json({
       trackingNumber: application.trackingNumber,
+      // Pass these down first so old UI doesn't completely break, but we overwrite status
       ...buildTrackingState(application.status, application.applicantType),
+      applicantType: application.applicantType,
+      application_type,
+      current_step,
+      status,
+      complianceStatus: application.complianceStatus,
+      scpAssessmentResult: application.scpProfile?.assessmentResult ?? null,
       firstName: application.learner.firstName,
       middleName: application.learner.middleName,
       lastName: application.learner.lastName,

@@ -81,7 +81,7 @@ export const teacherSchemaBase = z
     lastName: requiredUpperText("Last name is required"),
     middleName: optionalUpperText.optional(),
     suffix: optionalUpperText.optional(),
-    sex: SexEnum.default("FEMALE"),
+    sex: SexEnum,
     birthdate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")

@@ -187,6 +187,9 @@ model SchoolYear {
   enrollCloseDate        DateTime?               @map("enroll_close_date") @db.Date
   scpAdmissionOpenDate   DateTime?               @map("scp_admission_open_date") @db.Date
   scpAdmissionCloseDate  DateTime?               @map("scp_admission_close_date") @db.Date
+  steRosterLocked        Boolean                 @default(false) @map("ste_roster_locked")
+  spaRosterLocked        Boolean                 @default(false) @map("spa_roster_locked")
+  spsRosterLocked        Boolean                 @default(false) @map("sps_roster_locked")
   termFormat             TermFormat              @default(TRIMESTER) @map("term_format")
   clonedFromId           Int?                    @map("cloned_from_id")
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -443,10 +446,10 @@ model EnrollmentScpProfile {
   underSpecialScienceCurriculum Boolean               @default(false) @map("under_special_science_curriculum")
   artsSpecialization            String?               @map("arts_specialization")
   chosenSport                   String?               @map("chosen_sport")
-  hasPassedRequirements         Boolean               @default(false) @map("has_passed_requirements")
-  hasWrittenExam                Boolean               @default(false) @map("has_written_exam")
+  requirementsStatus            ScpAssessmentState    @default(PENDING) @map("requirements_status")
+  writtenExamStatus             ScpAssessmentState    @default(PENDING) @map("written_exam_status")
   writtenExamScore              Float?                @map("written_exam_score")
-  hasInterview                  Boolean               @default(false) @map("has_interview")
+  interviewStatus               ScpAssessmentState    @default(PENDING) @map("interview_status")
   assessmentResult              ScpAssessmentResult   @default(PENDING) @map("assessment_result")
   application                   EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
@@ -948,8 +951,15 @@ model SubjectDeficiency {
   @@map("subject_deficiencies")
 }
 
+enum ScpAssessmentState {
+  PENDING
+  PASSED
+  FAILED
+}
+
 enum ScpAssessmentResult {
   PENDING
   QUALIFIED
+  WAITLISTED
   DISQUALIFIED
 }

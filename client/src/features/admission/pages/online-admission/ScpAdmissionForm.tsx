@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import { scpAdmissionSubmitSchema } from "@enrollpro/shared/schemas";
@@ -22,6 +22,7 @@ import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import api from "@/shared/api/axiosInstance";
 import { cn } from "@/shared/lib/utils";
 import type { z } from "zod";
+import { useUnsavedChanges, useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 import { differenceInYears, format, isAfter, isBefore, isValid as isValidDate, parse } from "date-fns";
 
 type ScpFormData = z.infer<typeof scpAdmissionSubmitSchema>;
@@ -91,6 +92,49 @@ interface Props {
   onCancel: () => void;
 }
 
+const getEmptyValues = (intakeChoice: "NEW" | "RETURNING"): Partial<ScpFormData> => ({
+  isScpApplication: true,
+  scpType: undefined,
+  isPrivacyConsentGiven: false,
+  learnerType: intakeChoice === "RETURNING" ? "RETURNING" : "NEW_ENROLLEE",
+  gradeLevel: "7",
+  studentPhoto: null,
+  hasNoLrn: false,
+  lrn: "",
+  lastName: "",
+  firstName: "",
+  middleName: "",
+  extensionName: "",
+  birthdate: "",
+  sex: undefined as unknown as "MALE",
+  placeOfBirth: "",
+  religion: "",
+  motherTongue: "",
+  isIpCommunity: false,
+  ipGroupName: "",
+  is4PsBeneficiary: false,
+  householdId4Ps: "",
+  isLearnerWithDisability: false,
+  specialNeedsCategory: undefined,
+  hasPwdId: false,
+  disabilityTypes: [],
+  currentAddress: { houseNoStreet: "", sitio: "", barangay: "", cityMunicipality: "", province: "", region: "" },
+  permanentAddress: { houseNoStreet: "", sitio: "", barangay: "", cityMunicipality: "", province: "", region: "" },
+  mother: { lastName: "", firstName: "", middleName: "", contactNumber: "", email: "", occupation: "" },
+  father: { lastName: "", firstName: "", middleName: "", contactNumber: "", email: "", occupation: "" },
+  lastSchoolName: "",
+  lastSchoolId: "",
+  lastGradeCompleted: "6",
+  schoolYearLastAttended: "2025-2026",
+  lastSchoolAddress: "",
+  transferCertificateNo: "",
+  lastSchoolType: "PUBLIC",
+  grade5GeneralAverage: undefined,
+  underSpecialScienceCurriculum: false,
+  artsSpecialization: null,
+  chosenSport: "",
+});
+
 export const SCP_FORM_STATE_KEY = "scp_admission_form_state";
 
 export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: Props) {
@@ -106,59 +150,19 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
     resolver: zodResolver(scpAdmissionSubmitSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
-
-    defaultValues: parsedSavedState || {
-      isScpApplication: true,
-
-      scpType: undefined,
-      isPrivacyConsentGiven: false,
-      learnerType: intakeChoice === "RETURNING" ? "RETURNING" : "NEW_ENROLLEE",
-      gradeLevel: "7",
-      studentPhoto: null,
-      hasNoLrn: false,
-      lrn: "",
-      lastName: "",
-      firstName: "",
-      middleName: "",
-      extensionName: "",
-      birthdate: "",
-      sex: "MALE",
-      placeOfBirth: "",
-      religion: "",
-      motherTongue: "",
-      isIpCommunity: false,
-      ipGroupName: "",
-      is4PsBeneficiary: false,
-      householdId4Ps: "",
-      isLearnerWithDisability: false,
-      specialNeedsCategory: undefined,
-      hasPwdId: false,
-      disabilityTypes: [],
-      currentAddress: { houseNoStreet: "", sitio: "", barangay: "", cityMunicipality: "", province: "", region: "" },
-      permanentAddress: { houseNoStreet: "", sitio: "", barangay: "", cityMunicipality: "", province: "", region: "" },
-      mother: { lastName: "", firstName: "", middleName: "", contactNumber: "", email: "", occupation: "" },
-      father: { lastName: "", firstName: "", middleName: "", contactNumber: "", email: "", occupation: "" },
-      lastSchoolName: "",
-      lastSchoolId: "",
-      lastGradeCompleted: "6",
-      schoolYearLastAttended: "2025-2026",
-      lastSchoolAddress: "",
-      transferCertificateNo: "",
-      lastSchoolType: "PUBLIC",
-      grade5GeneralAverage: undefined,
-      underSpecialScienceCurriculum: false,
-      artsSpecialization: null,
-      chosenSport: "",
-    },
+    defaultValues: parsedSavedState || getEmptyValues(intakeChoice),
   });
 
 
   // Watch form values and save to sessionStorage
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      // Exclude studentPhoto from persistence since File objects can't be serialized cleanly
-      const { studentPhoto, ...rest } = value;
-      sessionStorage.setItem(SCP_FORM_STATE_KEY, JSON.stringify(rest));
+    const subscription = form.watch((value, { name }) => {
+      // Only save if a specific field was changed by the user
+      if (name) {
+        // Exclude studentPhoto from persistence since File objects can't be serialized cleanly
+        const { studentPhoto, ...rest } = value;
+        sessionStorage.setItem(SCP_FORM_STATE_KEY, JSON.stringify(rest));
+      }
     });
     return () => subscription.unsubscribe();
   }, [form.watch]);
@@ -169,7 +173,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   const studentPhoto = useWatch({ control, name: "studentPhoto" });
   const hasNoLrn = useWatch({ control, name: "hasNoLrn" });
   const lrn = useWatch({ control, name: "lrn" });
-  const { errors, isSubmitting } = form.formState;
+  const { errors, isSubmitting, isDirty } = form.formState;
   const [isValidatingLrn, setIsValidatingLrn] = useState(false);
   const [duplicateDetected, setDuplicateDetected] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -178,6 +182,22 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [hasNoMiddleName, setHasNoMiddleName] = useState(false);
   const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(false);
+
+  const { confirmOrRun } = useUnsavedChangesPrompt();
+  
+  const discardScpDraft = useCallback(() => {
+    form.reset(getEmptyValues(intakeChoice) as ScpFormData);
+    sessionStorage.removeItem(SCP_FORM_STATE_KEY);
+    setValue("studentPhoto", null);
+  }, [form, intakeChoice, setValue]);
+
+  useUnsavedChanges({
+    id: "scp-admission-form",
+    label: "SCP Admission Form",
+    isDirty: isDirty || parsedSavedState !== null,
+    isSubmitting,
+    onDiscard: discardScpDraft,
+  });
 
   const validationIssues: ValidationIssue[] = Array.from(
     new Map(
@@ -329,7 +349,12 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
     <div className="max-w-6xl mx-auto p-4 md:p-0">
       <Button
         type="button"
-        onClick={onCancel}
+        onClick={() => {
+          confirmOrRun(() => {
+            discardScpDraft();
+            onCancel();
+          });
+        }}
         className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6"
       >
         <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
@@ -853,7 +878,17 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                     <FormField control={control} name="grade5GeneralAverage" render={({ field, fieldState }) => (
                       <FormItem className="space-y-2">
                         <FormLabel className="text-base leading-tight font-bold text-foreground">Grade 5 Final General Average <span className="text-destructive">*</span></FormLabel>
-                        <FormControl><Input {...field} type="number" step="0.01" placeholder="e.g. 90.00" className={cn("h-11 font-bold", fieldState.error && "border-destructive focus-visible:ring-destructive")} value={field.value ?? ""} onChange={(e) => field.onChange(Number.isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} /></FormControl>
+                        <FormControl><Input {...field} type="number" step="0.01" placeholder="e.g. 90.00" className={cn("h-11 font-bold", fieldState.error && "border-destructive focus-visible:ring-destructive")} value={field.value ?? ""} onChange={(e) => {
+                          let val = e.target.value;
+                          if (val.includes(".")) {
+                            const [whole, decimal] = val.split(".");
+                            if (decimal && decimal.length > 2) {
+                              val = `${whole}.${decimal.slice(0, 2)}`;
+                              e.target.value = val;
+                            }
+                          }
+                          field.onChange(Number.isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber);
+                        }} /></FormControl>
                         <AnimatedError error={fieldState.error?.message} />
                       </FormItem>
                     )} />
