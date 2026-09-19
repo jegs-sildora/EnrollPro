@@ -185,6 +185,8 @@ model SchoolYear {
   classEndDate           DateTime?               @map("class_end_date") @db.Date
   enrollOpenDate         DateTime?               @map("enroll_open_date") @db.Date
   enrollCloseDate        DateTime?               @map("enroll_close_date") @db.Date
+  scpAdmissionOpenDate   DateTime?               @map("scp_admission_open_date") @db.Date
+  scpAdmissionCloseDate  DateTime?               @map("scp_admission_close_date") @db.Date
   termFormat             TermFormat              @default(TRIMESTER) @map("term_format")
   clonedFromId           Int?                    @map("cloned_from_id")
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -441,6 +443,11 @@ model EnrollmentScpProfile {
   underSpecialScienceCurriculum Boolean               @default(false) @map("under_special_science_curriculum")
   artsSpecialization            String?               @map("arts_specialization")
   chosenSport                   String?               @map("chosen_sport")
+  hasPassedRequirements         Boolean               @default(false) @map("has_passed_requirements")
+  hasWrittenExam                Boolean               @default(false) @map("has_written_exam")
+  writtenExamScore              Float?                @map("written_exam_score")
+  hasInterview                  Boolean               @default(false) @map("has_interview")
+  assessmentResult              ScpAssessmentResult   @default(PENDING) @map("assessment_result")
   application                   EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("enrollment_scp_profiles")
@@ -457,6 +464,7 @@ model ApplicationAddress {
   barangay         String?
   cityMunicipality String?                @map("city_municipality")
   province         String?
+  region           String?
   country          String?                @default("PHILIPPINES")
   zipCode          String?                @map("zip_code")
   enrollment       EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
@@ -938,4 +946,10 @@ model SubjectDeficiency {
   @@index([learnerId], map: "idx_subject_deficiency_learner_id")
   @@index([schoolYearId], map: "idx_subject_deficiency_school_year_id")
   @@map("subject_deficiencies")
+}
+
+enum ScpAssessmentResult {
+  PENDING
+  QUALIFIED
+  DISQUALIFIED
 }

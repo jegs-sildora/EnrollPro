@@ -705,6 +705,9 @@ export function VerificationWorkspace() {
                         <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
                         <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
                         <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_JOURNALISM" className="leading-tight font-bold">Special Program in Journalism</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" className="leading-tight font-bold">Special Program in Foreign Language</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION" className="leading-tight font-bold">Technical Vocational Education (SPTVE)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1114,6 +1117,9 @@ export function VerificationWorkspace() {
                                     (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
                                     (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
                                     (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
+                                    value === "SPECIAL_PROGRAM_IN_JOURNALISM" ||
+                                    value === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" ||
+                                    value === "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION" ||
                                     selectedApp.applicantType === value ||
                                     assignedProgram === value;
 

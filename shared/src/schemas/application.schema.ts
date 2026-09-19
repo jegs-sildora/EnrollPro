@@ -263,8 +263,36 @@ export const applicationTrackResponseSchema = z
   .passthrough();
 
 export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
-  birthdate: z.string().min(1, "Birthdate is required").or(z.date()),
-  grade5GeneralAverage: z.number().min(0, "Must be at least 0").max(100, "Must not exceed 100"),
+  lrn: z.string().regex(
+    /^\d{12}$/,
+    "Learner Reference Number must be exactly 12 numeric digits.",
+  ).or(z.literal("")).optional().nullable(),
+  lastName: z.string().min(1, "Learner's last name is required.").max(100, "Last name is too long"),
+  firstName: z.string().min(1, "Learner's first name is required.").max(100, "First name is too long"),
+  birthdate: z.string().min(1, "Please provide a valid birthdate.").or(z.date()),
+  placeOfBirth: z.string().min(1, "Place of birth as indicated in birth certificate is required."),
+  motherTongue: z.string().min(1, "Mother tongue is required."),
+  currentAddress: z.object({
+    houseNoStreet: z.string().optional(),
+    sitio: z.string().optional(),
+    region: z.string().min(1, "Current region is required."),
+    province: z.string().min(1, "Current province is required."),
+    cityMunicipality: z.string().min(1, "Current city/municipality is required."),
+    barangay: z.string().min(1, "Current barangay is required."),
+  }),
+  lastSchoolName: z.string().min(1, "Name of the last school attended is required."),
+  lastSchoolId: z.string().optional().nullable(),
+  isPrivacyConsentGiven: z.boolean().refine((value) => value === true, {
+    message: "Verification and certification of the provided information is required.",
+  }),
+  grade5GeneralAverage: z
+    .number({ message: "Please enter a valid numeric general average." })
+    .min(0, "General Average must be between 0 and 100.")
+    .max(100, "General Average must be between 0 and 100.")
+    .refine((value) => {
+      const decimalPart = value.toString().split(".")[1];
+      return !decimalPart || decimalPart.length <= 2;
+    }, "General Average must not exceed two decimal places."),
   underSpecialScienceCurriculum: z.boolean().default(false),
   artsSpecialization: z.enum([
     "CREATIVE_WRITING",
@@ -292,3 +320,13 @@ export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
 });
 
 export type ScpAdmissionSubmit = z.infer<typeof scpAdmissionSubmitSchema>;
+
+
+export const scpAssessmentUpdateSchema = z.object({
+  hasWrittenExam: z.boolean(),
+  writtenExamScore: z.number().nullable().optional(),
+  hasInterview: z.boolean(),
+  assessmentResult: z.enum(['PENDING', 'QUALIFIED', 'DISQUALIFIED'])
+});
+
+export type ScpAssessmentUpdate = z.infer<typeof scpAssessmentUpdateSchema>;

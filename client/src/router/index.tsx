@@ -39,6 +39,7 @@ const Teachers = lazy(() => import("@/features/teachers/pages/Index"));
 const Monitor = lazy(() => import("@/features/admission/pages/online-enrollment/Monitor"));
 const Apply = lazy(() => import("@/features/admission/pages/online-enrollment/Index"));
 const ScpApply = lazy(() => import("@/features/admission/pages/online-admission/Index"));
+const LearnerAdmissionIndex = lazy(() => import("@/features/admission/pages/learner-admission/LearnerAdmissionIndex"));
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
 
@@ -173,6 +174,10 @@ export const router = createBrowserRouter([
               {
                 path: "/learner-enrollment",
                 element: renderLazyPage(BOSYPage),
+              },
+              {
+                path: "/learner-admission",
+                element: renderLazyPage(LearnerAdmissionIndex),
               },
               {
                 path: "/learners",

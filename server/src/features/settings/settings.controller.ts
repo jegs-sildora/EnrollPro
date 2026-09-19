@@ -12,6 +12,7 @@ import { auditLog } from "../audit-logs/audit-logs.service.js";
 import {
   getEnrollmentPhase,
   isPublicEnrollmentOpen,
+  isScpAdmissionOpen,
 } from "./enrollment-gate.service.js";
 import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
@@ -113,6 +114,10 @@ export async function getPublicSettings(
       ? isPublicEnrollmentOpen(contextSy, settings.systemPhase)
       : false;
 
+    const isScpAdmissionOpenFlag = contextSy
+      ? isScpAdmissionOpen(contextSy)
+      : false;
+
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;
     const activeCorrection = lock && lock.expiresAt > Date.now() ? {
       userId: lock.userId,
@@ -144,6 +149,8 @@ export async function getPublicSettings(
       classEndDate: contextSy?.classEndDate ?? null,
       enrollOpenDate: contextSy?.enrollOpenDate ?? null,
       enrollCloseDate: contextSy?.enrollCloseDate ?? null,
+      scpAdmissionOpenDate: contextSy?.scpAdmissionOpenDate ?? null,
+      scpAdmissionCloseDate: contextSy?.scpAdmissionCloseDate ?? null,
       facebookPageUrl: settings.facebookPageUrl,
       depedEmail: settings.depedEmail,
       schoolWebsite: settings.schoolWebsite,
@@ -159,6 +166,7 @@ export async function getPublicSettings(
       heterogeneousRoundRobin: snapshotSettings?.heterogeneousRoundRobin ?? settings.heterogeneousRoundRobin,
       enrollmentPhase,
       isBosyEnrollmentOpen,
+      isScpAdmissionOpen: isScpAdmissionOpenFlag,
       systemPhase: effectiveSystemStatus === "ARCHIVED" ? "EOSY_CLOSING" : settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
       activeCorrection,

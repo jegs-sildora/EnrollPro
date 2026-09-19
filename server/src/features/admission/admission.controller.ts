@@ -13,7 +13,7 @@ import {
   type ScpAdmissionSubmit,
   type TrackingCurrentStep,
 } from "@enrollpro/shared";
-import { isPublicEnrollmentOpen } from "../settings/enrollment-gate.service.js";
+import { isPublicEnrollmentOpen, isScpAdmissionOpen } from "../settings/enrollment-gate.service.js";
 
 interface ActiveEnrollmentSetting {
   activeSchoolYearId: number
@@ -23,6 +23,7 @@ interface ActiveEnrollmentSetting {
 
 async function getOpenPublicEnrollmentSetting(
   res: Response,
+  isScp: boolean = false
 ): Promise<ActiveEnrollmentSetting | null> {
   const setting = await prisma.schoolSetting.findFirst({
     where: { activeSchoolYearId: { not: null } },
@@ -34,13 +35,23 @@ async function getOpenPublicEnrollmentSetting(
     return null;
   }
 
-  if (!isPublicEnrollmentOpen(setting.activeSchoolYear, setting.systemPhase)) {
-    res.status(403).json({
-      code: "PUBLIC_ENROLLMENT_CLOSED",
-      message:
-        "Regular online enrollment is closed. Please visit the School Registrar's Office for walk-in assistance.",
-    });
-    return null;
+  if (isScp) {
+    if (!isScpAdmissionOpen(setting.activeSchoolYear)) {
+      res.status(403).json({
+        code: "SCP_ADMISSION_CLOSED",
+        message: "SCP Admission is currently closed.",
+      });
+      return null;
+    }
+  } else {
+    if (!isPublicEnrollmentOpen(setting.activeSchoolYear, setting.systemPhase)) {
+      res.status(403).json({
+        code: "PUBLIC_ENROLLMENT_CLOSED",
+        message:
+          "Regular online enrollment is closed. Please visit the School Registrar's Office for walk-in assistance.",
+      });
+      return null;
+    }
   }
 
   return {
@@ -182,7 +193,7 @@ export async function submitApplication(req: Request, res: Response) {
     const scpData = isScp ? (data as ScpAdmissionSubmit) : null;
 
     // Get active school year
-    const schoolSetting = await getOpenPublicEnrollmentSetting(res);
+    const schoolSetting = await getOpenPublicEnrollmentSetting(res, isScp);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
@@ -310,6 +321,7 @@ export async function submitApplication(req: Request, res: Response) {
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
               province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
+              region: data.currentAddress.region,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
               ? [
@@ -320,6 +332,7 @@ export async function submitApplication(req: Request, res: Response) {
                     barangay: data.permanentAddress.barangay,
                     cityMunicipality: data.permanentAddress.cityMunicipality,
                     province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                    region: data.permanentAddress.region,
                   },
                 ]
               : []),
@@ -364,10 +377,11 @@ export async function submitApplication(req: Request, res: Response) {
         previousSchool: {
           create: {
             schoolName: data.lastSchoolName,
+            schoolId: data.lastSchoolId || null,
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,
-            // @ts-ignore Prisma client needs regeneration to recognize this new field
+            
             transferCertificateNo: data.transferCertificateNo || null,
           },
         },

@@ -3,7 +3,7 @@ import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "@/shared/components/PrivacyNotice";
-import ScpAdmissionForm from "./ScpAdmissionForm";
+import ScpAdmissionForm, { SCP_FORM_STATE_KEY } from "./ScpAdmissionForm";
 import EnrollmentSuccess from "../online-enrollment/components/EnrollmentSuccess";
 
 import { cn } from "@/shared/lib/utils";
@@ -37,10 +37,10 @@ export default function Apply() {
     activeSchoolYearLabel,
     systemPhase,
     facebookPageUrl,
-    isBosyEnrollmentOpen,
+    isScpAdmissionOpen,
   } = useSettingsStore();
   const isClassesOngoing = systemPhase === "CLASSES_ONGOING";
-  const isClosed = !isBosyEnrollmentOpen;
+  const isClosed = !isScpAdmissionOpen;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -50,6 +50,7 @@ export default function Apply() {
 
   const handleReset = () => {
     sessionStorage.removeItem(CONSENT_KEY);
+    sessionStorage.removeItem(SCP_FORM_STATE_KEY);
     setHasConsented(false);
     setSubmittedSuccessData(null);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -146,7 +147,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title="S.Y. 2030-2031 ADMISSION FORM"
+          title={activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} ADMISSION OPEN` : "ADMISSION OPEN"}
         />
 
         <main
@@ -188,7 +189,7 @@ export default function Apply() {
                     <div className="space-y-4 max-w-xl mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-2xl font-bold text-foreground mt-6">
-                          Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
+                          SCP Screening Period for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
                         <p className="text-base text-foreground mt-3 leading-relaxed max-w-lg mx-auto text-center font-bold">
                           Classes are already ongoing. New online applications are no longer accepted for this school year.
@@ -228,13 +229,13 @@ export default function Apply() {
                   ) : (
                     <div className="space-y-4 max-w-lg mx-auto">
                       <h3 className="text-xl sm:text-2xl font-bold text-foreground">
-                        S.Y. {activeSchoolYearLabel || "Admissions"} Portal is
+                        S.Y. {activeSchoolYearLabel || "Admissions"} SCP Screening Period is
                         Currently Closed
                       </h3>
                       <p className="text-base sm:text-base text-foreground leading-relaxed">
                         The online portal for{" "}
                         {activeSchoolYearLabel || "Admissions"} is not currently
-                        accepting applications. Registration periods are
+                        accepting SCP applications. Registration periods are
                         scheduled according to the DepEd school calendar.
                       </p>
                       <div className="pt-6 border-t border-border/50 space-y-4 flex flex-col">

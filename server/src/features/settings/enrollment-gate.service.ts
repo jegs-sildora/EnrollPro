@@ -41,6 +41,18 @@ export function isPublicEnrollmentOpen(
   );
 }
 
+export function isScpAdmissionOpen(
+  year: Pick<SchoolYear, "scpAdmissionOpenDate" | "scpAdmissionCloseDate">,
+): boolean {
+  if (!year.scpAdmissionOpenDate || !year.scpAdmissionCloseDate) return false;
+
+  const todayToken = toManilaDateToken(new Date());
+  return (
+    todayToken >= toManilaDateToken(year.scpAdmissionOpenDate)
+    && todayToken <= toManilaDateToken(year.scpAdmissionCloseDate)
+  );
+}
+
 export function isStaffIntakeAllowed(systemPhase?: string): boolean {
   return systemPhase !== "EOSY_CLOSING";
 }

@@ -108,6 +108,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         depedEmail: data.depedEmail,
         schoolWebsite: data.schoolWebsite,
         isBosyEnrollmentOpen: Boolean(data.isBosyEnrollmentOpen),
+        isScpAdmissionOpen: Boolean(data.isScpAdmissionOpen),
         steEnabled: data.steEnabled,
         spaEnabled: data.spaEnabled,
         spsEnabled: data.spsEnabled,

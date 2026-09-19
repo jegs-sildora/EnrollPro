@@ -769,6 +769,12 @@ function AppSidebar() {
                   {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                     <>
                       <NavItem
+                        to="/learner-admission"
+                        icon={CheckCircle2}
+                        label="Learner Admission"
+                        pathname={pathname}
+                      />
+                      <NavItem
                         to="/learner-enrollment"
                         icon={UserPlus}
                         label="Learner Enrollment"

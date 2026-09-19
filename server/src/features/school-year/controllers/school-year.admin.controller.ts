@@ -339,6 +339,8 @@ function sendTermContractMutationError(
       classEndDate,
       enrollOpenDate,
       enrollCloseDate,
+      scpAdmissionOpenDate,
+      scpAdmissionCloseDate,
     } = req.body;
 
     const existingYear = await prisma.schoolYear.findUnique({
@@ -350,6 +352,8 @@ function sendTermContractMutationError(
         classEndDate: true,
         enrollOpenDate: true,
         enrollCloseDate: true,
+        scpAdmissionOpenDate: true,
+        scpAdmissionCloseDate: true,
       },
     });
 
@@ -430,6 +434,30 @@ function sendTermContractMutationError(
       }
     }
 
+    const nextScpAdmissionOpenDate =
+      scpAdmissionOpenDate !== undefined
+        ? scpAdmissionOpenDate
+          ? normalizeDateToUtcNoon(new Date(scpAdmissionOpenDate))
+          : null
+        : existingYear.scpAdmissionOpenDate;
+
+    const nextScpAdmissionCloseDate =
+      scpAdmissionCloseDate !== undefined
+        ? scpAdmissionCloseDate
+          ? normalizeDateToUtcNoon(new Date(scpAdmissionCloseDate))
+          : null
+        : existingYear.scpAdmissionCloseDate;
+
+    if (nextScpAdmissionOpenDate && nextScpAdmissionCloseDate) {
+      if (nextScpAdmissionCloseDate.getTime() < nextScpAdmissionOpenDate.getTime()) {
+        res.status(400).json({
+          message:
+            "SCP Admission close date cannot be earlier than its open date.",
+        });
+        return;
+      }
+    }
+
     const updated = await prisma.schoolYear.update({
       where: { id },
       data: {
@@ -457,6 +485,20 @@ function sendTermContractMutationError(
                 : null,
             }
           : {}),
+        ...(scpAdmissionOpenDate !== undefined
+          ? {
+              scpAdmissionOpenDate: scpAdmissionOpenDate
+                ? normalizeDateToUtcNoon(new Date(scpAdmissionOpenDate))
+                : null,
+            }
+          : {}),
+        ...(scpAdmissionCloseDate !== undefined
+          ? {
+              scpAdmissionCloseDate: scpAdmissionCloseDate
+                ? normalizeDateToUtcNoon(new Date(scpAdmissionCloseDate))
+                : null,
+            }
+          : {}),
       },
     });
 
@@ -470,7 +512,7 @@ function sendTermContractMutationError(
 
   export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, activeTerm } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, scpAdmissionOpenDate, scpAdmissionCloseDate, activeTerm } = req.body;
 
     const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -554,6 +596,8 @@ function sendTermContractMutationError(
           : {}),
         ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),
         ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
+        ...(scpAdmissionOpenDate !== undefined ? { scpAdmissionOpenDate: scpAdmissionOpenDate ? normalizeDateToUtcNoon(new Date(scpAdmissionOpenDate)) : null } : {}),
+        ...(scpAdmissionCloseDate !== undefined ? { scpAdmissionCloseDate: scpAdmissionCloseDate ? normalizeDateToUtcNoon(new Date(scpAdmissionCloseDate)) : null } : {}),
         ...(activeTerm !== undefined ? { activeTerm } : {}),
       },
     });

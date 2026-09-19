@@ -183,7 +183,8 @@ function toManilaDateToken(value: string | Date): number {
 function getEnrollmentWindowStatus(
   openDate: string | null | undefined,
   closeDate: string | null | undefined,
-  isOfficialPhase: boolean = false
+  isOfficialPhase: boolean = false,
+  type: "ENROLLMENT" | "ADMISSION" = "ENROLLMENT"
 ) {
   if (!openDate || !closeDate) {
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
@@ -201,11 +202,11 @@ function getEnrollmentWindowStatus(
   }
 
   if (todayToken > endToken || !isOfficialPhase) {
-    return { label: " ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-800" };
+    return { label: `${type} CLOSED`, color: "bg-slate-100 text-slate-800" };
   }
 
   return {
-    label: "ENROLLMENT OPEN",
+    label: `${type} OPEN`,
     color: "bg-green-100 text-green-800 border border-green-500",
   };
 }
@@ -227,6 +228,8 @@ interface SYItem {
   term4End: string | null;
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
+  scpAdmissionOpenDate: string | null;
+  scpAdmissionCloseDate: string | null;
   termFormat: "TRIMESTER" | "QUARTERS" | null;
   activeTerm: string | null;
   _count: {
@@ -427,6 +430,8 @@ export default function SchoolYearTab() {
         term4End: activeYear.term4End ? activeYear.term4End.split('T')[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
+        scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split('T')[0] : "",
+        scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split('T')[0] : "",
         activeTerm: activeYear.activeTerm || activeTerm || "T1",
       });
     }
@@ -448,6 +453,8 @@ export default function SchoolYearTab() {
       localCalendarState.term4End !== getVal(activeYear.term4End) ||
       localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
       localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate) ||
+      localCalendarState.scpAdmissionOpenDate !== getVal(activeYear.scpAdmissionOpenDate) ||
+      localCalendarState.scpAdmissionCloseDate !== getVal(activeYear.scpAdmissionCloseDate) ||
       (localCalendarState.activeTerm !== (activeYear.activeTerm || activeTerm || "T1"))
     );
   }, [localCalendarState, activeYear, activeTerm]);
@@ -502,6 +509,8 @@ export default function SchoolYearTab() {
         term4End: activeYear.term4End ? activeYear.term4End.split("T")[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split("T")[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split("T")[0] : "",
+        scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split("T")[0] : "",
+        scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split("T")[0] : "",
         activeTerm: activeYear.activeTerm || activeTerm || "T1",
       });
     }
@@ -547,6 +556,8 @@ export default function SchoolYearTab() {
         }
         if (payload.enrollOpenDate) payload.enrollOpenDate = new Date(payload.enrollOpenDate).toISOString();
         if (payload.enrollCloseDate) payload.enrollCloseDate = new Date(payload.enrollCloseDate).toISOString();
+        if (payload.scpAdmissionOpenDate) payload.scpAdmissionOpenDate = new Date(payload.scpAdmissionOpenDate).toISOString();
+        if (payload.scpAdmissionCloseDate) payload.scpAdmissionCloseDate = new Date(payload.scpAdmissionCloseDate).toISOString();
 
         await api.put(`/school-years/${activeYear.id}`, payload);
         window.dispatchEvent(new Event("refetch-active-term"));
@@ -626,6 +637,17 @@ export default function SchoolYearTab() {
         systemPhase === "OFFICIAL_ENROLLMENT"
       ),
     [activeYear?.enrollCloseDate, activeYear?.enrollOpenDate, systemPhase],
+  );
+
+  const scpAdmissionPhaseStatus = useMemo(
+    () =>
+      getEnrollmentWindowStatus(
+        activeYear?.scpAdmissionOpenDate ?? null,
+        activeYear?.scpAdmissionCloseDate ?? null,
+        true, // SCP Admission doesn't necessarily depend on systemPhase in the same way, but let's assume it's always evaluated if dates are valid
+        "ADMISSION"
+      ),
+    [activeYear?.scpAdmissionCloseDate, activeYear?.scpAdmissionOpenDate],
   );
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
@@ -1087,7 +1109,77 @@ export default function SchoolYearTab() {
                     })}
                   </div>
 
+                  {/* SCP Admission Period */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
+                            SCP Admission Period
+                          </h4>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger type="button" className="cursor-help text-muted-foreground hover:text-foreground">
+                                <HelpCircle className="h-5 w-5 text-foreground hover:text-primary" />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-primary text-primary-foreground max-w-sm">
+                                <p className="text-sm">
+                                  Set the dates when the system will accept applications for the Science Class Program (SCP).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${scpAdmissionPhaseStatus.color}`}>
+                        {scpAdmissionPhaseStatus.label}
+                      </span>
+                    </div>
 
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                        <div className="space-y-2 relative">
+                          <Label className="text-base font-bold uppercase text-foreground">
+                            Opens On
+                          </Label>
+                          <HybridDatePicker
+                            value={localCalendarState.scpAdmissionOpenDate || ""}
+                            onChange={(val) => {
+                              setLocalCalendarState(prev => ({ ...prev, scpAdmissionOpenDate: val || "" }));
+                            }}
+                            minDate={new Date()}
+                            placeholder="Set start date"
+                            className="text-primary"
+                          />
+                        </div>
+                        <div className="space-y-2 relative">
+                          <Label className="text-base font-bold uppercase text-foreground">
+                            Closes On
+                          </Label>
+                          <HybridDatePicker
+                            value={localCalendarState.scpAdmissionCloseDate || ""}
+                            onChange={(val) => {
+                              setLocalCalendarState(prev => ({ ...prev, scpAdmissionCloseDate: val || "" }));
+                            }}
+                            minDate={new Date()}
+                            placeholder="Set end date"
+                            className="text-primary"
+                          />
+                        </div>
+                      </div>
+
+                      {localCalendarState.scpAdmissionOpenDate !== "" &&
+                        localCalendarState.scpAdmissionCloseDate !== "" &&
+                        toManilaDateToken(localCalendarState.scpAdmissionCloseDate) < toManilaDateToken(localCalendarState.scpAdmissionOpenDate) && (
+                          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <p>End date cannot be earlier than start date.</p>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                  
                   {/* BOSY Enrollment Period */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -1155,9 +1247,7 @@ export default function SchoolYearTab() {
                         toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
                           <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
-                            <p>
-                              Please select a closing date that comes after the opening date.
-                            </p>
+                            <p>End date cannot be earlier than start date.</p>
                           </div>
                         )}
                     </div>

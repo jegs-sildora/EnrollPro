@@ -13,8 +13,10 @@ import {
   revertApplication,
   completeRequirements,
 } from "./enrollment.controller.js";
+import { getScpApplicants, bulkSaveScpAssessments } from "./controllers/enrollment.scp.controller.js";
+import { saveScpAssessment } from "./enrollment.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { directEncodeWalkInSchema } from "@enrollpro/shared";
+import { directEncodeWalkInSchema, scpAssessmentUpdateSchema } from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -87,6 +89,28 @@ router.patch(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   completeRequirements,
+);
+
+router.get(
+  "/scp-applicants",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getScpApplicants,
+);
+
+router.patch(
+  "/scp-applicants/bulk-assessment",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  bulkSaveScpAssessments,
+);
+
+router.patch(
+  "/scp-applicants/:applicationId/assessment",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(scpAssessmentUpdateSchema),
+  saveScpAssessment,
 );
 
 export default router;

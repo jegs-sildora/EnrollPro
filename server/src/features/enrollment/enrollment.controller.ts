@@ -397,6 +397,10 @@ export async function getPendingVerifications(req: Request, res: Response) {
       learnerType: {
         in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
       },
+      OR: [
+        { applicantType: { in: ["REGULAR", "LATE_ENROLLEE"] } },
+        { scpProfile: { assessmentResult: "QUALIFIED" } },
+      ],
       ...(finalGradeLevelId ? { gradeLevelId: finalGradeLevelId } : {}),
     },
     include: {
@@ -968,3 +972,98 @@ export async function completeRequirements(req: Request, res: Response) {
     isTemporarilyEnrolled: !allDocsVerified,
   });
 }
+
+/**
+ * GET /api/enrollment/scp-applicants
+ *
+ * Retrieves all SCP applicants for the active school year.
+ */
+export async function getScpApplicants(req: Request, res: Response, next: NextFunction) {
+  try {
+    const activeSetting = await prisma.schoolSetting.findFirst({
+      where: { activeSchoolYearId: { not: null } },
+      select: { activeSchoolYearId: true },
+    });
+
+    if (!activeSetting?.activeSchoolYearId) {
+      throw new AppError(400, "No active school year configured.");
+    }
+
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: {
+        schoolYearId: activeSetting.activeSchoolYearId,
+        applicantType: {
+          in: [
+            "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+            "SPECIAL_PROGRAM_IN_THE_ARTS",
+            "SPECIAL_PROGRAM_IN_SPORTS",
+          ],
+        },
+      },
+      include: {
+        learner: {
+          select: {
+            id: true,
+            lrn: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            studentPhoto: true,
+          }
+        },
+        scpProfile: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    return res.json(applications);
+  } catch (error: unknown) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/enrollment/scp-applicants/:applicationId/assessment
+ *
+ * Updates the SCP assessment status for an applicant.
+ */
+export async function saveScpAssessment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const applicationId = Number(req.params.applicationId);
+    if (!applicationId || isNaN(applicationId)) {
+      throw new AppError(400, "Valid applicationId is required.");
+    }
+
+    const { hasWrittenExam, writtenExamScore, hasInterview, assessmentResult } = req.body;
+
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id: applicationId },
+      include: { scpProfile: true },
+    });
+
+    if (!application || !application.scpProfile) {
+      throw new AppError(404, "SCP Profile not found for this application.");
+    }
+
+    const updatedProfile = await prisma.enrollmentScpProfile.update({
+      where: { applicationId },
+      data: {
+        hasWrittenExam,
+        writtenExamScore: writtenExamScore ?? null,
+        hasInterview,
+        assessmentResult,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: "Assessment saved successfully.",
+      scpProfile: updatedProfile,
+    });
+  } catch (error: unknown) {
+    next(error);
+  }
+}
+

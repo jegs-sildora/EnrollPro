@@ -380,7 +380,7 @@ export function formatApplicationStatus(
   if (!status) return "N/A";
   const s = status.toUpperCase();
 
-  if (s === "PENDING_VERIFICATION") return "Pending Verification";
+  if (s === "PENDING_VERIFICATION") return "For Review";
   if (s === "PENDING_CONFIRMATION") return "Pending Enrollment";
   if (s === "FOR_REVISION") return "For Revision";
   if (s === "OFFICIALLY_ENROLLED") return "Officially Enrolled";
@@ -392,6 +392,7 @@ export function formatApplicationStatus(
   if (s === "ARCHIVED_NO_SHOW") return "No Show";
   if (s === "REMEDIAL_HOLD") return "For Summer Grade Review";
   if (s === "REMEDIAL_RESOLVED") return "SMART Remedial Outcome Resolved";
+  if (s === "CANCELLED") return "Cancelled";
 
   return s
     .replaceAll("_", " ")

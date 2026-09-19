@@ -168,6 +168,8 @@ async function getTargetOperationalCount(
       classEndDate: true,
       enrollOpenDate: true,
       enrollCloseDate: true,
+      scpAdmissionOpenDate: true,
+      scpAdmissionCloseDate: true,
       termFormat: true,
       term1Start: true,
       term1End: true,
@@ -198,6 +200,8 @@ async function getTargetOperationalCount(
     target.classEndDate,
     target.enrollOpenDate,
     target.enrollCloseDate,
+    target.scpAdmissionOpenDate,
+    target.scpAdmissionCloseDate,
     target.term1Start,
     target.term1End,
     target.term2Start,
@@ -219,7 +223,8 @@ async function getTargetOperationalCount(
       && target.enrollOpenDate !== null
       && target.enrollCloseDate !== null
       && target.classOpeningDate <= target.classEndDate
-      && target.enrollOpenDate <= target.enrollCloseDate,
+      && target.enrollOpenDate <= target.enrollCloseDate
+      && (!target.scpAdmissionOpenDate || !target.scpAdmissionCloseDate || target.scpAdmissionOpenDate <= target.scpAdmissionCloseDate),
     count: Object.values(target._count).reduce(
       (total, count) => total + count,
       0,
@@ -631,6 +636,8 @@ export async function executeSchoolYearRollover({
           classEndDate: true,
           enrollOpenDate: true,
           enrollCloseDate: true,
+          scpAdmissionOpenDate: true,
+          scpAdmissionCloseDate: true,
           termFormat: true,
           term1Start: true,
           term1End: true,
@@ -796,6 +803,8 @@ export async function executeSchoolYearRollover({
             classEndDate: addOneYear(sourceYear.classEndDate),
             enrollOpenDate: addOneYear(sourceYear.enrollOpenDate),
             enrollCloseDate: addOneYear(sourceYear.enrollCloseDate),
+            scpAdmissionOpenDate: sourceYear.scpAdmissionOpenDate ? addOneYear(sourceYear.scpAdmissionOpenDate) : null,
+            scpAdmissionCloseDate: sourceYear.scpAdmissionCloseDate ? addOneYear(sourceYear.scpAdmissionCloseDate) : null,
             termFormat: sourceYear.termFormat,
             term1Start: addOneYear(sourceYear.term1Start),
             term1End: addOneYear(sourceYear.term1End),

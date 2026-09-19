@@ -27,6 +27,8 @@ export interface SettingsState {
   classEndDate: string | null;
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
+  scpAdmissionOpenDate: string | null;
+  scpAdmissionCloseDate: string | null;
   facebookPageUrl: string | null;
   depedEmail: string | null;
   schoolWebsite: string | null;
@@ -44,6 +46,7 @@ export interface SettingsState {
   homogeneousSectionCount: number;
   heterogeneousRoundRobin: boolean;
   isBosyEnrollmentOpen: boolean;
+  isScpAdmissionOpen: boolean;
   enrollmentPhase:
     | "REGULAR_ENROLLMENT"
     | "CLOSED"
@@ -117,6 +120,8 @@ export const useSettingsStore = create<SettingsState>()(
       classEndDate: null,
       enrollOpenDate: null,
       enrollCloseDate: null,
+      scpAdmissionOpenDate: null,
+      scpAdmissionCloseDate: null,
       facebookPageUrl: null,
       depedEmail: null,
       schoolWebsite: null,
@@ -134,6 +139,7 @@ export const useSettingsStore = create<SettingsState>()(
       homogeneousSectionCount: 5,
       heterogeneousRoundRobin: true,
       isBosyEnrollmentOpen: false,
+      isScpAdmissionOpen: false,
       enrollmentPhase: "CLOSED",
       systemPhase: null,
       systemStatus: "ACTIVE",

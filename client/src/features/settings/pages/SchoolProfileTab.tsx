@@ -496,6 +496,7 @@ export default function SchoolProfileTab() {
                                 <Input
                                   type="number"
                                   min={1}
+                                  className="font-bold"
                                   placeholder="e.g. 100"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
@@ -541,6 +542,7 @@ export default function SchoolProfileTab() {
                                 <Input
                                   type="number"
                                   min={1}
+                                  className="font-bold"
                                   placeholder="e.g. 100"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
@@ -586,6 +588,7 @@ export default function SchoolProfileTab() {
                                 <Input
                                   type="number"
                                   min={1}
+                                  className="font-bold"
                                   placeholder="e.g. 100"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
