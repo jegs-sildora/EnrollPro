@@ -102,7 +102,7 @@ function ResultBadge({ result }: { result: AssessmentResult }) {
     return <Badge className="border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50">Waitlisted</Badge>
   }
   if (result === "DISQUALIFIED") return <Badge variant="destructive">Disqualified</Badge>
-  return <Badge variant="secondary" className="bg-muted text-muted-foreground">Pending</Badge>
+  return <Badge variant="secondary" className="bg text-foreground">Pending</Badge>
 }
 
 export default function LearnerAdmissionIndex() {
@@ -240,6 +240,14 @@ export default function LearnerAdmissionIndex() {
     })
   }, [edits, applicants])
 
+  const canLockRoster = useMemo(() => {
+    if (applicants.length === 0) return false
+    return applicants.every((app) => {
+      const result = app.scpProfile?.assessmentResult
+      return result === "QUALIFIED" || result === "DISQUALIFIED"
+    })
+  }, [applicants])
+
   const updateEdit = (application: Application, patch: Partial<EditState>) => {
     setEdits((current) => {
       const nextEdit = { ...(current[application.id] ?? getInitialEdit(application)), ...patch }
@@ -261,7 +269,7 @@ export default function LearnerAdmissionIndex() {
       size: 70,
       minSize: 70,
       maxSize: 70,
-      meta: { className: "text-center", headerClassName: "text-center" },
+      meta: { className: "text-center", headerClassName: "text-center", pin: "left" },
       header: "#",
       cell: ({ row }) => (page - 1) * limit + row.index + 1,
     },
@@ -269,6 +277,7 @@ export default function LearnerAdmissionIndex() {
       id: "applicant",
       size: 380,
       minSize: 300,
+      meta: { pin: "left" },
       header: "APPLICANT NAME & LRN",
       cell: ({ row }) => {
         const learner = row.original.learner
@@ -279,11 +288,11 @@ export default function LearnerAdmissionIndex() {
               containerClassName="h-12 w-12 shrink-0 rounded-full border-2 border-primary shadow-sm"
             />
             <div className="min-w-0">
-              <p className="truncate font-bold uppercase text-foreground">
+              <p className="truncate font-extrabold uppercase text-foreground">
                 {learner.lastName}, {learner.firstName}
                 {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
               </p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <p className="text-sm ">
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
             </div>
@@ -308,7 +317,7 @@ export default function LearnerAdmissionIndex() {
               value={currentState.requirementsStatus}
               onValueChange={(val: ScpAssessmentState) => updateEdit(application, { requirementsStatus: val })}
             >
-              <SelectTrigger className="w-36 font-semibold shadow-none">
+              <SelectTrigger className="w-36 font-bold uppercase">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -334,7 +343,7 @@ export default function LearnerAdmissionIndex() {
         if (isRosterLocked) return (
           <div className="flex items-center justify-center gap-2 py-2 font-semibold">
             <span>{currentState.writtenExamStatus === "PASSED" ? "Passed" : currentState.writtenExamStatus === "FAILED" ? "Failed" : "Pending"}</span>
-            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && <span className="text-muted-foreground ml-2">Score: {currentState.writtenExamScore}</span>}
+            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && <span className="text-foreground ml-2">Score: {currentState.writtenExamScore}</span>}
           </div>
         )
         return (
@@ -344,8 +353,12 @@ export default function LearnerAdmissionIndex() {
               disabled={currentState.requirementsStatus !== "PASSED"}
               onValueChange={(val: ScpAssessmentState) => updateEdit(application, { writtenExamStatus: val })}
             >
-              <SelectTrigger className="w-28 font-semibold shadow-none">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-36 font-bold uppercase">
+                {currentState.requirementsStatus === "FAILED" ? (
+                  <span className="text-foreground">---</span>
+                ) : (
+                  <SelectValue placeholder="Status" />
+                )}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PENDING">Pending</SelectItem>
@@ -390,8 +403,12 @@ export default function LearnerAdmissionIndex() {
               disabled={currentState.writtenExamStatus !== "PASSED"}
               onValueChange={(val: ScpAssessmentState) => updateEdit(application, { interviewStatus: val })}
             >
-              <SelectTrigger className="w-28 font-semibold shadow-none">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-36 font-bold uppercase">
+                {currentState.requirementsStatus === "FAILED" || currentState.writtenExamStatus === "FAILED" ? (
+                  <span className="text-foreground">---</span>
+                ) : (
+                  <SelectValue placeholder="Status" />
+                )}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PENDING">Pending</SelectItem>
@@ -407,7 +424,7 @@ export default function LearnerAdmissionIndex() {
       id: "result",
       size: 190,
       minSize: 170,
-      meta: { className: "text-center", headerClassName: "text-center" },
+      meta: { className: "text-center", headerClassName: "text-center", pin: "right" },
       header: "FINAL RESULT",
       cell: ({ row, table }) => {
         const application = row.original
@@ -416,7 +433,7 @@ export default function LearnerAdmissionIndex() {
         const result = edit
           ? getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus)
           : application.scpProfile?.assessmentResult ?? "PENDING"
-        return <div className="flex justify-center py-2"><ResultBadge result={result} /></div>
+        return <div className="flex justify-center py-2 uppercase"><ResultBadge result={result} /></div>
       },
     },
   ], [page, limit])
@@ -452,9 +469,9 @@ export default function LearnerAdmissionIndex() {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="w-full max-w-xl rounded-xl border border-border bg-card p-8 text-center shadow-sm">
-          <ClipboardCheck className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <ClipboardCheck className="mx-auto mb-4 h-12 w-12 text-foreground" />
           <h2 className="text-xl font-bold text-foreground">No active Special Curricular Program</h2>
-          <p className="mt-2 text-muted-foreground">Enable STE, SPA, or SPS in School Settings to manage applicants.</p>
+          <p className="mt-2 text-foreground">Enable STE, SPA, or SPS in School Settings to manage applicants.</p>
         </div>
       </div>
     )
@@ -463,7 +480,7 @@ export default function LearnerAdmissionIndex() {
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex h-full min-h-0 w-full flex-1 flex-col">
-        <TabsList className="relative mb-4 flex h-auto w-full gap-1 rounded-xl border border-border bg-muted p-1 shadow-sm">
+        <TabsList className="relative mb-4 flex h-auto w-full gap-1 rounded-xl border border-border bg p-1 shadow-sm">
           {activePrograms.map((program) => {
             const isActive = program.id === activeTab
             return (
@@ -520,7 +537,7 @@ export default function LearnerAdmissionIndex() {
                   </div>
                   <div className="flex flex-col space-y-4 p-4">
                     <div className="space-y-1.5">
-                      <Label className="text-sm uppercase text-muted-foreground">Final Result</Label>
+                      <Label className="text-sm uppercase text-foreground">Final Result</Label>
                       <Select isFilter value={localAssessmentFilter} onValueChange={(value) => setLocalAssessmentFilter(value as AssessmentResult | "all")}>
                         <SelectTrigger className="h-10 w-full font-bold leading-tight">
                           <SelectValue placeholder="All Results" />
@@ -534,7 +551,7 @@ export default function LearnerAdmissionIndex() {
                       </Select>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between rounded-b-md border-t bg-muted/30 p-4">
+                  <div className="flex items-center justify-between rounded-b-md border-t bg/30 p-4">
                     <Button variant="ghost" size="sm" onClick={() => {
                       setLocalAssessmentFilter("all")
                       setAssessmentFilter("all")
@@ -567,7 +584,7 @@ export default function LearnerAdmissionIndex() {
                     {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Results
                   </Button>
-                ) : applicants.length > 0 && (
+                ) : canLockRoster && (
                   <Button onClick={() => setIsLockModalOpen(true)} className="h-12 whitespace-nowrap font-bold shrink-0 bg-red-600 hover:bg-red-700 text-white">
                     <Lock className="mr-2 h-4 w-4" />
                     Finalize & Lock Roster
@@ -578,7 +595,7 @@ export default function LearnerAdmissionIndex() {
           </div>
 
           <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-            <div className="min-h-0 flex-1 overflow-auto bg-muted/5">
+            <div className="min-h-0 flex-1 overflow-auto bg/5">
               <DataTable<Application, unknown>
                 columns={columns}
                 data={paginatedApplicants}

@@ -1,56 +1,59 @@
-# Prompt for UI/UX & Logic Refactor: Context-Aware Application Tracker
+# Prompt for UI/UX Copywriting: DepEd Localization & Layman's Terms
 
 ## Role & Context
-Act as a Full-Stack Developer. We are refactoring the (Monitor Portal) page. 
+Act as a Frontend Developer. We are executing a strict copywriting and text-replacement pass on the `/track-application` portal for the Admission phase.
 
-Currently, the portal renders a static "Enrollment Progress" stepper for every queried tracking number. This is a critical UX flaw because in DepEd systems, SCP Admission (Screening/Exams) and Official Enrollment (Sectioning/LIS Encoding) are two distinct administrative phases. 
-
-We need the portal to dynamically adapt its UI stepper based on the *type* of application associated with the tracking number, and smoothly hand off qualified SCP applicants to the actual enrollment phase.
+Currently, the portal uses robotic, corporate-sounding system text (e.g., "Awaiting prior steps", "Document Verification"). We need to translate all UI text into standard DepEd (Department of Education) terminology and warm, layman's terms so parents and students can easily understand their exact status without needing to call the school.
 
 ## Critical Directive
-Utilize the existing design system cards, text elements, and vertical stepper components. The backend must now return an `application_type` parameter (e.g., `ADMISSION` vs `ENROLLMENT`) alongside the status data to dictate which frontend component to render.
+Do NOT change any UI layouts, colors, or icons. This is purely a text/string replacement task. Update your state dictionaries to use the exact strings provided below.
 
-## UI Component & State Logic Requirements
+## 1. Hero Banner Copy (Dynamic Updates)
 
-Please implement the following context-aware logic:
+Replace the existing Hero Banner states with these localized, conversational strings:
 
-### 1. The Dynamic Header Card
-*   **Update:** Keep the existing 3-column information grid (`LEARNER NAME`, `INCOMING GRADE`, `CURRICULAR PROGRAM`). 
-*   **Addition:** Add a status badge next to the `CURRENT STATUS` text at the top of the card that explicitly labels the phase: e.g., a blue badge reading `[ADMISSION PHASE]` or a green badge reading `[ENROLLMENT PHASE]`.
+*   **If Step 1 is Active:**
+    *   *Title:* `SUBMISSION OF REQUIREMENTS`
+    *   *Subtitle:* `Please bring your physical documents (SF9/Report Card, PSA, etc.) to the school for checking.`
+*   **If Step 2 is Active:**
+    *   *Title:* `WAITING FOR TEST / AUDITION RESULTS`
+    *   *Subtitle:* `The committee is currently computing the scores from the admission test or audition.`
+*   **If Step 3 is Active:**
+    *   *Title:* `INTERVIEW PHASE`
+    *   *Subtitle:* `Waiting for the final evaluation from your parent-teacher interview.`
+*   **If Step 4 is Active (Terminal States):**
+    *   *Qualified Title:* `QUALIFIED FOR [PROGRAM NAME]`
+    *   *Waitlisted Title:* `WAITLISTED FOR [PROGRAM NAME]`
+    *   *Not Qualified Title:* `NOT QUALIFIED`
 
-### 2. Layout A: The "Admission Phase" Stepper
-If the tracking number belongs to an SCP Admission Form (e.g., `STE...`, `SPA...`), render this 3-step timeline:
+## 2. Timeline Stepper Copy (The 4 Steps)
 
-*   **Step 1: Document Verification**
-    *   *Pending:* "Awaiting physical submission of SF9 and requirements."
-    *   *Passed:* "Requirements verified by Registrar."
-*   **Step 2: Screening & Assessment**
-    *   *Pending:* "Awaiting exam and/or interview results."
-    *   *Passed:* "Screening completed."
-*   **Step 3: Final Admission Result (The Handoff)**
-    *   *Pending:* (Muted)
-    *   *Failed (Red):* "Did not meet program requirements."
-    *   *Qualified (Green):* "Congratulations! You are qualified for [Program Name]."
-    *   **CRITICAL UX HANDOFF:** If Step 3 is `Qualified`, render a prominent primary button directly inside the Step 3 container: `Proceed to Official Enrollment`. Clicking this button must route the user to the Online Enrollment form and auto-fill their LRN so they don't have to start from scratch.
+Replace the titles and dynamic subtexts in the vertical stepper with the following:
 
-### 3. Layout B: The "Enrollment Phase" Stepper
-If the tracking number belongs to a standard Online Enrollment Form (or a Qualified SCP learner who has proceeded to enroll), render the existing 3-step timeline:
+### Step 1: Checking of Requirements
+*(Replaces "Document Verification")*
+*   **Active Subtext:** "Please submit your SF9, PSA Birth Certificate, and other requirements to the assigned office."
+*   **Completed Subtext:** "All documents have been submitted and verified."
 
-*   **Step 1: Registrar Review**
-    *   "The Registrar's Office is verifying your official enrollment records."
-*   **Step 2: Ready for Sectioning**
-    *   "Learner is queued for automated class sectioning."
-*   **Step 3: Officially Enrolled**
-    *   "Section finalized. Welcome to S.Y. [School Year]."
+### Step 2: Admission Test / Audition
+*(Replaces "Examination / Audition")*
+*   **Upcoming (Locked) Subtext:** "Must submit and pass the documentary requirements first."
+*   **Active Subtext:** "Waiting for the scheduled test/audition or the release of results."
+*   **Completed Subtext:** "Passed the admission test/audition."
 
-### 4. Waitlist & Disqualified Error States
-Ensure the timeline gracefully halts if an applicant does not proceed:
-*   **Waitlisted (Admission):** Change Step 3 to a Yellow warning state. "Passed screening, but placed on the waitlist due to limited program slots."
-*   **Disqualified (Admission):** Change Step 3 to a Red error state. "Please proceed to the registrar to explore Regular BEC enrollment options."
+### Step 3: Interview
+*(Replaces "Panel Interview")*
+*   **Upcoming (Locked) Subtext:** "Must pass the admission test/audition first." *(Replaces the robotic "Awaiting prior steps")*
+*   **Active Subtext:** "Waiting for the scheduled interview with the applicant and parents/guardians."
+*   **Completed Subtext:** "Interview completed."
 
-### 5. Backend Payload Requirement
-Update the tracking API endpoint (`GET /api/track/:tracking_number`). It must return:
-1. `application_type`: ENUM ('ADMISSION', 'ENROLLMENT')
-2. `current_step`: Integer/String mapping to the active step.
-3. `status`: ENUM ('PENDING', 'PASSED', 'FAILED', 'WAITLISTED')
-The frontend will switch between `<AdmissionTimeline />` and `<EnrollmentTimeline />` components based strictly on `application_type`.
+### Step 4: Final Screening Result
+*(Replaces "Final Admission Result")*
+*   **Upcoming (Locked) Subtext:** "Waiting for the official posting of qualified applicants."
+*   **Qualified (Green):** "Congratulations! You are officially qualified. Please proceed to the Online Enrollment Form."
+*   **Waitlisted (Yellow):** "Passed the screening, but placed on the waitlist due to limited slots."
+*   **Not Qualified (Red):** "Did not meet the cut-off. Please proceed to enroll in the Regular Basic Education (BEC) program."
+
+## 3. Empty States & Helpers
+*   **Search Placeholder:** Update the input placeholder to: `Enter Tracking Number (e.g., STE20260000001)`
+*   **Action Button (Inside Step 4):** Change `Proceed to Official Enrollment` to `Enroll Now` for brevity and action-orientation.

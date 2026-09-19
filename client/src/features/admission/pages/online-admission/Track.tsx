@@ -13,8 +13,8 @@ import {
   User,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -75,7 +75,7 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     icon: Search,
     color: "border-slate-200 bg-slate-50 text-slate-700",
     description:
-      "The Registrar's Office is checking the learner record and available school requirements.",
+      "The school is checking the learner record and available school requirements.",
   },
   QUALIFIED_FOR_ENROLLMENT: {
     label: "Ready for Section Assignment",
@@ -139,6 +139,7 @@ export default function TrackApplication({
   onResultsFetched?: (hasResults: boolean) => void;
 }) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [application, setApplication] = useState<ApplicationStatus | null>(
     null,
   );
@@ -152,13 +153,25 @@ export default function TrackApplication({
     formState: { errors },
   } = useForm<TrackFormData>({
     resolver: zodResolver(trackSchema),
+    defaultValues: {
+      trackingNumber: searchParams.get("trackingNumber") || "",
+    },
   });
+
+  useEffect(() => {
+    const trackingNumber = searchParams.get("trackingNumber");
+    if (trackingNumber) {
+      onTrack({ trackingNumber });
+    }
+  }, []); // Only run once on mount
 
   const handleBackToSearch = () => {
     setApplication(null);
     setError("");
     onResultsFetched?.(false);
     reset({ trackingNumber: "" });
+    searchParams.delete("trackingNumber");
+    setSearchParams(searchParams);
   };
 
   const onTrack = async (data: TrackFormData) => {
@@ -168,8 +181,12 @@ export default function TrackApplication({
     onResultsFetched?.(false);
 
     try {
+      const trimmedTrackingNumber = data.trackingNumber.trim().toUpperCase();
+      if (trimmedTrackingNumber !== searchParams.get("trackingNumber")) {
+        setSearchParams({ trackingNumber: trimmedTrackingNumber });
+      }
       const response = await api.get<ApplicationStatus>(
-        `/applications/track/${data.trackingNumber.trim().toUpperCase()}`,
+        `/applications/track/${trimmedTrackingNumber}`,
       );
       setApplication(response.data);
       onResultsFetched?.(true);
@@ -197,13 +214,97 @@ export default function TrackApplication({
   const normalizedStatus = application
     ? normalizeTrackingStatus(application.status)
     : "IN_REVIEW";
-  const presentation =
+  let presentation =
     STATUS_PRESENTATION[normalizedStatus] ?? STATUS_PRESENTATION.IN_REVIEW;
-  const StatusIcon = presentation.icon;
+  let StatusIcon = presentation.icon;
+
+  // Compute programLabel early so hero banner terminal titles can reference it
   const programLabel = application
     ? LEARNING_PROGRAM_LABELS[application.applicantType] ??
     application.applicantType.replaceAll("_", " ")
     : "";
+
+  if (application?.application_type === "ADMISSION") {
+    const { verification_status, exam_status, interview_status, final_result } = application;
+
+    // "Fail Fast" logic: if exam failed, skip interview and jump to terminal
+    const examFailed = exam_status === "FAILED";
+    const isTerminal = final_result === "QUALIFIED" || final_result === "DISQUALIFIED" || final_result === "WAITLISTED";
+
+    // Determine active step index (0-based, 4 steps)
+    let step: number;
+    if (isTerminal || examFailed) {
+      step = 3; // Step 4 terminal
+    } else if (verification_status !== "PASSED") {
+      step = 0; // Step 1
+    } else if (exam_status !== "PASSED") {
+      step = 1; // Step 2
+    } else if (interview_status !== "PASSED") {
+      step = 2; // Step 3
+    } else {
+      step = 3; // Step 4
+    }
+
+    if (step === 0) {
+      StatusIcon = FileText;
+      presentation = {
+        label: "SUBMISSION OF REQUIREMENTS",
+        icon: FileText,
+        description: "Please bring your physical documents (SF9/Report Card, PSA, etc.) to the school for checking.",
+        color: "border-blue-200 bg-blue-50 text-blue-900",
+      };
+    } else if (step === 1) {
+      StatusIcon = Search;
+      presentation = {
+        label: "WAITING FOR TEST / AUDITION RESULTS",
+        icon: Search,
+        description: "The committee is currently computing the scores from the admission test or audition.",
+        color: "border-blue-200 bg-blue-50 text-blue-900",
+      };
+    } else if (step === 2) {
+      StatusIcon = User;
+      presentation = {
+        label: "INTERVIEW PHASE",
+        icon: User,
+        description: "Waiting for the final evaluation from your parent-teacher interview.",
+        color: "border-blue-200 bg-blue-50 text-blue-900",
+      };
+    } else if (step === 3) {
+      if (final_result === "QUALIFIED") {
+        StatusIcon = CheckCircle2;
+        presentation = {
+          label: `QUALIFIED FOR ${programLabel.toUpperCase()}`,
+          icon: CheckCircle2,
+          description: "Congratulations! You are officially qualified. Please proceed to the Online Enrollment Form.",
+          color: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        };
+      } else if (final_result === "DISQUALIFIED" || examFailed) {
+        StatusIcon = AlertCircle;
+        presentation = {
+          label: "NOT QUALIFIED",
+          icon: AlertCircle,
+          description: "Did not meet the cut-off. Please proceed to enroll in the Regular Basic Education (BEC) program.",
+          color: "border-red-200 bg-red-50 text-red-700",
+        };
+      } else if (final_result === "WAITLISTED") {
+        StatusIcon = AlertCircle;
+        presentation = {
+          label: `WAITLISTED FOR ${programLabel.toUpperCase()}`,
+          icon: AlertCircle,
+          description: "Passed the screening, but placed on the waitlist due to limited slots.",
+          color: "border-yellow-200 bg-yellow-50 text-yellow-700",
+        };
+      } else {
+        StatusIcon = Clock;
+        presentation = {
+          label: "AWAITING FINAL RESULT",
+          icon: Clock,
+          description: "Waiting for the official posting of qualified applicants.",
+          color: "border-blue-200 bg-blue-50 text-blue-900",
+        };
+      }
+    }
+  }
 
   const { schoolName, logoUrl } = useSettingsStore();
 
@@ -246,11 +347,12 @@ export default function TrackApplication({
           <Card className="w-full overflow-hidden rounded-lg border-2 border-emerald-100 shadow-xl">
             <CardHeader className="bg-emerald-600 p-8 text-center text-white">
               <CardTitle className="text-2xl font-bold uppercase">
-                Enrollment Application Status
+                {application
+                  ? `${application.application_type} APPLICATION STATUS`
+                  : "TRACK APPLICATION STATUS"}
               </CardTitle>
               <CardDescription className="font-bold text-white/90">
-                Enter the tracking number issued after submitting the enrollment
-                form
+                Enter the tracking number issued after submitting your admission or enrollment form.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
@@ -258,7 +360,7 @@ export default function TrackApplication({
                 <div className="space-y-2">
                   <Label
                     htmlFor="trackingNumber"
-                    className="text-base font-bold uppercase"
+                    className="text-base font-bold uppercase text-emerald-600"
                   >
                     Tracking Number
                   </Label>
@@ -266,11 +368,11 @@ export default function TrackApplication({
                     <Input
                       id="trackingNumber"
                       {...register("trackingNumber")}
-                      placeholder="e.g., STE20260000001"
-                      className="h-14 border-2 pl-12 text-lg font-bold uppercase"
+                      placeholder="Enter Tracking Number (e.g., STE20260000001)"
+                      className="h-14 border-2 pl-12 text-lg font-bold uppercase text-emerald-900"
                       autoComplete="off"
                     />
-                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-900" />
                   </div>
                   <AnimatedError error={errors.trackingNumber?.message} />
                 </div>
@@ -323,7 +425,7 @@ export default function TrackApplication({
                         <p className="text-sm font-bold uppercase">
                           Current Status
                         </p>
-                        <h3 className="mt-1 text-2xl font-bold uppercase">
+                        <h3 className="mt-1 text-2xl font-bold uppercase text-emerald-900">
                           {presentation.label}
                         </h3>
                       </div>
@@ -369,12 +471,19 @@ export default function TrackApplication({
 
                     <div className="space-y-4 rounded-lg border bg-muted p-6">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-base font-bold uppercase">
+                        <h4 className="text-base font-bold uppercase text-emerald-900">
                           {application.application_type === "ADMISSION"
                             ? "Admission Progress"
                             : "Enrollment Progress"}
                         </h4>
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase text-emerald-700">
+                        <span
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-bold uppercase",
+                            application.application_type === "ADMISSION"
+                              ? "bg-emerald-600 text-white"
+                              : "bg-emerald-100 text-emerald-700",
+                          )}
+                        >
                           {application.application_type} Phase
                         </span>
                       </div>
@@ -415,15 +524,14 @@ function InfoBlock({
   return (
     <div
       className={cn(
-        "space-y-1 rounded-lg border border-primary/10 bg-primary/5 p-5",
+        "space-y-1 rounded-lg border border-emerald-600/20 bg-emerald-600/5 p-5",
         className,
       )}
     >
-      <p className="flex items-center justify-center gap-1.5 text-sm font-bold uppercase">
-        <Icon className="h-4 w-4" />
+      <p className="flex items-center justify-center gap-1.5 text-sm font-bold uppercase text-emerald-600">
         {label}
       </p>
-      <p className="font-bold uppercase text-primary">{value.trim()}</p>
+      <p className="font-bold uppercase text-emerald-900">{value.trim()}</p>
     </div>
   );
 }

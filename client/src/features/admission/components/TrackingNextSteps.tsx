@@ -36,7 +36,7 @@ const STEP_METADATA: Record<
   REGISTRAR_REVIEW: {
     title: "Registrar Review",
     description:
-      "The Registrar's Office is checking the learner record and submitted school requirements.",
+      "The school is checking the learner record and submitted school requirements.",
   },
   ENROLLMENT_QUALIFICATION: {
     title: "Ready for ",

@@ -263,6 +263,10 @@ export const applicationTrackResponseSchema = applicationTrackingStateSchema.par
       application_type: z.enum(["ADMISSION", "ENROLLMENT"]),
       current_step: z.number(),
       status: z.enum(["PENDING", "PASSED", "FAILED", "WAITLISTED"]),
+      verification_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
+      exam_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
+      interview_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
+      final_result: z.enum(["PENDING", "QUALIFIED", "DISQUALIFIED", "WAITLISTED"]).optional(),
     })
   )
   .passthrough();

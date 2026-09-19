@@ -13,8 +13,8 @@ import {
   User,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -70,7 +70,7 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     icon: Search,
     color: "border-slate-200 bg-slate-50 text-slate-700",
     description:
-      "The Registrar's Office is checking the learner record and available school requirements.",
+      "The school is checking the learner record and available school requirements.",
   },
   QUALIFIED_FOR_ENROLLMENT: {
     label: "Ready for Section Assignment",
@@ -138,6 +138,7 @@ export default function TrackApplication({
   onResultsFetched?: (hasResults: boolean) => void;
 }) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [application, setApplication] = useState<ApplicationStatus | null>(
     null,
   );
@@ -151,13 +152,25 @@ export default function TrackApplication({
     formState: { errors },
   } = useForm<TrackFormData>({
     resolver: zodResolver(trackSchema),
+    defaultValues: {
+      trackingNumber: searchParams.get("trackingNumber") || "",
+    },
   });
+
+  useEffect(() => {
+    const trackingNumber = searchParams.get("trackingNumber");
+    if (trackingNumber) {
+      onTrack({ trackingNumber });
+    }
+  }, []); // Only run once on mount
 
   const handleBackToSearch = () => {
     setApplication(null);
     setError("");
     onResultsFetched?.(false);
     reset({ trackingNumber: "" });
+    searchParams.delete("trackingNumber");
+    setSearchParams(searchParams);
   };
 
   const onTrack = async (data: TrackFormData) => {
@@ -167,8 +180,12 @@ export default function TrackApplication({
     onResultsFetched?.(false);
 
     try {
+      const trimmedTrackingNumber = data.trackingNumber.trim().toUpperCase();
+      if (trimmedTrackingNumber !== searchParams.get("trackingNumber")) {
+        setSearchParams({ trackingNumber: trimmedTrackingNumber });
+      }
       const response = await api.get<ApplicationStatus>(
-        `/applications/track/${data.trackingNumber.trim().toUpperCase()}`,
+        `/applications/track/${trimmedTrackingNumber}`,
       );
       setApplication(response.data);
       onResultsFetched?.(true);

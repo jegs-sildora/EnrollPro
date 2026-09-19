@@ -109,7 +109,12 @@ export async function trackApplication(req: Request, res: Response) {
         complianceStatus: true,
         learnerType: true,
         scpProfile: {
-          select: { assessmentResult: true },
+          select: { 
+            assessmentResult: true, 
+            requirementsStatus: true,
+            writtenExamStatus: true,
+            interviewStatus: true
+          },
         },
         learner: {
           select: {
@@ -140,27 +145,89 @@ export async function trackApplication(req: Request, res: Response) {
     }
 
     const isScp = isSpecialCurricularProgramType(application.applicantType);
-    const application_type = (isScp && !application.learnerType) ? "ADMISSION" : "ENROLLMENT";
+    let application_type: "ADMISSION" | "ENROLLMENT" = "ENROLLMENT";
+    if (application.trackingNumber?.startsWith("ADM-")) {
+      application_type = "ADMISSION";
+    } else if (application.trackingNumber?.startsWith("ENR-")) {
+      application_type = "ENROLLMENT";
+    } else {
+      // Fallback for edge cases, though migration script ran
+      application_type = (isScp && !application.learnerType) ? "ADMISSION" : "ENROLLMENT";
+    }
     
     let current_step = 1;
     let status = "PENDING";
+    let verification_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
+    let exam_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
+    let interview_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
+    let final_result: "PENDING" | "QUALIFIED" | "DISQUALIFIED" | "WAITLISTED" = "PENDING";
     
     if (application_type === "ADMISSION") {
-      if (application.complianceStatus === "COMPLIED") {
-        if (application.scpProfile?.assessmentResult === "QUALIFIED") {
-          current_step = 3;
-          status = "PASSED";
-        } else if (application.scpProfile?.assessmentResult === "WAITLISTED") {
-          current_step = 3;
-          status = "WAITLISTED";
-        } else if (application.scpProfile?.assessmentResult === "DISQUALIFIED") {
-          current_step = 3;
-          status = "FAILED";
-        } else {
-          // COMPLIED but no final result -> Step 2
-          current_step = 2;
-          status = "PENDING";
+      // Helper to prevent TS control-flow narrowing on union types
+      const asState = (v: string | undefined): "PENDING" | "PASSED" | "FAILED" =>
+        (v === "PASSED" || v === "FAILED") ? v : "PENDING";
+      const asResult = (v: string | undefined): "PENDING" | "QUALIFIED" | "DISQUALIFIED" | "WAITLISTED" =>
+        (v === "QUALIFIED" || v === "DISQUALIFIED" || v === "WAITLISTED") ? v : "PENDING";
+
+      final_result = asResult(application.scpProfile?.assessmentResult);
+
+      // Step 1: Document Verification
+      if (application.complianceStatus === "COMPLIED" || application.scpProfile?.requirementsStatus === "PASSED") {
+        verification_status = "PASSED";
+      } else if (application.scpProfile?.requirementsStatus === "FAILED") {
+        verification_status = "FAILED";
+      }
+
+      // Step 2: Examination / Audition
+      exam_status = asState(application.scpProfile?.writtenExamStatus);
+
+      // Step 3: Panel Interview
+      interview_status = asState(application.scpProfile?.interviewStatus);
+
+      // "Fail Fast" rule: if exam failed, skip interview and jump to terminal
+      if (exam_status === "FAILED") {
+        interview_status = "FAILED";
+        if (final_result === "PENDING") {
+          final_result = "DISQUALIFIED";
         }
+      }
+
+      // Infer statuses from terminal final_result if backend hasn't graded individually
+      if (final_result !== "PENDING") {
+        if (exam_status === "PENDING") {
+          exam_status = final_result === "DISQUALIFIED" ? "FAILED" : "PASSED";
+        }
+        if (interview_status === "PENDING") {
+          interview_status = final_result === "DISQUALIFIED" ? "FAILED" : "PASSED";
+        }
+      }
+
+      // Compute current_step (1-4) using snapshots to avoid TS narrowing
+      const fResult = asResult(final_result);
+      const eStatus = asState(exam_status);
+      const iStatus = asState(interview_status);
+
+      if (fResult !== "PENDING") {
+        current_step = 4;
+        status = fResult === "QUALIFIED" ? "PASSED" : fResult === "WAITLISTED" ? "WAITLISTED" : "FAILED";
+      } else if (verification_status !== "PASSED") {
+        current_step = 1;
+        status = verification_status === "FAILED" ? "FAILED" : "PENDING";
+      } else if (eStatus === "PENDING") {
+        current_step = 2;
+        status = "PENDING";
+      } else if (eStatus === "FAILED") {
+        current_step = 4;
+        status = "FAILED";
+      } else if (iStatus === "PENDING") {
+        current_step = 3;
+        status = "PENDING";
+      } else if (iStatus === "PASSED") {
+        current_step = 4;
+        status = "PENDING";
+      } else {
+        current_step = 4;
+        status = "FAILED";
       }
     } else {
       if (application.status === "OFFICIALLY_ENROLLED") {
@@ -184,6 +251,10 @@ export async function trackApplication(req: Request, res: Response) {
       application_type,
       current_step,
       status,
+      verification_status,
+      exam_status,
+      interview_status,
+      final_result,
       complianceStatus: application.complianceStatus,
       scpAssessmentResult: application.scpProfile?.assessmentResult ?? null,
       firstName: application.learner.firstName,
@@ -340,7 +411,9 @@ export async function submitApplication(req: Request, res: Response) {
                            programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                            programType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
     const paddedId = String(learner.id).padStart(7, '0');
-    const trackingNumber = `${programAcronym}${yearPrefix}${paddedId}`;
+    const trackingNumber = isScp 
+      ? `ADM-${programAcronym}${yearPrefix}${paddedId}` 
+      : `ENR-${programAcronym}${yearPrefix}${paddedId}`;
 
     const application = await prisma.enrollmentApplication.create({
       data: {

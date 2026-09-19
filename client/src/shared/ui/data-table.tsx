@@ -29,6 +29,7 @@ interface DataTableColumnMeta {
   customSkeleton?: React.ReactNode;
   skeletonWidth?: string;
   skeletonShape?: SkeletonShape;
+  pin?: "left" | "right";
 }
 
 export interface DataTableProps<TData, TValue> {
@@ -165,10 +166,14 @@ function TableRowComponentInner<TData>(
               "first:pl-6 last:pr-6",
               meta?.className,
               isPinned ? "sticky bg-inherit z-10" : "",
-              isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
-              isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
+              isLeftPinned ? "shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+              isRightPinned ? "shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
             )}
-            style={{ width: cell.column.getSize() }}>
+            style={{ 
+              width: cell.column.getSize(),
+              left: isLeftPinned ? `${cell.column.getStart('left')}px` : undefined,
+              right: isRightPinned ? `${cell.column.getAfter('right')}px` : undefined,
+            }}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>
         );
@@ -221,12 +226,17 @@ export function DataTable<TData, TValue>({
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const leftPinned = columns[0]
-    ? getColumnIdentifier(columns[0])
-    : undefined;
-  const rightPinned = columns.length > 1
-    ? getColumnIdentifier(columns[columns.length - 1])
-    : undefined;
+    // Fallback to implicit first/last column pinning if no explicit pins are set
+    const explicitLeftPinned = columns.filter((c) => (c.meta as DataTableColumnMeta)?.pin === "left").map((c) => getColumnIdentifier(c)!);
+    const explicitRightPinned = columns.filter((c) => (c.meta as DataTableColumnMeta)?.pin === "right").map((c) => getColumnIdentifier(c)!);
+
+    const leftPinned = explicitLeftPinned.length > 0 
+      ? explicitLeftPinned 
+      : columns[0] ? [getColumnIdentifier(columns[0])!] : [];
+
+    const rightPinned = explicitRightPinned.length > 0
+      ? explicitRightPinned
+      : columns.length > 1 ? [getColumnIdentifier(columns[columns.length - 1])!] : [];
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -241,13 +251,17 @@ export function DataTable<TData, TValue>({
       externalOnRowSelectionChange ?? setInternalRowSelection,
     initialState: {
       columnPinning: {
-        left: leftPinned ? [leftPinned] : [],
-        right: rightPinned ? [rightPinned] : [],
+        left: leftPinned,
+        right: rightPinned,
       },
     },
     state: {
       sorting: externalSorting ?? internalSorting,
       rowSelection: externalRowSelection ?? internalRowSelection,
+      columnPinning: {
+        left: leftPinned,
+        right: rightPinned,
+      },
     },
   });
 
@@ -297,14 +311,16 @@ export function DataTable<TData, TValue>({
                         "first:pl-6 last:pr-6",
                         dense ? "h-8" : "h-11",
                         isPinned ? "z-30" : "z-20",
-                        isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
-                        isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+                        isLeftPinned ? "shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+                        isRightPinned ? "shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
                         meta?.headerClassName || meta?.className
                       )}
                       style={{
                         width: header.column.getSize(),
                         minWidth: header.column.columnDef.minSize,
                         maxWidth: header.column.columnDef.maxSize,
+                        left: isLeftPinned ? `${header.column.getStart('left')}px` : undefined,
+                        right: isRightPinned ? `${header.column.getAfter('right')}px` : undefined,
                       }}>
                       {header.isPlaceholder
                         ? null
@@ -342,9 +358,13 @@ export function DataTable<TData, TValue>({
                           dense ? "py-1.5 px-2" : "p-4",
                           "first:pl-6 last:pr-6",
                           isPinned ? "sticky bg-inherit z-10" : "",
-                          isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
-                          isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
-                        )}>
+                          isLeftPinned ? "shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+                          isRightPinned ? "shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
+                        )}
+                        style={{
+                          left: isLeftPinned ? `${column.getStart('left')}px` : undefined,
+                          right: isRightPinned ? `${column.getAfter('right')}px` : undefined,
+                        }}>
                         {meta?.customSkeleton ? (
                           meta.customSkeleton
                         ) : (
