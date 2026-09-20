@@ -275,9 +275,9 @@ export function DataTable<TData, TValue>({
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-  const delayedLoading = useDelayedLoading(loading, 200);
-  const showLoadingRows = loadingBehavior === "delayed" ? delayedLoading : loading;
-  const suppressEmptyDuringDelayedLoading = loadingBehavior === "delayed" && loading && !delayedLoading;
+  const delayedLoading = useDelayedLoading(loading, 400);
+  const showLoadingRows = delayedLoading;
+  const suppressEmptyDuringDelayedLoading = false;
 
   return (
     <div
@@ -350,7 +350,7 @@ export function DataTable<TData, TValue>({
                           ? "h-7 w-24 rounded-full"
                           : meta?.skeletonShape === "button"
                             ? "h-10 w-24 rounded-lg"
-                            : "h-5 w-full";
+                            : "h-5 w-3/4 max-w-[250px]";
                     return (
                       <TableCell
                         key={index}

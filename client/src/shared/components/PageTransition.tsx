@@ -32,7 +32,7 @@ export function PageTransition({ children, ...props }: PageTransitionProps) {
       animate="animate"
       exit="exit"
       transition={{
-        duration: motionPreferences.reduceMotion ? 0.16 : 0.4,
+        duration: 0,
         ease: "easeInOut",
       }}
       {...props}
