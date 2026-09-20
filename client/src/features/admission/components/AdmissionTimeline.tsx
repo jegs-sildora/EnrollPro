@@ -215,7 +215,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
               )}
               {s.step === 4 && isCompleted && (
                 <div className="mt-4">
-                  <Button onClick={handleProceed} className="w-full sm:w-auto font-bold uppercase bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button onClick={handleProceed} className="w-full font-bold uppercase bg-green-600 hover:bg-green-700 text-white ">
                     Enroll Now
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
@@ -227,7 +227,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
       })}
 
       <div className="flex justify-center pt-4">
-        <Button type="button" variant="outline" className="w-full font-bold sm:w-auto bg-green-600 text-white" onClick={onBack}>
+        <Button type="button" variant="outline" className="w-full font-bold bg-green-600 text-white hover:bg-green-700 hover:text-white" onClick={onBack}>
           Check Another Tracking Number
         </Button>
       </div>

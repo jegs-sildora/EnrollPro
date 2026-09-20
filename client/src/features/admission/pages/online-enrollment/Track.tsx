@@ -164,6 +164,28 @@ export default function TrackApplication({
     }
   }, []); // Only run once on mount
 
+  // Poll for updates every 3 seconds if we are tracking an application
+  useEffect(() => {
+    const trackingNumber = searchParams.get("trackingNumber");
+    if (!trackingNumber || !application) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get<ApplicationStatus>(
+          `/applications/track/${trackingNumber.trim().toUpperCase()}`,
+        );
+        // Compare with current state to avoid unnecessary re-renders
+        if (JSON.stringify(response.data) !== JSON.stringify(application)) {
+          setApplication(response.data);
+        }
+      } catch (e) {
+        // Silently ignore errors during polling (e.g. temporary network loss)
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [searchParams, application]);
+
   const handleBackToSearch = () => {
     setApplication(null);
     setError("");
@@ -254,7 +276,7 @@ export default function TrackApplication({
                 <Input
                   id="trackingNumber"
                   {...register("trackingNumber")}
-                  placeholder="e.g., STE20260000001"
+                  placeholder="Enter Tracking Number (e.g., ADM-STE20260000001)"
                   className="h-14 border-2 pl-12 text-lg font-bold uppercase"
                   autoComplete="off"
                 />

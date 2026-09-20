@@ -168,7 +168,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title={activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} ADMISSION OPEN` : "ADMISSION OPEN"}
+          title={activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} ADMISSION PORTAL` : "ADMISSION PORTAL"}
         />
 
         <main
