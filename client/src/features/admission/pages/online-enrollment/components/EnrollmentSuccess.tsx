@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ export default function EnrollmentSuccess({
   const [copied, setCopied] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { enrollOpenDate, enrollCloseDate } = useSettingsStore();
+  const navigate = useNavigate();
 
   const formattedDates = enrollOpenDate && enrollCloseDate
     ? `${format(new Date(enrollOpenDate), "MMMM d")} and ${format(new Date(enrollCloseDate), "MMMM d, yyyy")}`
@@ -129,12 +131,22 @@ export default function EnrollmentSuccess({
             </p>
           </div>
 
-          <div className="pt-10 border-t border-border/60 flex justify-center print:hidden">
+          <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
             <Button
               type="button"
-              className="w-full sm:w-full h-12 px-12 font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+              variant="outline"
+              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 border-primary text-primary hover:bg-primary/10 shadow-md uppercase"
               onClick={() => setShowConfirmModal(true)}>
               Back to Home
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 shadow-md uppercase"
+              onClick={() => {
+                navigate(`/track-application?trackingNumber=${trackingNumber}`);
+              }}>
+              Track Application
             </Button>
           </div>
         </CardContent>

@@ -307,15 +307,6 @@ export default function Apply() {
                         onBackHome={handleBackHome}
                       />
                     </motion.div>
-                  ) : !actionChoice ? (
-                    <motion.div
-                      key="intake-choice"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}>
-                      <AdmissionChoice onChoice={handleActionChoice} />
-                    </motion.div>
                   ) : !hasConsented ? (
                     <motion.div
                       key="privacy"
@@ -327,6 +318,15 @@ export default function Apply() {
                         formType="admission"
                         onAccept={handleAccept}
                       />
+                    </motion.div>
+                  ) : !actionChoice ? (
+                    <motion.div
+                      key="intake-choice"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}>
+                      <AdmissionChoice onChoice={handleActionChoice} />
                     </motion.div>
                   ) : (
                     <motion.div

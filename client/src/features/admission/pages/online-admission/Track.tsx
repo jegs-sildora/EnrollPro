@@ -373,7 +373,7 @@ export default function TrackApplication({
                   ? `${application.application_type} APPLICATION STATUS`
                   : "TRACK APPLICATION STATUS"}
               </CardTitle>
-              <CardDescription className="font-bold text-white/90">
+              <CardDescription className="font-bold text-white">
                 Enter the tracking number issued after submitting your admission or enrollment form.
               </CardDescription>
             </CardHeader>

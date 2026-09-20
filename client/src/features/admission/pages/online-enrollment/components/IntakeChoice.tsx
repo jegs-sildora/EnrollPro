@@ -13,26 +13,40 @@ import {
   ArrowRight,
   FileCheck,
   ClipboardList,
+  AlertCircle,
 } from "lucide-react";
+import { useSettingsStore } from "@/store/settings.slice";
 
 interface IntakeChoiceProps {
   onChoice: (choice: "NEW" | "RETURNING") => void;
 }
 
 export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
+  const { activeSchoolYearLabel } = useSettingsStore();
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-extrabold text-foreground uppercase">
-          Welcome to Online Enrollment
-        </h2>
-        <h3 className="text-foreground font-bold">
-          To begin, please select the appropriate learner category.
-        </h3>
+    <div className="max-w-5xl mx-auto p-4 md:p-0 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col items-center text-center gap-4">
+        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 font-extrabold text-blue-800 ring-1 ring-inset ring-blue-600/20 uppercase tracking-wide">
+          {activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} • ` : ""}ENROLLMENT ONGOING
+        </span>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground uppercase tracking-tight">
+          Official Learner Enrollment
+        </h1>
+        <p className="text-lg text-foreground font-bold max-w-4xl leading-relaxed">
+          For Regular Basic Education (BEC) entrants and officially Qualified SCP Applicants.
+        </p>
+        
+        <div className="mt-2 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm max-w-5xl text-left">
+          <AlertCircle className="h-5 w-5 shrink-0 text-blue-600 mt-0.5" />
+          <p className="text-sm font-bold leading-relaxed">
+            Important: Please ensure you have the student's 12-digit Learner Reference Number (LRN) and PSA Birth Certificate ready before starting.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

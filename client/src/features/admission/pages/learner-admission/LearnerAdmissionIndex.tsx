@@ -142,7 +142,7 @@ export default function LearnerAdmissionIndex() {
     activeTab === "SPECIAL_PROGRAM_IN_SPORTS" ? spsCapacity : null
 
   useEffect(() => {
-    setTitle("Learner Admission")
+    setTitle("SCP Admission")
     return () => setTitle(null)
   }, [setTitle])
 

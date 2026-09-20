@@ -1,59 +1,40 @@
-# Prompt for UI/UX Copywriting: DepEd Localization & Layman's Terms
+# Prompt for UI/UX Refactor: Enrollment Portal Hero Header
 
 ## Role & Context
-Act as a Frontend Developer. We are executing a strict copywriting and text-replacement pass on the `/track-application` portal for the Admission phase.
+Act as a Frontend Developer. We are refining the landing page of the public-facing `Online Enrollment Portal`. 
 
-Currently, the portal uses robotic, corporate-sounding system text (e.g., "Awaiting prior steps", "Document Verification"). We need to translate all UI text into standard DepEd (Department of Education) terminology and warm, layman's terms so parents and students can easily understand their exact status without needing to call the school.
+Currently, the header is a generic "WELCOME TO ONLINE ENROLLMENT". We need to upgrade this into a Contextual Hero Header that establishes the official DepEd enrollment period, assures Qualified SCP applicants they are in the right place, and reminds parents of the most critical prerequisite: the Learner Reference Number (LRN).
 
 ## Critical Directive
-Do NOT change any UI layouts, colors, or icons. This is purely a text/string replacement task. Update your state dictionaries to use the exact strings provided below.
+Utilize the existing design system typography tokens, badges, and spacing. Do not introduce custom CSS or new font scales. Transform the static text block into a structured, informative header.
 
-## 1. Hero Banner Copy (Dynamic Updates)
+## UI Component & Copywriting Requirements
 
-Replace the existing Hero Banner states with these localized, conversational strings:
+Please refactor the header section to match this structured layout:
 
-*   **If Step 1 is Active:**
-    *   *Title:* `SUBMISSION OF REQUIREMENTS`
-    *   *Subtitle:* `Please bring your physical documents (SF9/Report Card, PSA, etc.) to the school for checking.`
-*   **If Step 2 is Active:**
-    *   *Title:* `WAITING FOR TEST / AUDITION RESULTS`
-    *   *Subtitle:* `The committee is currently computing the scores from the admission test or audition.`
-*   **If Step 3 is Active:**
-    *   *Title:* `INTERVIEW PHASE`
-    *   *Subtitle:* `Waiting for the final evaluation from your parent-teacher interview.`
-*   **If Step 4 is Active (Terminal States):**
-    *   *Qualified Title:* `QUALIFIED FOR [PROGRAM NAME]`
-    *   *Waitlisted Title:* `WAITLISTED FOR [PROGRAM NAME]`
-    *   *Not Qualified Title:* `NOT QUALIFIED`
+### 1. Dynamic Status Badge (Top)
+*   Render a small, centered system Badge/Pill component above the main title.
+*   **Content:** It should dynamically query the active school year from the backend (e.g., `S.Y. 2026-2027 • ENROLLMENT ONGOING`).
+*   **Color:** Use a primary or success color (e.g., Blue or Green) to indicate the system is actively receiving enrollments.
 
-## 2. Timeline Stepper Copy (The 4 Steps)
+### 2. Main Title (H1)
+*   Replace "WELCOME TO ONLINE ENROLLMENT" with an official, authoritative title.
+*   **New Text:** `Official Learner Enrollment`
+*   **Styling:** Use the standard H1/Title typography token. Keep it centered.
 
-Replace the titles and dynamic subtexts in the vertical stepper with the following:
+### 3. Subtitle / Context (Lead Text)
+*   Replace the generic subtext with instructions that cover both Regular BEC and Qualified SCP learners.
+*   **New Text:** `For Regular Basic Education (BEC) entrants and officially Qualified SCP Applicants.`
+*   **Styling:** Use a muted/secondary text color with a readable medium font size.
 
-### Step 1: Checking of Requirements
-*(Replaces "Document Verification")*
-*   **Active Subtext:** "Please submit your SF9, PSA Birth Certificate, and other requirements to the assigned office."
-*   **Completed Subtext:** "All documents have been submitted and verified."
+### 4. Critical Prerequisite Warning (Information Alert)
+*   Directly below the subtitle (and above the two learner category cards), insert a standard small Information Alert banner or a highlighted helper text block. This prevents user drop-off during the form-filling process.
+*   **Icon:** Standard `Info` or `Alert` icon.
+*   **Text:** `Important: Please ensure you have the student's 12-digit Learner Reference Number (LRN) and PSA Birth Certificate ready before starting.`
 
-### Step 2: Admission Test / Audition
-*(Replaces "Examination / Audition")*
-*   **Upcoming (Locked) Subtext:** "Must submit and pass the documentary requirements first."
-*   **Active Subtext:** "Waiting for the scheduled test/audition or the release of results."
-*   **Completed Subtext:** "Passed the admission test/audition."
+### 5. Layout & Spacing
+*   Wrap the Badge, Title, and Subtitle in a flex-col container with a standard tight gap (`gap-2`).
+*   Apply a slightly larger bottom margin below the new Information Alert to separate the header clearly from the `Incoming` and `Continuing` action cards.
 
-### Step 3: Interview
-*(Replaces "Panel Interview")*
-*   **Upcoming (Locked) Subtext:** "Must pass the admission test/audition first." *(Replaces the robotic "Awaiting prior steps")*
-*   **Active Subtext:** "Waiting for the scheduled interview with the applicant and parents/guardians."
-*   **Completed Subtext:** "Interview completed."
 
-### Step 4: Final Screening Result
-*(Replaces "Final Admission Result")*
-*   **Upcoming (Locked) Subtext:** "Waiting for the official posting of qualified applicants."
-*   **Qualified (Green):** "Congratulations! You are officially qualified. Please proceed to the Online Enrollment Form."
-*   **Waitlisted (Yellow):** "Passed the screening, but placed on the waitlist due to limited slots."
-*   **Not Qualified (Red):** "Did not meet the cut-off. Please proceed to enroll in the Regular Basic Education (BEC) program."
-
-## 3. Empty States & Helpers
-*   **Search Placeholder:** Update the input placeholder to: `Enter Tracking Number (e.g., STE20260000001)`
-*   **Action Button (Inside Step 4):** Change `Proceed to Official Enrollment` to `Enroll Now` for brevity and action-orientation.
+MAKE THE UI FORMAT TO BE THE SAME WITH THE @AdmissionChoice.tsx FILE BUT ONLY THE HEADER.

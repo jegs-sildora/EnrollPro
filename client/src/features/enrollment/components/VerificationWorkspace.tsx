@@ -26,6 +26,7 @@ import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLab
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
@@ -151,6 +152,8 @@ function VerificationRow({ label, children, valueClassName }: { label: React.Rea
 export function VerificationWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const queryClient = useQueryClient();
+
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(35);
 
   const [processing, setProcessing] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
@@ -793,9 +796,12 @@ export function VerificationWorkspace() {
           </div>
         </div>
 
-        <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-background relative overflow-hidden">
           {/* LEFT PANE */}
-          <div className="w-[500px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
+          <div 
+            className="flex flex-col border-r border-border min-h-0 bg-card text-card-foreground flex-shrink-0 transition-[width] duration-75 ease-linear w-full md:w-auto relative z-10"
+            style={isDesktopViewport ? { width: `${panelPercentage}vw`, minWidth: '350px', maxWidth: '800px' } : undefined}
+          >
             <div className="border-b border-border bg-white shrink-0 flex flex-col w-full">
               {(() => {
                 const deficientCount = pendingVerifications.filter((app) => {
@@ -828,36 +834,56 @@ export function VerificationWorkspace() {
                   }
                 ] as const;
 
+                const isNarrow = isDesktopViewport && panelPercentage < 35;
+
                 return (
                   <div className={cn("grid h-10 w-full divide-x divide-gray-200", deficientCount > 0 ? "grid-cols-4" : "grid-cols-3")}>
                     {metrics.map((m) => {
                       const isActive = activeTab === m.key;
+                      let Icon = Clock;
+                      if (m.key === "PENDING") Icon = Clock;
+                      if (m.key === "READY") Icon = CheckCircle2;
+                      if (m.key === "INCOMPLETE") Icon = AlertTriangle;
+                      if (m.key === "CANCELLED") Icon = XCircle;
                       return (
-                        <button
-                          key={m.key}
-                          onClick={() => {
-                            setActiveTab(m.key as VerificationTab);
-                            setSelectedAppId(null);
-                          }}
-                          className={cn(
-                            "relative flex items-center justify-between px-3 h-full transition-colors uppercase font-bold z-10",
-                            isActive
-                              ? "text-primary-foreground bg-primary"
-                              : "text-foreground hover:bg-gray-50"
-                          )}
-                        >
-                          {isActive && (
-                            <motion.div
-                              layoutId="verification-active-pill"
-                              className="absolute inset-0 bg-primary"
-                              transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                            />
-                          )}
-                          <span className="truncate relative z-20 text-xs">{m.title}</span>
-                          <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-sm text-primary-foreground relative z-20">
-                            {m.value}
-                          </span>
-                        </button>
+                        <TooltipProvider key={m.key} delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => {
+                                  setActiveTab(m.key as VerificationTab);
+                                  setSelectedAppId(null);
+                                }}
+                                className={cn(
+                                  "relative flex items-center justify-center sm:justify-between px-3 h-full transition-colors uppercase font-bold z-10",
+                                  isActive
+                                    ? "text-primary-foreground bg-primary"
+                                    : "text-foreground hover:bg-gray-50"
+                                )}
+                              >
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="verification-active-pill"
+                                    className="absolute inset-0 bg-primary"
+                                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                                  />
+                                )}
+                                <span className={cn("truncate relative z-20 text-xs hidden sm:block", isNarrow && "hidden")}>{m.title}</span>
+                                <Icon className={cn("w-4 h-4 relative z-20 block sm:hidden", isNarrow && "sm:block")} />
+                                <span className={cn(
+                                  "shrink-0 rounded-full bg-primary text-sm text-primary-foreground relative z-20 font-bold", 
+                                  isNarrow || isActive ? "ml-1.5 px-1.5 py-0.5" : "hidden sm:inline-flex ml-1 px-1.5 py-0.5",
+                                  (!isNarrow && !isActive) && "hidden sm:inline-flex"
+                                )}>
+                                  {m.value}
+                                </span>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className={cn("font-bold uppercase", !isNarrow && "sm:hidden")}>
+                              {m.title} ({m.value})
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       );
                     })}
                   </div>
@@ -934,8 +960,16 @@ export function VerificationWorkspace() {
             </div>
           </div>
 
+          {/* DRAG HANDLE */}
+          <div
+            onMouseDown={startResizingRight}
+            className="hidden md:flex w-[12px] -ml-[6px] -mr-[6px] cursor-col-resize z-50 hover:bg-primary/20 transition-all items-center justify-center group bg-transparent shrink-0"
+          >
+            <div className="h-12 w-1.5 rounded-full bg-border group-hover:bg-primary/60 transition-colors" />
+          </div>
+
           {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground relative z-0">
             {selectedApp ? (
               <>
                 {/* STICKY HEADER */}

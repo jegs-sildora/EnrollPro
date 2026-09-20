@@ -50,7 +50,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
   const steps: StepDefinition[] = [
     {
       step: 1,
-      title: "Checking of Requirements",
+      title: "Submission & Checking of Requirements",
       pending: "Please submit your SF9, PSA Birth Certificate, and other requirements to the assigned office.",
       passed: "All documents have been submitted and verified.",
       failed: "Requirements did not pass verification.",
@@ -169,7 +169,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
                     isSkipped ? "border bg text-foreground line-through" :
                       isFailed ? "border-red-500 bg-red-500 text-white" :
                         isWaitlisted ? "border-yellow-500 bg-yellow-500 text-white" :
-                          isActive ? "border-amber-500 text-amber-500" :
+                          isActive ? "border-blue-500 text-blue-500" :
                             "border-bg text-foreground"
                 )}
               >
@@ -183,7 +183,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
             <div className={cn(
               "flex-1 flex flex-col gap-1 rounded-xl p-4 border shadow-sm",
               isCompleted ? "border-green-500 bg-card" :
-              isActive ? "border-amber-500 bg-amber-50/50 dark:bg-amber-900/10" : "bg-card",
+              isActive ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/10" : "bg-card",
               isSkipped && "opacity-60 bg/30"
             )}>
               <h4 className={cn("text-xl font-extrabold uppercase",
@@ -191,7 +191,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
                   isSkipped ? "text-foreground line-through" :
                     isFailed ? "text-red-700 dark:text-red-400" :
                       isWaitlisted ? "text-yellow-700 dark:text-yellow-400" :
-                        isActive ? "text-amber-700 dark:text-amber-400" :
+                        isActive ? "text-blue-700 dark:text-blue-400" :
                           "text-foreground"
               )}>
                 {s.title}
@@ -205,7 +205,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
                   isCompleted ? "text-green-600 dark:text-green-500" :
                     isFailed ? "text-red-600 dark:text-red-500" :
                       isWaitlisted ? "text-yellow-600 dark:text-yellow-500" :
-                        isActive ? "text-amber-600 dark:text-amber-500" :
+                        isActive ? "text-blue-600 dark:text-blue-500" :
                           "text-foreground"
                 )}>
                   {isCompleted ? s.passed : isFailed ? s.failed : isWaitlisted ? s.waitlisted : s.pending}
@@ -227,7 +227,7 @@ export default function AdmissionTimeline({ application, onBack }: AdmissionTime
       })}
 
       <div className="flex justify-center pt-4">
-        <Button type="button" variant="outline" className="w-full font-bold bg-green-600 text-white hover:bg-green-700 hover:text-white" onClick={onBack}>
+        <Button type="button" variant="outline" className="w-full font-bold bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white" onClick={onBack}>
           Check Another Tracking Number
         </Button>
       </div>

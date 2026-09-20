@@ -771,7 +771,7 @@ function AppSidebar() {
                       <NavItem
                         to="/learner-admission"
                         icon={CheckCircle2}
-                        label="Learner Admission"
+                        label="SCP Admission"
                         pathname={pathname}
                       />
                       <NavItem

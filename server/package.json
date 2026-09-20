@@ -14,6 +14,7 @@
     "db:seed-psgc": "tsx src/scripts/seed-psgc.ts",
     "db:wipe": "tsx prisma/seeds/wipe-everything.ts",
     "db:wipe-enrollment": "tsx prisma/seeds/wipe-enrollment.ts",
+    "db:wipe-scp": "tsx prisma/seeds/wipe-scp-applicants.ts",
     "db:seed-info": "tsx prisma/seeds/task-01-seed.ts",
     "db:wipe-info": "tsx prisma/seeds/task-01-wipe.ts",
     "db:seed-eosy-mock": "tsx prisma/seeds/seed_eosy_mock.ts",

@@ -7,12 +7,12 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { sileo } from "sileo";
 import { isAxiosError } from "axios";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/shared/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -136,7 +136,7 @@ export function WalkInEncodePanel() {
   const queryClient = useQueryClient();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
-  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(80, { centered: true });
 
   const userRoles = useAuthStore((s) => s.user?.roles ?? []);
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
@@ -424,40 +424,33 @@ export function WalkInEncodePanel() {
   const isCompleteDocs = hasSf9 && hasPsa;
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
         <Button className="h-11 px-6 text-base font-bold gap-2">
           <Plus className="w-5 h-5" />
           Encode Walk-In
         </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="right"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        className="p-0 flex flex-col h-full border-l overflow-visible w-full sm:w-auto sm:max-w-none"
+      </DialogTrigger>
+      <DialogContent
+        aria-describedby={undefined}
+        className="p-0 flex flex-col h-[90vh] overflow-visible w-[95vw] sm:w-full max-w-none transition-[width] duration-75 ease-linear"
         style={
-          isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
+          isDesktopViewport ? { width: `${panelPercentage}vw`, maxWidth: '90vw', minWidth: '40vw' } : undefined
         }
       >
-        {/* Resize Handle — hidden on mobile */}
         <div
-          onMouseDown={startResizing}
-          className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+          onMouseDown={startResizingRight}
+          className="absolute right-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group"
+        >
           <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
         </div>
-
+        <DialogHeader className="px-6 py-4 border-b bg-muted/30 shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold uppercase tracking-tight">
+            <Plus className="w-6 h-6 text-primary" />
+            Walk-In Learner Enrollment
+          </DialogTitle>
+        </DialogHeader>
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-          {/* ─── Header ─── */}
-          <SheetHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold text-left space-y-0 mt-0">
-            <div>
-              <SheetTitle className="text-base sm:text-lg text-primary-foreground font-bold uppercase flex items-center gap-2">
-                Walk-In Learner Enrollment
-              </SheetTitle>
-            </div>
-          </SheetHeader>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0" autoComplete="off">
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-muted/10">
@@ -1510,7 +1503,7 @@ export function WalkInEncodePanel() {
             </form>
           </Form>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

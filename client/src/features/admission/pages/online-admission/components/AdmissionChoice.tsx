@@ -7,26 +7,49 @@ import {
   CardDescription,
 } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight, ClipboardList, FileCheck, Search, FileSignature } from "lucide-react";
+import { ArrowRight, ClipboardList, FileCheck, Search, FileSignature, AlertCircle } from "lucide-react";
+import { useSettingsStore } from "@/store/settings.slice";
 
 interface AdmissionChoiceProps {
   onChoice: (choice: "APPLY" | "TRACK") => void;
 }
 
 export function AdmissionChoice({ onChoice }: AdmissionChoiceProps) {
+  const { activeSchoolYearLabel, steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
+
+  const activePrograms = [
+    steEnabled ? "STE" : null,
+    spaEnabled ? "SPA" : null,
+    spsEnabled ? "SPS" : null,
+  ].filter(Boolean) as string[];
+
+  const programListFormatter = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
+  const formattedPrograms = programListFormatter.format(activePrograms);
+  const programText = formattedPrograms ? ` (${formattedPrograms})` : "";
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-extrabold text-foreground uppercase">
-          Welcome to Online Admission
-        </h2>
-        <h3 className="text-foreground font-bold">
-          To begin, please select an action below.
-        </h3>
+    <div className="max-w-5xl mx-auto p-4 md:p-0 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col items-center text-center gap-4">
+        <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 font-extrabold text-emerald-800 ring-1 ring-inset ring-emerald-600/20 uppercase tracking-wide">
+          {activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} • ` : ""}ADMISSIONS OPEN
+        </span>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground uppercase tracking-tight">
+          Special Curricular Programs (SCP) Admission
+        </h1>
+        <p className="text-lg text-foreground font-bold max-w-4xl leading-relaxed">
+          Welcome! This portal is exclusively for incoming Grade 7 applicants applying for specialized programs{programText}.
+        </p>
+        
+        <div className="mt-2 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 shadow-sm max-w-5xl text-left">
+          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+          <p className="text-sm font-bold leading-relaxed">
+            Note: If you are enrolling in the Regular Basic Education (BEC) program, do not apply here. Please wait for the official enrollment period.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -45,7 +68,7 @@ export function AdmissionChoice({ onChoice }: AdmissionChoiceProps) {
               Submit Admission Form
             </CardTitle>
             <CardDescription className="text-foreground leading-relaxed">
-              Apply for Special Curricular Programs (STE, SPA, SPS, etc.)
+              Apply for Special Curricular Programs{programText}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">

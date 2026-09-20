@@ -78,6 +78,7 @@ import {
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 
 interface SectionSummary {
   id: number;
@@ -583,6 +584,7 @@ const createDraftPlacement = (
 };
 export function SectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(45);
 
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
@@ -1331,7 +1333,12 @@ export function SectioningWorkspace() {
         <Card className="flex flex-col flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
           <div className="flex flex-1 min-h-0 w-full overflow-hidden">
             {/* LEFT PANE: UNSECTIONED POOL */}
-            <div className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground">
+            <div
+              className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground sm:flex-none transition-[width] duration-75 ease-linear"
+              style={
+                isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
+              }
+            >
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -1659,8 +1666,17 @@ export function SectioningWorkspace() {
               </div>
             </div>
 
+            {/* DRAG HANDLE */}
+            <div
+              onMouseDown={startResizingRight}
+              className="relative w-[1px] cursor-col-resize z-50 hover:bg-primary/50 transition-colors hidden sm:flex flex-col justify-center group shrink-0 bg-border"
+            >
+              <div className="absolute left-[-3px] right-[-3px] top-0 bottom-0 z-10" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-primary/70 shadow-sm z-20" />
+            </div>
+
             {/* RIGHT PANE: AVAILABLE SECTIONS */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground">
+            <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground min-w-0">
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
