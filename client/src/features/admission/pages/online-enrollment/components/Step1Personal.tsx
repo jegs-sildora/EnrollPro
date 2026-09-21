@@ -242,7 +242,7 @@ export default function Step1Personal() {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setValue("studentPhoto", reader.result as string);
+      setValue("studentPhoto", reader.result as string, { shouldValidate: true, shouldDirty: true });
     };
     reader.readAsDataURL(file);
   };
@@ -250,7 +250,7 @@ export default function Step1Personal() {
   const clearPhoto = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setValue("studentPhoto", undefined);
+    setValue("studentPhoto", "", { shouldValidate: true, shouldDirty: true });
   };
 
   return (
@@ -355,7 +355,7 @@ export default function Step1Personal() {
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
           <Label className="text-base leading-tight font-bold self-start md:self-center">
-            Learner's Photo
+            Learner's Photo <span className="text-destructive">*</span>
           </Label>
           <div className="relative group">
             <UserPhoto
@@ -391,6 +391,7 @@ export default function Step1Personal() {
               title="Upload learner's photo"
             />
           </div>
+          <AnimatedError error={errors.studentPhoto?.message as string} />
         </div>
 
         {/* NAME FIELDS COLUMN */}

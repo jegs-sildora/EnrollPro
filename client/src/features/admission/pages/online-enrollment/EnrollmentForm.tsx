@@ -48,7 +48,7 @@ const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
   gradeLevel: "7",
   isScpApplication: false,
   scpType: undefined,
-  studentPhoto: undefined,
+  studentPhoto: "",
   lastName: "",
   firstName: "",
   middleName: "",
@@ -360,13 +360,37 @@ export default function EnrollmentForm({
     }
   };
 
-  const handleAttemptSubmit = async () => {
-    const isValid = await trigger();
-    if (isValid) {
-      void handleSubmit(onSubmit)();
-    } else {
-      scrollToTopInstant();
-    }
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(
+        '[aria-invalid="true"], .border-destructive, .animated-error'
+      ) as HTMLElement;
+
+      if (errorElement) {
+        if (
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA" ||
+          errorElement.tagName === "BUTTON"
+        ) {
+          errorElement.focus({ preventScroll: true });
+        }
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        scrollToTopInstant();
+      }
+    }, 100);
+  };
+
+  const handleAttemptSubmit = () => {
+    handleSubmit(
+      () => {
+        setIsConfirmDialogOpen(true);
+      },
+      () => {
+        scrollToFirstError();
+      }
+    )();
   };
 
   const onSubmit = async (data: EnrollmentFormData) => {
@@ -736,7 +760,7 @@ export default function EnrollmentForm({
           )}
 
           <FormProvider {...methods}>
-            <form onSubmit={(e) => { e.preventDefault(); setIsConfirmDialogOpen(true); }} className="space-y-16">
+            <form onSubmit={(e) => { e.preventDefault(); handleAttemptSubmit(); }} className="space-y-16">
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
@@ -791,7 +815,7 @@ export default function EnrollmentForm({
                           }}
                           className="underline underline-offset-2 text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm"
                           aria-label={`Fix field ${issue.fieldLabel}`}>
-                          {issue.fieldLabel}: {issue.message}
+                          {issue.fieldPath === "studentPhoto" ? issue.message : `${issue.fieldLabel}: ${issue.message}`}
                         </a>
                       </li>
                     ))}
@@ -875,7 +899,10 @@ export default function EnrollmentForm({
         }}
         title="Confirm Enrollment Submission"
         description="You are about to submit this online enrollment form. Please confirm all details are complete and accurate."
-        onConfirm={handleAttemptSubmit}
+        onConfirm={() => {
+          setIsConfirmDialogOpen(false);
+          void handleSubmit(onSubmit)();
+        }}
         confirmText="Yes, Submit Application"
         loading={isSubmitting}
         variant="primary"

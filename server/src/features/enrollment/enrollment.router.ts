@@ -13,7 +13,7 @@ import {
   revertApplication,
   completeRequirements,
 } from "./enrollment.controller.js";
-import { getScpApplicants, bulkSaveScpAssessments, lockScpRoster } from "./controllers/enrollment.scp.controller.js";
+import { getScpApplicants, bulkSaveScpAssessments, lockScpRoster, unlockScpRoster } from "./controllers/enrollment.scp.controller.js";
 import { saveScpAssessment } from "./enrollment.controller.js";
 import { validate } from "../../middleware/validate.js";
 import { directEncodeWalkInSchema, scpAssessmentUpdateSchema } from "@enrollpro/shared";
@@ -110,6 +110,13 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   lockScpRoster,
+);
+
+router.post(
+  "/scp-applicants/unlock-roster",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  unlockScpRoster,
 );
 
 router.patch(

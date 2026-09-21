@@ -146,12 +146,16 @@ export default function Step2Family() {
             cityMunicipality: data.currentAddress?.cityMunicipality ?? "",
             barangay: data.currentAddress?.barangay ?? "",
           }}
-          onChange={(field, val) =>
-            setValue(`currentAddress.${field}`, val, {
-              shouldValidate: val !== "",
-              shouldDirty: true,
-            })
-          }
+          onChange={(updates) => {
+            Object.entries(updates).forEach(([field, val]) => {
+              if (val !== undefined) {
+                setValue(`currentAddress.${field}` as any, val, {
+                  shouldValidate: val !== "",
+                  shouldDirty: true,
+                });
+              }
+            });
+          }}
           errors={{
             region: errors.currentAddress?.region?.message,
             province: errors.currentAddress?.province?.message,
@@ -241,12 +245,16 @@ export default function Step2Family() {
                       data.permanentAddress?.cityMunicipality ?? "",
                     barangay: data.permanentAddress?.barangay ?? "",
                   }}
-                  onChange={(field, val) =>
-                    setValue(`permanentAddress.${field}`, val, {
-                      shouldValidate: val !== "",
-                      shouldDirty: true,
-                    })
-                  }
+                  onChange={(updates) => {
+                    Object.entries(updates).forEach(([field, val]) => {
+                      if (val !== undefined) {
+                        setValue(`permanentAddress.${field}` as any, val, {
+                          shouldValidate: val !== "",
+                          shouldDirty: true,
+                        });
+                      }
+                    });
+                  }}
                   errors={{
                     region: errors.permanentAddress?.region?.message,
                     province: errors.permanentAddress?.province?.message,

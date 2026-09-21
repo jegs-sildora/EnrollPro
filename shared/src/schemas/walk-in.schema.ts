@@ -63,7 +63,9 @@ export const directEncodeWalkInSchema = z.object({
     .max(2, "Select no more than 2 back subjects")
     .default([]),
   sectionId: z.coerce.number().optional().nullable(),
-  studentPhoto: z.string().optional(),
+  studentPhoto: z.string({
+    message: "Learner photo is required.",
+  }).min(1, "Learner photo is required."),
   addressStreet: z.string().optional(),
   addressSitio: z.string().optional(),
   addressRegion: z.string().min(1, "Region is required"),

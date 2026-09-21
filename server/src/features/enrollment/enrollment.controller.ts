@@ -12,6 +12,7 @@ import {
   getPreviousJhsGradeNumber,
   type AtlasSubjectCatalogItem,
 } from "../integration/atlas-subject-catalog.service.js";
+import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 
 interface StaffIntakeContext {
   schoolYearId: number;
@@ -774,7 +775,7 @@ export async function directEncodeWalkIn(
             firstName,
             lastName,
             middleName: middleName || null,
-            birthdate: new Date(birthdate),
+            birthdate: normalizeDateToUtcNoon(new Date(birthdate)),
             sex: sex,
             motherTongue: motherTongue,
             studentPhoto: studentPhoto,
@@ -788,7 +789,7 @@ export async function directEncodeWalkIn(
             firstName,
             lastName,
             middleName: middleName || null,
-            birthdate: new Date(birthdate),
+            birthdate: normalizeDateToUtcNoon(new Date(birthdate)),
             sex: sex,
             isIpCommunity: false,
             isLearnerWithDisability: false,

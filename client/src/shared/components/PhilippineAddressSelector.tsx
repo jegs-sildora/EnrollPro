@@ -19,10 +19,7 @@ export interface PhilippineAddressErrors {
 
 interface PhilippineAddressSelectorProps {
   value: PhilippineAddressValue;
-  onChange: (
-    field: "region" | "province" | "cityMunicipality" | "barangay",
-    value: string,
-  ) => void;
+  onChange: (updates: Partial<PhilippineAddressValue>) => void;
   errors?: PhilippineAddressErrors;
   required?: boolean;
 }
@@ -141,28 +138,36 @@ export function PhilippineAddressSelector({
     setSelectedProvince(null);
     setSelectedCity(null);
     // Clear downstream form values
-    onChange("region", name.toUpperCase());
-    onChange("province", "");
-    onChange("cityMunicipality", "");
-    onChange("barangay", "");
+    onChange({
+      region: name.toUpperCase(),
+      province: "",
+      cityMunicipality: "",
+      barangay: "",
+    });
   }
 
   function handleProvinceChange(name: string, code: string) {
     setSelectedProvince({ code, name: name.toUpperCase() });
     setSelectedCity(null);
-    onChange("province", name.toUpperCase());
-    onChange("cityMunicipality", "");
-    onChange("barangay", "");
+    onChange({
+      province: name.toUpperCase(),
+      cityMunicipality: "",
+      barangay: "",
+    });
   }
 
   function handleCityChange(name: string, code: string) {
     setSelectedCity({ code, name: name.toUpperCase() });
-    onChange("cityMunicipality", name.toUpperCase());
-    onChange("barangay", "");
+    onChange({
+      cityMunicipality: name.toUpperCase(),
+      barangay: "",
+    });
   }
 
   function handleBarangayChange(name: string, _code: string) {
-    onChange("barangay", name.toUpperCase());
+    onChange({
+      barangay: name.toUpperCase(),
+    });
   }
 
   const requiredMark = required ? (

@@ -19,23 +19,42 @@ async function main() {
 
     const activeSchoolYearId = settings.activeSchoolYearId;
 
-    const { count } = await prisma.enrollmentApplication.deleteMany({
+    const applicantTypes = [
+      "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+      "SPECIAL_PROGRAM_IN_THE_ARTS",
+      "SPECIAL_PROGRAM_IN_SPORTS",
+      "SPECIAL_PROGRAM_IN_JOURNALISM",
+      "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+      "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
+    ] as const;
+
+    const scpApplications = await prisma.enrollmentApplication.findMany({
       where: {
         schoolYearId: activeSchoolYearId,
-        applicantType: {
-          in: [
-            "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-            "SPECIAL_PROGRAM_IN_THE_ARTS",
-            "SPECIAL_PROGRAM_IN_SPORTS",
-            "SPECIAL_PROGRAM_IN_JOURNALISM",
-            "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-            "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
-          ]
-        }
+        applicantType: { in: applicantTypes as any }
+      },
+      select: { learnerId: true }
+    });
+
+    const learnerIds = scpApplications.map(app => app.learnerId);
+
+    if (learnerIds.length === 0) {
+      console.log("✅ No SCP applicants found for the active school year.");
+      return;
+    }
+
+    const { count: appCount } = await prisma.enrollmentApplication.deleteMany({
+      where: {
+        schoolYearId: activeSchoolYearId,
+        applicantType: { in: applicantTypes as any }
       }
     });
 
-    console.log(`✅ Successfully wiped ${count} SCP applicants for the active school year (ID: ${activeSchoolYearId}).`);
+    const { count: learnerCount } = await prisma.learner.deleteMany({
+      where: { id: { in: learnerIds } }
+    });
+
+    console.log(`✅ Successfully wiped ${appCount} SCP applications and ${learnerCount} Learner records for the active school year (ID: ${activeSchoolYearId}).`);
   } catch (error) {
     console.error("❌ Failed to wipe SCP applicants:", error);
   }

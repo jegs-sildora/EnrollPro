@@ -1502,19 +1502,18 @@ export function StudentDetailPanel({
                     cityMunicipality: profileForm.cityMunicipality,
                     barangay: profileForm.barangay,
                   }}
-                  onChange={(field, val) => {
+                  onChange={(updates) => {
                     setProfileForm((prev) => ({
                       ...prev,
-                      [field]: val,
-                      ...(field === "region"
-                        ? { province: "", cityMunicipality: "", barangay: "" }
-                        : {}),
-                      ...(field === "province"
-                        ? { cityMunicipality: "", barangay: "" }
-                        : {}),
-                      ...(field === "cityMunicipality" ? { barangay: "" } : {}),
+                      ...updates,
                     }));
-                    setErrors((prev) => ({ ...prev, [field]: "" }));
+                    setErrors((prev) => {
+                      const newErrors = { ...prev };
+                      Object.keys(updates).forEach((k) => {
+                        delete newErrors[k as keyof typeof newErrors];
+                      });
+                      return newErrors;
+                    });
                   }}
                 />
               </div>

@@ -135,7 +135,7 @@ export default function EnrollmentSuccess({
             <Button
               type="button"
               variant="outline"
-              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 border-primary text-primary hover:bg-primary/10 shadow-md uppercase"
+              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 border-primary text-primary hover:bg-primary/10 hover:text-primary shadow-md uppercase"
               onClick={() => setShowConfirmModal(true)}>
               Back to Home
             </Button>

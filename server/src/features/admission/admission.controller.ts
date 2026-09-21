@@ -14,6 +14,7 @@ import {
   type TrackingCurrentStep,
 } from "@enrollpro/shared";
 import { isPublicEnrollmentOpen, isScpAdmissionOpen } from "../settings/enrollment-gate.service.js";
+import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 
 interface ActiveEnrollmentSetting {
   activeSchoolYearId: number
@@ -336,7 +337,8 @@ export async function submitApplication(req: Request, res: Response) {
       });
     }
 
-    const birthdateDate = data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate);
+    const parsedDate = data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate);
+    const birthdateDate = normalizeDateToUtcNoon(parsedDate);
 
     const learnerData = {
       firstName: data.firstName,
@@ -513,7 +515,7 @@ export async function submitApplication(req: Request, res: Response) {
                 create: {
                   grade5GeneralAverage: scpData.grade5GeneralAverage,
                   underSpecialScienceCurriculum:
-                    scpData.underSpecialScienceCurriculum,
+                    scpData.underSpecialScienceCurriculum ?? false,
                   artsSpecialization: scpData.artsSpecialization || null,
                   chosenSport: scpData.chosenSport || null,
                 },
@@ -576,7 +578,8 @@ export async function updateExistingApplication(req: Request, res: Response) {
     }
 
     // Update Learner details
-    const birthdateDate = data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate);
+    const parsedDate = data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate);
+    const birthdateDate = normalizeDateToUtcNoon(parsedDate);
     await prisma.learner.update({
       where: { id: existingApplication.learnerId },
       data: {

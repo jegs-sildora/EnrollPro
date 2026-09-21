@@ -99,7 +99,9 @@ export const previousSchoolSchema = z.object({
 // ─── Application Submit ────────────────────────────────
 export const applicationSubmitSchema = z
   .object({
-    studentPhoto: z.string().optional().nullable(),
+    studentPhoto: z.string({
+      message: "Learner photo is required.",
+    }).min(1, "Learner photo is required."),
     hasNoLrn: z.boolean().default(false),
     lrn: z
       .string()
@@ -302,7 +304,9 @@ export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
       const decimalPart = value.toString().split(".")[1];
       return !decimalPart || decimalPart.length <= 2;
     }, "General Average must not exceed two decimal places."),
-  underSpecialScienceCurriculum: z.boolean().default(false),
+  underSpecialScienceCurriculum: z.boolean({
+    message: "Please specify if you are under the Special Science Curriculum in Elementary.",
+  }).optional().nullable(),
   artsSpecialization: z.enum([
     "CREATIVE_WRITING",
     "MEDIA_AND_VISUAL_ARTS",
@@ -311,6 +315,14 @@ export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
   ]).optional().nullable(),
   chosenSport: z.string().trim().optional().nullable(),
 }).superRefine((data, ctx) => {
+  if (data.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && data.underSpecialScienceCurriculum == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["underSpecialScienceCurriculum"],
+      message: "Please specify if you are under the Special Science Curriculum in Elementary.",
+    });
+  }
+
   if (data.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !data.artsSpecialization) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

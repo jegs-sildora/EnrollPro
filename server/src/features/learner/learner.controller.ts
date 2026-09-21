@@ -16,6 +16,7 @@ import {
   parseStoredGrades,
   getHistoricalReportedGrades,
 } from "./grade-utils.js";
+import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 
 function computeSchoolAcronym(schoolName: string): string {
   return schoolName
@@ -622,7 +623,7 @@ export async function checkDuplicateLearner(req: Request, res: Response) {
       return;
     }
 
-    const parsedBirthdate = birthdate ? new Date(birthdate) : undefined;
+    const parsedBirthdate = birthdate ? normalizeDateToUtcNoon(new Date(birthdate)) : undefined;
 
     const matchConditions = new Array();
     if (lrn && lrn.trim().length === 12) {

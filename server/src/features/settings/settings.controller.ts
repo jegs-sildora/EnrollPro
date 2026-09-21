@@ -32,8 +32,11 @@ function broadcastSettingsInvalidation(): void {
 
 interface SettingsSnapshot {
   steEnabled?: boolean
+  steCapacity?: number | null
   spaEnabled?: boolean
+  spaCapacity?: number | null
   spsEnabled?: boolean
+  spsCapacity?: number | null
   enableHomogeneousSections?: boolean
   homogeneousSectionCount?: number
   heterogeneousRoundRobin?: boolean
@@ -48,10 +51,16 @@ function parseSettingsSnapshot(value: unknown): SettingsSnapshot | null {
   return {
     steEnabled:
       typeof source.steEnabled === "boolean" ? source.steEnabled : undefined,
+    steCapacity:
+      typeof source.steCapacity === "number" ? source.steCapacity : undefined,
     spaEnabled:
       typeof source.spaEnabled === "boolean" ? source.spaEnabled : undefined,
+    spaCapacity:
+      typeof source.spaCapacity === "number" ? source.spaCapacity : undefined,
     spsEnabled:
       typeof source.spsEnabled === "boolean" ? source.spsEnabled : undefined,
+    spsCapacity:
+      typeof source.spsCapacity === "number" ? source.spsCapacity : undefined,
     enableHomogeneousSections:
       typeof source.enableHomogeneousSections === "boolean"
         ? source.enableHomogeneousSections
@@ -159,8 +168,11 @@ export async function getPublicSettings(
       schoolHeadName: settings.schoolHeadName,
       schoolHeadTitle: settings.schoolHeadTitle,
       steEnabled: snapshotSettings?.steEnabled ?? settings.steEnabled,
+      steCapacity: snapshotSettings?.steCapacity ?? settings.steCapacity,
       spaEnabled: snapshotSettings?.spaEnabled ?? settings.spaEnabled,
+      spaCapacity: snapshotSettings?.spaCapacity ?? settings.spaCapacity,
       spsEnabled: snapshotSettings?.spsEnabled ?? settings.spsEnabled,
+      spsCapacity: snapshotSettings?.spsCapacity ?? settings.spsCapacity,
       steRosterLocked: contextSy?.steRosterLocked ?? false,
       spaRosterLocked: contextSy?.spaRosterLocked ?? false,
       spsRosterLocked: contextSy?.spsRosterLocked ?? false,

@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shar
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, X } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -615,7 +616,7 @@ export function WalkInEncodePanel() {
                         <div className="grid grid-cols-[120px_1fr] gap-6">
                           {/* LEFT COLUMN: Photo */}
                           <div className="flex flex-col space-y-2 items-center">
-                            <FormLabel className="font-bold capitalize whitespace-nowrap">Learner's Photo</FormLabel>
+                            <FormLabel className="font-bold capitalize whitespace-nowrap">Learner's Photo <span className="text-destructive">*</span></FormLabel>
                             <div className="relative group w-[120px]">
                               <UserPhoto
                                 photo={form.watch("studentPhoto")}
@@ -633,7 +634,7 @@ export function WalkInEncodePanel() {
                                 }>
                                 {form.watch("studentPhoto") && (
                                   <button
-                                    onClick={(e) => { e.preventDefault(); form.setValue("studentPhoto", undefined, { shouldDirty: true }); }}
+                                    onClick={(e) => { e.preventDefault(); form.setValue("studentPhoto", "", { shouldDirty: true }); }}
                                     type="button"
                                     className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
                                     <X strokeWidth={3} className="w-3 h-3" />
@@ -664,6 +665,7 @@ export function WalkInEncodePanel() {
                                 }}
                               />
                             </div>
+                            <AnimatedError error={form.formState.errors.studentPhoto?.message as string} />
                           </div>
 
                           {/* RIGHT COLUMN: Dense Data Grid */}
@@ -913,11 +915,11 @@ export function WalkInEncodePanel() {
                           cityMunicipality: form.watch("addressCity") || "",
                           barangay: form.watch("addressBarangay") || "",
                         }}
-                        onChange={(f, val) => {
-                          if (f === "cityMunicipality") form.setValue("addressCity", val, { shouldValidate: val !== "", shouldDirty: true });
-                          else if (f === "region") form.setValue("addressRegion", val, { shouldValidate: val !== "", shouldDirty: true });
-                          else if (f === "province") form.setValue("addressProvince", val, { shouldValidate: val !== "", shouldDirty: true });
-                          else if (f === "barangay") form.setValue("addressBarangay", val, { shouldValidate: val !== "", shouldDirty: true });
+                        onChange={(updates) => {
+                          if (updates.region !== undefined) form.setValue("addressRegion", updates.region, { shouldValidate: updates.region !== "", shouldDirty: true });
+                          if (updates.province !== undefined) form.setValue("addressProvince", updates.province, { shouldValidate: updates.province !== "", shouldDirty: true });
+                          if (updates.cityMunicipality !== undefined) form.setValue("addressCity", updates.cityMunicipality, { shouldValidate: updates.cityMunicipality !== "", shouldDirty: true });
+                          if (updates.barangay !== undefined) form.setValue("addressBarangay", updates.barangay, { shouldValidate: updates.barangay !== "", shouldDirty: true });
                         }}
                         errors={{
                           region: form.formState.errors.addressRegion?.message as string,

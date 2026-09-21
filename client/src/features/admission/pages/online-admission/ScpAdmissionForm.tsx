@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import { scpAdmissionSubmitSchema } from "@enrollpro/shared/schemas";
@@ -98,7 +98,7 @@ const getEmptyValues = (intakeChoice: "NEW" | "RETURNING"): Partial<ScpFormData>
   isPrivacyConsentGiven: false,
   learnerType: intakeChoice === "RETURNING" ? "RETURNING" : "NEW_ENROLLEE",
   gradeLevel: "7",
-  studentPhoto: null,
+  studentPhoto: "",
   hasNoLrn: false,
   lrn: "",
   lastName: "",
@@ -130,7 +130,7 @@ const getEmptyValues = (intakeChoice: "NEW" | "RETURNING"): Partial<ScpFormData>
   transferCertificateNo: "",
   lastSchoolType: "PUBLIC",
   grade5GeneralAverage: undefined,
-  underSpecialScienceCurriculum: false,
+  underSpecialScienceCurriculum: null,
   artsSpecialization: null,
   chosenSport: "",
 });
@@ -154,11 +154,13 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   });
 
 
+  const hasSubmittedRef = useRef(false);
+
   // Watch form values and save to sessionStorage
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       // Only save if a specific field was changed by the user
-      if (name) {
+      if (name && !hasSubmittedRef.current) {
         // Exclude studentPhoto from persistence since File objects can't be serialized cleanly
         const { studentPhoto, ...rest } = value;
         sessionStorage.setItem(SCP_FORM_STATE_KEY, JSON.stringify(rest));
@@ -188,7 +190,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   const discardScpDraft = useCallback(() => {
     form.reset(getEmptyValues(intakeChoice) as ScpFormData);
     sessionStorage.removeItem(SCP_FORM_STATE_KEY);
-    setValue("studentPhoto", null);
+    setValue("studentPhoto", "");
   }, [form, intakeChoice, setValue]);
 
   useUnsavedChanges({
@@ -223,7 +225,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setValue("studentPhoto", reader.result as string, { shouldDirty: true });
+      setValue("studentPhoto", reader.result as string, { shouldValidate: true, shouldDirty: true });
     };
     reader.readAsDataURL(file);
   };
@@ -299,7 +301,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
   useEffect(() => {
     if (selectedScp !== "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
-      setValue("underSpecialScienceCurriculum", false, { shouldValidate: true });
+      setValue("underSpecialScienceCurriculum", null, { shouldValidate: true });
     }
     if (selectedScp !== "SPECIAL_PROGRAM_IN_THE_ARTS") {
       setValue("artsSpecialization", null, { shouldValidate: true });
@@ -312,6 +314,10 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   const onSubmit = async (data: ScpFormData) => {
     try {
       const response = await api.post("/applications", data);
+      
+      hasSubmittedRef.current = true;
+      sessionStorage.removeItem(SCP_FORM_STATE_KEY);
+      
       onSuccess(response.data);
     } catch (error) {
       console.error(error);
@@ -319,13 +325,37 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
     }
   };
 
-  const handleAttemptSubmit = async () => {
-    const isFormValid = await trigger();
-    if (isFormValid) {
-      setIsConfirmDialogOpen(true);
-    } else {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    }
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(
+        '[aria-invalid="true"], .border-destructive, .animated-error'
+      ) as HTMLElement;
+
+      if (errorElement) {
+        if (
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA" ||
+          errorElement.tagName === "BUTTON"
+        ) {
+          errorElement.focus({ preventScroll: true });
+        }
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+    }, 100);
+  };
+
+  const handleAttemptSubmit = () => {
+    handleSubmit(
+      () => {
+        setIsConfirmDialogOpen(true);
+      },
+      () => {
+        scrollToFirstError();
+      }
+    )();
   };
 
   const confirmSubmit = () => {
@@ -517,7 +547,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
                     <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
                       <Label className="text-base leading-tight font-bold self-start md:self-center">
-                        Learner's Photo
+                        Learner's Photo <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative group">
                         <UserPhoto
@@ -543,7 +573,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                               onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
-                                setValue("studentPhoto", null, { shouldDirty: true });
+                                setValue("studentPhoto", "", { shouldValidate: true, shouldDirty: true });
                               }}
                               className="absolute top-1 right-1 p-1 bg-primary text-primary-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20"
                               aria-label="Remove learner photo"
@@ -560,6 +590,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                           title="Upload learner's photo"
                         />
                       </div>
+                      <AnimatedError error={errors.studentPhoto?.message as string} />
                     </div>
 
                     <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -761,10 +792,10 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                                 province: field.value?.province,
                                 region: field.value?.region,
                               }}
-                              onChange={(addressField, addressValue) => {
-                                setValue(`currentAddress.${addressField}`, addressValue, {
-                                  shouldValidate: addressValue !== "",
-                                  shouldDirty: true,
+                              onChange={(updates) => {
+                                field.onChange({
+                                  ...field.value,
+                                  ...updates,
                                 });
                               }}
                               errors={{
@@ -959,7 +990,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                           }}
                           className="underline underline-offset-2 text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm"
                         >
-                          {issue.fieldLabel}: {issue.message}
+                          {issue.fieldPath === "studentPhoto" ? issue.message : `${issue.fieldLabel}: ${issue.message}`}
                         </a>
                       </li>
                     ))}

@@ -16,6 +16,7 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { DataTable } from "@/shared/ui/data-table"
+import { TableRow, TableCell } from "@/shared/ui/table"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
@@ -96,13 +97,13 @@ function getComputedResult(
 
 function ResultBadge({ result }: { result: AssessmentResult }) {
   if (result === "QUALIFIED") {
-    return <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">Qualified</Badge>
+    return <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 text-base">Qualified</Badge>
   }
   if (result === "WAITLISTED") {
-    return <Badge className="border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50">Waitlisted</Badge>
+    return <Badge className="border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50 text-base">Waitlisted</Badge>
   }
-  if (result === "DISQUALIFIED") return <Badge variant="destructive">Disqualified</Badge>
-  return <Badge variant="secondary" className="bg text-foreground">Pending</Badge>
+  if (result === "DISQUALIFIED") return <Badge variant="destructive" className="text-base">Disqualified</Badge>
+  return <Badge variant="secondary" className="bg text-foreground text-base">Pending</Badge>
 }
 
 export default function LearnerAdmissionIndex() {
@@ -118,7 +119,8 @@ export default function LearnerAdmissionIndex() {
   const [localAssessmentFilter, setLocalAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
-
+  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false)
+  
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
     if (steEnabled) programs.push({ id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE Applicants" })
@@ -171,6 +173,22 @@ export default function LearnerAdmissionIndex() {
     }
   })
 
+  const unlockMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/enrollment/scp-applicants/unlock-roster", { program: activeTab })
+      return data
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings:public"] })
+      await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
+      sileo.success({ title: "Roster Unlocked", description: "The roster has been unlocked." })
+      setIsUnlockModalOpen(false)
+    },
+    onError: () => {
+      sileo.error({ title: "Unlocking Failed", description: "Could not unlock the roster." })
+    }
+  })
+
   const updateMutation = useMutation({
     mutationFn: async (payload: BulkAssessmentPayload) => {
       const { data } = await api.patch<{ message: string; updatedCount: number }>(
@@ -189,25 +207,19 @@ export default function LearnerAdmissionIndex() {
     },
   })
 
-  const filteredApplicants = useMemo(() => {
-    const search = searchTerm.trim().toLocaleLowerCase()
-    const result = applicants.filter((application) => {
-      const fullName = [application.learner.firstName, application.learner.middleName, application.learner.lastName]
-        .filter(Boolean).join(" ").toLocaleLowerCase()
-      const matchesSearch = !search || fullName.includes(search) || application.learner.lrn?.includes(search) === true
-      const edit = edits[application.id]
-      const res = edit
+  const rankedApplicants = useMemo(() => {
+    const withBaseResult = applicants.map((app) => {
+      const edit = edits[app.id]
+      const baseResult = edit
         ? getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus)
-        : application.scpProfile?.assessmentResult ?? "PENDING"
-      return matchesSearch && (assessmentFilter === "all" || res === assessmentFilter)
+        : app.scpProfile?.assessmentResult ?? "PENDING"
+      return { ...app, baseResult }
     })
-    
+
     const statusOrder: Record<AssessmentResult, number> = { QUALIFIED: 1, WAITLISTED: 2, PENDING: 3, DISQUALIFIED: 4 }
-    return result.sort((a, b) => {
-      const statusA = (a.scpProfile?.assessmentResult as AssessmentResult) ?? "PENDING"
-      const statusB = (b.scpProfile?.assessmentResult as AssessmentResult) ?? "PENDING"
-      if (statusOrder[statusA] !== statusOrder[statusB]) {
-        return statusOrder[statusA] - statusOrder[statusB]
+    const sorted = withBaseResult.sort((a, b) => {
+      if (statusOrder[a.baseResult] !== statusOrder[b.baseResult]) {
+        return statusOrder[a.baseResult] - statusOrder[b.baseResult]
       }
       const scoreA = a.scpProfile?.writtenExamScore ?? 0
       const scoreB = b.scpProfile?.writtenExamScore ?? 0
@@ -218,7 +230,66 @@ export default function LearnerAdmissionIndex() {
       const gwaB = b.scpProfile?.grade5GeneralAverage ?? 0
       return gwaB - gwaA
     })
-  }, [applicants, assessmentFilter, edits, searchTerm])
+
+    let qualifiedCount = 0;
+    return sorted.map((app) => {
+      let finalResult = app.baseResult;
+      if (finalResult === "QUALIFIED") {
+        qualifiedCount++;
+        if (maxSlots !== null && maxSlots !== undefined && qualifiedCount > maxSlots) {
+          finalResult = "WAITLISTED";
+        }
+      }
+      return { ...app, finalResult }
+    })
+  }, [applicants, edits, maxSlots])
+
+  const filteredApplicants = useMemo(() => {
+    const search = searchTerm.trim().toLocaleLowerCase()
+    const result = rankedApplicants.filter((application) => {
+      const fullName = [application.learner.firstName, application.learner.middleName, application.learner.lastName]
+        .filter(Boolean).join(" ").toLocaleLowerCase()
+      const matchesSearch = !search || fullName.includes(search) || application.learner.lrn?.includes(search) === true
+      const res = application.finalResult
+      return matchesSearch && (assessmentFilter === "all" || res === assessmentFilter)
+    })
+    
+    const firstDisqualifiedIndex = result.findIndex((app: any) => {
+      return app.finalResult === "DISQUALIFIED"
+    })
+
+    const resultWithHeaders = [...result]
+
+    if (firstDisqualifiedIndex !== -1) {
+      resultWithHeaders.splice(firstDisqualifiedIndex, 0, {
+        isCustomHeaderRow: true,
+        headerType: "UNQUALIFIED",
+        id: -2,
+      } as any)
+    }
+
+    const hasQualifying = result.some((app: any) => {
+      return app.finalResult !== "DISQUALIFIED"
+    })
+
+    if (hasQualifying) {
+      resultWithHeaders.unshift({
+        isCustomHeaderRow: true,
+        headerType: "QUALIFYING",
+        id: -1,
+      } as any)
+    }
+
+    let currentGroupNumber = 0;
+    return resultWithHeaders.map(app => {
+      if ((app as any).isCustomHeaderRow) {
+        currentGroupNumber = 0;
+        return app;
+      }
+      currentGroupNumber++;
+      return { ...app, calculatedRowNumber: currentGroupNumber };
+    }) as Application[];
+  }, [applicants, assessmentFilter, edits, searchTerm, activeTab])
 
   const paginatedApplicants = useMemo(() => {
     const start = (page - 1) * limit
@@ -226,7 +297,7 @@ export default function LearnerAdmissionIndex() {
   }, [filteredApplicants, limit, page])
 
   const hasChanges = useMemo(() => {
-    return Object.keys(edits).some((id) => {
+    const hasEdits = Object.keys(edits).some((id) => {
       const edit = edits[Number(id)]
       const app = applicants.find((a) => a.id === Number(id))
       if (!app) return false
@@ -238,13 +309,17 @@ export default function LearnerAdmissionIndex() {
         edit.interviewStatus !== initial.interviewStatus
       )
     })
-  }, [edits, applicants])
+    
+    if (hasEdits) return true;
+    
+    return rankedApplicants.some(app => app.scpProfile?.assessmentResult !== app.finalResult)
+  }, [edits, applicants, rankedApplicants])
 
   const canLockRoster = useMemo(() => {
     if (applicants.length === 0) return false
     return applicants.every((app) => {
       const result = app.scpProfile?.assessmentResult
-      return result === "QUALIFIED" || result === "DISQUALIFIED"
+      return result === "QUALIFIED" || result === "DISQUALIFIED" || result === "WAITLISTED"
     })
   }, [applicants])
 
@@ -271,7 +346,7 @@ export default function LearnerAdmissionIndex() {
       maxSize: 70,
       meta: { className: "text-center", headerClassName: "text-center", pin: "left" },
       header: "#",
-      cell: ({ row }) => (page - 1) * limit + row.index + 1,
+      cell: ({ row }) => (row.original as any).calculatedRowNumber || ((page - 1) * limit + row.index + 1),
     },
     {
       id: "applicant",
@@ -350,11 +425,11 @@ export default function LearnerAdmissionIndex() {
           <div className="flex items-center justify-center gap-2 py-2">
             <Select
               value={currentState.writtenExamStatus}
-              disabled={currentState.requirementsStatus !== "PASSED"}
+              disabled={application.scpProfile?.requirementsStatus !== "PASSED"}
               onValueChange={(val: ScpAssessmentState) => updateEdit(application, { writtenExamStatus: val })}
             >
               <SelectTrigger className="w-36 font-bold uppercase">
-                {currentState.requirementsStatus === "FAILED" ? (
+                {application.scpProfile?.requirementsStatus !== "PASSED" ? (
                   <span className="text-foreground">---</span>
                 ) : (
                   <SelectValue placeholder="Status" />
@@ -366,7 +441,7 @@ export default function LearnerAdmissionIndex() {
                 <SelectItem value="FAILED">Failed</SelectItem>
               </SelectContent>
             </Select>
-            {currentState.requirementsStatus === "PASSED" && currentState.writtenExamStatus !== "PENDING" && (
+            {application.scpProfile?.requirementsStatus === "PASSED" && currentState.writtenExamStatus !== "PENDING" && (
               <Input
                 type="text"
                 inputMode="numeric"
@@ -400,11 +475,11 @@ export default function LearnerAdmissionIndex() {
           <div className="flex justify-center py-2">
             <Select
               value={currentState.interviewStatus}
-              disabled={currentState.writtenExamStatus !== "PASSED"}
+              disabled={application.scpProfile?.requirementsStatus !== "PASSED" || application.scpProfile?.writtenExamStatus !== "PASSED" || currentState.writtenExamStatus !== "PASSED"}
               onValueChange={(val: ScpAssessmentState) => updateEdit(application, { interviewStatus: val })}
             >
               <SelectTrigger className="w-36 font-bold uppercase">
-                {currentState.requirementsStatus === "FAILED" || currentState.writtenExamStatus === "FAILED" ? (
+                {application.scpProfile?.requirementsStatus !== "PASSED" || application.scpProfile?.writtenExamStatus !== "PASSED" || currentState.writtenExamStatus !== "PASSED" ? (
                   <span className="text-foreground">---</span>
                 ) : (
                   <SelectValue placeholder="Status" />
@@ -426,27 +501,43 @@ export default function LearnerAdmissionIndex() {
       minSize: 170,
       meta: { className: "text-center", headerClassName: "text-center", pin: "right" },
       header: "FINAL RESULT",
-      cell: ({ row, table }) => {
-        const application = row.original
-        const { edits } = table.options.meta as { edits: Record<number, EditState> }
-        const edit = edits[application.id]
-        const result = edit
-          ? getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus)
-          : application.scpProfile?.assessmentResult ?? "PENDING"
+      cell: ({ row }) => {
+        const result = (row.original as any).finalResult ?? "PENDING"
         return <div className="flex justify-center py-2 uppercase"><ResultBadge result={result} /></div>
       },
     },
   ], [page, limit])
 
   const handleSaveBulk = () => {
-    const updates = Object.entries(edits).map(([applicationId, edit]) => ({
-      applicationId: Number(applicationId),
-      requirementsStatus: edit.requirementsStatus,
-      writtenExamStatus: edit.writtenExamStatus,
-      writtenExamScore: edit.writtenExamScore === "" ? null : Number(edit.writtenExamScore),
-      interviewStatus: edit.interviewStatus,
-      assessmentResult: getComputedResult(edit.requirementsStatus, edit.writtenExamStatus, edit.interviewStatus),
-    } satisfies AssessmentUpdate))
+    const updatesMap = new Map<number, AssessmentUpdate>();
+    
+    Object.entries(edits).forEach(([idStr, edit]) => {
+      const applicationId = Number(idStr)
+      const rankedApp = rankedApplicants.find(a => a.id === applicationId)
+      updatesMap.set(applicationId, {
+        applicationId,
+        requirementsStatus: edit.requirementsStatus,
+        writtenExamStatus: edit.writtenExamStatus,
+        writtenExamScore: edit.writtenExamScore === "" ? null : Number(edit.writtenExamScore),
+        interviewStatus: edit.interviewStatus,
+        assessmentResult: rankedApp?.finalResult ?? "PENDING",
+      } satisfies AssessmentUpdate)
+    })
+
+    rankedApplicants.forEach(app => {
+      if (app.scpProfile?.assessmentResult !== app.finalResult && !updatesMap.has(app.id)) {
+        updatesMap.set(app.id, {
+          applicationId: app.id,
+          requirementsStatus: app.scpProfile?.requirementsStatus ?? "PENDING",
+          writtenExamStatus: app.scpProfile?.writtenExamStatus ?? "PENDING",
+          writtenExamScore: app.scpProfile?.writtenExamScore ?? null,
+          interviewStatus: app.scpProfile?.interviewStatus ?? "PENDING",
+          assessmentResult: app.finalResult,
+        })
+      }
+    })
+    
+    const updates = Array.from(updatesMap.values())
 
     const hasInvalidScore = updates.some(({ writtenExamScore }) =>
       writtenExamScore !== null && (!Number.isFinite(writtenExamScore) || writtenExamScore < 0 || writtenExamScore > 100),
@@ -570,11 +661,9 @@ export default function LearnerAdmissionIndex() {
             
             {isRosterLocked ? (
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="secondary" className="h-12 whitespace-nowrap font-bold" onClick={() => sileo.info({ title: "Export Qualified List", description: "This feature is not yet available in the demo." })}>
-                  Export Qualified List
-                </Button>
-                <Button className="h-12 whitespace-nowrap font-bold" onClick={() => sileo.info({ title: "Push to Ready for Sectioning", description: "This feature is not yet available in the demo." })}>
-                  Push to Ready for Sectioning
+                <Button className="h-12 whitespace-nowrap font-bold bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setIsUnlockModalOpen(true)}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Unlock Roster
                 </Button>
               </div>
             ) : (
@@ -585,8 +674,7 @@ export default function LearnerAdmissionIndex() {
                     Save Results
                   </Button>
                 ) : canLockRoster && (
-                  <Button onClick={() => setIsLockModalOpen(true)} className="h-12 whitespace-nowrap font-bold shrink-0 bg-red-600 hover:bg-red-700 text-white">
-                    <Lock className="mr-2 h-4 w-4" />
+                  <Button onClick={() => setIsLockModalOpen(true)} className="h-12 whitespace-nowrap font-bold shrink-0 bg-primary text-primary-foreground">
                     Finalize & Lock Roster
                   </Button>
                 )}
@@ -600,7 +688,34 @@ export default function LearnerAdmissionIndex() {
                 key={activeTab}
                 columns={columns}
                 data={paginatedApplicants}
-                getRowId={(row) => row.id.toString()}
+                getRowId={(row) => row.id ? row.id.toString() : Math.random().toString()}
+                isHeaderRow={(row) => (row as any).isCustomHeaderRow === true}
+                renderHeaderRow={(row, columnsCount) => {
+                  const headerType = (row as any).headerType;
+                  const programLabel = activePrograms.find(p => p.id === activeTab)?.label?.toUpperCase() || "";
+                  
+                  if (headerType === "QUALIFYING") {
+                    const headerText = isRosterLocked
+                      ? `TOP ${maxSlots || ""} QUALIFIED ${programLabel}`
+                      : `QUALIFYING ${programLabel}`;
+                      
+                    return (
+                      <TableRow className="bg-emerald-50 hover:bg-emerald-50" key={`qualifying-header-${(row as any).id}`}>
+                        <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-emerald-800 uppercase border-y border-emerald-200">
+                          {headerText}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  }
+                  
+                  return (
+                    <TableRow className="bg-red-50 hover:bg-red-50" key={`unqualified-header-${(row as any).id}`}>
+                      <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-red-800 uppercase border-y border-red-200">
+                        UNQUALIFIED {programLabel}
+                      </TableCell>
+                    </TableRow>
+                  )
+                }}
                 meta={{ edits, updateEdit, isRosterLocked }}
                 loading={isFetching}
                 loadingBehavior="delayed"
@@ -619,11 +734,23 @@ export default function LearnerAdmissionIndex() {
       <ConfirmationModal
         open={isLockModalOpen}
         onOpenChange={setIsLockModalOpen}
-        title="Finalize Official Roster?"
-        description="You are about to lock the admission results for this program. This action will seal the assessment table and prevent further modifications."
-        confirmText="Confirm & Lock"
-        onConfirm={() => lockMutation.mutate()}
+        title="Finalize & Lock Roster"
+        description={`Are you sure you want to finalize the ${activePrograms.find(p => p.id === activeTab)?.label} roster? This will lock the current list and prevent further modifications until unlocked.`}
+        confirmText="Finalize & Lock"
         variant="danger"
+        onConfirm={() => lockMutation.mutate()}
+        loading={lockMutation.isPending}
+      />
+
+      <ConfirmationModal
+        open={isUnlockModalOpen}
+        onOpenChange={setIsUnlockModalOpen}
+        title="Unlock Roster"
+        description={`Are you sure you want to unlock the ${activePrograms.find(p => p.id === activeTab)?.label} roster? This will allow modifications to be made again.`}
+        confirmText="Unlock Roster"
+        variant="primary"
+        onConfirm={() => unlockMutation.mutate()}
+        loading={unlockMutation.isPending}
       />
     </div>
   )

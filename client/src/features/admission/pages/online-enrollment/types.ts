@@ -83,7 +83,7 @@ export const EnrollmentFormSchema = z
       .optional(),
 
     // Section 3: Personal Information
-    studentPhoto: z.string().optional(),
+    studentPhoto: z.string().min(1, "Learner photo is required"),
     lastName: z.string().min(1, "Learner's last name is required."),
     firstName: z.string().min(1, "Learner's first name is required."),
     middleName: z.string().optional(),

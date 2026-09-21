@@ -265,3 +265,29 @@ export const lockScpRoster = async (req: Request, res: Response): Promise<void> 
   // We could broadcastSettingsInvalidation here if needed, but the frontend will rely on useMutation invalidation or SSE.
   res.json({ message: "Roster successfully locked." })
 }
+
+export const unlockScpRoster = async (req: Request, res: Response): Promise<void> => {
+  const schoolYearId = req.schoolYearId
+  if (!schoolYearId) {
+    throw new AppError(400, "Active school year not found.")
+  }
+
+  const { program } = z.object({ program: supportedProgramSchema }).parse(req.body)
+  const enabledPrograms = await getEnabledPrograms()
+  
+  if (!enabledPrograms.includes(program)) {
+    throw new AppError(400, "The selected Special Curricular Program is not active.")
+  }
+
+  const updateData: any = {}
+  if (program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") updateData.steRosterLocked = false
+  if (program === "SPECIAL_PROGRAM_IN_THE_ARTS") updateData.spaRosterLocked = false
+  if (program === "SPECIAL_PROGRAM_IN_SPORTS") updateData.spsRosterLocked = false
+
+  await prisma.schoolYear.update({
+    where: { id: schoolYearId },
+    data: updateData
+  })
+
+  res.json({ message: "Roster successfully unlocked." })
+}
