@@ -317,9 +317,9 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
       throw new AppError(400, "Application belongs to a different school year.")
     }
 
-    const program = scpProfile.application.assignedProgram
+    const program = scpProfile.application.applicantType
     if (!program) {
-      throw new AppError(400, "Applicant does not have an assigned program.")
+      throw new AppError(400, "Applicant does not have an applied program.")
     }
 
     // 1. Mark as forfeited
@@ -333,7 +333,7 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
       where: {
         application: {
           schoolYearId,
-          assignedProgram: program,
+          applicantType: program,
           status: { notIn: ["REJECTED", "WITHDRAWN", "DROPPED"] }
         },
         assessmentResult: "WAITLISTED",
@@ -354,4 +354,68 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
   })
 
   res.json({ message: "Slot successfully forfeited." })
+}
+
+export const restoreScpApplication = async (req: Request, res: Response): Promise<void> => {
+  const schoolYearId = req.schoolYearId
+  if (!schoolYearId) {
+    throw new AppError(400, "Active school year not found.")
+  }
+
+  const applicationId = parseInt(req.params.applicationId as string, 10)
+  if (isNaN(applicationId)) {
+    throw new AppError(400, "Invalid application ID.")
+  }
+
+  const resultStatus = await prisma.$transaction(async (tx) => {
+    const scpProfile = await tx.enrollmentScpProfile.findUnique({
+      where: { applicationId },
+      include: { application: true }
+    })
+
+    if (!scpProfile || scpProfile.assessmentResult !== "FORFEITED") {
+      throw new AppError(400, "Only forfeited applicants can be restored.")
+    }
+
+    if (scpProfile.application.schoolYearId !== schoolYearId) {
+      throw new AppError(400, "Application belongs to a different school year.")
+    }
+
+    const program = scpProfile.application.applicantType
+    if (!program) {
+      throw new AppError(400, "Applicant does not have an applied program.")
+    }
+
+    // 1. Get Capacity
+    const settings = await tx.schoolSetting.findFirst()
+    let maxSlots = 0
+    if (program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") maxSlots = settings?.steCapacity ?? 0
+    else if (program === "SPECIAL_PROGRAM_IN_THE_ARTS") maxSlots = settings?.spaCapacity ?? 0
+    else if (program === "SPECIAL_PROGRAM_IN_SPORTS") maxSlots = settings?.spsCapacity ?? 0
+
+    // 2. Count current occupancy (QUALIFIED applicants)
+    const occupancy = await tx.enrollmentScpProfile.count({
+      where: {
+        application: {
+          schoolYearId,
+          applicantType: program,
+          status: { in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING"] },
+        },
+        assessmentResult: "QUALIFIED",
+      },
+    })
+
+    // 3. Evaluate capacity and determine new status
+    const newStatus = occupancy < maxSlots ? "QUALIFIED" : "WAITLISTED"
+
+    // 4. Update the applicant
+    await tx.enrollmentScpProfile.update({
+      where: { id: scpProfile.id },
+      data: { assessmentResult: newStatus }
+    })
+
+    return newStatus
+  })
+
+  res.json({ message: "Application restored successfully.", status: resultStatus })
 }

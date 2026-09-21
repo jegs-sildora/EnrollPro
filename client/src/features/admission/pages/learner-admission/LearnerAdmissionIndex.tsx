@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 
@@ -125,7 +126,8 @@ export default function LearnerAdmissionIndex() {
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false)
   const [isForfeitModalOpen, setIsForfeitModalOpen] = useState(false)
   const [forfeitTarget, setForfeitTarget] = useState<{ id: number; name: string } | null>(null)
-  
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false)
+  const [restoreTarget, setRestoreTarget] = useState<{ id: number; name: string } | null>(null)
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
     if (steEnabled) programs.push({ id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE Applicants" })
@@ -207,6 +209,26 @@ export default function LearnerAdmissionIndex() {
     },
     onError: () => {
       sileo.error({ title: "Forfeiture Failed", description: "Could not forfeit the slot." })
+    }
+  })
+
+  const restoreMutation = useMutation({
+    mutationFn: async (applicationId: number) => {
+      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/restore`)
+      return data
+    },
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.publicSettings })
+      await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
+      sileo.success({ 
+        title: "Application Restored", 
+        description: `Application restored. The learner is now ${data.status === 'QUALIFIED' ? 'Qualified' : 'Waitlisted'}.` 
+      })
+      setIsRestoreModalOpen(false)
+      setRestoreTarget(null)
+    },
+    onError: () => {
+      sileo.error({ title: "Restore Failed", description: "Could not restore the application." })
     }
   })
 
@@ -340,7 +362,7 @@ export default function LearnerAdmissionIndex() {
     if (applicants.length === 0) return false
     return applicants.every((app) => {
       const result = app.scpProfile?.assessmentResult
-      return result === "QUALIFIED" || result === "DISQUALIFIED" || result === "WAITLISTED"
+      return result === "QUALIFIED" || result === "DISQUALIFIED" || result === "WAITLISTED" || result === "FORFEITED"
     })
   }, [applicants])
 
@@ -406,7 +428,7 @@ export default function LearnerAdmissionIndex() {
         const application = row.original
         const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
-        if (isRosterLocked) return <div className="text-center font-semibold py-2">{currentState.requirementsStatus === "PASSED" ? "Passed" : currentState.requirementsStatus === "FAILED" ? "Failed" : "Pending"}</div>
+        if (isRosterLocked) return <div className="text-center font-bold py-2 uppercase">{currentState.requirementsStatus === "PASSED" ? "Passed" : currentState.requirementsStatus === "FAILED" ? "Failed" : "Pending"}</div>
         return (
           <div className="flex justify-center py-2">
             <Select
@@ -437,9 +459,11 @@ export default function LearnerAdmissionIndex() {
         const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
         if (isRosterLocked) return (
-          <div className="flex items-center justify-center gap-2 py-2 font-semibold">
-            <span>{currentState.writtenExamStatus === "PASSED" ? "Passed" : currentState.writtenExamStatus === "FAILED" ? "Failed" : "Pending"}</span>
-            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && <span className="text-foreground ml-2">Score: {currentState.writtenExamScore}</span>}
+          <div className="flex flex-col items-center justify-center py-2 font-bold uppercase leading-tight">
+            <span>{currentState.writtenExamStatus}</span>
+            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && currentState.writtenExamScore !== "" && (
+              <span className="text-foreground text-sm mt-0.5">SCORE: {currentState.writtenExamScore}</span>
+            )}
           </div>
         )
         return (
@@ -491,7 +515,7 @@ export default function LearnerAdmissionIndex() {
         const application = row.original
         const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
-        if (isRosterLocked) return <div className="text-center font-semibold py-2">{currentState.interviewStatus === "PASSED" ? "Passed" : currentState.interviewStatus === "FAILED" ? "Failed" : "Pending"}</div>
+        if (isRosterLocked) return <div className="text-center font-bold py-2 uppercase">{currentState.interviewStatus === "PASSED" ? "Passed" : currentState.interviewStatus === "FAILED" ? "Failed" : "Pending"}</div>
         return (
           <div className="flex justify-center py-2">
             <Select
@@ -550,11 +574,32 @@ export default function LearnerAdmissionIndex() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            {result === "FORFEITED" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-primary font-bold cursor-pointer"
+                    onClick={() => {
+                      setRestoreTarget({ id: application.id, name: `${application.learner.lastName}, ${application.learner.firstName}` })
+                      setIsRestoreModalOpen(true)
+                    }}
+                  >
+                    Restore Application
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )
       },
     },
-  ], [page, limit, setForfeitTarget, setIsForfeitModalOpen])
+  ], [page, limit, setForfeitTarget, setIsForfeitModalOpen, setRestoreTarget, setIsRestoreModalOpen])
 
   const handleSaveBulk = () => {
     const updatesMap = new Map<number, AssessmentUpdate>();
@@ -636,9 +681,9 @@ export default function LearnerAdmissionIndex() {
         {isRosterLocked && (
         <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
           <Info className="h-4 w-4 text-emerald-600" />
-          <AlertTitle>Official Roster Finalized and Locked</AlertTitle>
-          <AlertDescription>
-            {applicants.filter(a => a.scpProfile?.assessmentResult === "QUALIFIED").length} out of {maxSlots || "N/A"} filled. This roster is sealed.
+          <AlertTitle>Official List of Qualified Applicants</AlertTitle>
+          <AlertDescription className="text-sm">
+            All {maxSlots || "N/A"} slots are filled and the list is now final. If a student backs out, use the row menu to forfeit their slot and automatically promote a waitlisted applicant.
           </AlertDescription>
         </Alert>
       )}
@@ -709,8 +754,7 @@ export default function LearnerAdmissionIndex() {
             
             {isRosterLocked ? (
               <div className="flex items-center gap-2 shrink-0">
-                <Button className="h-12 whitespace-nowrap font-bold bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setIsUnlockModalOpen(true)}>
-                  <Lock className="mr-2 h-4 w-4" />
+                <Button className="h-12 whitespace-nowrap font-bold bg-primary text-primary-foreground" onClick={() => setIsUnlockModalOpen(true)}>
                   Unlock Roster
                 </Button>
               </div>
@@ -721,10 +765,30 @@ export default function LearnerAdmissionIndex() {
                     {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Results
                   </Button>
-                ) : canLockRoster && (
-                  <Button onClick={() => setIsLockModalOpen(true)} className="h-12 whitespace-nowrap font-bold shrink-0 bg-primary text-primary-foreground">
-                    Finalize & Lock Roster
-                  </Button>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-flex">
+                          <Button 
+                            onClick={() => setIsLockModalOpen(true)} 
+                            disabled={!canLockRoster}
+                            className={cn(
+                              "h-12 whitespace-nowrap font-bold shrink-0", 
+                              canLockRoster ? "bg-primary text-primary-foreground" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            )}
+                          >
+                            Finalize & Lock Roster
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!canLockRoster && (
+                        <TooltipContent>
+                          <p>All applicants must have a complete assessment result (e.g. Passed, Failed) before locking.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
             )}
@@ -745,7 +809,7 @@ export default function LearnerAdmissionIndex() {
                   if (headerType === "QUALIFYING") {
                     const headerText = isRosterLocked
                       ? `TOP ${maxSlots || ""} QUALIFIED ${programLabel}`
-                      : `QUALIFYING ${programLabel}`;
+                      : `${programLabel} UNDER SCREENING`;
                       
                     return (
                       <TableRow className="bg-emerald-50 hover:bg-emerald-50" key={`qualifying-header-${(row as any).id}`}>
@@ -810,6 +874,17 @@ export default function LearnerAdmissionIndex() {
         variant="danger"
         onConfirm={() => forfeitTarget && forfeitMutation.mutate(forfeitTarget.id)}
         loading={forfeitMutation.isPending}
+      />
+
+      <ConfirmationModal
+        open={isRestoreModalOpen}
+        onOpenChange={setIsRestoreModalOpen}
+        title="Restore Application?"
+        description="You are restoring this applicant to the active roster. Depending on current program capacity, they will be placed as either QUALIFIED (if slots are open) or WAITLISTED (if the quota is currently full)."
+        confirmText="Confirm Restore"
+        variant="primary"
+        onConfirm={() => restoreTarget && restoreMutation.mutate(restoreTarget.id)}
+        loading={restoreMutation.isPending}
       />
     </div>
   )
