@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/shared/lib/queryKeys"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ClipboardCheck, Loader2, Search, SlidersHorizontal, Info, Lock } from "lucide-react"
+import { ClipboardCheck, Loader2, Search, SlidersHorizontal, Info, Lock, MoreHorizontal } from "lucide-react"
 import { motion } from "motion/react"
 import { sileo } from "sileo"
 
@@ -22,11 +23,12 @@ import { Label } from "@/shared/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 
 type ScpProgram = "SCIENCE_TECHNOLOGY_AND_ENGINEERING" | "SPECIAL_PROGRAM_IN_THE_ARTS" | "SPECIAL_PROGRAM_IN_SPORTS"
-type AssessmentResult = "PENDING" | "QUALIFIED" | "WAITLISTED" | "DISQUALIFIED"
+type AssessmentResult = "PENDING" | "QUALIFIED" | "WAITLISTED" | "DISQUALIFIED" | "FORFEITED"
 
 interface ProgramTab { id: ScpProgram; label: string }
 interface Learner {
@@ -103,6 +105,7 @@ function ResultBadge({ result }: { result: AssessmentResult }) {
     return <Badge className="border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50 text-base">Waitlisted</Badge>
   }
   if (result === "DISQUALIFIED") return <Badge variant="destructive" className="text-base">Disqualified</Badge>
+  if (result === "FORFEITED") return <Badge variant="outline" className="border-gray-500 text-gray-700 bg-gray-50 text-base">Forfeited</Badge>
   return <Badge variant="secondary" className="bg text-foreground text-base">Pending</Badge>
 }
 
@@ -120,6 +123,8 @@ export default function LearnerAdmissionIndex() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false)
+  const [isForfeitModalOpen, setIsForfeitModalOpen] = useState(false)
+  const [forfeitTarget, setForfeitTarget] = useState<{ id: number; name: string } | null>(null)
   
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
@@ -163,7 +168,7 @@ export default function LearnerAdmissionIndex() {
       return data
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["settings:public"] })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.publicSettings })
       await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
       sileo.success({ title: "Roster Locked", description: "The roster has been finalized and locked." })
       setIsLockModalOpen(false)
@@ -179,13 +184,29 @@ export default function LearnerAdmissionIndex() {
       return data
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["settings:public"] })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.publicSettings })
       await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
       sileo.success({ title: "Roster Unlocked", description: "The roster has been unlocked." })
       setIsUnlockModalOpen(false)
     },
     onError: () => {
       sileo.error({ title: "Unlocking Failed", description: "Could not unlock the roster." })
+    }
+  })
+
+  const forfeitMutation = useMutation({
+    mutationFn: async (applicationId: number) => {
+      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/forfeit`)
+      return data
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
+      sileo.success({ title: "Slot Forfeited", description: "The applicant has been forfeited and the highest ranking waitlisted applicant has been promoted." })
+      setIsForfeitModalOpen(false)
+      setForfeitTarget(null)
+    },
+    onError: () => {
+      sileo.error({ title: "Forfeiture Failed", description: "Could not forfeit the slot." })
     }
   })
 
@@ -216,7 +237,7 @@ export default function LearnerAdmissionIndex() {
       return { ...app, baseResult }
     })
 
-    const statusOrder: Record<AssessmentResult, number> = { QUALIFIED: 1, WAITLISTED: 2, PENDING: 3, DISQUALIFIED: 4 }
+    const statusOrder: Record<AssessmentResult, number> = { QUALIFIED: 1, WAITLISTED: 2, PENDING: 3, DISQUALIFIED: 4, FORFEITED: 5 }
     const sorted = withBaseResult.sort((a, b) => {
       if (statusOrder[a.baseResult] !== statusOrder[b.baseResult]) {
         return statusOrder[a.baseResult] - statusOrder[b.baseResult]
@@ -502,11 +523,38 @@ export default function LearnerAdmissionIndex() {
       meta: { className: "text-center", headerClassName: "text-center", pin: "right" },
       header: "FINAL RESULT",
       cell: ({ row }) => {
-        const result = (row.original as any).finalResult ?? "PENDING"
-        return <div className="flex justify-center py-2 uppercase"><ResultBadge result={result} /></div>
+        const application = row.original as any
+        const result = application.finalResult ?? "PENDING"
+        
+        return (
+          <div className="flex items-center justify-center gap-2 uppercase relative">
+            <ResultBadge result={result} />
+            {result === "QUALIFIED" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-primary font-bold cursor-pointer"
+                    onClick={() => {
+                      setForfeitTarget({ id: application.id, name: `${application.learner.lastName}, ${application.learner.firstName}` })
+                      setIsForfeitModalOpen(true)
+                    }}
+                  >
+                    Forfeit Slot
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        )
       },
     },
-  ], [page, limit])
+  ], [page, limit, setForfeitTarget, setIsForfeitModalOpen])
 
   const handleSaveBulk = () => {
     const updatesMap = new Map<number, AssessmentUpdate>();
@@ -751,6 +799,17 @@ export default function LearnerAdmissionIndex() {
         variant="primary"
         onConfirm={() => unlockMutation.mutate()}
         loading={unlockMutation.isPending}
+      />
+
+      <ConfirmationModal
+        open={isForfeitModalOpen}
+        onOpenChange={setIsForfeitModalOpen}
+        title="Forfeit Applicant Slot?"
+        description={`Are you sure you want to forfeit ${forfeitTarget?.name}'s slot in this program? This action is irreversible. The system will automatically promote the highest-ranking waitlisted applicant to fill this empty slot.`}
+        confirmText="Confirm Forfeiture"
+        variant="danger"
+        onConfirm={() => forfeitTarget && forfeitMutation.mutate(forfeitTarget.id)}
+        loading={forfeitMutation.isPending}
       />
     </div>
   )

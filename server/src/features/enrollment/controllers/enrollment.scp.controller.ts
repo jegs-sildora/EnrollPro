@@ -291,3 +291,67 @@ export const unlockScpRoster = async (req: Request, res: Response): Promise<void
 
   res.json({ message: "Roster successfully unlocked." })
 }
+
+export const forfeitScpSlot = async (req: Request, res: Response): Promise<void> => {
+  const schoolYearId = req.schoolYearId
+  if (!schoolYearId) {
+    throw new AppError(400, "Active school year not found.")
+  }
+
+  const applicationId = parseInt(req.params.applicationId as string, 10)
+  if (isNaN(applicationId)) {
+    throw new AppError(400, "Invalid application ID.")
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const scpProfile = await tx.enrollmentScpProfile.findUnique({
+      where: { applicationId },
+      include: { application: true }
+    })
+
+    if (!scpProfile || scpProfile.assessmentResult !== "QUALIFIED") {
+      throw new AppError(400, "Only qualified applicants can be forfeited.")
+    }
+    
+    if (scpProfile.application.schoolYearId !== schoolYearId) {
+      throw new AppError(400, "Application belongs to a different school year.")
+    }
+
+    const program = scpProfile.application.assignedProgram
+    if (!program) {
+      throw new AppError(400, "Applicant does not have an assigned program.")
+    }
+
+    // 1. Mark as forfeited
+    await tx.enrollmentScpProfile.update({
+      where: { id: scpProfile.id },
+      data: { assessmentResult: "FORFEITED" }
+    })
+
+    // 2. Find next waitlisted
+    const nextWaitlisted = await tx.enrollmentScpProfile.findFirst({
+      where: {
+        application: {
+          schoolYearId,
+          assignedProgram: program,
+          status: { notIn: ["REJECTED", "WITHDRAWN", "DROPPED"] }
+        },
+        assessmentResult: "WAITLISTED",
+      },
+      orderBy: [
+        { writtenExamScore: "desc" },
+        { grade5GeneralAverage: "desc" }
+      ]
+    })
+
+    // 3. Promote if found
+    if (nextWaitlisted) {
+      await tx.enrollmentScpProfile.update({
+        where: { id: nextWaitlisted.id },
+        data: { assessmentResult: "QUALIFIED" }
+      })
+    }
+  })
+
+  res.json({ message: "Slot successfully forfeited." })
+}

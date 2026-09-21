@@ -960,6 +960,7 @@ enum ScpAssessmentState {
 enum ScpAssessmentResult {
   PENDING
   QUALIFIED
-  WAITLISTED
   DISQUALIFIED
+  WAITLISTED
+  FORFEITED
 }

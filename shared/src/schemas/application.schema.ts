@@ -268,7 +268,7 @@ export const applicationTrackResponseSchema = applicationTrackingStateSchema.par
       verification_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
       exam_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
       interview_status: z.enum(["PENDING", "PASSED", "FAILED"]).optional(),
-      final_result: z.enum(["PENDING", "QUALIFIED", "DISQUALIFIED", "WAITLISTED"]).optional(),
+      final_result: z.enum(["PENDING", "QUALIFIED", "DISQUALIFIED", "WAITLISTED", "FORFEITED"]).optional(),
     })
   )
   .passthrough();

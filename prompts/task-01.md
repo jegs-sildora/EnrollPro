@@ -1,40 +1,39 @@
-# Prompt for UI/UX Refactor: Enrollment Portal Hero Header
+# Prompt for UI/UX & Logic Implementation: Waitlist Management & Slot Forfeiture
 
 ## Role & Context
-Act as a Frontend Developer. We are refining the landing page of the public-facing `Online Enrollment Portal`. 
+Act as a Full-Stack Developer. We are implementing the "Waitlist Promotion" workflow on the locked `SCP Admission` page. 
 
-Currently, the header is a generic "WELCOME TO ONLINE ENROLLMENT". We need to upgrade this into a Contextual Hero Header that establishes the official DepEd enrollment period, assures Qualified SCP applicants they are in the right place, and reminds parents of the most critical prerequisite: the Learner Reference Number (LRN).
+Currently, when an SCP roster is locked and the `Max Learner Slots` are filled, the system correctly tags excess passing applicants as `WAITLISTED`. In reality, top applicants often enroll elsewhere, freeing up slots. We need a safe, controlled mechanism for registrars to mark a qualified student as "Forfeited," which must trigger the system to automatically promote the next highest-ranking waitlisted learner to fill the empty slot.
 
 ## Critical Directive
-Utilize the existing design system typography tokens, badges, and spacing. Do not introduce custom CSS or new font scales. Transform the static text block into a structured, informative header.
+Do not require the user to "Unlock Roster" to perform this action. Unlocking exposes the entire table to accidental edits. Instead, implement targeted row-level actions using existing design system components (Dropdown menus, Modals, Badges) while the table remains in its globally locked state.
 
-## UI Component & Copywriting Requirements
+## UI Component & Logic Requirements
 
-Please refactor the header section to match this structured layout:
+Please implement the following workflow:
 
-### 1. Dynamic Status Badge (Top)
-*   Render a small, centered system Badge/Pill component above the main title.
-*   **Content:** It should dynamically query the active school year from the backend (e.g., `S.Y. 2026-2027 • ENROLLMENT ONGOING`).
-*   **Color:** Use a primary or success color (e.g., Blue or Green) to indicate the system is actively receiving enrollments.
+### 1. Row-Level Action: Mark as Forfeited
+*   **Target:** Render a row-level action (e.g., a standard kebab/three-dot menu icon, or a small ghost button) ONLY on rows where the `FINAL RESULT` is `QUALIFIED`.
+*   **Action Label:** `Forfeit Slot`.
+*   **Visibility:** This action must be visible and clickable even when the global roster is "Finalized and Locked".
 
-### 2. Main Title (H1)
-*   Replace "WELCOME TO ONLINE ENROLLMENT" with an official, authoritative title.
-*   **New Text:** `Official Learner Enrollment`
-*   **Styling:** Use the standard H1/Title typography token. Keep it centered.
+### 2. The Confirmation Modal (Critical Safety Check)
+Clicking `Forfeit Slot` must trigger a standard system Confirmation Modal to prevent accidental clicks.
+*   **Title:** `Forfeit Applicant Slot?`
+*   **Body:** `Are you sure you want to forfeit [Applicant Name]'s slot in this program? This action is irreversible. The system will automatically promote the highest-ranking waitlisted applicant to fill this empty slot.`
+*   **Actions:** `Cancel` (Ghost) | `Confirm Forfeiture` (Destructive/Primary).
 
-### 3. Subtitle / Context (Lead Text)
-*   Replace the generic subtext with instructions that cover both Regular BEC and Qualified SCP learners.
-*   **New Text:** `For Regular Basic Education (BEC) entrants and officially Qualified SCP Applicants.`
-*   **Styling:** Use a muted/secondary text color with a readable medium font size.
+### 3. Backend Logic: The Cascading Promotion Algorithm
+Upon confirmation, the backend must execute the following atomic transaction:
+1.  **Update the Forfeiter:** Change the target applicant's status from `QUALIFIED` to `FORFEITED`. 
+2.  **Identify the Next-in-Line:** Query the database for the highest-ranking applicant in the same program whose status is `WAITLISTED` (sorted descending by `Written Exam Score`, then `Gen Ave` as the tie-breaker).
+3.  **Promote:** Update that specific waitlisted applicant's status from `WAITLISTED` to `QUALIFIED`.
+4.  *Edge Case:* If there are no waitlisted applicants left, simply leave the slot open (e.g., the tracker now reads "1 out of 2 filled").
 
-### 4. Critical Prerequisite Warning (Information Alert)
-*   Directly below the subtitle (and above the two learner category cards), insert a standard small Information Alert banner or a highlighted helper text block. This prevents user drop-off during the form-filling process.
-*   **Icon:** Standard `Info` or `Alert` icon.
-*   **Text:** `Important: Please ensure you have the student's 12-digit Learner Reference Number (LRN) and PSA Birth Certificate ready before starting.`
-
-### 5. Layout & Spacing
-*   Wrap the Badge, Title, and Subtitle in a flex-col container with a standard tight gap (`gap-2`).
-*   Apply a slightly larger bottom margin below the new Information Alert to separate the header clearly from the `Incoming` and `Continuing` action cards.
-
-
-MAKE THE UI FORMAT TO BE THE SAME WITH THE @AdmissionChoice.tsx FILE BUT ONLY THE HEADER.
+### 4. UI Table Refresh & Badge Updates
+Once the backend transaction succeeds, refresh the frontend table to reflect the new reality:
+*   **Re-sort the Table:** The newly `FORFEITED` applicant must drop down to the bottom section (group them with the Unqualified applicants). The newly `QUALIFIED` applicant must move up into the "TOP QUALIFIED" section.
+*   **Badge Updates:** 
+    *   Render a new distinct Status Badge for the dropout: `FORFEITED` (Use a gray or dark outline style to differentiate it from a standard failure).
+    *   The promoted applicant's badge smoothly updates from `WAITLISTED` to `QUALIFIED`.
+*   **Audit Trail (Optional but Recommended):** Consider adding a small tooltip to the promoted applicant's badge that says: *"Promoted from Waitlist on [Date]"*.
