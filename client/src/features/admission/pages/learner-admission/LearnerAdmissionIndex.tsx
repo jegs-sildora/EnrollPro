@@ -355,7 +355,7 @@ export default function LearnerAdmissionIndex() {
     
     if (hasEdits) return true;
     
-    return rankedApplicants.some(app => app.scpProfile?.assessmentResult !== app.finalResult)
+    return rankedApplicants.some(app => (app.scpProfile?.assessmentResult ?? "PENDING") !== app.finalResult)
   }, [edits, applicants, rankedApplicants])
 
   const canLockRoster = useMemo(() => {

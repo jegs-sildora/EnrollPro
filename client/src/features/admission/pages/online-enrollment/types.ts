@@ -53,6 +53,10 @@ export const EnrollmentFormSchema = z
     isPrivacyConsentGiven: z.boolean().refine((val) => val === true, {
       message: "Acceptance of the Data Privacy Notice is required to proceed.",
     }),
+    
+    // Auto-filled fetched details
+    scpProgram: z.string().optional().nullable(),
+    scpAdmissionStatus: z.string().optional().nullable(),
 
 
     // Section 1: Tracking Numbers

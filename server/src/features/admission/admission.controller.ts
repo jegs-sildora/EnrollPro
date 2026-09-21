@@ -296,6 +296,69 @@ export async function validateLrn(req: Request, res: Response) {
   }
 }
 
+export async function getLearnerProfile(req: Request, res: Response) {
+  try {
+    const lrn = String(req.params.lrn ?? "").trim();
+    if (!/^\d{12}$/.test(lrn)) {
+      res.status(400).json({ message: "Invalid LRN format. Must be exactly 12 digits." });
+      return;
+    }
+
+    const setting = await prisma.schoolSetting.findFirst({
+      where: { activeSchoolYearId: { not: null } },
+      select: { activeSchoolYearId: true },
+    });
+
+    if (!setting?.activeSchoolYearId) {
+      res.status(400).json({ message: "No active school year configured." });
+      return;
+    }
+
+    const learner = await prisma.learner.findUnique({
+      where: { lrn },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        enrollmentApplications: {
+          where: { schoolYearId: setting.activeSchoolYearId },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: {
+            applicantType: true, // This stores the specific SCP program they applied to, if any
+            scpProfile: {
+              select: {
+                assessmentResult: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!learner) {
+      res.status(404).json({ message: "Learner not found." });
+      return;
+    }
+
+    const application = learner.enrollmentApplications[0];
+    const isScp = isSpecialCurricularProgramType(application?.applicantType);
+
+    res.json({
+      id: learner.id,
+      firstName: learner.firstName,
+      lastName: learner.lastName,
+      middleName: learner.middleName,
+      scpProgram: isScp ? application?.applicantType : null,
+      scpAdmissionStatus: isScp ? application?.scpProfile?.assessmentResult : null,
+    });
+  } catch (error) {
+    console.error("Failed to fetch learner profile:", error);
+    res.status(500).json({ message: "Could not fetch learner profile." });
+  }
+}
+
 export async function submitApplication(req: Request, res: Response) {
   try {
     const isScp = req.body.isScpApplication === true;
@@ -317,6 +380,45 @@ export async function submitApplication(req: Request, res: Response) {
     const schoolSetting = await getOpenPublicEnrollmentSetting(res, isScp);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+
+    // --- SCP VALIDATION FOR ENROLLMENT FORM ---
+    // If this is a regular enrollment submission (not SCP screening form),
+    // and the user has selected an SCP program, we MUST verify they are actually QUALIFIED in the database.
+    if (!isScp && "scpType" in data && data.scpType && isSpecialCurricularProgramType(data.scpType)) {
+      if (data.hasNoLrn || !data.lrn) {
+        res.status(403).json({
+          message: "Validation failed",
+          errors: {
+            scpType: { _errors: ["You cannot select an SCP program without a valid LRN and prior qualification."] }
+          },
+        });
+        return;
+      }
+      
+      const learner = await prisma.learner.findUnique({
+        where: { lrn: data.lrn },
+        include: {
+          enrollmentApplications: {
+            where: { schoolYearId: activeSchoolYearId, applicantType: data.scpType as ApplicantType },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            include: { scpProfile: true },
+          }
+        }
+      });
+      
+      const scpApp = learner?.enrollmentApplications?.[0];
+      if (!scpApp || scpApp.scpProfile?.assessmentResult !== "QUALIFIED") {
+        res.status(403).json({
+          message: "Validation failed",
+          errors: {
+            scpType: { _errors: ["Unauthorized: Learner is not officially qualified for the selected program in the finalized admission roster."] }
+          },
+        });
+        return;
+      }
+    }
+    // --- END SCP VALIDATION ---
 
     // Get grade level id
     const gradeLevelRecord = await prisma.gradeLevel.findFirst({

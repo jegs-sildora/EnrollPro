@@ -86,6 +86,8 @@ export default function Step5Enrollment() {
   const scpType = watch("scpType");
 
   const hasNoLrn = watch("hasNoLrn");
+  const scpProgram = watch("scpProgram");
+  const scpAdmissionStatus = watch("scpAdmissionStatus");
   const artField = watch("artField");
   const sportsList = watch("sportsList");
   const foreignLanguage = watch("foreignLanguage");
@@ -229,6 +231,22 @@ export default function Step5Enrollment() {
       clearErrors("hasNoLrn");
     }
   }, [canDeclareNoLrn, hasNoLrn, setValue, clearErrors]);
+
+  // Lock Curricular Program based on conditions
+  const isQualifiedScp = scpAdmissionStatus === "QUALIFIED" && scpProgram;
+  const isRegularOrDisqualified = !hasNoLrn && (!scpAdmissionStatus || scpAdmissionStatus === "DISQUALIFIED" || scpAdmissionStatus === "FORFEITED" || scpAdmissionStatus === "WAITLISTED");
+
+  useEffect(() => {
+    if (hasNoLrn || isRegularOrDisqualified) {
+      setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
+      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+    } else if (isQualifiedScp) {
+      setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
+      setValue("scpType", scpProgram as ScpTypeValue, { shouldValidate: true, shouldDirty: true });
+      setValue("hasScpFallbackConsent", true, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [hasNoLrn, isRegularOrDisqualified, isQualifiedScp, scpProgram, setValue]);
 
   return (
     <div className="space-y-12">
@@ -395,6 +413,7 @@ export default function Step5Enrollment() {
             </div>
 
             <Select
+              disabled={true}
               value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
               onValueChange={(val) => {
                 if (val === "REGULAR") {
@@ -407,7 +426,7 @@ export default function Step5Enrollment() {
                 }
               }}
             >
-              <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase">
+              <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase disabled:opacity-100 disabled:bg-gray-100 disabled:cursor-not-allowed">
                 <SelectValue placeholder="Select Preferred Curricular Program" />
               </SelectTrigger>
               <SelectContent>
@@ -421,7 +440,8 @@ export default function Step5Enrollment() {
             </Select>
 
           <AnimatePresence>
-            {isScpApplication && scpType && (
+            {/* We no longer show the manual checkbox warning since it's auto-verified */}
+            {isScpApplication && scpType && !isQualifiedScp && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}

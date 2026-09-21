@@ -44,6 +44,8 @@ const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
   schoolYear: "2026-2027",
   lrn: "",
   hasNoLrn: false,
+  scpProgram: null,
+  scpAdmissionStatus: null,
   psaBirthCertNumber: "",
   gradeLevel: "7",
   isScpApplication: false,

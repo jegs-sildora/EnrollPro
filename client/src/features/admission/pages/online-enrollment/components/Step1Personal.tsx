@@ -80,6 +80,7 @@ export default function Step1Personal() {
 
   const [isValidatingLrn, setIsValidatingLrn] = useState(false);
   const [duplicateDetected, setDuplicateDetected] = useState(false);
+  const [learnerFound, setLearnerFound] = useState(false);
 
   const birthdate = watch("birthdate");
   const studentPhoto = watch("studentPhoto");
@@ -108,20 +109,33 @@ export default function Step1Personal() {
     if (!lrn || lrn.length !== 12 || hasNoLrn) {
       setIsValidatingLrn(false);
       setDuplicateDetected(false);
+      setLearnerFound(false);
       return;
     }
 
     setIsValidatingLrn(true);
     setDuplicateDetected(false);
+    setLearnerFound(false);
 
-    api.get(`/applications/validate-lrn/${lrn}`)
+    api.get(`/applications/learner-profile/${lrn}`)
       .then((res) => {
         if (active) {
-          setDuplicateDetected(res.data.isDuplicate);
+          const profile = res.data;
+          setLearnerFound(true);
+          if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
+          if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
+          if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
+          setValue("scpProgram", profile.scpProgram, { shouldValidate: true });
+          setValue("scpAdmissionStatus", profile.scpAdmissionStatus, { shouldValidate: true });
         }
       })
       .catch((err) => {
-        console.error("LRN validation error:", err);
+        if (active && err.response?.status === 404) {
+          // No record found, not an error
+          setLearnerFound(false);
+        } else {
+          console.error("LRN validation error:", err);
+        }
       })
       .finally(() => {
         if (active) setIsValidatingLrn(false);
@@ -130,7 +144,7 @@ export default function Step1Personal() {
     return () => {
       active = false;
     };
-  }, [lrn, hasNoLrn]);
+  }, [lrn, hasNoLrn, setValue]);
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -273,7 +287,9 @@ export default function Step1Personal() {
             {isValidatingLrn ? (
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             ) : lrn?.length === 12 && !hasNoLrn ? (
-              duplicateDetected ? (
+              learnerFound ? (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              ) : duplicateDetected ? (
                 <AlertTriangle className="w-5 h-5 text-destructive" />
               ) : (
                 <CheckCircle className="w-5 h-5 text-green-500" />
@@ -294,7 +310,9 @@ export default function Step1Personal() {
               hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",
               errors.lrn || duplicateDetected
                 ? "border-destructive"
-                : "border-primary/30 focus:border-primary",
+                : learnerFound 
+                  ? "border-green-500 focus:border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.1)] transition-all duration-300"
+                  : "border-primary/30 focus:border-primary",
             )}
             onInput={(e) => {
               e.currentTarget.value = e.currentTarget.value.replace(
@@ -305,13 +323,24 @@ export default function Step1Personal() {
           />
         </div>
 
-        {duplicateDetected && (
-          <div className="bg-destructive/10 text-destructive text-sm font-bold p-3 rounded-lg flex items-center gap-2 justify-center">
+        {errors.lrn && (
+          <p className="text-sm font-medium text-destructive">
+            {errors.lrn.message}
+          </p>
+        )}
+        {lrn?.length === 12 && duplicateDetected && !hasNoLrn && (
+          <div className="flex items-center text-sm font-medium text-destructive">
+            <AlertTriangle className="w-4 h-4 mr-1.5 flex-shrink-0" />
             This LRN already exists in our database. Enrollment application is a duplicate.
           </div>
         )}
-
-        <p className="text-base text-foreground">
+        {lrn?.length === 12 && learnerFound && !hasNoLrn && (
+          <div className="flex items-center text-sm font-bold text-green-600">
+            <CheckCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            Learner record found. Auto-filling form...
+          </div>
+        )}
+        <p className="text-sm font-medium text-muted-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
@@ -346,8 +375,6 @@ export default function Step1Personal() {
             </Label>
           </div>
         )}
-
-        <AnimatedError error={errors.lrn?.message as string || errors.lrn as unknown as string} />
       </div>
 
       {/* ─── Name & Photo Section ─── */}
