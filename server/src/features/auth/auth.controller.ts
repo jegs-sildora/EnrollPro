@@ -17,6 +17,7 @@ export type AuthUser = {
   employeeId: string | null;
   accountName: string | null;
   roles: string[];
+  ancillaryRoles: string[];
   mustChangePassword: boolean;
   isActive: boolean;
   lastLoginAt: Date | null;
@@ -215,6 +216,7 @@ function toUserResponse(user: AuthUser) {
     employeeId: user.employeeId,
     accountName: user.accountName,
     roles: user.roles,
+    ancillaryRoles: user.ancillaryRoles,
     mustChangePassword: user.mustChangePassword,
   };
 }
@@ -233,6 +235,7 @@ function createAuthToken(user: AuthUser): string {
     {
       userId: user.id,
       roles: user.roles,
+      ancillaryRoles: user.ancillaryRoles,
       mustChangePassword: user.mustChangePassword,
     },
     jwtSecret,
@@ -370,6 +373,13 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const ancillaryRoles = await getAncillaryRoles(user.id);
+
+  const authUser: AuthUser = {
+    ...user,
+    ancillaryRoles
+  };
+
   if (!user.isActive) {
     res.status(401).json({
       message:
@@ -399,12 +409,18 @@ export async function login(req: Request, res: Response): Promise<void> {
     req,
   });
 
-  const token = createAuthToken(updatedUser);
+  const finalAuthUser: AuthUser = {
+    ...authUser,
+    lastLoginAt: now,
+    mustChangePassword: user.mustChangePassword || isDefaultPassword,
+  };
+
+  const token = createAuthToken(finalAuthUser);
   setSessionCookie(res, token);
 
   res.json({
     token,
-    user: toUserResponse(updatedUser),
+    user: toUserResponse(finalAuthUser),
   });
 }
 
@@ -413,6 +429,30 @@ export async function logout(_req: Request, res: Response): Promise<void> {
   res.status(204).send();
 }
 
+
+export async function getAncillaryRoles(userId: number): Promise<string[]> {
+  let ancillaryRoles: string[] = [];
+  const teacher = await prisma.teacher.findFirst({
+    where: { userId },
+    include: { teacherDesignations: true }
+  });
+
+  if (teacher) {
+    const rolesSet = new Set<string>();
+    if (teacher.ancillaryRoles) {
+      teacher.ancillaryRoles.forEach(r => rolesSet.add(r));
+    }
+    if (teacher.teacherDesignations) {
+      teacher.teacherDesignations.forEach(d => {
+        if (d.ancillaryRoles) {
+          d.ancillaryRoles.forEach(r => rolesSet.add(r));
+        }
+      });
+    }
+    ancillaryRoles = Array.from(rolesSet);
+  }
+  return ancillaryRoles;
+}
 
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
@@ -434,7 +474,8 @@ export async function me(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  res.json({ user });
+  const ancillaryRoles = await getAncillaryRoles(user.id);
+  res.json({ user: { ...user, ancillaryRoles } });
 }
 
 export async function changePassword(
@@ -488,10 +529,16 @@ export async function changePassword(
     },
   });
 
-  const token = createAuthToken(updated);
+  const ancillaryRoles = await getAncillaryRoles(userId);
+  const authUser: AuthUser = {
+    ...updated,
+    ancillaryRoles,
+  };
+
+  const token = createAuthToken(authUser);
   setSessionCookie(res, token, AUTH_COOKIE_NAME);
 
-  res.json({ token, user: toUserResponse(updated) });
+  res.json({ token, user: toUserResponse(authUser) });
 }
 
 export async function changeExternalDefaultPassword(
@@ -613,6 +660,9 @@ export async function verifyCredentials(
 
     const usesDefaultPassword = await isConfiguredDefaultPassword(password);
     const requiresPasswordChange = user.mustChangePassword || usesDefaultPassword;
+    const ancillaryRoles = await getAncillaryRoles(user.id);
+    const authUser = { ...user, ancillaryRoles };
+
     if (requiresPasswordChange) {
       const returnTo = getSafeCompanionReturnUrl(req, requestedReturnUrl);
       if (!user.mustChangePassword) {
@@ -622,7 +672,7 @@ export async function verifyCredentials(
         });
       }
       const ticket = createExternalPasswordChangeTicket({
-        ...user,
+        ...authUser,
         mustChangePassword: true,
       }, returnTo);
       const passwordChangePath =
@@ -646,7 +696,7 @@ export async function verifyCredentials(
 
     res.json({
       valid: true,
-      user: toUserResponse(user),
+      user: toUserResponse(authUser),
     });
   } catch (error) {
     if (error instanceof AppError) {

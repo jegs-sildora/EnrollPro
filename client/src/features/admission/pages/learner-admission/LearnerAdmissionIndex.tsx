@@ -27,7 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
-
+import { useAuthStore } from "@/store/auth.slice"
 type ScpProgram = "SCIENCE_TECHNOLOGY_AND_ENGINEERING" | "SPECIAL_PROGRAM_IN_THE_ARTS" | "SPECIAL_PROGRAM_IN_SPORTS"
 type AssessmentResult = "PENDING" | "QUALIFIED" | "WAITLISTED" | "DISQUALIFIED" | "FORFEITED"
 
@@ -128,13 +128,26 @@ export default function LearnerAdmissionIndex() {
   const [forfeitTarget, setForfeitTarget] = useState<{ id: number; name: string } | null>(null)
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false)
   const [restoreTarget, setRestoreTarget] = useState<{ id: number; name: string } | null>(null)
+  const user = useAuthStore((state) => state.user)
+  const roles = user?.roles ?? []
+  const ancillaryRoles = user?.ancillaryRoles ?? []
+  const isGlobalAdmin = roles.some((r) => 
+    ["SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "HEAD_REGISTRAR"].includes(r)
+  )
+
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
-    if (steEnabled) programs.push({ id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE Applicants" })
-    if (spaEnabled) programs.push({ id: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA Applicants" })
-    if (spsEnabled) programs.push({ id: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS Applicants" })
+    if (steEnabled && (isGlobalAdmin || roles.includes("STE_COORDINATOR") || ancillaryRoles.includes("STE HEAD TEACHER"))) {
+      programs.push({ id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE Applicants" })
+    }
+    if (spaEnabled && (isGlobalAdmin || roles.includes("SPA_COORDINATOR") || ancillaryRoles.includes("SPA HEAD TEACHER"))) {
+      programs.push({ id: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA Applicants" })
+    }
+    if (spsEnabled && (isGlobalAdmin || roles.includes("SPS_COORDINATOR") || ancillaryRoles.includes("SPS HEAD TEACHER"))) {
+      programs.push({ id: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS Applicants" })
+    }
     return programs
-  }, [spaEnabled, spsEnabled, steEnabled])
+  }, [spaEnabled, spsEnabled, steEnabled, isGlobalAdmin, roles, ancillaryRoles])
 
   const activeTab = activePrograms.some((program) => program.id === selectedTab)
     ? selectedTab
@@ -198,7 +211,7 @@ export default function LearnerAdmissionIndex() {
 
   const forfeitMutation = useMutation({
     mutationFn: async (applicationId: number) => {
-      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/forfeit`)
+      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/forfeit`, { program: activeTab })
       return data
     },
     onSuccess: async () => {
@@ -214,7 +227,7 @@ export default function LearnerAdmissionIndex() {
 
   const restoreMutation = useMutation({
     mutationFn: async (applicationId: number) => {
-      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/restore`)
+      const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/restore`, { program: activeTab })
       return data
     },
     onSuccess: async (data) => {
@@ -650,12 +663,23 @@ export default function LearnerAdmissionIndex() {
   }
 
   if (activePrograms.length === 0) {
+    const hasEnabledPrograms = steEnabled || spaEnabled || spsEnabled
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="w-full max-w-xl rounded-xl border border-border bg-card p-8 text-center shadow-sm">
-          <ClipboardCheck className="mx-auto mb-4 h-12 w-12 text-foreground" />
-          <h2 className="text-xl font-bold text-foreground">No active Special Curricular Program</h2>
-          <p className="mt-2 text-foreground">Enable STE, SPA, or SPS in School Settings to manage applicants.</p>
+          {hasEnabledPrograms ? (
+            <>
+              <Lock className="mx-auto mb-4 h-12 w-12 text-foreground" />
+              <h2 className="text-xl font-bold text-foreground">Restricted Access</h2>
+              <p className="mt-2 text-foreground">You do not have the required role to view or manage Special Curricular Programs.</p>
+            </>
+          ) : (
+            <>
+              <ClipboardCheck className="mx-auto mb-4 h-12 w-12 text-foreground" />
+              <h2 className="text-xl font-bold text-foreground">No active Special Curricular Program</h2>
+              <p className="mt-2 text-foreground">Enable STE, SPA, or SPS in School Settings to manage applicants.</p>
+            </>
+          )}
         </div>
       </div>
     )

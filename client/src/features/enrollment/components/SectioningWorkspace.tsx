@@ -79,6 +79,8 @@ import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
+import { useAuthStore } from "@/store/auth.slice";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 interface SectionSummary {
   id: number;
@@ -621,25 +623,50 @@ export function SectioningWorkspace() {
   const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
   const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  
+  const { data: activeSchoolYear } = useQuery({
+    queryKey: ["school-years", "active", "grade-levels"],
+    queryFn: async () => {
+      const res = await api.get("/school-years/grade-levels");
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+
+  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const isAdminOrRegistrar = userRoles.includes("SYSTEM_ADMIN") || userRoles.includes("HEAD_REGISTRAR") || userRoles.includes("SCHOOL_REGISTRAR");
+
+  const assignedGradeLevelId = useMemo(() => {
+    if (!activeSchoolYear?.gradeLevels) return null;
+    if (isAdminOrRegistrar) return null;
+    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
+    return null;
+  }, [isAdminOrRegistrar, ancillaryRoles, activeSchoolYear?.gradeLevels]);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
-    queryKey: queryKeys.sectioningSections(),
+    queryKey: ["sectioning", "sections-summary", assignedGradeLevelId],
     queryFn: () =>
       api
-        .get<SectionSummary[]>("/sectioning/sections-summary")
+        .get<SectionSummary[]>("/sectioning/sections-summary", {
+          params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+        })
         .then((r) => r.data),
     enabled: !isHistoricalReadOnly,
-    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
     staleTime: 3_000,
   });
 
   const { data: poolData, isLoading: poolInitialLoading } = useQuery({
-    queryKey: queryKeys.sectioningPool(),
+    queryKey: ["sectioning", "pool", assignedGradeLevelId],
     queryFn: () =>
-      api.get<PoolLearner[]>("/sectioning/pool").then((r) => r.data),
+      api.get<PoolLearner[]>("/sectioning/pool", {
+        params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+      }).then((r) => r.data),
     enabled: !isHistoricalReadOnly,
-    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
     staleTime: 3_000,
   });
@@ -711,15 +738,28 @@ export function SectioningWorkspace() {
 
   const gradeLevels = useMemo(() => {
     const raw = gradeLevelsResponse?.gradeLevels ?? [];
-    const jhs = raw.filter((gradeLevel) =>
+    let jhs = raw.filter((gradeLevel) =>
       ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(gradeLevel.name),
     );
+    
+    if (!isAdminOrRegistrar) {
+      const allowedNames: string[] = [];
+      if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) allowedNames.push("Grade 7");
+      if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) allowedNames.push("Grade 8");
+      if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) allowedNames.push("Grade 9");
+      if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) allowedNames.push("Grade 10");
+      
+      if (allowedNames.length > 0) {
+        jhs = jhs.filter((g) => allowedNames.includes(g.name));
+      }
+    }
+
     return jhs.sort((a, b) => {
       const orderA = a.displayOrder ?? parseInt(a.name.replace(/\D/g, "")) ?? 0;
       const orderB = b.displayOrder ?? parseInt(b.name.replace(/\D/g, "")) ?? 0;
       return orderA - orderB;
     });
-  }, [gradeLevelsResponse]);
+  }, [gradeLevelsResponse, isAdminOrRegistrar, ancillaryRoles]);
 
   useEffect(() => {
     if (gradeLevels.length > 0) {

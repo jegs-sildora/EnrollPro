@@ -1,47 +1,51 @@
-# Prompt for UI/UX & Logic Implementation: LRN Lookup & Curricular Program Locking
+# Prompt for UI/UX & Logic Implementation: Ancillary Roles Dropdown & RBAC Mapping
 
 ## Role & Context
-Act as a Full-Stack Developer. We are implementing the core data-binding logic for the `Online Enrollment Form`.
+Act as a Full-Stack Developer. We are updating the `Personnel Management` module (User Creation/Edit profile form) and tying it to the platform's Role-Based Access Control (RBAC).
 
-Currently, the `Learner Reference Number (LRN)` input simply acts as a text field, and the `Preferred Curricular Program` is a free-choice dropdown. We need to implement an auto-fetch mechanism where entering a valid 12-digit LRN queries the backend for the student's existing records (specifically their SCP Admission status) and strictly locks their program eligibility to prevent unauthorized enrollment in restricted programs.
+In DepEd public schools, a teacher's system permissions are driven by their "Ancillary Role." We need to update the Ancillary Roles dropdown to include specific, localized Grade Level Coordinators and SCP Head Teachers. These selections will dictate whether the user is locked into specific Grade Levels in the Enrollment module, or specific programs in the SCP Admission module.
 
 ## Critical Directive
-Data integrity is the priority. The `Preferred Curricular Program` must transition from an open user choice to a strict system-computed, read-only field based on the LRN fetch results. 
+Utilize the existing Select/Dropdown component in the design system. Group the options logically so the System Admin can easily scan and assign the correct administrative access. Ensure the backend maps these exact enum strings to the scoped authorization middleware.
 
-## UI Component & Logic Requirements
+## UI Component & Data Mapping Requirements
 
-Please implement the following behavior and validation workflow:
+Please implement the following updates to the Personnel form and authorization logic:
 
-### 1. The LRN Lookup Trigger
-*   **Validation:** The LRN input field must strictly accept exactly 12 numeric digits. 
-*   **Trigger:** Once the 12th digit is entered (or on `blur` if 12 digits are present), automatically trigger a `GET` request to fetch the learner's pre-enrollment/admission profile.
-*   **Active State:** While fetching, disable the input and render a small inline loading spinner inside or next to the LRN input.
-*   **Success UI:** If found, render a small green checkmark inside the input and a helper text: *"Learner record found. Auto-filling form..."*
+### 1. The Ancillary Role Dropdown (UI Refactor)
+Update the `Ancillary Role` dropdown field to include the following grouped options. Use a grouped select component (e.g., `<optgroup>` in native HTML, or group headers in your UI library):
 
-### 2. Auto-filling Personal Information
-*   Upon a successful fetch, automatically populate the `Last Name`, `First Name`, and any other available demographic fields.
-*   **UX Polish:** Apply a brief visual highlight (e.g., a subtle green flash or border transition) to the auto-filled fields so the user understands the system did the work for them. 
+*   **Group 1: Enrollment & Sectioning Chairs**
+    *   `Grade 7 Coordinator`
+    *   `Grade 8 Coordinator`
+    *   `Grade 9 Coordinator`
+    *   `Grade 10 Coordinator`
+*   **Group 2: Special Curricular Program (SCP) Heads**
+    *   `STE Head Teacher`
+    *   `SPA Head Teacher`
+    *   `SPS Head Teacher`
+*   *(Optional)* **Group 3: System-Wide Roles**
+    *   `School Registrar` (Full enrollment access)
+    *   `System Administrator` (Unrestricted access)
 
-### 3. Smart Locking: The "Preferred Curricular Program"
-This is the most critical validation step. The system must evaluate the fetched `scp_admission_status` and lock the dropdown accordingly.
+### 2. Frontend State & Form Locking (Enrollment Module)
+When a user logs in, read their `ancillary_role` from the JWT/Session and enforce these UI rules in the `Learner Enrollment` and `Section Assignment` pages:
 
-*   **Condition A: The Qualified SCP Learner**
-    *   *Logic:* If the fetched LRN exists in the locked SCP Admission roster with a status of `QUALIFIED` for a specific program (e.g., STE).
-    *   *UI:* Programmatically set the dropdown value to that specific program (`SCIENCE, TECHNOLOGY AND ENGINEERING`). 
-    *   *Locking:* Apply the `disabled` or `read-only` prop to the dropdown. The user CANNOT change it.
-    *   *Helper Text:* Render a green success message below the field: *"Verified: Learner is officially qualified for this program."*
+*   **If role is `Grade [X] Coordinator`:** 
+    *   Auto-fill the `Incoming Grade Level` dropdown on the enrollment form to Grade [X].
+    *   Apply a `disabled` or `read-only` state to the dropdown.
+    *   Append `?grade=[X]` to all table fetch requests to isolate their view to their specific grade level.
+*   **If role is `School Registrar`:** Leave the grade level dropdown unlocked and fetch all grades.
 
-*   **Condition B: The Regular / Disqualified Learner**
-    *   *Logic:* If the fetched LRN has NO admission record, OR their admission record is `DISQUALIFIED`, `FORFEITED`, or `WAITLISTED` (not yet promoted).
-    *   *UI:* Programmatically set the dropdown value to `REGULAR BASIC EDUCATION CURRICULUM (BEC)`.
-    *   *Locking:* Apply the `disabled` or `read-only` prop to the dropdown.
-    *   *Helper Text:* Render a muted information message below the field: *"Assigned to Regular BEC based on admission records."*
+### 3. Frontend State & Tab Isolation (SCP Admission Module)
+Enforce these UI rules on the `/scp-admission` page based on the `ancillary_role`:
 
-*   **Condition C: "Learner has no LRN yet"**
-    *   *Logic:* If the user checks the radio button `Learner has no LRN yet` (meaning they are a completely new entrant without prior DepEd tracking).
-    *   *UI:* They automatically bypass the SCP lookup (since SCP requires prior records/screening). Force-set and lock the dropdown to `REGULAR BASIC EDUCATION CURRICULUM (BEC)`.
+*   **If role is `STE Head Teacher`:** Render ONLY the `STE APPLICANTS` tab. Remove SPA and SPS from the DOM.
+*   **If role is `SPA Head Teacher`:** Render ONLY the `SPA APPLICANTS` tab. Remove STE and SPS.
+*   **If role is `SPS Head Teacher`:** Render ONLY the `SPS APPLICANTS` tab. Remove STE and SPA.
 
-### 4. Backend Validation (The Ultimate Safeguard)
-*   Do not rely solely on the frontend disabled dropdown. 
-*   When the enrollment form is submitted via `POST`, the backend MUST independently re-verify the LRN against the finalized SCP Admission roster. 
-*   If a malicious user intercepts the payload and tries to submit `program: "STE"` for an LRN that is not explicitly marked as `QUALIFIED` in the admission table, the backend must reject it with a `403 Forbidden` error.
+### 4. Backend API Enforcement (The Safeguard)
+Update your authorization middleware to intercept API requests and validate the payload against the user's ancillary role:
+
+*   **Enrollment Payload Check:** On `POST /api/enrollment`, if `user.role` includes "Coordinator", assert that `request.body.grade_level` matches the number in their title. Throw a `403 Forbidden` if there is a mismatch.
+*   **Admission Payload Check:** On `PATCH /api/scp/applicant`, if `user.role` includes "Head Teacher", assert that the target applicant belongs to their specific program. Throw a `403 Forbidden` if an STE Head Teacher attempts to modify an SPA applicant.

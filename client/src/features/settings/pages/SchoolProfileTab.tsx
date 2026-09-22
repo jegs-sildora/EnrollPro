@@ -497,13 +497,12 @@ export default function SchoolProfileTab() {
                                   type="number"
                                   min={1}
                                   className="font-bold"
-                                  placeholder="e.g. 100"
+                                  placeholder="e.g. 70"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                   disabled={isArchived || isSubmitting}
                                 />
                               </FormControl>
-                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -543,13 +542,12 @@ export default function SchoolProfileTab() {
                                   type="number"
                                   min={1}
                                   className="font-bold"
-                                  placeholder="e.g. 100"
+                                  placeholder="e.g. 70"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                   disabled={isArchived || isSubmitting}
                                 />
                               </FormControl>
-                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -589,13 +587,12 @@ export default function SchoolProfileTab() {
                                   type="number"
                                   min={1}
                                   className="font-bold"
-                                  placeholder="e.g. 100"
+                                  placeholder="e.g. 70"
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                   disabled={isArchived || isSubmitting}
                                 />
                               </FormControl>
-                              <p className="text-sm text-foreground mt-1">Set the enrollment cap for this program</p>
                               <FormMessage />
                             </FormItem>
                           )}

@@ -15,7 +15,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
-import { ArrowLeft, AlertCircle, ShieldCheck, Info } from "lucide-react";
+import { ArrowLeft, AlertCircle, ShieldCheck, Info, Trash2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toUpperCaseRecursive } from "@/shared/lib/utils";
 import { sileo } from "sileo";
@@ -273,6 +273,8 @@ export default function EnrollmentForm({
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
   const [duplicateAction, setDuplicateAction] = useState<"new" | "update" | null>(null);
   const [trackingNumberInput, setTrackingNumberInput] = useState("");
+  
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
   const methods = useForm<EnrollmentFormData, unknown, EnrollmentFormData>({
     resolver: zodResolver(
@@ -286,6 +288,12 @@ export default function EnrollmentForm({
   });
 
   const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty, dirtyFields } } = methods;
+
+  const handleStartOver = () => {
+    reset({ ...DEFAULT_VALUES });
+    localStorage.removeItem(DRAFT_KEY);
+    setIsClearModalOpen(false);
+  };
 
   const validationIssues: ValidationIssue[] = Array.from(
     new Map(
@@ -466,8 +474,8 @@ export default function EnrollmentForm({
       const mapAddress = (addr: AddressPayload | null | undefined) => {
         if (!addr) return null;
         return {
-          houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,
-          sitio: undefined,
+          houseNoStreet: addr.houseNo || undefined,
+          sitio: addr.street || undefined,
           barangay: addr.barangay,
           cityMunicipality: addr.cityMunicipality,
           province: addr.province,
@@ -744,16 +752,38 @@ export default function EnrollmentForm({
                 Please complete all required fields below.
               </p>
             </div>
-            {isDirty && (
-              <div className="text-sm  text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                Draft Auto Saved
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {isDirty && (
+                <div className="text-sm  text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Draft Auto Saved
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:text-destructive transition-colors px-2"
+                onClick={() => setIsClearModalOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Clear Form
+              </Button>
+            </div>
           </div>
+
+          <ConfirmationModal
+            open={isClearModalOpen}
+            onOpenChange={setIsClearModalOpen}
+            title="Clear Entire Form?"
+            description="Are you sure you want to start over? This will permanently delete all the information you have entered so far."
+            variant="danger"
+            confirmText="Yes, Clear Form"
+            cancelText="Cancel"
+            onConfirm={handleStartOver}
+          />
 
           {submitError && (
             <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-bold">

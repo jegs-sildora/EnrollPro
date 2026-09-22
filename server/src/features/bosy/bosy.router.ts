@@ -19,28 +19,28 @@ const router: Router = Router();
 router.get(
   "/readiness",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   getBosyReadiness,
 );
 
 router.get(
   "/queue",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   getBosyQueue,
 );
 
 router.get(
   "/previous-sections",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   getPreviousSectionsHandler,
 );
 
 router.post(
   "/confirm-return/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER", "CLASS_ADVISER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER", "CLASS_ADVISER", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   staffIntakePhaseGuard,
   confirmReturnHandler,
 );
@@ -48,7 +48,7 @@ router.post(
 router.post(
   "/transfer-request/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   staffIntakePhaseGuard,
   markTransferRequestHandler,
 );
@@ -56,7 +56,7 @@ router.post(
 router.post(
   "/revoke-confirmation/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   staffIntakePhaseGuard,
   revokeConfirmedReturnHandler,
 );
@@ -64,7 +64,7 @@ router.post(
 router.post(
   "/confirmed-transfer-out/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   staffIntakePhaseGuard,
   markConfirmedTransferOutHandler,
 );
@@ -72,7 +72,7 @@ router.post(
 router.post(
   "/bulk-confirm",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   staffIntakePhaseGuard,
   bulkConfirmReturnHandler,
 );
@@ -80,7 +80,7 @@ router.post(
 router.get(
   "/completers",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"),
   getJHSCompletersHandler,
 );
 

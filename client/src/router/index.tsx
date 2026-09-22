@@ -158,6 +158,7 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute
             allowedRoles={["HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"]}
+            allowedAncillaryRoles={["COORDINATOR"]}
           />
         ),
         children: [

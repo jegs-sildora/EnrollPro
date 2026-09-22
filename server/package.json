@@ -17,6 +17,8 @@
     "db:wipe-scp": "tsx prisma/seeds/wipe-scp-applicants.ts",
     "db:seed-info": "tsx prisma/seeds/task-01-seed.ts",
     "db:wipe-info": "tsx prisma/seeds/task-01-wipe.ts",
+    "db:seed-task-01-users": "tsx prisma/seeds/task-01-users-seed.ts",
+    "db:wipe-task-01-users": "tsx prisma/seeds/task-01-users-wipe.ts",
     "db:seed-eosy-mock": "tsx prisma/seeds/seed_eosy_mock.ts",
     "db:wipe-eosy-mock": "tsx prisma/seeds/wipe_eosy_mock.ts",
     "db:seed-g7-2026-2027": "tsx prisma/seeds/seed-g7-2026-2027.ts",

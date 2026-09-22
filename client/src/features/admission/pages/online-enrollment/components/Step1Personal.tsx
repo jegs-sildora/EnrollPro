@@ -70,8 +70,61 @@ export default function Step1Personal() {
     setValue,
     clearErrors,
     getValues,
+    resetField,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
+
+  const handleClearLrn = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 1. Clear LRN and related states
+    setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+    setLearnerFound(false);
+    setDuplicateDetected(false);
+
+    // 2. Wipe demographics by resetting to defaults
+    const fieldsToReset: (keyof EnrollmentFormData)[] = [
+      "studentPhoto",
+      "firstName",
+      "lastName",
+      "middleName",
+      "extensionName",
+      "birthdate",
+      "sex",
+      "placeOfBirth",
+      "religion",
+      "motherTongue",
+      "isIpCommunity",
+      "ipGroupName",
+      "isLearnerWithDisability",
+      "disabilityTypes",
+      "is4PsBeneficiary",
+      "householdId4Ps",
+      "hasPwdId",
+      "isBalikAral",
+      "lastYearEnrolled",
+      "psaBirthCertNumber",
+      "specialNeedsCategory",
+      "scpProgram",
+      "scpAdmissionStatus",
+      "currentAddress",
+      "permanentAddress",
+      "mother",
+      "father",
+      "guardian",
+      "lastSchoolName",
+      "lastSchoolId",
+      "lastSchoolAddress",
+      "lastSchoolType",
+      "transferCertificateNo",
+      "generalAverage",
+    ];
+
+    fieldsToReset.forEach((field) => {
+      resetField(field);
+    });
+  };
 
   const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(() => {
     const val = getValues("motherTongue");
@@ -122,9 +175,101 @@ export default function Step1Personal() {
         if (active) {
           const profile = res.data;
           setLearnerFound(true);
+
+          // 1. Personal Info
+          if (profile.studentPhoto) setValue("studentPhoto", profile.studentPhoto, { shouldValidate: true, shouldDirty: true });
           if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
           if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
           if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
+          if (profile.extensionName) setValue("extensionName", profile.extensionName, { shouldValidate: true, shouldDirty: true });
+          
+          if (profile.birthdate) {
+            const d = new Date(profile.birthdate);
+            if (!isNaN(d.getTime())) {
+              setValue("birthdate", d, { shouldValidate: true, shouldDirty: true });
+            }
+          }
+          
+          if (profile.sex) {
+            setValue("sex", profile.sex === "MALE" ? "Male" : "Female", { shouldValidate: true, shouldDirty: true });
+          }
+
+          if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
+          if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
+          if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+          if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
+          if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
+          if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
+          if (profile.disabilityTypes?.length) setValue("disabilityTypes", profile.disabilityTypes, { shouldValidate: true, shouldDirty: true });
+          if (profile.is4PsBeneficiary !== undefined) setValue("is4PsBeneficiary", profile.is4PsBeneficiary, { shouldValidate: true, shouldDirty: true });
+          if (profile.householdId4Ps) setValue("householdId4Ps", profile.householdId4Ps, { shouldValidate: true, shouldDirty: true });
+          if (profile.hasPwdId !== undefined) setValue("hasPwdId", profile.hasPwdId, { shouldValidate: true, shouldDirty: true });
+          if (profile.isBalikAral !== undefined) setValue("isBalikAral", profile.isBalikAral, { shouldValidate: true, shouldDirty: true });
+          if (profile.lastYearEnrolled) setValue("lastYearEnrolled", profile.lastYearEnrolled, { shouldValidate: true, shouldDirty: true });
+          if (profile.psaBirthCertNumber) setValue("psaBirthCertNumber", profile.psaBirthCertNumber, { shouldValidate: true, shouldDirty: true });
+          if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
+
+          const mapAddress = (addr: any) => ({
+            houseNo: addr.houseNoStreet || "",
+            street: addr.street || "",
+            region: addr.region || "",
+            province: addr.province || "",
+            cityMunicipality: addr.cityMunicipality || "",
+            barangay: addr.barangay || "",
+            country: addr.country || "Philippines",
+            zipCode: addr.zipCode || "",
+          });
+
+          // 2. Addresses
+          if (profile.addresses?.length > 0) {
+            const current = profile.addresses.find((a: any) => a.addressType === "CURRENT");
+            if (current) setValue("currentAddress", mapAddress(current), { shouldValidate: true, shouldDirty: true });
+            
+            const permanent = profile.addresses.find((a: any) => a.addressType === "PERMANENT");
+            if (permanent) setValue("permanentAddress", mapAddress(permanent), { shouldValidate: true, shouldDirty: true });
+          }
+
+          const mapFamily = (f: any) => ({
+            lastName: f.lastName || "",
+            firstName: f.firstName || "",
+            middleName: f.middleName || "",
+            contactNumber: f.contactNumber || "",
+            email: f.email || "",
+            occupation: f.occupation || "",
+          });
+
+          // 3. Family Members
+          if (profile.familyMembers?.length > 0) {
+            const mother = profile.familyMembers.find((f: any) => f.relationship === "MOTHER");
+            if (mother) setValue("mother", mapFamily(mother), { shouldValidate: true, shouldDirty: true });
+            
+            const father = profile.familyMembers.find((f: any) => f.relationship === "FATHER");
+            if (father) setValue("father", mapFamily(father), { shouldValidate: true, shouldDirty: true });
+            
+            const guardian = profile.familyMembers.find((f: any) => f.relationship === "GUARDIAN");
+            if (guardian) setValue("guardian", mapFamily(guardian), { shouldValidate: true, shouldDirty: true });
+          }
+
+          // 4. Previous School
+          if (profile.previousSchool) {
+            const mapSchoolType = (type: string | undefined | null) => {
+              if (!type) return undefined;
+              if (type === "PUBLIC") return "Public";
+              if (type === "PRIVATE") return "Private";
+              if (type === "INTERNATIONAL") return "International";
+              if (type === "ALS") return "ALS";
+              return type as any;
+            };
+
+            if (profile.previousSchool.schoolName) setValue("lastSchoolName", profile.previousSchool.schoolName, { shouldValidate: true, shouldDirty: true });
+            if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
+            if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
+            if (profile.previousSchool.schoolType) setValue("lastSchoolType", mapSchoolType(profile.previousSchool.schoolType), { shouldValidate: true, shouldDirty: true });
+            if (profile.previousSchool.transferCertificateNo) setValue("transferCertificateNo", profile.previousSchool.transferCertificateNo, { shouldValidate: true, shouldDirty: true });
+            if (profile.previousSchool.generalAverage) setValue("generalAverage", profile.previousSchool.generalAverage, { shouldValidate: true, shouldDirty: true });
+          }
+
+          // 5. SCP Validation
           setValue("scpProgram", profile.scpProgram, { shouldValidate: true });
           setValue("scpAdmissionStatus", profile.scpAdmissionStatus, { shouldValidate: true });
         }
@@ -321,6 +466,18 @@ export default function Step1Personal() {
               );
             }}
           />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {lrn && lrn.length > 0 && !hasNoLrn && (
+              <button
+                type="button"
+                onClick={handleClearLrn}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                aria-label="Clear LRN"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {errors.lrn && (

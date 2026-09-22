@@ -9,6 +9,7 @@ import { cn } from "@/shared/lib/utils";
 export interface MultiSearchableComboboxItem {
   value: string;
   label: string;
+  group?: string;
 }
 
 interface MultiSearchableComboboxProps {
@@ -153,35 +154,72 @@ export function MultiSearchableCombobox({
               {emptyText}
             </li>
           ) : (
-            filtered.map((item) => {
-              const isSelected = value.includes(item.value);
-              const isAtLimit =
-                maxSelected !== undefined &&
-                value.length >= maxSelected &&
-                !isSelected;
+            (() => {
+              const groups: Record<string, MultiSearchableComboboxItem[]> = {};
+              const ungrouped: MultiSearchableComboboxItem[] = [];
+
+              filtered.forEach((item) => {
+                if (item.group) {
+                  if (!groups[item.group]) groups[item.group] = [];
+                  groups[item.group].push(item);
+                } else {
+                  ungrouped.push(item);
+                }
+              });
+
+              const renderItem = (item: MultiSearchableComboboxItem) => {
+                const isSelected = value.includes(item.value);
+                const isAtLimit =
+                  maxSelected !== undefined &&
+                  value.length >= maxSelected &&
+                  !isSelected;
+
+                return (
+                  <li key={item.value}>
+                    <button
+                      type="button"
+                      disabled={isAtLimit}
+                      onClick={() => handleSelect(item)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 text-base font-bold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                        isSelected && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <Check
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          isSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {item.label}
+                    </button>
+                  </li>
+                );
+              };
 
               return (
-                <li key={item.value}>
-                  <button
-                    type="button"
-                    disabled={isAtLimit}
-                    onClick={() => handleSelect(item)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 text-base font-bold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-45",
-                      isSelected && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    <Check
-                      className={cn(
-                        "h-3.5 w-3.5 shrink-0",
-                        isSelected ? "opacity-100" : "opacity-0"
+                <>
+                  {Object.entries(groups).map(([group, items]) => (
+                    <div key={group}>
+                      <li className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        {group}
+                      </li>
+                      {items.map(renderItem)}
+                    </div>
+                  ))}
+                  {ungrouped.length > 0 && (
+                    <div key="ungrouped">
+                      {Object.keys(groups).length > 0 && (
+                        <li className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                          Other
+                        </li>
                       )}
-                    />
-                    {item.label}
-                  </button>
-                </li>
+                      {ungrouped.map(renderItem)}
+                    </div>
+                  )}
+                </>
               );
-            })
+            })()
           )}
         </ul>
       </PopoverContent>

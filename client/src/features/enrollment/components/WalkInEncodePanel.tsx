@@ -159,9 +159,26 @@ export function WalkInEncodePanel() {
     enabled: isStrictClassAdviser && !!activeSyId,
   });
 
-  const assignedGradeLevelId = isStrictClassAdviser && advisoryData?.section?.gradeLevelId
-    ? advisoryData.section.gradeLevelId
-    : null;
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  
+  let assignedGradeLevelId: number | null = null;
+  if (isStrictClassAdviser && advisoryData?.section?.gradeLevelId) {
+    assignedGradeLevelId = advisoryData.section.gradeLevelId;
+  } else if (!isAdmin && !isHeadRegistrar) {
+    const isGrade7Coordinator = ancillaryRoles.includes("GRADE 7 COORDINATOR");
+    const isGrade8Coordinator = ancillaryRoles.includes("GRADE 8 COORDINATOR");
+    const isGrade9Coordinator = ancillaryRoles.includes("GRADE 9 COORDINATOR");
+    const isGrade10Coordinator = ancillaryRoles.includes("GRADE 10 COORDINATOR");
+
+    if (isGrade7Coordinator || isGrade8Coordinator || isGrade9Coordinator || isGrade10Coordinator) {
+      if (activeSchoolYear?.gradeLevels) {
+        if (isGrade7Coordinator) assignedGradeLevelId = activeSchoolYear.gradeLevels.find(g => g.name === "Grade 7")?.id ?? null;
+        else if (isGrade8Coordinator) assignedGradeLevelId = activeSchoolYear.gradeLevels.find(g => g.name === "Grade 8")?.id ?? null;
+        else if (isGrade9Coordinator) assignedGradeLevelId = activeSchoolYear.gradeLevels.find(g => g.name === "Grade 9")?.id ?? null;
+        else if (isGrade10Coordinator) assignedGradeLevelId = activeSchoolYear.gradeLevels.find(g => g.name === "Grade 10")?.id ?? null;
+      }
+    }
+  }
 
   const programOptions = [
     { val: "REGULAR", label: "BEC" },

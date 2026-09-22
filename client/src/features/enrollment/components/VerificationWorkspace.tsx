@@ -21,6 +21,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useAuthStore } from "@/store/auth.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
@@ -292,15 +293,36 @@ export function VerificationWorkspace() {
   const activeTabRaw = useSettingsStore((s) => s.uiPreferences.verificationTab);
   const activeTab = (["PENDING", "READY", "INCOMPLETE", "CANCELLED"].includes(activeTabRaw) ? activeTabRaw : "PENDING") as VerificationTab;
   const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
+  const ancillaryRoles = useAuthStore((s: any) => s.user?.ancillaryRoles ?? []);
+  
+  const { data: activeSchoolYear } = useQuery({
+    queryKey: ["school-years", "active", "grade-levels"],
+    queryFn: async () => {
+      const res = await api.get("/school-years/grade-levels");
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+  
+  const assignedGradeLevelId = useMemo(() => {
+    if (!activeSchoolYear?.gradeLevels) return null;
+    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
+    return null;
+  }, [ancillaryRoles, activeSchoolYear?.gradeLevels]);
 
   const {
     data: pendingVerifications = [],
     isLoading,
     isPending,
   } = useQuery({
-    queryKey: ["enrollment", "pending-verifications"],
+    queryKey: ["enrollment", "pending-verifications", assignedGradeLevelId],
     queryFn: () =>
-      api.get<PendingVerification[]>("/enrollment/pending-verifications").then((r) => r.data),
+      api.get<PendingVerification[]>("/enrollment/pending-verifications", {
+        params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+      }).then((r) => r.data),
     enabled: !isHistoricalReadOnly,
   });
 

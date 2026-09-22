@@ -44,6 +44,7 @@ type AuthResponseUser = {
   employeeId: string | null;
   accountName: string | null;
   roles: Role[];
+  ancillaryRoles: string[];
   mustChangePassword?: boolean;
 };
 
@@ -329,15 +330,15 @@ export default function Login() {
     void api.get<AuthResponsePayload>("/auth/me")
       .then(({ data }) => {
         setAuth(data.user);
-        const isStrictClassAdviser =
-          data.user.roles?.includes("CLASS_ADVISER") &&
-          !data.user.roles?.includes("SYSTEM_ADMIN") &&
-          !data.user.roles?.includes("HEAD_REGISTRAR");
-
-        const destination = isStrictClassAdviser
+        const isRegistrar = data.user.roles?.includes("HEAD_REGISTRAR") || data.user.roles?.includes("SCHOOL_REGISTRAR");
+        const isAdmin = data.user.roles?.includes("SYSTEM_ADMIN");
+        const isClassAdviser = data.user.roles?.includes("CLASS_ADVISER");
+        const isGradeCoordinator = data.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
+        
+        const destination = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
           ? "/dashboard"
           : data.user.roles?.includes("TEACHER")
-            ? "/teacher/advisory"
+            ? "/learners"
             : data.user.roles?.includes("MRF")
               ? "/my-activity"
               : "/dashboard";
@@ -424,15 +425,15 @@ export default function Login() {
         return;
       }
 
-      const isStrictClassAdviser =
-        payload.user.roles?.includes("CLASS_ADVISER") &&
-        !payload.user.roles?.includes("SYSTEM_ADMIN") &&
-        !payload.user.roles?.includes("HEAD_REGISTRAR");
-
-      const destination = isStrictClassAdviser
+      const isRegistrar = payload.user.roles?.includes("HEAD_REGISTRAR") || payload.user.roles?.includes("SCHOOL_REGISTRAR");
+      const isAdmin = payload.user.roles?.includes("SYSTEM_ADMIN");
+      const isClassAdviser = payload.user.roles?.includes("CLASS_ADVISER");
+      const isGradeCoordinator = payload.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
+      
+      const destination = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
         ? "/dashboard"
         : payload.user.roles?.includes("TEACHER")
-          ? "/teacher/advisory"
+          ? "/learners"
           : payload.user.roles?.includes("MRF")
             ? "/my-activity"
             : "/dashboard";
@@ -476,15 +477,15 @@ export default function Login() {
     && !reverseSsoErrorCode
     && !reverseSsoSucceeded
   ) {
-    const isStrictClassAdviser =
-      user.roles?.includes("CLASS_ADVISER") &&
-      !user.roles?.includes("SYSTEM_ADMIN") &&
-      !user.roles?.includes("HEAD_REGISTRAR");
-
-    const homeRoute = isStrictClassAdviser
+    const isRegistrar = user.roles?.includes("HEAD_REGISTRAR") || user.roles?.includes("SCHOOL_REGISTRAR");
+    const isAdmin = user.roles?.includes("SYSTEM_ADMIN");
+    const isClassAdviser = user.roles?.includes("CLASS_ADVISER");
+    const isGradeCoordinator = user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
+    
+    const homeRoute = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
       ? "/dashboard"
       : user.roles?.includes("TEACHER")
-        ? "/teacher/advisory"
+        ? "/learners"
         : user.roles?.includes("MRF")
           ? "/my-activity"
           : "/dashboard";

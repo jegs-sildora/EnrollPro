@@ -316,22 +316,15 @@ export async function getLearnerProfile(req: Request, res: Response) {
 
     const learner = await prisma.learner.findUnique({
       where: { lrn },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
+      include: {
         enrollmentApplications: {
-          where: { schoolYearId: setting.activeSchoolYearId },
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: {
-            applicantType: true, // This stores the specific SCP program they applied to, if any
-            scpProfile: {
-              select: {
-                assessmentResult: true,
-              },
-            },
+          include: {
+            scpProfile: true,
+            addresses: true,
+            familyMembers: true,
+            previousSchool: true,
           },
         },
       },
@@ -343,15 +336,43 @@ export async function getLearnerProfile(req: Request, res: Response) {
     }
 
     const application = learner.enrollmentApplications[0];
-    const isScp = isSpecialCurricularProgramType(application?.applicantType);
+    const isActiveYearApp = application?.schoolYearId === setting.activeSchoolYearId;
+    const isScp = isActiveYearApp && isSpecialCurricularProgramType(application?.applicantType);
 
     res.json({
+      // Core Learner Demographics
       id: learner.id,
       firstName: learner.firstName,
       lastName: learner.lastName,
       middleName: learner.middleName,
-      scpProgram: isScp ? application?.applicantType : null,
-      scpAdmissionStatus: isScp ? application?.scpProfile?.assessmentResult : null,
+      extensionName: learner.extensionName,
+      birthdate: learner.birthdate,
+      sex: learner.sex,
+      placeOfBirth: learner.placeOfBirth,
+      religion: learner.religion,
+      motherTongue: learner.motherTongue,
+      isIpCommunity: learner.isIpCommunity,
+      ipGroupName: learner.ipGroupName,
+      isLearnerWithDisability: learner.isLearnerWithDisability,
+      disabilityTypes: learner.disabilityTypes,
+      is4PsBeneficiary: learner.is4PsBeneficiary,
+      householdId4Ps: learner.householdId4Ps,
+      hasPwdId: learner.hasPwdId,
+      isBalikAral: learner.isBalikAral,
+      lastGradeLevel: learner.lastGradeLevel,
+      lastYearEnrolled: learner.lastYearEnrolled,
+      psaBirthCertNumber: learner.psaBirthCertNumber,
+      specialNeedsCategory: learner.specialNeedsCategory,
+      studentPhoto: learner.studentPhoto,
+
+      // Previous Application Data (for auto-filling addresses, family, previous school)
+      addresses: application?.addresses || [],
+      familyMembers: application?.familyMembers || [],
+      previousSchool: application?.previousSchool || null,
+
+      // SCP Eligibility (strictly from active school year)
+      scpProgram: isScp ? application.applicantType : null,
+      scpAdmissionStatus: isScp ? application.scpProfile?.assessmentResult : null,
     });
   } catch (error) {
     console.error("Failed to fetch learner profile:", error);

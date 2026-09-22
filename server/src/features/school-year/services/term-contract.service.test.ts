@@ -84,12 +84,10 @@ test("resolves the active identity and its matching configured label", () => {
   assert.equal(active.displayLabel, "SECOND TERM")
 })
 
-test("does not fabricate T1 when no term contains the current date", () => {
-  assert.throws(
-    () => resolveActiveTermEntry(buildOrderedTermContract(trimesterSource()), date("2032-01-01")),
-    (error: unknown) =>
-      error instanceof TermContractError && error.code === "ACTIVE_TERM_UNRESOLVED",
-  )
+test("fallback applies when no term contains the current date", () => {
+  const active = resolveActiveTermEntry(buildOrderedTermContract(trimesterSource()), date("2032-01-01"))
+  assert.equal(active.identity, "T3")
+  assert.equal(active.isGradingLocked, true)
 })
 
 test("shared contract rejects duplicate or out-of-order identities", () => {
@@ -166,4 +164,86 @@ test("quarters require a complete fourth term before persistence", () => {
     (error: unknown) =>
       error instanceof TermContractError && error.code === "TERM_ENTRY_INVALID",
   )
+})
+
+test("resolves exactly the current term before midnight rollover in Asia/Manila (Pre-Rollover State)", () => {
+  const source = {
+    ...trimesterSource(),
+    term1Start: date("2026-06-01"),
+    term1End: date("2026-09-15"),
+    term2Start: date("2026-09-16"),
+    term2End: date("2026-12-18"),
+    term3Start: date("2027-01-04"),
+    term3End: date("2027-04-08"),
+  };
+  // September 15, 2026, 23:59:59 PHT -> 15:59:59 UTC
+  test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T15:59:59.000Z") }) 
+  const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
+  assert.equal(active.identity, "T1")
+  test.mock.timers.reset()
+})
+
+test("resolves the next term at exactly midnight rollover in Asia/Manila (Midnight Rollover Trigger)", () => {
+  const source = {
+    ...trimesterSource(),
+    term1Start: date("2026-06-01"),
+    term1End: date("2026-09-15"),
+    term2Start: date("2026-09-16"),
+    term2End: date("2026-12-18"),
+    term3Start: date("2027-01-04"),
+    term3End: date("2027-04-08"),
+  };
+  // September 16, 2026, 00:00:01 PHT -> 16:00:01 UTC on Sept 15
+  test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T16:00:01.000Z") }) 
+  const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
+  assert.equal(active.identity, "T2")
+  test.mock.timers.reset()
+})
+
+test("gap day fallback resolves to the most recently completed term with isGradingLocked flag (Gap Day Handling)", () => {
+  const source = {
+    ...trimesterSource(),
+    term1Start: date("2026-06-01"),
+    term1End: date("2026-09-15"),
+    term2Start: date("2026-09-16"),
+    term2End: date("2026-12-18"),
+    term3Start: date("2027-01-04"),
+    term3End: date("2027-04-08"),
+  };
+  // December 25, 2026, 12:00:00 PHT -> 04:00:00 UTC
+  test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-12-25T04:00:00.000Z") }) 
+  const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
+  assert.equal(active.identity, "T2")
+  assert.equal(active.isGradingLocked, true)
+  test.mock.timers.reset()
+})
+
+test("resolves perfectly aligned with midnight in Asia/Manila even if server timezone is America/New_York (Timezone Immunity)", () => {
+  const source = {
+    ...trimesterSource(),
+    term1Start: date("2026-06-01"),
+    term1End: date("2026-09-15"),
+    term2Start: date("2026-09-16"),
+    term2End: date("2026-12-18"),
+    term3Start: date("2027-01-04"),
+    term3End: date("2027-04-08"),
+  };
+  const originalTz = process.env.TZ;
+  process.env.TZ = "America/New_York";
+
+  try {
+    // September 15, 2026, 23:59:59 PHT
+    test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T15:59:59.000Z") }) 
+    const active1 = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
+    assert.equal(active1.identity, "T1")
+    test.mock.timers.reset()
+
+    // September 16, 2026, 00:00:01 PHT
+    test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T16:00:01.000Z") }) 
+    const active2 = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
+    assert.equal(active2.identity, "T2")
+  } finally {
+    process.env.TZ = originalTz;
+    test.mock.timers.reset()
+  }
 })

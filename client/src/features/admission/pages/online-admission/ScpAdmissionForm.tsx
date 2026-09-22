@@ -292,6 +292,80 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   }, [lrn, hasNoLrn]);
 
   useEffect(() => {
+    let active = true;
+
+    if (intakeChoice !== "RETURNING" || !lrn || lrn.length !== 12 || hasNoLrn || duplicateDetected) {
+      return;
+    }
+
+    api.get(`/applications/learner-profile/${lrn}`)
+      .then((res) => {
+        if (!active) return;
+        const profile = res.data;
+
+        if (profile.studentPhoto) setValue("studentPhoto", profile.studentPhoto, { shouldValidate: true, shouldDirty: true });
+        if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
+        if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
+        if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
+        if (profile.extensionName) setValue("extensionName", profile.extensionName, { shouldValidate: true, shouldDirty: true });
+        
+        if (profile.birthdate) {
+          const d = new Date(profile.birthdate);
+          if (!isNaN(d.getTime())) {
+            setValue("birthdate", d as any, { shouldValidate: true, shouldDirty: true });
+            setDateInput(format(d, "MM/dd/yyyy"));
+            setCalendarMonth(d);
+          }
+        }
+        
+        if (profile.sex) {
+          setValue("sex", profile.sex, { shouldValidate: true, shouldDirty: true });
+        }
+
+        if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
+        if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
+        if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+        
+        if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
+        if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
+        if (profile.is4PsBeneficiary !== undefined) setValue("is4PsBeneficiary", profile.is4PsBeneficiary, { shouldValidate: true, shouldDirty: true });
+        if (profile.householdId4Ps) setValue("householdId4Ps", profile.householdId4Ps, { shouldValidate: true, shouldDirty: true });
+        if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
+        if (profile.hasPwdId !== undefined) setValue("hasPwdId", profile.hasPwdId, { shouldValidate: true, shouldDirty: true });
+        if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
+        if (profile.disabilityTypes && Array.isArray(profile.disabilityTypes)) {
+          setValue("disabilityTypes", profile.disabilityTypes, { shouldValidate: true, shouldDirty: true });
+        }
+
+        if (profile.addresses && Array.isArray(profile.addresses)) {
+          const current = profile.addresses.find((a: any) => a.addressType === "CURRENT");
+          if (current) {
+            setValue("currentAddress", {
+              houseNoStreet: current.houseNoStreet || "",
+              sitio: current.sitio || "",
+              barangay: current.barangay || "",
+              cityMunicipality: current.cityMunicipality || "",
+              province: current.province || "",
+              region: current.region || "",
+            }, { shouldValidate: true, shouldDirty: true });
+          }
+        }
+
+        if (profile.previousSchool) {
+          setValue("lastSchoolName", profile.previousSchool.schoolName || "", { shouldValidate: true, shouldDirty: true });
+          if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
+          if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
+          if (profile.previousSchool.schoolType) setValue("lastSchoolType", profile.previousSchool.schoolType, { shouldValidate: true, shouldDirty: true });
+        }
+      })
+      .catch((error) => console.error("Error fetching learner profile:", error));
+
+    return () => {
+      active = false;
+    };
+  }, [lrn, hasNoLrn, intakeChoice, duplicateDetected, setValue]);
+
+  useEffect(() => {
     if (!hasNoLrn) return;
     if (lrn) {
       setValue("lrn", "", { shouldValidate: true, shouldDirty: true });

@@ -387,6 +387,8 @@ export async function getPendingVerifications(req: Request, res: Response) {
       return res.status(403).json({ message: "You do not have an active advisory class assigned." });
     }
     finalGradeLevelId = adviserGradeId;
+  } else if (req.query.gradeLevelId) {
+    finalGradeLevelId = Number(req.query.gradeLevelId);
   }
 
   const applications = await prisma.enrollmentApplication.findMany({
@@ -726,6 +728,26 @@ export async function directEncodeWalkIn(
           403,
           "You can only encode walk-in applications for your assigned advisory grade level.",
         );
+      }
+    }
+
+    const ancillaryRoles = req.user!.ancillaryRoles || [];
+    const isGrade7Coordinator = ancillaryRoles.includes("GRADE 7 COORDINATOR");
+    const isGrade8Coordinator = ancillaryRoles.includes("GRADE 8 COORDINATOR");
+    const isGrade9Coordinator = ancillaryRoles.includes("GRADE 9 COORDINATOR");
+    const isGrade10Coordinator = ancillaryRoles.includes("GRADE 10 COORDINATOR");
+
+    if (isGrade7Coordinator || isGrade8Coordinator || isGrade9Coordinator || isGrade10Coordinator) {
+      const grade = await prisma.gradeLevel.findUnique({ where: { id: gradeLevelId } });
+      if (!grade) throw new AppError(400, "Invalid grade level.");
+
+      if (
+        (isGrade7Coordinator && grade.name !== "Grade 7") ||
+        (isGrade8Coordinator && grade.name !== "Grade 8") ||
+        (isGrade9Coordinator && grade.name !== "Grade 9") ||
+        (isGrade10Coordinator && grade.name !== "Grade 10")
+      ) {
+        throw new AppError(403, `You are not authorized to enroll students in ${grade.name}.`);
       }
     }
     const applicantType = parseWalkInProgramType(assignedProgram);
