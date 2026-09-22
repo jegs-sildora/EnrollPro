@@ -3,6 +3,7 @@ export {
   listSchoolYears,
   getNextDefaults,
   getSchoolYear,
+  getActiveSchoolYearTerm,
 } from "./controllers/school-year.query.controller.js";
 export {
   createSchoolYear,

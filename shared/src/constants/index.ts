@@ -798,44 +798,64 @@ export const DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS = [
 ] as const;
 
 export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
+  // Enrollment & Sectioning Chairs
+  { value: "GRADE 7 COORDINATOR", label: "Grade 7 Coordinator", group: "Enrollment & Sectioning Chairs" },
+  { value: "GRADE 8 COORDINATOR", label: "Grade 8 Coordinator", group: "Enrollment & Sectioning Chairs" },
+  { value: "GRADE 9 COORDINATOR", label: "Grade 9 Coordinator", group: "Enrollment & Sectioning Chairs" },
+  { value: "GRADE 10 COORDINATOR", label: "Grade 10 Coordinator", group: "Enrollment & Sectioning Chairs" },
+
+  // Special Curricular Program (SCP) Heads
+  { value: "STE HEAD TEACHER", label: "STE Head Teacher", group: "Special Curricular Program (SCP) Heads" },
+  { value: "SPA HEAD TEACHER", label: "SPA Head Teacher", group: "Special Curricular Program (SCP) Heads" },
+  { value: "SPS HEAD TEACHER", label: "SPS Head Teacher", group: "Special Curricular Program (SCP) Heads" },
+
+  // System-Wide Roles
+  { value: "SCHOOL REGISTRAR", label: "School Registrar", group: "System-Wide Roles" },
+  { value: "SYSTEM ADMINISTRATOR", label: "System Administrator", group: "System-Wide Roles" },
+
+  // Other Roles
   {
     value: "TEACHER-IN-CHARGE (TIC) / OFFICER-IN-CHARGE (OIC)",
     label: "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)",
+    group: "Other Roles",
   },
-  { value: "LIS COORDINATOR", label: "LIS Coordinator" },
-  { value: "ICT COORDINATOR", label: "ICT Coordinator" },
-  { value: "SDRRM COORDINATOR", label: "SDRRM Coordinator" },
-  { value: "GUIDANCE DESIGNATE", label: "Guidance Designate" },
-  { value: "SCHOOL PAPER ADVISER (SPA)", label: "School Paper Adviser (SPA)" },
-  { value: "PROPERTY CUSTODIAN", label: "Property Custodian" },
+  { value: "LIS COORDINATOR", label: "LIS Coordinator", group: "Other Roles" },
+  { value: "ICT COORDINATOR", label: "ICT Coordinator", group: "Other Roles" },
+  { value: "SDRRM COORDINATOR", label: "SDRRM Coordinator", group: "Other Roles" },
+  { value: "GUIDANCE DESIGNATE", label: "Guidance Designate", group: "Other Roles" },
+  { value: "SCHOOL PAPER ADVISER (SPA)", label: "School Paper Adviser (SPA)", group: "Other Roles" },
+  { value: "PROPERTY CUSTODIAN", label: "Property Custodian", group: "Other Roles" },
   {
     value: "CLINIC TEACHER / HEALTH COORDINATOR",
     label: "Clinic Teacher / Health Coordinator",
+    group: "Other Roles",
   },
-  { value: "SPORTS COORDINATOR", label: "Sports Coordinator" },
-  { value: "BSP / GSP COORDINATOR", label: "BSP / GSP Coordinator" },
+  { value: "SPORTS COORDINATOR", label: "Sports Coordinator", group: "Other Roles" },
+  { value: "BSP / GSP COORDINATOR", label: "BSP / GSP Coordinator", group: "Other Roles" },
   {
     value: "GULAYAN SA PAARALAN (GPP) COORDINATOR",
     label: "Gulayan sa Paaralan (GPP) Coordinator",
+    group: "Other Roles",
   },
-  { value: "FEEDING COORDINATOR", label: "Feeding Coordinator" },
+  { value: "FEEDING COORDINATOR", label: "Feeding Coordinator", group: "Other Roles" },
   {
     value: "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER",
     label: "Supreme Secondary Learner Government (SSLG) Adviser",
+    group: "Other Roles",
   },
-  { value: "SSG ADVISER", label: "Supreme Student Government (SSG) Adviser" },
-  { value: "GRADE LEVEL CHAIRMAN", label: "Grade Level Chairman" },
-  { value: "SUBJECT AREA COORDINATOR", label: "Subject Area Coordinator" },
-  { value: "BSP COORDINATOR", label: "BSP Coordinator" },
-  { value: "GSP COORDINATOR", label: "GSP Coordinator" },
-  { value: "YES-O ADVISER", label: "YES-O Adviser" },
-  { value: "BARKADA KONTRA DROGA ADVISER", label: "Barkada Kontra Droga Adviser" },
-  { value: "BIDS AND AWARDS COMMITTEE MEMBER", label: "Bids and Awards Committee Member" },
-  { value: "SCHOOL-BASED MANAGEMENT COORDINATOR", label: "School-Based Management Coordinator" },
-  { value: "GENDER AND DEVELOPMENT COORDINATOR", label: "Gender and Development Coordinator" },
-  { value: "WASH IN SCHOOLS COORDINATOR", label: "Wash in Schools Coordinator" },
-  { value: "CHILD PROTECTION POLICY COORDINATOR", label: "Child Protection Policy Coordinator" },
-  { value: "NATIONAL ACHIEVEMENT TEST COORDINATOR", label: "National Achievement Test Coordinator" },
+  { value: "SSG ADVISER", label: "Supreme Student Government (SSG) Adviser", group: "Other Roles" },
+  { value: "GRADE LEVEL CHAIRMAN", label: "Grade Level Chairman", group: "Other Roles" },
+  { value: "SUBJECT AREA COORDINATOR", label: "Subject Area Coordinator", group: "Other Roles" },
+  { value: "BSP COORDINATOR", label: "BSP Coordinator", group: "Other Roles" },
+  { value: "GSP COORDINATOR", label: "GSP Coordinator", group: "Other Roles" },
+  { value: "YES-O ADVISER", label: "YES-O Adviser", group: "Other Roles" },
+  { value: "BARKADA KONTRA DROGA ADVISER", label: "Barkada Kontra Droga Adviser", group: "Other Roles" },
+  { value: "BIDS AND AWARDS COMMITTEE MEMBER", label: "Bids and Awards Committee Member", group: "Other Roles" },
+  { value: "SCHOOL-BASED MANAGEMENT COORDINATOR", label: "School-Based Management Coordinator", group: "Other Roles" },
+  { value: "GENDER AND DEVELOPMENT COORDINATOR", label: "Gender and Development Coordinator", group: "Other Roles" },
+  { value: "WASH IN SCHOOLS COORDINATOR", label: "Wash in Schools Coordinator", group: "Other Roles" },
+  { value: "CHILD PROTECTION POLICY COORDINATOR", label: "Child Protection Policy Coordinator", group: "Other Roles" },
+  { value: "NATIONAL ACHIEVEMENT TEST COORDINATOR", label: "National Achievement Test Coordinator", group: "Other Roles" },
 ] as const;
 
 export const TEACHER_NATURE_OF_APPOINTMENT_VALUES = [

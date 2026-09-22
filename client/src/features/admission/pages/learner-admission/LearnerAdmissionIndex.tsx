@@ -130,23 +130,24 @@ export default function LearnerAdmissionIndex() {
   const [restoreTarget, setRestoreTarget] = useState<{ id: number; name: string } | null>(null)
   const user = useAuthStore((state) => state.user)
   const roles = user?.roles ?? []
+  const ancillaryRoles = user?.ancillaryRoles ?? []
   const isGlobalAdmin = roles.some((r) => 
     ["SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "HEAD_REGISTRAR"].includes(r)
   )
 
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
-    if (steEnabled && (isGlobalAdmin || roles.includes("STE_COORDINATOR"))) {
+    if (steEnabled && (isGlobalAdmin || roles.includes("STE_COORDINATOR") || ancillaryRoles.includes("STE HEAD TEACHER"))) {
       programs.push({ id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE Applicants" })
     }
-    if (spaEnabled && (isGlobalAdmin || roles.includes("SPA_COORDINATOR"))) {
+    if (spaEnabled && (isGlobalAdmin || roles.includes("SPA_COORDINATOR") || ancillaryRoles.includes("SPA HEAD TEACHER"))) {
       programs.push({ id: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA Applicants" })
     }
-    if (spsEnabled && (isGlobalAdmin || roles.includes("SPS_COORDINATOR"))) {
+    if (spsEnabled && (isGlobalAdmin || roles.includes("SPS_COORDINATOR") || ancillaryRoles.includes("SPS HEAD TEACHER"))) {
       programs.push({ id: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS Applicants" })
     }
     return programs
-  }, [spaEnabled, spsEnabled, steEnabled, isGlobalAdmin, roles])
+  }, [spaEnabled, spsEnabled, steEnabled, isGlobalAdmin, roles, ancillaryRoles])
 
   const activeTab = activePrograms.some((program) => program.id === selectedTab)
     ? selectedTab

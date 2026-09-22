@@ -95,6 +95,12 @@ api.interceptors.request.use((config) => {
   if (learnerToken && config.url?.startsWith("/learner")) {
     config.headers.Authorization = `Bearer ${learnerToken}`;
   }
+
+  const mockDate = localStorage.getItem("mocked_system_date");
+  if (mockDate) {
+    config.headers.set("x-mock-date", mockDate);
+  }
+
   return config;
 });
 

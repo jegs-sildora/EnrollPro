@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
-import { cn } from "@/shared/lib/utils";
+import { cn, getManilaNow } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
   AlertTriangle,
@@ -190,7 +190,7 @@ function getEnrollmentWindowStatus(
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
 
-  const todayToken = toManilaDateToken(new Date());
+  const todayToken = toManilaDateToken(getManilaNow());
   const startToken = toManilaDateToken(openDate);
   const endToken = toManilaDateToken(closeDate);
 
@@ -231,7 +231,6 @@ interface SYItem {
   scpAdmissionOpenDate: string | null;
   scpAdmissionCloseDate: string | null;
   termFormat: "TRIMESTER" | "QUARTERS" | null;
-  activeTerm: string | null;
   _count: {
     sections: number;
     gradeLevels: number;
@@ -432,10 +431,9 @@ export default function SchoolYearTab() {
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
         scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split('T')[0] : "",
         scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split('T')[0] : "",
-        activeTerm: activeYear.activeTerm || activeTerm || "T1",
       });
     }
-  }, [activeYear, activeTerm]);
+  }, [activeYear]);
 
   const isCalendarChanged = useMemo(() => {
     if (!activeYear) return false;
@@ -454,10 +452,9 @@ export default function SchoolYearTab() {
       localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
       localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate) ||
       localCalendarState.scpAdmissionOpenDate !== getVal(activeYear.scpAdmissionOpenDate) ||
-      localCalendarState.scpAdmissionCloseDate !== getVal(activeYear.scpAdmissionCloseDate) ||
-      (localCalendarState.activeTerm !== (activeYear.activeTerm || activeTerm || "T1"))
+      localCalendarState.scpAdmissionCloseDate !== getVal(activeYear.scpAdmissionCloseDate)
     );
-  }, [localCalendarState, activeYear, activeTerm]);
+  }, [localCalendarState, activeYear]);
 
   const [localAlgorithmState, setLocalAlgorithmState] = useState({
     enableHomogeneousSections: enableHomogeneousSections ?? false,
@@ -511,7 +508,6 @@ export default function SchoolYearTab() {
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split("T")[0] : "",
         scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split("T")[0] : "",
         scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split("T")[0] : "",
-        activeTerm: activeYear.activeTerm || activeTerm || "T1",
       });
     }
 
@@ -521,7 +517,7 @@ export default function SchoolYearTab() {
     });
 
     setSelectedPhase(systemPhase);
-  }, [activeYear, activeTerm, enableHomogeneousSections, homogeneousSectionCount, systemPhase]);
+  }, [activeYear, enableHomogeneousSections, homogeneousSectionCount, systemPhase]);
 
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
 
@@ -1015,93 +1011,122 @@ export default function SchoolYearTab() {
                       { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
                       { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
                       ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
-                    ].map((term) => {
-                      const isActiveTerm = localCalendarState.activeTerm === `T${term.num}`;
+                    ].map((term, index, array) => {
+                      const todayToken = toManilaDateToken(getManilaNow());
+                      const startToken = term.start ? toManilaDateToken(term.start) : null;
+                      const endToken = term.end ? toManilaDateToken(term.end) : null;
+                      
+                      let termStatus: "UPCOMING" | "ACTIVE" | "COMPLETED" | "UNSCHEDULED" = "UNSCHEDULED";
+                      if (startToken && endToken) {
+                        if (todayToken < startToken) {
+                          termStatus = "UPCOMING";
+                        } else if (todayToken > endToken) {
+                          termStatus = "COMPLETED";
+                        } else {
+                          termStatus = "ACTIVE";
+                        }
+                      }
+                      
+                      const isCompleted = termStatus === "COMPLETED";
+                      const isActiveDateBounds = termStatus === "ACTIVE";
+                      
+                      // Also determine if there's a date conflict with the previous term
+                      let hasDateConflict = false;
+                      let conflictMessage = "";
+                      if (index > 0 && startToken) {
+                        const prevTerm = array[index - 1];
+                        const prevEndToken = prevTerm?.end ? toManilaDateToken(prevTerm.end) : null;
+                        if (prevEndToken && startToken < prevEndToken) {
+                          hasDateConflict = true;
+                          conflictMessage = `${term.label} start date cannot be earlier than ${prevTerm!.label} end date.`;
+                        }
+                      }
+
                       return (
-                        <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-2 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
-                          <div className="w-30 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase text-lg">
-                            {term.label}
-                            {isActiveTerm && (
-                              <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
-                            )}
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50">
-                              <div className="font-bold text-foreground uppercase mb-0.5">Start Date</div>
-                              <div className="relative w-full flex items-center">
-                                <HybridDatePicker
-                                  value={term.start || ""}
-                                  onChange={(val) => {
-                                    setLocalCalendarState(prev => ({ ...prev, [term.startField]: val }));
-                                  }}
-                                  hideCalendarIcon
-                                  className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground"
-                                />
-                                <DualPaneDateRangePicker
-                                  startValue={term.start || ""}
-                                  endValue={term.end || ""}
-                                  popoverAlign="start"
-                                  onApply={(start, end) => {
-                                    setLocalCalendarState(prev => ({
-                                      ...prev,
-                                      [term.startField]: start,
-                                      [term.endField]: end,
-                                    }));
-                                  }}
-                                  customTrigger={
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted-foreground/10 flex items-center justify-center shrink-0 text-foreground cursor-pointer z-10">
-                                      <CalendarIcon className="h-4 w-4" />
-                                    </div>
-                                  }
-                                />
+                        <div key={term.num} className="space-y-2">
+                          <div className={cn("flex flex-col sm:flex-row items-center gap-2 bg-card p-4 rounded-xl border transition-all", isActiveDateBounds ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
+                            <div className="w-30 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase text-lg">
+                              {term.label}
+                              {termStatus === "ACTIVE" && (
+                                <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
+                              )}
+                              {termStatus === "UPCOMING" && (
+                                <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-slate-100 text-slate-600 border border-slate-300 self-start ">UPCOMING</span>
+                              )}
+                              {termStatus === "COMPLETED" && (
+                                <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-slate-100 text-slate-500 border border-slate-200 self-start">COMPLETED</span>
+                              )}
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                              <div className={cn("w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50", hasDateConflict ? "border-destructive/50" : "border-border")}>
+                                <div className="font-bold text-foreground uppercase mb-0.5">Start Date</div>
+                                <div className="relative w-full flex items-center">
+                                  <HybridDatePicker
+                                    value={term.start || ""}
+                                    onChange={(val) => {
+                                      setLocalCalendarState(prev => ({ ...prev, [term.startField]: val }));
+                                    }}
+                                    hideCalendarIcon
+                                    disabled={isCompleted}
+                                    className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground disabled:opacity-100 disabled:text-primary"
+                                  />
+                                  <DualPaneDateRangePicker
+                                    startValue={term.start || ""}
+                                    endValue={term.end || ""}
+                                    popoverAlign="start"
+                                    onApply={(start, end) => {
+                                      setLocalCalendarState(prev => ({
+                                        ...prev,
+                                        [term.startField]: start,
+                                        [term.endField]: end,
+                                      }));
+                                    }}
+                                    customTrigger={
+                                      <div className={cn("absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full flex items-center justify-center shrink-0 text-foreground z-10", isCompleted ? "text-muted-foreground pointer-events-none" : "hover:bg-muted-foreground/10 cursor-pointer")}>
+                                        <CalendarIcon className="h-4 w-4" />
+                                      </div>
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <span className="text-foreground font-bold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
+                              <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50 border-border">
+                                <div className="font-bold text-foreground uppercase mb-0.5">End Date</div>
+                                <div className="relative w-full flex items-center">
+                                  <HybridDatePicker
+                                    value={term.end || ""}
+                                    onChange={(val) => {
+                                      setLocalCalendarState(prev => ({ ...prev, [term.endField]: val }));
+                                    }}
+                                    hideCalendarIcon
+                                    disabled={isCompleted}
+                                    className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground disabled:opacity-100 disabled:text-primary"
+                                  />
+                                  <DualPaneDateRangePicker
+                                    startValue={term.start || ""}
+                                    endValue={term.end || ""}
+                                    popoverAlign="end"
+                                    onApply={(start, end) => {
+                                      setLocalCalendarState(prev => ({
+                                        ...prev,
+                                        [term.startField]: start,
+                                        [term.endField]: end,
+                                      }));
+                                    }}
+                                    customTrigger={
+                                      <div className={cn("absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full flex items-center justify-center shrink-0 text-foreground z-10", isCompleted ? "text-muted-foreground pointer-events-none" : "hover:bg-muted-foreground/10 cursor-pointer")}>
+                                        <CalendarIcon className="h-4 w-4" />
+                                      </div>
+                                    }
+                                  />
+                                </div>
                               </div>
                             </div>
-                            <span className="text-foreground font-bold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
-                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative transition-colors focus-within:ring-1 focus-within:ring-primary/50">
-                              <div className="font-bold text-foreground uppercase mb-0.5">End Date</div>
-                              <div className="relative w-full flex items-center">
-                                <HybridDatePicker
-                                  value={term.end || ""}
-                                  onChange={(val) => {
-                                    setLocalCalendarState(prev => ({ ...prev, [term.endField]: val }));
-                                  }}
-                                  hideCalendarIcon
-                                  className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground"
-                                />
-                                <DualPaneDateRangePicker
-                                  startValue={term.start || ""}
-                                  endValue={term.end || ""}
-                                  popoverAlign="end"
-                                  onApply={(start, end) => {
-                                    setLocalCalendarState(prev => ({
-                                      ...prev,
-                                      [term.startField]: start,
-                                      [term.endField]: end,
-                                    }));
-                                  }}
-                                  customTrigger={
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted-foreground/10 flex items-center justify-center shrink-0 text-foreground cursor-pointer z-10">
-                                      <CalendarIcon className="h-4 w-4" />
-                                    </div>
-                                  }
-                                />
-                              </div>
-                            </div>
                           </div>
-                          {!isActiveTerm && activeYear && !isArchived && (
-                            <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
-                              <Button
-                                variant="outline"
-                                className="h-full px-6 border-primary/40 text-primary hover:text-primary shadow-sm font-extrabold uppercase tracking-wide transition-all"
-                                onClick={() => {
-                                  setLocalCalendarState(prev => ({
-                                    ...prev,
-                                    activeTerm: `T${term.num}`
-                                  }));
-                                }}
-                              >
-                                Set as Active {localCalendarState.termFormat === "QUARTERS" ? "Quarter" : "Term"}
-                              </Button>
+                          {hasDateConflict && (
+                            <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive animate-in fade-in slide-in-from-top-1">
+                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                              <p>{conflictMessage}</p>
                             </div>
                           )}
                         </div>

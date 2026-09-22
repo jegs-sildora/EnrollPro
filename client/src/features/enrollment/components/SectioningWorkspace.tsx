@@ -79,6 +79,8 @@ import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
+import { useAuthStore } from "@/store/auth.slice";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 interface SectionSummary {
   id: number;
@@ -621,12 +623,33 @@ export function SectioningWorkspace() {
   const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
   const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  
+  const { data: activeSchoolYear } = useQuery({
+    queryKey: ["school-years", "active", "grade-levels"],
+    queryFn: async () => {
+      const res = await api.get("/school-years/grade-levels");
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+
+  const assignedGradeLevelId = useMemo(() => {
+    if (!activeSchoolYear?.gradeLevels) return null;
+    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
+    return null;
+  }, [ancillaryRoles, activeSchoolYear?.gradeLevels]);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
-    queryKey: queryKeys.sectioningSections(),
+    queryKey: ["sectioning", "sections-summary", assignedGradeLevelId],
     queryFn: () =>
       api
-        .get<SectionSummary[]>("/sectioning/sections-summary")
+        .get<SectionSummary[]>("/sectioning/sections-summary", {
+          params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+        })
         .then((r) => r.data),
     enabled: !isHistoricalReadOnly,
     refetchInterval: 5_000,
@@ -635,9 +658,11 @@ export function SectioningWorkspace() {
   });
 
   const { data: poolData, isLoading: poolInitialLoading } = useQuery({
-    queryKey: queryKeys.sectioningPool(),
+    queryKey: ["sectioning", "pool", assignedGradeLevelId],
     queryFn: () =>
-      api.get<PoolLearner[]>("/sectioning/pool").then((r) => r.data),
+      api.get<PoolLearner[]>("/sectioning/pool", {
+        params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+      }).then((r) => r.data),
     enabled: !isHistoricalReadOnly,
     refetchInterval: 5_000,
     refetchOnWindowFocus: true,

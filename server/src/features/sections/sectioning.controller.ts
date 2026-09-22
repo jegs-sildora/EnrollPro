@@ -50,13 +50,17 @@ export async function getSectionsSummary(req: Request, res: Response) {
     const schoolYearId = req.query.schoolYearId
       ? Number(req.query.schoolYearId)
       : req.schoolYearId;
+    const { gradeLevelId } = req.query;
 
     if (!schoolYearId) {
       return res.status(400).json({ message: "Active school year not found." });
     }
 
+    const where: Prisma.SectionWhereInput = { schoolYearId };
+    if (gradeLevelId) where.gradeLevelId = Number(gradeLevelId);
+
     const sections = await prisma.section.findMany({
-      where: { schoolYearId },
+      where,
       include: {
         gradeLevel: { select: { name: true, displayOrder: true } },
         advisers: {

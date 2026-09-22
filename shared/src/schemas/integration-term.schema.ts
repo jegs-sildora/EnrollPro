@@ -31,6 +31,7 @@ export const integrationTermEntrySchema = z.object({
   order: z.number().int().min(1).max(4),
   startDate: z.iso.date(),
   endDate: z.iso.date(),
+  isGradingLocked: z.boolean().optional(),
 })
 
 export const integrationSchoolYearTermContractSchema = z.object({

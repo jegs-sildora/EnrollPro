@@ -75,11 +75,18 @@ export function formatManilaDate(
 
 /**
  * Returns the current date/time adjusted to Manila timezone.
+ * In development, respects the Time Machine mocked date.
  */
 export function getManilaNow(): Date {
-  // Return a date object that represents "Now" in Manila
-  // Note: Date objects are always UTC internally, but this ensures
-  // we're thinking about Manila when we perform operations.
+  if (import.meta.env.DEV) {
+    const mock = localStorage.getItem("mocked_system_date");
+    if (mock) {
+      const parsed = new Date(mock);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+  }
   return new Date();
 }
 

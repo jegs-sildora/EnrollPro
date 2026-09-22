@@ -10,6 +10,7 @@ import {
   deleteSchoolYear,
   getNextDefaults,
   updateDates,
+  getActiveSchoolYearTerm,
 } from "./school-year.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -35,6 +36,10 @@ router.get(
   authenticate,
   authorize("SYSTEM_ADMIN"),
   getNextDefaults,
+);
+router.get(
+  "/active-term",
+  getActiveSchoolYearTerm,
 );
 router.get(
   "/grade-levels",

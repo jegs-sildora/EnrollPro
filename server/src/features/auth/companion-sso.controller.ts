@@ -4,7 +4,11 @@ import type { CompanionSsoExchangeInput } from "@enrollpro/shared";
 import { companionSsoReverseCallbackSchema } from "@enrollpro/shared";
 
 import { AppError } from "../../lib/AppError.js";
-import { clearAuthSession, issueAuthSession } from "./auth.controller.js";
+import {
+  clearAuthSession,
+  getAncillaryRoles,
+  issueAuthSession,
+} from "./auth.controller.js";
 import {
   REVERSE_COMPLETION_CACHE_TTL_MS,
   completeCompanionReverseSso,
@@ -161,7 +165,10 @@ export async function completeCompanionReverseSsoCallback(
       parsed.data.state,
       reverseCookieOptions(REVERSE_COMPLETION_CACHE_TTL_MS),
     );
-    issueAuthSession(res, user);
+    const ancillaryRoles = await getAncillaryRoles(user.id);
+    const authUser = { ...user, ancillaryRoles };
+    
+    issueAuthSession(res, authUser);
     console.log(
       "[ReverseSSO] Callback succeeded for %s — user %s signed in, landing redirect issued.",
       system,

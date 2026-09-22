@@ -12,6 +12,7 @@ interface User {
   employeeId: string | null;
   accountName: string | null;
   roles: AuthRole[];
+  ancillaryRoles: string[];
   mustChangePassword?: boolean;
 }
 

@@ -24,13 +24,14 @@ export const authorizeScpProgram = (req: Request, res: Response, next: NextFunct
 		return;
 	}
 
+	const ancillaryRoles = req.user.ancillaryRoles || [];
 	let isAuthorized = false;
 
-	if (requestedProgram === 'SCIENCE_TECHNOLOGY_AND_ENGINEERING' && roles.includes('STE_COORDINATOR')) {
+	if (requestedProgram === 'SCIENCE_TECHNOLOGY_AND_ENGINEERING' && (roles.includes('STE_COORDINATOR') || ancillaryRoles.includes('STE HEAD TEACHER'))) {
 		isAuthorized = true;
-	} else if (requestedProgram === 'SPECIAL_PROGRAM_IN_THE_ARTS' && roles.includes('SPA_COORDINATOR')) {
+	} else if (requestedProgram === 'SPECIAL_PROGRAM_IN_THE_ARTS' && (roles.includes('SPA_COORDINATOR') || ancillaryRoles.includes('SPA HEAD TEACHER'))) {
 		isAuthorized = true;
-	} else if (requestedProgram === 'SPECIAL_PROGRAM_IN_SPORTS' && roles.includes('SPS_COORDINATOR')) {
+	} else if (requestedProgram === 'SPECIAL_PROGRAM_IN_SPORTS' && (roles.includes('SPS_COORDINATOR') || ancillaryRoles.includes('SPS HEAD TEACHER'))) {
 		isAuthorized = true;
 	}
 

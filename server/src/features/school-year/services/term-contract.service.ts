@@ -190,13 +190,32 @@ export function resolveActiveTermEntry(
   const matches = terms.filter(
     (term) => today >= term.startDate && today <= term.endDate,
   )
-  if (matches.length !== 1) {
-    throw new TermContractError(
-      "ACTIVE_TERM_UNRESOLVED",
-      "No single configured term contains the current Manila calendar date.",
-    )
+  if (matches.length === 1) {
+    return matches[0]!
   }
-  return matches[0]!
+
+  // Handle Gap Days: Find the most recently ended term
+  const pastTerms = terms.filter((term) => term.endDate < today)
+  if (pastTerms.length > 0) {
+    const mostRecent = pastTerms[pastTerms.length - 1]!
+    return {
+      ...mostRecent,
+      isGradingLocked: true,
+    }
+  }
+
+  // Fallback to Term 1 if today is before the entire school year starts
+  if (terms.length > 0 && today < terms[0]!.startDate) {
+    return {
+      ...terms[0]!,
+      isGradingLocked: true,
+    }
+  }
+
+  throw new TermContractError(
+    "ACTIVE_TERM_UNRESOLVED",
+    "No single configured term contains the current Manila calendar date, and gap fallback failed.",
+  )
 }
 
 export function isTermIdentity(value: string): value is IntegrationTermIdentity {

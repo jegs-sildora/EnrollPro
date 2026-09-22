@@ -44,6 +44,7 @@ type AuthResponseUser = {
   employeeId: string | null;
   accountName: string | null;
   roles: Role[];
+  ancillaryRoles: string[];
   mustChangePassword?: boolean;
 };
 
