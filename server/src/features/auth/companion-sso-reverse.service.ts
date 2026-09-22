@@ -288,6 +288,27 @@ interface CompanionErrorDetails {
   csrfRejected: boolean;
 }
 
+class CompanionReverseAccessDeniedError extends AppError {
+  readonly companionCode: string;
+
+  constructor(system: CompanionSystem, companionCode: string) {
+    super(
+      403,
+      `${system} denied access to EnrollPro (${companionCode}).`,
+      "COMPANION_REVERSE_SSO_ACCESS_DENIED",
+    );
+    Object.setPrototypeOf(this, CompanionReverseAccessDeniedError.prototype);
+    this.companionCode = companionCode;
+  }
+}
+
+export function originatingCompanionErrorCode(error: unknown): string | null {
+  return error instanceof CompanionReverseAccessDeniedError
+    && error.companionCode !== "UNSPECIFIED"
+    ? error.companionCode
+    : null;
+}
+
 async function readCompanionErrorDetails(
   response: Response,
 ): Promise<CompanionErrorDetails> {
@@ -377,10 +398,9 @@ async function exchangeCodeWithCompanion(input: {
           "COMPANION_REVERSE_SSO_CONFIGURATION_ERROR",
         );
       }
-      throw new AppError(
-        403,
-        "The companion account is not authorized for EnrollPro.",
-        "COMPANION_REVERSE_SSO_ACCESS_DENIED",
+      throw new CompanionReverseAccessDeniedError(
+        input.system,
+        companionError.code,
       );
     }
     throw new AppError(
@@ -418,19 +438,43 @@ function assertUserCanEnterEnrollPro(user: ReverseSsoUser): void {
   }
 }
 
-async function resolveUserById(input: {
+async function resolveUserByAssertion(input: {
   assertion: CompanionSsoReverseExchangeResponse["identity"];
   authenticatedAt: Date;
 }): Promise<ReverseSsoUser> {
-  let user = null;
-  if (input.assertion.userId) {
+  const employeeId = input.assertion.employeeId?.trim() || null;
+  let user: ReverseSsoUser | null = null;
+
+  if (employeeId) {
+    const [employeeUser, assertedIdUser] = await Promise.all([
+      prisma.user.findUnique({
+        where: { employeeId },
+        select: reverseUserSelect,
+      }),
+      input.assertion.userId
+        ? prisma.user.findUnique({
+            where: { id: input.assertion.userId },
+            select: reverseUserSelect,
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (
+      employeeUser
+      && assertedIdUser
+      && employeeUser.id !== assertedIdUser.id
+    ) {
+      throw new AppError(
+        409,
+        "The companion identity identifiers resolve to different EnrollPro accounts.",
+        "COMPANION_REVERSE_SSO_IDENTITY_CONFLICT",
+      );
+    }
+    user = employeeUser;
+  } else if (input.assertion.userId) {
+    // Compatibility fallback for companions that have not adopted employee IDs.
     user = await prisma.user.findUnique({
       where: { id: input.assertion.userId },
-      select: reverseUserSelect,
-    });
-  } else if (input.assertion.employeeId) {
-    user = await prisma.user.findUnique({
-      where: { employeeId: input.assertion.employeeId },
       select: reverseUserSelect,
     });
   }
@@ -438,7 +482,7 @@ async function resolveUserById(input: {
   if (!user) {
     throw new AppError(
       401,
-      "The EnrollPro user ID does not identify an account.",
+      "The companion identity does not identify an EnrollPro account.",
       "COMPANION_REVERSE_SSO_USER_NOT_FOUND",
     );
   }
@@ -476,7 +520,7 @@ async function completeCompanionReverseSsoOnce(input: {
   });
 
   const authenticatedAt = new Date();
-  const user = await resolveUserById({
+  const user = await resolveUserByAssertion({
     assertion: assertion.identity,
     authenticatedAt,
   });
@@ -489,6 +533,7 @@ async function completeCompanionReverseSsoOnce(input: {
     metadata: {
       companion: input.system,
       assertedUserId: assertion.identity.userId,
+      identityMatch: assertion.identity.employeeId ? "employeeId" : "userId",
     },
     req: input.req,
   });
@@ -522,6 +567,7 @@ export async function completeCompanionReverseSso(input: {
       metadata: {
         companion: input.system,
         reason: error instanceof AppError ? error.code : "REVERSE_SSO_FAILED",
+        companionError: originatingCompanionErrorCode(error),
       },
       req: input.req,
     });
@@ -560,6 +606,7 @@ export async function completeCompanionReverseSso(input: {
         metadata: {
           companion: input.system,
           reason: error instanceof AppError ? error.code : "REVERSE_SSO_FAILED",
+          companionError: originatingCompanionErrorCode(error),
         },
         req: input.req,
       });

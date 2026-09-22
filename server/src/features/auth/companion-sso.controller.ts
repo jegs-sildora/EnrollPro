@@ -9,6 +9,7 @@ import {
   REVERSE_COMPLETION_CACHE_TTL_MS,
   completeCompanionReverseSso,
   createCompanionReverseStart,
+  originatingCompanionErrorCode,
   reverseStateCookieName,
 } from "./companion-sso-reverse.service.js";
 
@@ -81,6 +82,18 @@ function reverseErrorCode(error: unknown): string {
     : "COMPANION_REVERSE_SSO_FAILED";
 }
 
+function reverseErrorQuery(
+  error: unknown,
+  system: ReturnType<typeof parseCompanionSystem> | null,
+): URLSearchParams {
+  const companionError = originatingCompanionErrorCode(error);
+  return new URLSearchParams({
+    ssoError: reverseErrorCode(error),
+    ...(system ? { source: system } : {}),
+    ...(companionError ? { companionError } : {}),
+  });
+}
+
 export async function startCompanionReverseSso(
   req: Request,
   res: Response,
@@ -106,10 +119,7 @@ export async function startCompanionReverseSso(
         ? `${error.code}: ${error.message}`
         : error,
     );
-    const query = new URLSearchParams({
-      ssoError: reverseErrorCode(error),
-      ...(system ? { source: system } : {}),
-    });
+    const query = reverseErrorQuery(error, system);
     res.redirect(303, `/personnel/login?${query.toString()}`);
   }
 }
@@ -184,10 +194,7 @@ export async function completeCompanionReverseSsoCallback(
     if (system) {
       res.clearCookie(reverseStateCookieName(system), reverseCookieOptions());
     }
-    const query = new URLSearchParams({
-      ssoError: reverseErrorCode(error),
-      ...(system ? { source: system } : {}),
-    });
+    const query = reverseErrorQuery(error, system);
     res.redirect(303, `/personnel/login?${query.toString()}`);
   }
 }

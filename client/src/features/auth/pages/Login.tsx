@@ -57,8 +57,15 @@ type SchoolMetaSettings = SettingsState & {
   schoolRegion?: string | null;
 };
 
-function reverseSsoErrorMessage(code: string, source: string | null): string {
+function reverseSsoErrorMessage(
+  code: string,
+  source: string | null,
+  companionError: string | null,
+): string {
   const system = source ?? "The integrated system";
+  const companionDetail = companionError && /^[A-Z0-9_]{1,64}$/.test(companionError)
+    ? ` (${companionError})`
+    : "";
   if (code === "COMPANION_REVERSE_SSO_CODE_INVALID") {
     return `${system} sign-in expired or was already used. Start again from ${system}.`;
   }
@@ -86,7 +93,7 @@ function reverseSsoErrorMessage(code: string, source: string | null): string {
     return `${system} could not accept EnrollPro's secure sign-in request. Contact the system administrator.`;
   }
   if (code === "COMPANION_REVERSE_SSO_ACCESS_DENIED") {
-    return `Your ${system} account is not authorized to sign in to EnrollPro.`;
+    return `Your ${system} account is not authorized to sign in to EnrollPro${companionDetail}.`;
   }
   if (code === "COMPANION_REVERSE_SSO_RESPONSE_INVALID") {
     return `The ${system} server returned an invalid or malformed sign-in response.`;
@@ -280,7 +287,11 @@ export default function Login() {
     clearAuth();
     sileo.error({
       title: "Integrated Sign-In Failed",
-      description: reverseSsoErrorMessage(code, searchParams.get("source")),
+      description: reverseSsoErrorMessage(
+        code,
+        searchParams.get("source"),
+        searchParams.get("companionError"),
+      ),
     });
     window.history.replaceState({}, "", "/personnel/login");
   }, [clearAuth, reverseSsoErrorCode, searchParams]);

@@ -1,6 +1,6 @@
 # ATLAS EnrollPro SSO
 
-Last reviewed: 2026-09-17
+Last reviewed: 2026-09-22
 
 ## Purpose
 
@@ -12,7 +12,7 @@ This is not cross-domain cookie sharing. ATLAS must never receive an EnrollPro p
 
 ```text
 ENROLLPRO_PUBLIC_URL=https://dev-jegs.buru-degree.ts.net
-ATLAS_SSO_CALLBACK_URL=https://njgrm.buru-degree.ts.net/auth/sso/callback
+ATLAS_SSO_CALLBACK_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/enrollpro/callback
 ATLAS_SSO_CLIENT_SECRET=<securely-provisioned-random-secret>
 ATLAS_SSO_REVERSE_AUTHORIZE_URL=https://njgrm.buru-degree.ts.net/auth/enrollpro/authorize
 ATLAS_SSO_REVERSE_EXCHANGE_URL=https://njgrm.buru-degree.ts.net/api/v1/auth/sso/exchange
@@ -55,7 +55,7 @@ must receive and install both replacements out of band before joint testing.
 
 ## ATLAS Callback Flow
 
-1. Accept `GET /auth/enrollpro/callback?code=<authorization-code>` on the ATLAS server.
+1. Accept `GET /api/v1/auth/enrollpro/callback?code=<authorization-code>` on the ATLAS server. This is the server callback, not the `/auth/sso/callback` SPA result page.
 2. Read the code on the server. Do not exchange it from browser JavaScript.
 3. Send `POST <ENROLLPRO_BASE_URL>/api/auth/companion-sso/atlas/exchange` with `Authorization: Bearer <ATLAS_SSO_CLIENT_SECRET>` and the JSON body `{ "code": "<authorization-code>" }`.
 4. Require `success: true`, `companion: "ATLAS"`, an active identity, at least one permitted role, and a valid active school-year object.
@@ -84,14 +84,19 @@ Signing out of ATLAS ends only the ATLAS session. Coordinated logout is not part
 3. ATLAS validates its session, client ID, and exact EnrollPro callback before issuing a 60-second single-use code.
 4. ATLAS stores only the code hash, bound user, client, callback, expiry, and consumption state.
 5. EnrollPro exchanges the code once at `ATLAS_SSO_REVERSE_EXCHANGE_URL` using `ATLAS_SSO_REVERSE_CLIENT_SECRET`.
-6. ATLAS returns `identity.userId`, using the numeric EnrollPro user ID saved from EnrollPro's earlier outbound SSO assertion.
-7. EnrollPro finds `User.id = identity.userId` and creates an EnrollPro-owned session for an existing active account.
+6. ATLAS returns its stable `identity.subject` and the user's EnrollPro-aligned `identity.employeeId`. A numeric `identity.userId` is optional and must not be an ATLAS-local account ID.
+7. EnrollPro resolves `User.employeeId` first and creates an EnrollPro-owned session for the existing active account. Numeric `userId` remains a compatibility fallback only when no employee ID is asserted.
 
-The reverse response must include `success`, `issuer: "ATLAS"`, `identity.userId`, and `authenticatedAt`. Names, employee ID, LRN, subject, roles, and school-year context may be returned but do not participate in EnrollPro account matching. Signed state, the exact callback, the single-use code, issuer validation, and the ATLAS reverse Bearer secret remain mandatory.
+The reverse response must include `success`, `issuer: "ATLAS"`, a usable identity, and `authenticatedAt`. When both `employeeId` and `userId` are supplied and resolve to different EnrollPro users, EnrollPro rejects the assertion with `COMPANION_REVERSE_SSO_IDENTITY_CONFLICT`; it never signs in the numeric-ID user. A supplied employee ID that has no EnrollPro match does not fall back to `userId`. Signed state, the exact callback, the single-use code, issuer validation, and the ATLAS reverse Bearer secret remain mandatory.
+
+When ATLAS rejects reverse authorization with HTTP 403, EnrollPro retains the
+stable top-level error `COMPANION_REVERSE_SSO_ACCESS_DENIED` and forwards the
+validated originating ATLAS code as `companionError`. The login notice displays
+that code for support diagnosis without exposing credentials or identity data.
 
 ## Implementation Verification
 
-Verified on 2026-09-17:
+Verified on 2026-09-22:
 
 - A fresh EnrollPro process redirects `/atlas/reverse/start` to the live ATLAS
   mediator at `/auth/enrollpro/authorize`.
@@ -101,7 +106,6 @@ Verified on 2026-09-17:
 - EnrollPro resolves a valid authoritative active school year for S.Y.
   2030–2031. Active-year validity is based on the settings pointer and the
   unique `ACTIVE` row, not the host calendar date.
-- ATLAS currently returns `COMPANION_SSO_CLIENT_INVALID` when EnrollPro presents
-  the rotated reverse secret. ATLAS-to-EnrollPro SSO cannot complete until ATLAS
-  securely installs the current EnrollPro `ATLAS_SSO_REVERSE_CLIENT_SECRET` as
-  its `ATLAS_SSO_REVERSE_CLIENT_SECRET` and deploys that configuration.
+- The outbound EnrollPro-to-ATLAS launch targets the ATLAS server callback at
+  `/api/v1/auth/enrollpro/callback`; `/auth/sso/callback` remains ATLAS's result
+  page and must not receive an EnrollPro authorization code directly.
