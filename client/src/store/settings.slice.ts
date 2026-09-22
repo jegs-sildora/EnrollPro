@@ -106,6 +106,8 @@ export interface SettingsState {
     settings: Partial<SettingsState>,
     targetLabel: string,
   ) => void;
+  showTimeMachineWidget: boolean;
+  setShowTimeMachineWidget: (show: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -174,6 +176,7 @@ export const useSettingsStore = create<SettingsState>()(
         verificationTab: "PENDING",
         studentProfileTab: "record",
       },
+      showTimeMachineWidget: false,
       updateUiPreference: (key, value) => 
         set((state) => ({
           uiPreferences: {
@@ -234,6 +237,7 @@ export const useSettingsStore = create<SettingsState>()(
           window.dispatchEvent(new CustomEvent("ROLLOVER_COMPLETE"));
         }, 2000);
       },
+      setShowTimeMachineWidget: (show) => set({ showTimeMachineWidget: show }),
     }),
     {
       name: "enrollpro-settings",

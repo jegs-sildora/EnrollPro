@@ -26,6 +26,7 @@ import {
   KeyRound,
   UserRound,
   LoaderCircle,
+  Clock,
 } from "lucide-react";
 import type {
   CompanionSsoCatalogItem,
@@ -62,6 +63,7 @@ import { Separator } from "@/shared/ui/separator";
 import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Switch } from "@/shared/ui/switch";
 
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -110,6 +112,7 @@ interface SchoolYearItem {
 
 function UserNav() {
   const { user, clearAuth } = useAuthStore();
+  const { showTimeMachineWidget, setShowTimeMachineWidget } = useSettingsStore();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { confirmOrRun } = useUnsavedChangesPrompt();
@@ -186,6 +189,35 @@ function UserNav() {
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="flex items-center justify-between py-2 font-bold cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              const nextState = !showTimeMachineWidget;
+              setShowTimeMachineWidget(nextState);
+              if (!nextState) {
+                localStorage.removeItem("mocked_system_date");
+                window.location.reload();
+              }
+            }}
+          >
+            <div className="flex items-center">
+              <Clock className="mr-2 h-4 w-4" />
+              <span>Enable Time Machine</span>
+            </div>
+            <Switch
+              checked={showTimeMachineWidget}
+              onCheckedChange={(checked) => {
+                setShowTimeMachineWidget(checked);
+                if (!checked) {
+                  localStorage.removeItem("mocked_system_date");
+                  window.location.reload();
+                }
+              }}
+              className="ml-4"
+            />
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {canOpenPersonnelProfile && user?.employeeId ? (
             <DropdownMenuItem

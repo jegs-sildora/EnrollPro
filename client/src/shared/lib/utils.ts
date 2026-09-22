@@ -78,13 +78,11 @@ export function formatManilaDate(
  * In development, respects the Time Machine mocked date.
  */
 export function getManilaNow(): Date {
-  if (import.meta.env.DEV) {
-    const mock = localStorage.getItem("mocked_system_date");
-    if (mock) {
-      const parsed = new Date(mock);
-      if (!Number.isNaN(parsed.getTime())) {
-        return parsed;
-      }
+  const mock = localStorage.getItem("mocked_system_date");
+  if (mock) {
+    const parsed = new Date(mock);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
     }
   }
   return new Date();

@@ -3,9 +3,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Button } from "@/shared/ui/button";
 import { Clock } from "lucide-react";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { useSettingsStore } from "@/store/settings.slice";
 
 export function TimeMachineWidget() {
-  if (!import.meta.env.DEV) {
+  const { showTimeMachineWidget } = useSettingsStore();
+
+  if (!showTimeMachineWidget) {
     return null;
   }
 
