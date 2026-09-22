@@ -634,14 +634,18 @@ export function SectioningWorkspace() {
     staleTime: 60_000,
   });
 
+  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const isAdminOrRegistrar = userRoles.includes("SYSTEM_ADMIN") || userRoles.includes("HEAD_REGISTRAR") || userRoles.includes("SCHOOL_REGISTRAR");
+
   const assignedGradeLevelId = useMemo(() => {
     if (!activeSchoolYear?.gradeLevels) return null;
+    if (isAdminOrRegistrar) return null;
     if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
     if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
     if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
     if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
     return null;
-  }, [ancillaryRoles, activeSchoolYear?.gradeLevels]);
+  }, [isAdminOrRegistrar, ancillaryRoles, activeSchoolYear?.gradeLevels]);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
     queryKey: ["sectioning", "sections-summary", assignedGradeLevelId],
@@ -652,7 +656,6 @@ export function SectioningWorkspace() {
         })
         .then((r) => r.data),
     enabled: !isHistoricalReadOnly,
-    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
     staleTime: 3_000,
   });
@@ -664,7 +667,6 @@ export function SectioningWorkspace() {
         params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
       }).then((r) => r.data),
     enabled: !isHistoricalReadOnly,
-    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
     staleTime: 3_000,
   });
@@ -736,15 +738,28 @@ export function SectioningWorkspace() {
 
   const gradeLevels = useMemo(() => {
     const raw = gradeLevelsResponse?.gradeLevels ?? [];
-    const jhs = raw.filter((gradeLevel) =>
+    let jhs = raw.filter((gradeLevel) =>
       ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(gradeLevel.name),
     );
+    
+    if (!isAdminOrRegistrar) {
+      const allowedNames: string[] = [];
+      if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) allowedNames.push("Grade 7");
+      if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) allowedNames.push("Grade 8");
+      if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) allowedNames.push("Grade 9");
+      if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) allowedNames.push("Grade 10");
+      
+      if (allowedNames.length > 0) {
+        jhs = jhs.filter((g) => allowedNames.includes(g.name));
+      }
+    }
+
     return jhs.sort((a, b) => {
       const orderA = a.displayOrder ?? parseInt(a.name.replace(/\D/g, "")) ?? 0;
       const orderB = b.displayOrder ?? parseInt(b.name.replace(/\D/g, "")) ?? 0;
       return orderA - orderB;
     });
-  }, [gradeLevelsResponse]);
+  }, [gradeLevelsResponse, isAdminOrRegistrar, ancillaryRoles]);
 
   useEffect(() => {
     if (gradeLevels.length > 0) {
