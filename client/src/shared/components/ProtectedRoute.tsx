@@ -4,9 +4,10 @@ import type { AuthRole } from "@/store/auth.slice";
 
 interface ProtectedRouteProps {
   allowedRoles?: AuthRole[];
+  allowedAncillaryRoles?: string[];
 }
 
-export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ allowedRoles, allowedAncillaryRoles }: ProtectedRouteProps) {
   const staffAuth = useAuthStore();
   const user = staffAuth.user;
   const hasSession = Boolean(staffAuth.user);
@@ -24,11 +25,39 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to={"/change-password"} replace />;
   }
 
-  if (allowedRoles && !user.roles?.some((r) => allowedRoles.includes(r))) {
+  let isAllowed = false;
+  
+  if (!allowedRoles && !allowedAncillaryRoles) {
+    isAllowed = true;
+  } else {
+    if (allowedRoles && user.roles?.some((r) => allowedRoles.includes(r))) {
+      isAllowed = true;
+    }
+    if (allowedAncillaryRoles && user.ancillaryRoles?.some((userRole) => 
+      allowedAncillaryRoles.some((allowedRole) => userRole.includes(allowedRole))
+    )) {
+      isAllowed = true;
+    }
+  }
+
+  if (!isAllowed) {
     // Redirect to role-appropriate home rather than /login (avoids loops)
+    const isRegistrar = user.roles?.includes("HEAD_REGISTRAR") || user.roles?.includes("SCHOOL_REGISTRAR");
+    const isAdmin = user.roles?.includes("SYSTEM_ADMIN");
+    const isClassAdviser = user.roles?.includes("CLASS_ADVISER");
+    const isGradeCoordinator = user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
+    
+    const fallbackRoute = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
+      ? "/dashboard"
+      : user.roles?.includes("TEACHER")
+        ? "/learners"
+        : user.roles?.includes("MRF")
+          ? "/my-activity"
+          : "/dashboard";
+
     return (
       <Navigate
-        to={"/dashboard"}
+        to={fallbackRoute}
         replace
       />
     );

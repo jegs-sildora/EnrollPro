@@ -95,7 +95,7 @@ router.patch(
 router.get(
   "/scp-applicants",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   getScpApplicants,
 );
@@ -103,7 +103,7 @@ router.get(
 router.patch(
   "/scp-applicants/bulk-assessment",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   bulkSaveScpAssessments,
 );
@@ -111,7 +111,7 @@ router.patch(
 router.post(
   "/scp-applicants/lock-roster",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   lockScpRoster,
 );
@@ -119,7 +119,7 @@ router.post(
 router.post(
   "/scp-applicants/unlock-roster",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   unlockScpRoster,
 );
@@ -127,7 +127,7 @@ router.post(
 router.patch(
   "/scp-applicants/:applicationId/assessment",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   validate(scpAssessmentUpdateSchema),
   saveScpAssessment,
@@ -136,7 +136,7 @@ router.patch(
 router.post(
   "/scp-applicants/:applicationId/forfeit",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   forfeitScpSlot,
 );
@@ -144,7 +144,7 @@ router.post(
 router.post(
   "/scp-applicants/:applicationId/restore",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"),
   authorizeScpProgram,
   restoreScpApplication,
 );

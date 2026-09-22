@@ -614,6 +614,8 @@ function AppSidebar() {
   const isTeacher = useAuthStore(
     (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const isGradeCoordinator = ancillaryRoles.some(role => role.includes("COORDINATOR"));
   const [companionCatalog, setCompanionCatalog] = useState<
     CompanionSsoCatalogItem[]
   >([]);
@@ -745,8 +747,8 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, and strict class adviser */}
-              {(isRegistrar || isAdmin || isStrictClassAdviser) && (
+              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, strict class adviser, and grade coordinator */}
+              {(isRegistrar || isAdmin || isStrictClassAdviser || isGradeCoordinator) && (
                 <>
                   <NavDivider
                     label={
@@ -754,7 +756,7 @@ function AppSidebar() {
                         ? "ACTIVE SCHOOL OPERATIONS"
                         : systemPhase === "EOSY_CLOSING"
                           ? "END OF SCHOOL YEAR PROCESSING"
-                          : isStrictClassAdviser
+                          : (isStrictClassAdviser && !isGradeCoordinator)
                             ? "ENROLLMENT"
                             : "ENROLLMENT AND SECTIONING"
                     }
@@ -926,12 +928,6 @@ function AppSidebar() {
               {!isStrictClassAdviser && isTeacher && (
                 <>
                   <NavDivider label="Management" />
-                  <NavItem
-                    to="/teacher/advisory"
-                    icon={Users}
-                    label="My Advisory Class"
-                    pathname={pathname}
-                  />
                   <NavItem
                     to="/learners"
                     icon={BookOpen}
