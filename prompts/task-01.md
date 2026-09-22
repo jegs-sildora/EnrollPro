@@ -1,47 +1,46 @@
-# Prompt for UI/UX & Logic Implementation: LRN Lookup & Curricular Program Locking
+# Prompt for Full-Stack Implementation: Automated Term Rollover & Date Mocking
 
 ## Role & Context
-Act as a Full-Stack Developer. We are implementing the core data-binding logic for the `Online Enrollment Form`.
+Act as a Full-Stack Developer. We are refactoring the `System Configuration` module, specifically the `Term Dates` configuration card. 
 
-Currently, the `Learner Reference Number (LRN)` input simply acts as a text field, and the `Preferred Curricular Program` is a free-choice dropdown. We need to implement an auto-fetch mechanism where entering a valid 12-digit LRN queries the backend for the student's existing records (specifically their SCP Admission status) and strictly locks their program eligibility to prevent unauthorized enrollment in restricted programs.
+Currently, the system relies on manual intervention via "SET AS ACTIVE TERM" buttons to transition between academic periods. We are migrating to a fully automated, clock-driven architecture. The backend must automatically compute and broadcast the `ACTIVE` term to the entire application based strictly on the current date of the `Asia/Manila` server clock and the dates configured in this UI.
 
 ## Critical Directive
-Data integrity is the priority. The `Preferred Curricular Program` must transition from an open user choice to a strict system-computed, read-only field based on the LRN fetch results. 
+All date/time evaluations must strictly use the `Asia/Manila` (PHT) timezone, regardless of the physical location of the server or the client's browser. Furthermore, you must write a robust test suite utilizing Date Mocking to prove the automated rollover executes precisely at midnight on the boundary dates.
 
-## UI Component & Logic Requirements
+## 1. UI Component Refactor (The Frontend)
 
-Please implement the following behavior and validation workflow:
+Remove the manual controls to prevent human error and user confusion.
 
-### 1. The LRN Lookup Trigger
-*   **Validation:** The LRN input field must strictly accept exactly 12 numeric digits. 
-*   **Trigger:** Once the 12th digit is entered (or on `blur` if 12 digits are present), automatically trigger a `GET` request to fetch the learner's pre-enrollment/admission profile.
-*   **Active State:** While fetching, disable the input and render a small inline loading spinner inside or next to the LRN input.
-*   **Success UI:** If found, render a small green checkmark inside the input and a helper text: *"Learner record found. Auto-filling form..."*
+*   **Remove Action Buttons:** Delete all `SET AS ACTIVE TERM` buttons from the UI. 
+*   **Dynamic Status Badges:** The UI must now dynamically render a single status badge next to each term based on the backend's computed state:
+    *   If `current_date < start_date`: Render a gray `UPCOMING` badge.
+    *   If `current_date >= start_date && current_date <= end_date`: Render the green `ACTIVE` badge. Apply the existing green border highlight to this term's container.
+    *   If `current_date > end_date`: Render a muted `COMPLETED` badge.
+*   **Date Input Validation:** 
+    *   Ensure the `start_date` of Term 2 cannot be earlier than the `end_date` of Term 1.
+    *   Disable the date picker inputs for any term that is already `COMPLETED`. 
 
-### 2. Auto-filling Personal Information
-*   Upon a successful fetch, automatically populate the `Last Name`, `First Name`, and any other available demographic fields.
-*   **UX Polish:** Apply a brief visual highlight (e.g., a subtle green flash or border transition) to the auto-filled fields so the user understands the system did the work for them. 
+## 2. Backend Controller & Automation Logic
 
-### 3. Smart Locking: The "Preferred Curricular Program"
-This is the most critical validation step. The system must evaluate the fetched `scp_admission_status` and lock the dropdown accordingly.
+You have two architectural choices for this automation. Implement the one that best fits our stack:
 
-*   **Condition A: The Qualified SCP Learner**
-    *   *Logic:* If the fetched LRN exists in the locked SCP Admission roster with a status of `QUALIFIED` for a specific program (e.g., STE).
-    *   *UI:* Programmatically set the dropdown value to that specific program (`SCIENCE, TECHNOLOGY AND ENGINEERING`). 
-    *   *Locking:* Apply the `disabled` or `read-only` prop to the dropdown. The user CANNOT change it.
-    *   *Helper Text:* Render a green success message below the field: *"Verified: Learner is officially qualified for this program."*
+*   **Option A: Lazy Evaluation (Middleware / Service Layer) - *Recommended***
+    *   Instead of a scheduled cron job, intercept the global application state request (e.g., `/api/config/current-term`).
+    *   On fetch, the server queries the `academic_terms` table, compares the `Asia/Manila` `now()` against the date ranges, and dynamically returns the active term. 
+    *   This guarantees 100% accuracy without relying on a cron daemon.
+*   **Option B: Cron Job (Scheduled Task)**
+    *   Write a daily scheduled task that runs exactly at `00:01 AM Asia/Manila`.
+    *   The task queries the database, identifies if today matches a new term's `start_date`, updates an `is_active` boolean column, and flushes the application cache.
 
-*   **Condition B: The Regular / Disqualified Learner**
-    *   *Logic:* If the fetched LRN has NO admission record, OR their admission record is `DISQUALIFIED`, `FORFEITED`, or `WAITLISTED` (not yet promoted).
-    *   *UI:* Programmatically set the dropdown value to `REGULAR BASIC EDUCATION CURRICULUM (BEC)`.
-    *   *Locking:* Apply the `disabled` or `read-only` prop to the dropdown.
-    *   *Helper Text:* Render a muted information message below the field: *"Assigned to Regular BEC based on admission records."*
+## 3. Software Testing & Date Mocking Requirements
 
-*   **Condition C: "Learner has no LRN yet"**
-    *   *Logic:* If the user checks the radio button `Learner has no LRN yet` (meaning they are a completely new entrant without prior DepEd tracking).
-    *   *UI:* They automatically bypass the SCP lookup (since SCP requires prior records/screening). Force-set and lock the dropdown to `REGULAR BASIC EDUCATION CURRICULUM (BEC)`.
+You must prove this logic works using a testing framework (e.g., Jest/Vitest for Node, PHPUnit for Laravel, or PyTest for Python) before merging. 
 
-### 4. Backend Validation (The Ultimate Safeguard)
-*   Do not rely solely on the frontend disabled dropdown. 
-*   When the enrollment form is submitted via `POST`, the backend MUST independently re-verify the LRN against the finalized SCP Admission roster. 
-*   If a malicious user intercepts the payload and tries to submit `program: "STE"` for an LRN that is not explicitly marked as `QUALIFIED` in the admission table, the backend must reject it with a `403 Forbidden` error.
+Write a test suite that utilizes **Date Mocking** (e.g., `sinon.useFakeTimers()` in JS, or `Carbon::setTestNow()` in PHP) to simulate time travel.
+
+**Required Test Cases:**
+1.  **The Pre-Rollover State:** Mock the system clock to `September 15, 2026, 23:59:59 PHT`. Assert that the API returns `Term 1` as the active term.
+2.  **The Midnight Rollover Trigger:** Advance the mocked clock by exactly 2 seconds to `September 16, 2026, 00:00:01 PHT`. Assert that the API instantly shifts and returns `Term 2` as the active term.
+3.  **The Gap Day Handling:** If Term 2 ends on Dec 18, and Term 3 starts on Jan 4, mock the clock to `December 25`. The API must return a safe fallback state (e.g., `SEMESTRAL BREAK` or maintain the previous term's `is_active` state but set an `is_grading_locked` flag to true).
+4.  **Timezone Immunity:** Mock the server's local environment timezone to `UTC` or `America/New_York`. Assert that the rollover still perfectly aligns with midnight in `Asia/Manila`.

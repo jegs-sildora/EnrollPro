@@ -8,6 +8,11 @@ export const RoleEnum = z.enum([
   "TEACHER",
   "LEARNER",
   "MRF",
+  "PRINCIPAL",
+  "SCHOOL_REGISTRAR",
+  "STE_COORDINATOR",
+  "SPA_COORDINATOR",
+  "SPS_COORDINATOR",
 ]);
 export type Role = z.infer<typeof RoleEnum>;
 export const SexEnum = z.enum(["MALE", "FEMALE"]);
