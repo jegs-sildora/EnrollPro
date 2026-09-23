@@ -9,6 +9,10 @@ import {
   startSmartSseBridge,
   stopSmartSseBridge,
 } from "./features/integration/smart-sse-bridge.service.js";
+import {
+  startTermChangedPublisher,
+  stopTermChangedPublisher,
+} from "./features/school-year/services/term-changed-publisher.service.js";
 import { disconnectPrisma } from "./lib/prisma.js";
 
 const __dirname = path.resolve();
@@ -34,6 +38,7 @@ const PORT = process.env.PORT || 5002;
 const server = app.listen(PORT as number, "0.0.0.0", () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
   startSmartSseBridge();
+  startTermChangedPublisher();
 });
 
 let shutdownStarted = false
@@ -43,6 +48,7 @@ async function shutdown(signal: string): Promise<void> {
   shutdownStarted = true
   console.log(`[Server] Received ${signal}. Shutting down.`)
   stopSmartSseBridge()
+  await stopTermChangedPublisher()
 
   const closeServer = new Promise<void>((resolve, reject) => {
     server.close((error) => {

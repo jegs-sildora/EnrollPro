@@ -23,8 +23,10 @@ backend exchanges the code once using its dedicated Bearer secret, validates
 the minimized EnrollPro identity and active school year, then creates its own
 session. EnrollPro cookies, JWTs, and passwords are never shared across domains.
 
-ATLAS, AIMS, and SMART allow `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `TEACHER`, and
-`CLASS_ADVISER`. MRF allows `SYSTEM_ADMIN` and `MRF`. Inactive users,
+ATLAS allows `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `TEACHER`, `CLASS_ADVISER`, and
+`GRADE_LEVEL_COORDINATOR`. AIMS and SMART allow `SYSTEM_ADMIN`,
+`HEAD_REGISTRAR`, `TEACHER`, and `CLASS_ADVISER`. MRF allows `SYSTEM_ADMIN`
+and `MRF`. Inactive users,
 JHS completers, unsupported roles, identities without an employee ID or LRN,
 and accounts using a default password are denied.
 

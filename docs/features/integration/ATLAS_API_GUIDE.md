@@ -31,7 +31,7 @@ ATLAS_SCHOOL_ID=optional-external-school-id
 | GET | `/health` | Verify integration availability |
 | GET | `/school-year` | Resolve active or explicit school year |
 | GET | `/active-term` | Resolve the current term from the ordered EnrollPro term contract |
-| GET | `/default/faculty` | Active faculty, employee numbers, roles, designations, and advisership |
+| GET | `/default/faculty` | Active faculty, employee numbers, merged ancillary roles, designations, and advisership |
 | GET | `/sections` | Grade, program, section, capacity, and adviser context |
 
 The optional `schoolYearId` query value must be one canonical positive base-10
@@ -65,5 +65,6 @@ states, and the complete reconciliation order are in
 [ATLAS School Year Rollover](./ATLAS-SCHOOL-YEAR-ROLLOVER.md).
 
 See [EnrollPro API](ENROLLPRO-API.md),
+[ATLAS Faculty Ancillary Roles API](ATLAS-FACULTY-ANCILLARY-ROLES-API.md),
 [Authoritative Term Integration](../../../ACTIVE-TERM-INTEGRATION.md), and
 [Personnel and SF7](../personnel/PERSONNEL_AND_SF7.md).

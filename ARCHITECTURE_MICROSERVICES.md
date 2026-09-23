@@ -1,6 +1,6 @@
 # EnrollPro Microservice Architecture
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-23
 
 ## Purpose
 
@@ -28,6 +28,7 @@ EnrollPro owns:
 - current personnel service status
 - immutable enrollment history and recorded SF5 or SF6 artifacts
 - synchronization provenance and readiness state for finalized SMART outcomes
+- the authoritative `TERM_CHANGED` event stream and its durable publication outbox
 
 EnrollPro does not own:
 
@@ -55,6 +56,16 @@ ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration
 ```
 
 Private network transport may use Tailscale or another school-approved network. Transport choice does not change the API or ownership contract.
+
+### Term Event Transport
+
+EnrollPro alone publishes the v2 `TERM_CHANGED` event to the durable
+`aims.calendar.fanout` RabbitMQ exchange. AIMS, ATLAS, and SMART are subscribers
+only. Each companion owns a durable bound queue, manual acknowledgements,
+reconnection, and durable `eventId` deduplication. EnrollPro uses a transactional
+outbox and publisher confirms, so delivery is at least once and retries preserve
+the original `eventId`. Broker credentials are server-only and exchanged out of
+band. See [TERM_CHANGED Event Contract](docs/features/integration/TERM-CHANGED-EVENT-CONTRACT.md).
 
 ## Authentication
 
@@ -99,6 +110,7 @@ No downstream system should switch years before EnrollPro completes the atomic r
 ## References
 
 - [EnrollPro API](docs/features/integration/ENROLLPRO-API.md)
+- [TERM_CHANGED Event Contract](docs/features/integration/TERM-CHANGED-EVENT-CONTRACT.md)
 - [School Year Lifecycle](docs/features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
 - [ATLAS School Year Rollover](docs/features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md)
 - [SMART School Year Rollover](docs/features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md)

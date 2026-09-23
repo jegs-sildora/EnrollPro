@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { PrismaClient, Sex } from "../../src/generated/prisma/index.js";
+import { PrismaClient, Role, Sex } from "../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
+import { mergeRequiredSchedulerRoles } from "../../src/features/auth/application-role.service.js";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -14,7 +15,7 @@ const USERS_TO_SEED = [
     firstName: "Juan Miguel",
     lastName: "Santos",
     sex: Sex.MALE,
-    roles: ["TEACHER"],
+    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
     ancillaryRoles: ["STE HEAD TEACHER", "GRADE 7 COORDINATOR"],
     departmentCode: "SCI" // SCIENCE
   },
@@ -23,7 +24,7 @@ const USERS_TO_SEED = [
     firstName: "Maria Angela",
     lastName: "Reyes",
     sex: Sex.FEMALE,
-    roles: ["TEACHER"],
+    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
     ancillaryRoles: ["SPA HEAD TEACHER", "GRADE 8 COORDINATOR"],
     departmentCode: "MAPEH" // MAPEH
   },
@@ -32,7 +33,7 @@ const USERS_TO_SEED = [
     firstName: "Jose Gabriel",
     lastName: "Cruz",
     sex: Sex.MALE,
-    roles: ["TEACHER"],
+    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
     ancillaryRoles: ["SPS HEAD TEACHER", "GRADE 9 COORDINATOR"],
     departmentCode: "MAPEH" // MAPEH
   },
@@ -41,7 +42,7 @@ const USERS_TO_SEED = [
     firstName: "Anna Patricia",
     lastName: "Garcia",
     sex: Sex.FEMALE,
-    roles: ["TEACHER"],
+    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
     ancillaryRoles: ["GRADE 10 COORDINATOR"], // Personnel with grade 10 coordinator
     departmentCode: "GEN"
   }
@@ -70,16 +71,25 @@ export const seedUsers = async () => {
         });
       }
 
+      const existingUser = await prisma.user.findUnique({
+        where: { employeeId: userData.employeeId },
+        select: { roles: true },
+      });
+      const roles = mergeRequiredSchedulerRoles(
+        userData.employeeId,
+        existingUser?.roles ?? userData.roles,
+      );
+
       const user = await prisma.user.upsert({
         where: { employeeId: userData.employeeId },
-        update: {},
+        update: { roles },
         create: {
           employeeId: userData.employeeId,
           firstName: userData.firstName,
           lastName: userData.lastName,
           sex: userData.sex,
           password: defaultPassword,
-          roles: userData.roles as any,
+          roles,
           isActive: true,
           mustChangePassword: true
         }
@@ -133,7 +143,7 @@ export const seedUsers = async () => {
         }
       });
 
-      console.log(`✅ Created user ${userData.firstName} ${userData.lastName} (${userData.employeeId}) with roles: ${userData.ancillaryRoles.join(", ")}`);
+      console.log(`✅ Ensured user ${userData.firstName} ${userData.lastName} (${userData.employeeId}) application roles and personnel assignments.`);
     }
 
     console.log("✅ Seeding complete.");

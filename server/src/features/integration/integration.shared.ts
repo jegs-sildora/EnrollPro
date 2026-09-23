@@ -87,6 +87,19 @@ export function buildTeacherName(teacher: {
   return `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`;
 }
 
+export function mergeAncillaryRoles(
+  ...roleGroups: ReadonlyArray<readonly string[] | null | undefined>
+): string[] {
+  return Array.from(
+    new Set(
+      roleGroups
+        .flatMap((roles) => roles ?? [])
+        .map((role) => role.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
 export async function resolveSchoolYearScope(
   req: Request,
 ): Promise<

@@ -3,6 +3,7 @@ import type { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   buildTeacherName,
+  mergeAncillaryRoles,
   OFFICIAL_ENROLLMENT_STATUSES,
   parsePositiveInt,
   readSnapshotNumber,
@@ -327,6 +328,10 @@ export async function listDefaultFaculty(
       departmentCode: teacher.departments?.[0]?.code ?? null,
       departmentName: teacher.departments?.[0]?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
+      ancillaryRoles: mergeAncillaryRoles(
+        teacher.ancillaryRoles,
+        designation?.ancillaryRoles,
+      ),
       isClassAdviser: designation?.isClassAdviser ?? false,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,

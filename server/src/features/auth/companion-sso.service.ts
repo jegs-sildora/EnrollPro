@@ -16,6 +16,7 @@ import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+import { normalizeApplicationRoles } from "./application-role.service.js";
 
 const AUTHORIZATION_CODE_TTL_MS = 60_000;
 const COMPANION_SYSTEMS: readonly CompanionSystem[] = [
@@ -26,7 +27,13 @@ const COMPANION_SYSTEMS: readonly CompanionSystem[] = [
 ];
 
 const ALLOWED_ROLES: Record<CompanionSystem, readonly Role[]> = {
-  ATLAS: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
+  ATLAS: [
+    "SYSTEM_ADMIN",
+    "HEAD_REGISTRAR",
+    "TEACHER",
+    "CLASS_ADVISER",
+    "GRADE_LEVEL_COORDINATOR",
+  ],
   AIMS: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
   SMART: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
   MRF: ["SYSTEM_ADMIN", "MRF"],
@@ -117,12 +124,12 @@ function hasCompanionRole(system: CompanionSystem, roles: readonly Role[]): bool
   return roles.some((role) => allowed.has(role));
 }
 
-function allowedCompanionRoles(
+export function projectCompanionRoles(
   system: CompanionSystem,
   roles: readonly Role[],
 ): Role[] {
   const allowed = new Set<Role>(ALLOWED_ROLES[system]);
-  return roles.filter((role) => allowed.has(role));
+  return normalizeApplicationRoles(roles).filter((role) => allowed.has(role));
 }
 
 function codeHash(code: string): string {
@@ -539,7 +546,7 @@ export async function exchangeCompanionSsoCode(input: {
       firstName: exchanged.user.firstName,
       middleName: exchanged.user.middleName,
       lastName: exchanged.user.lastName,
-      roles: allowedCompanionRoles(input.system, exchanged.user.roles),
+      roles: projectCompanionRoles(input.system, exchanged.user.roles),
     },
     activeSchoolYear: exchanged.activeSchoolYear,
     authenticatedAt: now.toISOString(),

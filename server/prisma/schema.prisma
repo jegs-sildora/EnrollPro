@@ -145,76 +145,77 @@ model TeacherSchedulePeriod {
 
 /// Singleton config: school identity (name, logo, accent color) and active school year pointer
 model SchoolSetting {
-  id                        Int                 @id @default(autoincrement())
-  schoolName                String              @map("school_name")
-  logoPath                  String?             @map("logo_path")
-  logoUrl                   String?             @map("logo_url")
-  colorScheme               Json?               @map("color_scheme")
-  selectedAccentHsl         String?             @map("selected_accent_hsl")
-  activeSchoolYearId        Int?                @map("active_school_year_id")
-  depedEmail                String?             @map("deped_email")
-  facebookPageUrl           String?             @map("facebook_page_url")
-  schoolWebsite             String?             @map("school_website")
-  depedSchoolId             String?             @map("deped_school_id")
+  id                        Int                      @id @default(autoincrement())
+  schoolName                String                   @map("school_name")
+  logoPath                  String?                  @map("logo_path")
+  logoUrl                   String?                  @map("logo_url")
+  colorScheme               Json?                    @map("color_scheme")
+  selectedAccentHsl         String?                  @map("selected_accent_hsl")
+  activeSchoolYearId        Int?                     @map("active_school_year_id")
+  depedEmail                String?                  @map("deped_email")
+  facebookPageUrl           String?                  @map("facebook_page_url")
+  schoolWebsite             String?                  @map("school_website")
+  depedSchoolId             String?                  @map("deped_school_id")
   division                  String?
   region                    String?
-  schoolHeadName            String?             @map("school_head_name")
-  schoolHeadTitle           String?             @map("school_head_title")
-  steEnabled                Boolean             @default(false) @map("ste_enabled")
-  steCapacity               Int?                @map("ste_capacity")
-  spaEnabled                Boolean             @default(false) @map("spa_enabled")
-  spaCapacity               Int?                @map("spa_capacity")
-  spsEnabled                Boolean             @default(false) @map("sps_enabled")
-  spsCapacity               Int?                @map("sps_capacity")
-  enableHomogeneousSections Boolean             @default(true) @map("enable_homogeneous_sections")
-  homogeneousSectionCount   Int                 @default(5) @map("homogeneous_section_count")
-  heterogeneousRoundRobin   Boolean             @default(true) @map("heterogeneous_round_robin")
-  systemPhase               SystemAcademicPhase @default(OFFICIAL_ENROLLMENT) @map("system_phase")
-  globalDefaultPassword     String              @default("DepEd2026!") @map("global_default_password")
-  activeSchoolYear          SchoolYear?         @relation(fields: [activeSchoolYearId], references: [id])
+  schoolHeadName            String?                  @map("school_head_name")
+  schoolHeadTitle           String?                  @map("school_head_title")
+  steEnabled                Boolean                  @default(false) @map("ste_enabled")
+  steCapacity               Int?                     @map("ste_capacity")
+  spaEnabled                Boolean                  @default(false) @map("spa_enabled")
+  spaCapacity               Int?                     @map("spa_capacity")
+  spsEnabled                Boolean                  @default(false) @map("sps_enabled")
+  spsCapacity               Int?                     @map("sps_capacity")
+  enableHomogeneousSections Boolean                  @default(true) @map("enable_homogeneous_sections")
+  homogeneousSectionCount   Int                      @default(5) @map("homogeneous_section_count")
+  heterogeneousRoundRobin   Boolean                  @default(true) @map("heterogeneous_round_robin")
+  systemPhase               SystemAcademicPhase      @default(OFFICIAL_ENROLLMENT) @map("system_phase")
+  globalDefaultPassword     String                   @default("DepEd2026!") @map("global_default_password")
+  activeSchoolYear          SchoolYear?              @relation(fields: [activeSchoolYearId], references: [id])
+  termChangedEventOutbox    TermChangedEventOutbox[]
 
   @@map("school_settings")
 }
 
 /// Academic year with enrollment window dates and lifecycle status
 model SchoolYear {
-  id                     Int                     @id @default(autoincrement())
-  yearLabel              String                  @unique(map: "uq_school_years_year_label") @map("year_label")
-  status                 SchoolYearStatus        @default(ACTIVE)
-  classOpeningDate       DateTime?               @map("class_opening_date") @db.Date
-  classEndDate           DateTime?               @map("class_end_date") @db.Date
-  enrollOpenDate         DateTime?               @map("enroll_open_date") @db.Date
-  enrollCloseDate        DateTime?               @map("enroll_close_date") @db.Date
-  scpAdmissionOpenDate   DateTime?               @map("scp_admission_open_date") @db.Date
-  scpAdmissionCloseDate  DateTime?               @map("scp_admission_close_date") @db.Date
-  steRosterLocked        Boolean                 @default(false) @map("ste_roster_locked")
-  spaRosterLocked        Boolean                 @default(false) @map("spa_roster_locked")
-  spsRosterLocked        Boolean                 @default(false) @map("sps_roster_locked")
-  termFormat             TermFormat              @default(TRIMESTER) @map("term_format")
-  clonedFromId           Int?                    @map("cloned_from_id")
-  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  isEosyFinalized        Boolean                 @default(false) @map("is_eosy_finalized")
-  settingsSnapshot       Json?                   @map("settings_snapshot")
-  term1End               DateTime?               @map("term1_end") @db.Date
-  term1Start             DateTime?               @map("term1_start") @db.Date
-  term2End               DateTime?               @map("term2_end") @db.Date
-  term2Start             DateTime?               @map("term2_start") @db.Date
-  term3End               DateTime?               @map("term3_end") @db.Date
-  term3Start             DateTime?               @map("term3_start") @db.Date
-  term4End               DateTime?               @map("term4_end") @db.Date
-  term4Start             DateTime?               @map("term4_start") @db.Date
-  term1Label             String                  @default("TERM 1") @map("term1_label")
-  term2Label             String                  @default("TERM 2") @map("term2_label")
-  term3Label             String                  @default("TERM 3") @map("term3_label")
-  term4Label             String                  @default("QUARTER 4") @map("term4_label")
-  activeTerm             String?                 @map("active_term")
+  id                     Int                      @id @default(autoincrement())
+  yearLabel              String                   @unique(map: "uq_school_years_year_label") @map("year_label")
+  status                 SchoolYearStatus         @default(ACTIVE)
+  classOpeningDate       DateTime?                @map("class_opening_date") @db.Date
+  classEndDate           DateTime?                @map("class_end_date") @db.Date
+  enrollOpenDate         DateTime?                @map("enroll_open_date") @db.Date
+  enrollCloseDate        DateTime?                @map("enroll_close_date") @db.Date
+  scpAdmissionOpenDate   DateTime?                @map("scp_admission_open_date") @db.Date
+  scpAdmissionCloseDate  DateTime?                @map("scp_admission_close_date") @db.Date
+  steRosterLocked        Boolean                  @default(false) @map("ste_roster_locked")
+  spaRosterLocked        Boolean                  @default(false) @map("spa_roster_locked")
+  spsRosterLocked        Boolean                  @default(false) @map("sps_roster_locked")
+  termFormat             TermFormat               @default(TRIMESTER) @map("term_format")
+  clonedFromId           Int?                     @map("cloned_from_id")
+  createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  isEosyFinalized        Boolean                  @default(false) @map("is_eosy_finalized")
+  settingsSnapshot       Json?                    @map("settings_snapshot")
+  term1End               DateTime?                @map("term1_end") @db.Date
+  term1Start             DateTime?                @map("term1_start") @db.Date
+  term2End               DateTime?                @map("term2_end") @db.Date
+  term2Start             DateTime?                @map("term2_start") @db.Date
+  term3End               DateTime?                @map("term3_end") @db.Date
+  term3Start             DateTime?                @map("term3_start") @db.Date
+  term4End               DateTime?                @map("term4_end") @db.Date
+  term4Start             DateTime?                @map("term4_start") @db.Date
+  term1Label             String                   @default("TERM 1") @map("term1_label")
+  term2Label             String                   @default("TERM 2") @map("term2_label")
+  term3Label             String                   @default("TERM 3") @map("term3_label")
+  term4Label             String                   @default("QUARTER 4") @map("term4_label")
+  activeTerm             String?                  @map("active_term")
   scpAdmissions          ScpAdmission[]
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
   schoolSettings         SchoolSetting[]
-  clonedFrom             SchoolYear?             @relation("SchoolYearClone", fields: [clonedFromId], references: [id])
-  clones                 SchoolYear[]            @relation("SchoolYearClone")
+  clonedFrom             SchoolYear?              @relation("SchoolYearClone", fields: [clonedFromId], references: [id])
+  clones                 SchoolYear[]             @relation("SchoolYearClone")
   sectionAdvisers        SectionAdviser[]
   sections               Section[]
   teacherDesignations    TeacherDesignation[]
@@ -222,8 +223,37 @@ model SchoolYear {
   enrollmentHistories    EnrollmentHistory[]
   schoolFormArtifacts    SchoolFormArtifact[]
   subjectDeficiencies    SubjectDeficiency[]
+  termChangedEventOutbox TermChangedEventOutbox[]
 
   @@map("school_years")
+}
+
+/// Durable TERM_CHANGED events awaiting or completing RabbitMQ publication.
+model TermChangedEventOutbox {
+  id              Int                   @id @default(autoincrement())
+  eventId         String                @unique(map: "uq_term_changed_outbox_event_id") @map("event_id") @db.Uuid
+  schoolSettingId Int                   @map("school_setting_id")
+  schoolYearId    Int                   @map("school_year_id")
+  schoolId        String                @map("school_id") @db.VarChar(191)
+  fromTerm        String                @map("from_term") @db.VarChar(2)
+  toTerm          String                @map("to_term") @db.VarChar(2)
+  effectiveDate   DateTime              @map("effective_date") @db.Date
+  payload         Json
+  status          TermEventOutboxStatus @default(PENDING)
+  attempts        Int                   @default(0)
+  nextAttemptAt   DateTime              @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  leaseUntil      DateTime?             @map("lease_until") @db.Timestamptz(6)
+  publishedAt     DateTime?             @map("published_at") @db.Timestamptz(6)
+  lastError       String?               @map("last_error") @db.VarChar(500)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  schoolSetting   SchoolSetting         @relation(fields: [schoolSettingId], references: [id], onDelete: Cascade)
+  schoolYear      SchoolYear            @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolSettingId, schoolYearId, fromTerm, toTerm, effectiveDate], name: "uq_term_changed_outbox_boundary")
+  @@index([status, nextAttemptAt], map: "idx_term_changed_outbox_pending")
+  @@index([schoolYearId, createdAt], map: "idx_term_changed_outbox_school_year")
+  @@map("term_changed_event_outbox")
 }
 
 /// JHS grade levels (e.g. Grade 7, Grade 10) - Permanent global records
@@ -429,14 +459,14 @@ model EnrollmentBackSubject {
 
 /// Previous school record linked to enrollment application
 model EnrollmentPreviousSchool {
-  id                    Int                   @id @default(autoincrement())
-  enrollmentId          Int?                  @unique(map: "uq_enrollment_prev_school_app_id") @map("enrollment_id")
-  schoolName            String?               @map("school_name")
-  schoolId              String?               @map("school_id")
-  schoolAddress         String?               @map("school_address")
-  schoolType            String?               @map("school_type")
-  generalAverage        Float?                @map("general_average")
-  transferCertificateNo String?               @map("transfer_certificate_no")
+  id                    Int                    @id @default(autoincrement())
+  enrollmentId          Int?                   @unique(map: "uq_enrollment_prev_school_app_id") @map("enrollment_id")
+  schoolName            String?                @map("school_name")
+  schoolId              String?                @map("school_id")
+  schoolAddress         String?                @map("school_address")
+  schoolType            String?                @map("school_type")
+  generalAverage        Float?                 @map("general_average")
+  transferCertificateNo String?                @map("transfer_certificate_no")
   enrollment            EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   scpAdmissionId        Int?                   @unique @map("scp_admission_id")
   scpAdmission          ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
@@ -464,29 +494,29 @@ model EnrollmentScpProfile {
 
 /// Special Curricular Program online admission screening
 model ScpAdmission {
-  id                            Int                   @id @default(autoincrement())
-  learnerId                     Int                   @map("learner_id")
-  schoolYearId                  Int                   @map("school_year_id")
-  program                       ApplicantType         @map("program")
-  trackingNumber                String                @unique(map: "uq_scp_admission_tracking_number") @map("tracking_number")
-  grade5GeneralAverage          Float                 @map("grade_5_general_average")
-  underSpecialScienceCurriculum Boolean               @default(false) @map("under_special_science_curriculum")
-  artsSpecialization            String?               @map("arts_specialization")
-  chosenSport                   String?               @map("chosen_sport")
-  requirementsStatus            ScpAssessmentState    @default(PENDING) @map("requirements_status")
-  writtenExamStatus             ScpAssessmentState    @default(PENDING) @map("written_exam_status")
-  writtenExamScore              Float?                @map("written_exam_score")
-  interviewStatus               ScpAssessmentState    @default(PENDING) @map("interview_status")
-  assessmentResult              ScpAssessmentResult   @default(PENDING) @map("assessment_result")
-  createdAt                     DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                     DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                            Int                 @id @default(autoincrement())
+  learnerId                     Int                 @map("learner_id")
+  schoolYearId                  Int                 @map("school_year_id")
+  program                       ApplicantType       @map("program")
+  trackingNumber                String              @unique(map: "uq_scp_admission_tracking_number") @map("tracking_number")
+  grade5GeneralAverage          Float               @map("grade_5_general_average")
+  underSpecialScienceCurriculum Boolean             @default(false) @map("under_special_science_curriculum")
+  artsSpecialization            String?             @map("arts_specialization")
+  chosenSport                   String?             @map("chosen_sport")
+  requirementsStatus            ScpAssessmentState  @default(PENDING) @map("requirements_status")
+  writtenExamStatus             ScpAssessmentState  @default(PENDING) @map("written_exam_status")
+  writtenExamScore              Float?              @map("written_exam_score")
+  interviewStatus               ScpAssessmentState  @default(PENDING) @map("interview_status")
+  assessmentResult              ScpAssessmentResult @default(PENDING) @map("assessment_result")
+  createdAt                     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  learner                       Learner               @relation(fields: [learnerId], references: [id])
-  schoolYear                    SchoolYear            @relation(fields: [schoolYearId], references: [id])
-  enrollmentApplication         EnrollmentApplication?
-  addresses                     ApplicationAddress[]
-  familyMembers                 ApplicationFamilyMember[]
-  previousSchool                EnrollmentPreviousSchool?
+  learner               Learner                   @relation(fields: [learnerId], references: [id])
+  schoolYear            SchoolYear                @relation(fields: [schoolYearId], references: [id])
+  enrollmentApplication EnrollmentApplication?
+  addresses             ApplicationAddress[]
+  familyMembers         ApplicationFamilyMember[]
+  previousSchool        EnrollmentPreviousSchool?
 
   @@unique([learnerId, schoolYearId], name: "uq_scp_admission_learner_sy")
   @@map("scp_admissions")
@@ -517,19 +547,19 @@ model ApplicationAddress {
 
 /// Parent or guardian info linked to an application
 model ApplicationFamilyMember {
-  id            Int                    @id @default(autoincrement())
-  enrollmentId  Int?                   @map("enrollment_id")
-  relationship  FamilyRelationship
-  firstName     String                 @map("first_name")
-  lastName      String                 @map("last_name")
-  middleName    String?                @map("middle_name")
-  extensionName String?                @map("extension_name")
-  contactNumber String?                @map("contact_number")
-  email         String?
-  maidenName    String?                @map("maiden_name")
-  enrollment    EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  scpAdmissionId Int?                  @map("scp_admission_id")
-  scpAdmission  ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
+  id             Int                    @id @default(autoincrement())
+  enrollmentId   Int?                   @map("enrollment_id")
+  relationship   FamilyRelationship
+  firstName      String                 @map("first_name")
+  lastName       String                 @map("last_name")
+  middleName     String?                @map("middle_name")
+  extensionName  String?                @map("extension_name")
+  contactNumber  String?                @map("contact_number")
+  email          String?
+  maidenName     String?                @map("maiden_name")
+  enrollment     EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  scpAdmissionId Int?                   @map("scp_admission_id")
+  scpAdmission   ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
 
   @@unique([enrollmentId, relationship], name: "uq_enrollment_family_members_rel")
   @@unique([scpAdmissionId, relationship], name: "uq_scp_admission_family_members_rel")
@@ -723,6 +753,7 @@ enum Role {
   STE_COORDINATOR
   SPA_COORDINATOR
   SPS_COORDINATOR
+  GRADE_LEVEL_COORDINATOR
 
   @@map("user_role")
 }
@@ -894,6 +925,14 @@ enum TermFormat {
   QUARTERS
 
   @@map("term_format")
+}
+
+enum TermEventOutboxStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+
+  @@map("term_event_outbox_status")
 }
 
 enum TeacherNatureOfAppointment {

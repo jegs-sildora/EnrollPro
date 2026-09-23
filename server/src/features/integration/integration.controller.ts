@@ -7,6 +7,7 @@ import { getSystemDate } from "../../lib/date-wrapper.js";
 import {
   buildTeacherName,
   isUuidLike,
+  mergeAncillaryRoles,
   OFFICIAL_ENROLLMENT_STATUSES,
   parseOptionalText,
   parsePositiveInt,
@@ -647,7 +648,10 @@ export async function listIntegrationFaculty(
       schoolYearLabel: scope.schoolYearLabel,
       plantillaPosition: teacher.plantillaPosition ?? null,
       designationTitle: teacher.designation ?? null,
-      ancillaryRoles: Array.from(new Set([...teacher.ancillaryRoles, ...(designation?.ancillaryRoles ?? [])])),
+      ancillaryRoles: mergeAncillaryRoles(
+        teacher.ancillaryRoles,
+        designation?.ancillaryRoles,
+      ),
       isClassAdviser: designation?.isClassAdviser ?? false,
       advisorySectionId: designation?.advisorySectionId ?? null,
       advisorySectionName: designation?.advisorySection?.name ?? null,

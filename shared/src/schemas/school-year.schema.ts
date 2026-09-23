@@ -24,7 +24,6 @@ export const createSchoolYearSchema = z.object({
   termFormat: TermFormatEnum.optional(),
   termLabels: integrationTermLabelsSchema.optional(),
   cloneFromId: z.number().int().positive().optional().nullable(),
-  activeTerm: z.string().optional().nullable(),
 });
 
 export const updateSchoolYearSchema = createSchoolYearSchema.partial().extend({
