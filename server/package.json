@@ -56,13 +56,15 @@
     "db:seed-ancillary-roles": "tsx prisma/seeds/ancillary-roles-seed.ts",
     "db:wipe-ancillary-roles": "tsx prisma/seeds/ancillary-roles-wipe.ts",
     "audit:smart-grades": "tsx src/scripts/audit-smart-grade-sync.ts",
-    "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts"
+    "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts",
+    "term-events:tick": "tsx src/scripts/run-term-event-tick.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",
     "@prisma/adapter-pg": "^6",
     "@prisma/client": "^6",
     "@types/pg": "^8.18.0",
+    "amqplib": "^2.0.1",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -80,6 +82,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.4.0",
+    "@types/amqplib": "^0.10.8",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

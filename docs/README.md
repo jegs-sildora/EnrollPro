@@ -2,7 +2,7 @@
 
 This index lists the maintained EnrollPro product documentation. The implementation remains authoritative when a document becomes stale.
 
-Last reviewed: 2026-09-11
+Last reviewed: 2026-09-23
 
 ## Repository And Core
 
@@ -33,12 +33,14 @@ Last reviewed: 2026-09-11
 | --- | --- | --- |
 | [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
 | [Authoritative Term Integration](../ACTIVE-TERM-INTEGRATION.md) | Companion Teams | Ordered term identities, labels, dates, active-term resolution, and typed failures |
+| [TERM_CHANGED Event Contract](features/integration/TERM-CHANGED-EVENT-CONTRACT.md) | EnrollPro and Companion Teams | Authoritative RabbitMQ term transitions, outbox delivery, retries, and subscriber duties |
 | [School Year and Term API Changes](features/integration/ENROLLPRO-SCHOOL-YEAR-TERM-API-CHANGES-2026-09-11.md) | EnrollPro and Companion Teams | Consolidated school-year and term API, validation, persistence, rollover, compatibility, and verification changes |
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
 | [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
 | [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
 | [SMART Transferee API](features/integration/SMART-TRANSFEREE-API.md) | SMART and EnrollPro Teams | Dedicated endpoint for synchronizing transferee learners |
 | [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
+| [ATLAS Faculty Ancillary Roles API](features/integration/ATLAS-FACULTY-ANCILLARY-ROLES-API.md) | ATLAS and EnrollPro Teams | Protected faculty feed, ancillary-role scope, payload, and reconciliation rules |
 | [ATLAS Authoritative Term Contract Handoff](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-HANDOFF-2026-09-11.md) | ATLAS and EnrollPro Teams | Implemented ordered-term API changes, migration requirement, errors, and acceptance checks |
 | [ATLAS Authoritative Term Contract Correction Report](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-CORRECTION-REPORT-2026-09-11.md) | ATLAS and EnrollPro Teams | Strict year-ID parsing, pre-write term validation, regression matrix, and delivery status |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |

@@ -49,6 +49,7 @@ The implementation sources are:
 | `HEAD_REGISTRAR` | Allowed | Allowed | Allowed | Denied |
 | `TEACHER` | Allowed | Allowed | Allowed | Denied |
 | `CLASS_ADVISER` | Allowed | Allowed | Allowed | Denied |
+| `GRADE_LEVEL_COORDINATOR` | Denied | Denied | Allowed | Denied |
 | `MRF` | Denied | Denied | Denied | Allowed |
 | `LEARNER` | Denied | Denied | Denied | Denied |
 

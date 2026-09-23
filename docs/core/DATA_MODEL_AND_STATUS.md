@@ -1,6 +1,6 @@
 # Data Model And Status
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-23
 
 `server/prisma/schema.prisma` is the authoritative data model.
 
@@ -14,6 +14,7 @@ Last reviewed: 2026-09-01
 | `TeacherSchedulePeriod` | School-year SF7 teaching-period snapshot |
 | `SchoolSetting` | School identity, active-year reference, branding, and operational configuration |
 | `SchoolYear` | Academic-year label, dates, phase, finalization, and active or archived state |
+| `TermChangedEventOutbox` | Stable authoritative term-transition payload, publication attempts, retry lease, and confirmation state |
 | `GradeLevel` | Grade 7 to Grade 10 reference and display order |
 | `Section` | School-year section, program, capacity, order, and ranking |
 | `SectionAdviser` | Time-bound adviser assignment, handover, and revocation history |
@@ -66,6 +67,7 @@ Lifecycle outcomes include `TRANSFERRING_OUT`, `TRANSFERRED_OUT`, `DROPPED`, `AR
 
 - School years are `ACTIVE` or `ARCHIVED`.
 - School-year calendar dates are stored directly on `SchoolYear` and may be updated through System Configuration.
+- `SchoolYear.activeTerm` is the server-owned term-event checkpoint; client create and update requests cannot set it.
 - SF artifacts are `SF5` or `SF6`.
 
 ### Sectioning
@@ -74,7 +76,10 @@ Lifecycle outcomes include `TRANSFERRING_OUT`, `TRANSFERRED_OUT`, `DROPPED`, `AR
 
 ### Personnel
 
-Roles are `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, and `MRF`.
+Roles are `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`,
+`GRADE_LEVEL_COORDINATOR`, `LEARNER`, `MRF`, `PRINCIPAL`,
+`SCHOOL_REGISTRAR`, `STE_COORDINATOR`, `SPA_COORDINATOR`, and
+`SPS_COORDINATOR`.
 
 Appointments include regular or permanent, provisional, substitute, contractual, volunteer, Local School Board, and other. Funding sources include national, Special Education Fund, Local School Board, PTA, NGO, and other.
 
@@ -83,7 +88,7 @@ Appointments include regular or permanent, provisional, substitute, contractual,
 | Prisma enum | Values and use |
 | --- | --- |
 | `SectionAdviserStatus` | `ACTIVE`, `HANDED_OVER`, `REVOKED` |
-| `Role` | `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, `MRF` |
+| `Role` | `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `GRADE_LEVEL_COORDINATOR`, `LEARNER`, `MRF`, `PRINCIPAL`, `SCHOOL_REGISTRAR`, `STE_COORDINATOR`, `SPA_COORDINATOR`, `SPS_COORDINATOR` |
 | `CompanionSystem` | `ATLAS`, `AIMS`, `SMART`, `MRF` |
 | `ComplianceStatus` | `PENDING`, `COMPLIED`, `OVERDUE` |
 | `PrimaryContactType` | `FATHER`, `MOTHER`, `GUARDIAN` |
@@ -105,6 +110,7 @@ Appointments include regular or permanent, provisional, substitute, contractual,
 | `SectioningMethod` | `BATCH_ALGORITHM`, `INLINE_SLOTTING`, `MANUAL_OVERRIDE`, `MANUAL_REASSIGNMENT`, `TRANSFER` |
 | `LearnerStatus` | `ACTIVE`, `INACTIVE`, `RESTRICTED`, `JHS_COMPLETER`, `DROPPED`, `TRANSFERRED_OUT` |
 | `TermFormat` | `TRIMESTER`, `QUARTERS` |
+| `TermEventOutboxStatus` | `PENDING`, `PUBLISHING`, `PUBLISHED` |
 | `TeacherNatureOfAppointment` | `REGULAR_PERMANENT`, `PROVISIONAL`, `SUBSTITUTE`, `CONTRACTUAL`, `VOLUNTEER`, `LOCAL_SCHOOL_BOARD`, `OTHER` |
 | `TeacherFundingSource` | `NATIONAL`, `SPECIAL_EDUCATION_FUND`, `LOCAL_SCHOOL_BOARD`, `PTA`, `NGO`, `OTHER` |
 | `Weekday` | `MONDAY`, `TUESDAY`, `WEDNESDAY`, `THURSDAY`, `FRIDAY` |

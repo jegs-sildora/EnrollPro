@@ -512,7 +512,7 @@ function sendTermContractMutationError(
 
   export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, scpAdmissionOpenDate, scpAdmissionCloseDate, activeTerm } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, scpAdmissionOpenDate, scpAdmissionCloseDate } = req.body;
 
     const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -598,7 +598,6 @@ function sendTermContractMutationError(
         ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
         ...(scpAdmissionOpenDate !== undefined ? { scpAdmissionOpenDate: scpAdmissionOpenDate ? normalizeDateToUtcNoon(new Date(scpAdmissionOpenDate)) : null } : {}),
         ...(scpAdmissionCloseDate !== undefined ? { scpAdmissionCloseDate: scpAdmissionCloseDate ? normalizeDateToUtcNoon(new Date(scpAdmissionCloseDate)) : null } : {}),
-        ...(activeTerm !== undefined ? { activeTerm } : {}),
       },
     });
 

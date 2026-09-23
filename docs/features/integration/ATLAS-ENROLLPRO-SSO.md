@@ -66,7 +66,10 @@ must receive and install both replacements out of band before joint testing.
 ## Role Routing
 
 - `SYSTEM_ADMIN` redirects to the ATLAS main dashboard at `https://njgrm.buru-degree.ts.net/`.
-- `HEAD_REGISTRAR`, `TEACHER`, and `CLASS_ADVISER` redirect to the matching ATLAS workspace selected by ATLAS.
+- `HEAD_REGISTRAR`, `TEACHER`, `CLASS_ADVISER`, and
+  `GRADE_LEVEL_COORDINATOR` redirect to the matching ATLAS workspace selected
+  by ATLAS. ATLAS may map the exact `GRADE_LEVEL_COORDINATOR` application role
+  to its least-privilege scheduler role.
 - All other roles are denied.
 
 ## Required Rejections

@@ -448,7 +448,7 @@ Existing ATLAS, SMART, and AIMS endpoints are now key-protected for machine-to-m
 | GET | `/staff` | Integration key | Not school-year bound | Active EnrollPro staff accounts, excluding MRF compatibility role |
 | GET | `/sections` | Integration key | Optional `schoolYearId` | Sections, grade levels, capacity, count, and adviser |
 | GET | `/sections/:sectionId/learners` | Integration key | Optional `schoolYearId` | Current or archived section roster |
-| GET | `/default/faculty` | Integration key | Optional `schoolYearId` | ATLAS-ready active faculty feed |
+| GET | `/default/faculty` | Integration key | Optional `schoolYearId` | ATLAS-ready active faculty feed with deduplicated profile and school-year ancillary roles |
 | GET | `/default/smart/students` | Integration key | Optional `schoolYearId` | SMART-ready current or archived grade roster |
 | GET | `/default/smart/transferees` | Integration key | Optional `schoolYearId`, `page`, `limit` | SMART-ready active-year transferee roster; only officially enrolled and sectioned learners are included |
 | GET | `/default/aims/context` | Integration key | Optional `schoolYearId` | AIMS-ready current or archived learner context |

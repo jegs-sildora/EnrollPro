@@ -8,6 +8,8 @@ import {
   FALLBACK_DEFAULT_PASSWORD,
   isConfiguredDefaultPassword,
 } from "./default-password.service.js";
+import type { Role } from "@enrollpro/shared";
+import { normalizeApplicationRoles } from "./application-role.service.js";
 
 export type AuthUser = {
   id: number;
@@ -16,7 +18,7 @@ export type AuthUser = {
   email: string | null;
   employeeId: string | null;
   accountName: string | null;
-  roles: string[];
+  roles: Role[];
   ancillaryRoles: string[];
   mustChangePassword: boolean;
   isActive: boolean;
@@ -207,7 +209,7 @@ export function clearAuthSession(res: Response): void {
   clearSessionCookie(res);
 }
 
-function toUserResponse(user: AuthUser) {
+export function toAuthUserResponse(user: AuthUser) {
   return {
     id: user.id,
     firstName: user.firstName,
@@ -215,7 +217,7 @@ function toUserResponse(user: AuthUser) {
     email: user.email,
     employeeId: user.employeeId,
     accountName: user.accountName,
-    roles: user.roles,
+    roles: normalizeApplicationRoles(user.roles),
     ancillaryRoles: user.ancillaryRoles,
     mustChangePassword: user.mustChangePassword,
   };
@@ -420,7 +422,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   res.json({
     token,
-    user: toUserResponse(finalAuthUser),
+    user: toAuthUserResponse(finalAuthUser),
   });
 }
 
@@ -538,7 +540,7 @@ export async function changePassword(
   const token = createAuthToken(authUser);
   setSessionCookie(res, token, AUTH_COOKIE_NAME);
 
-  res.json({ token, user: toUserResponse(authUser) });
+  res.json({ token, user: toAuthUserResponse(authUser) });
 }
 
 export async function changeExternalDefaultPassword(
@@ -696,7 +698,7 @@ export async function verifyCredentials(
 
     res.json({
       valid: true,
-      user: toUserResponse(authUser),
+      user: toAuthUserResponse(authUser),
     });
   } catch (error) {
     if (error instanceof AppError) {

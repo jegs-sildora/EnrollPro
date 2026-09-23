@@ -14,3 +14,4 @@ export * from "./smart-eosy.schema.js";
 export * from "./smart-back-subjects.schema.js";
 export * from "./companion-sso.schema.js";
 export * from "./integration-term.schema.js";
+export * from "./term-changed-event.schema.js";
