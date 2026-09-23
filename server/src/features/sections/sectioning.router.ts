@@ -14,6 +14,7 @@ const router: Router = Router();
 const sectioningRoles = [
   "HEAD_REGISTRAR",
   "SYSTEM_ADMIN",
+  "GRADE_LEVEL_COORDINATOR",
   "GRADE 7 COORDINATOR",
   "GRADE 8 COORDINATOR",
   "GRADE 9 COORDINATOR",

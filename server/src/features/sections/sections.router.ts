@@ -29,6 +29,20 @@ import {
 
 const router: Router = Router();
 
+const gradeCoordinatorRoles = [
+  "GRADE_LEVEL_COORDINATOR",
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+] as const;
+
+const sectionManagerRoles = [
+  "HEAD_REGISTRAR",
+  "SYSTEM_ADMIN",
+  ...gradeCoordinatorRoles,
+] as const;
+
 const sf1Upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -52,26 +66,38 @@ const sf1Upload = multer({
 router.get(
   "/teachers",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...sectionManagerRoles),
   listEligibleAdvisers,
 );
 
 router.get(
   "/",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
+  authorize(
+    "HEAD_REGISTRAR",
+    "SYSTEM_ADMIN",
+    "CLASS_ADVISER",
+    "TEACHER",
+    ...gradeCoordinatorRoles,
+  ),
   listSections,
 );
 router.get(
   "/:ayId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
+  authorize(
+    "HEAD_REGISTRAR",
+    "SYSTEM_ADMIN",
+    "CLASS_ADVISER",
+    "TEACHER",
+    ...gradeCoordinatorRoles,
+  ),
   listSections,
 );
 router.post(
   "/",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...sectionManagerRoles),
   validate(createSectionSchema),
   createSection,
 );
@@ -79,7 +105,7 @@ router.post(
 router.post(
   "/:id/handover-adviser",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...sectionManagerRoles),
   validate(advisoryHandoverSchema),
   handoverAdviser,
 );
@@ -87,14 +113,14 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...sectionManagerRoles),
   validate(updateSectionSchema),
   updateSection,
 );
 router.delete(
 	'/:id',
 	authenticate,
-	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	authorize(...sectionManagerRoles),
 	deleteSection,
 );
 
@@ -139,14 +165,14 @@ router.post(
 router.get(
 	'/unsectioned-pool/:gradeLevelId',
 	authenticate,
-	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	authorize(...sectionManagerRoles),
 	getUnsectionedPool,
 );
 
 router.post(
 	'/:id/inline-slot',
 	authenticate,
-	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	authorize(...sectionManagerRoles),
 	staffIntakePhaseGuard,
 	inlineSlotLearner,
 );
@@ -154,7 +180,7 @@ router.post(
 router.post(
   "/transfer-learner",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...sectionManagerRoles),
   transferLearner,
 );
 

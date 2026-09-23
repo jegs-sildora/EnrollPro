@@ -19,6 +19,12 @@ import {
   commitSf1RosterImport,
   previewSf1RosterImport,
 } from "./sf1-roster.service.js";
+import {
+  getGradeCoordinatorGradeLevelIds,
+  getSectionManagementGradeScope,
+  isGradeLevelCoordinator,
+  isGradeLevelWithinScope,
+} from "./grade-level-scope.service.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -59,6 +65,20 @@ function numericIds(values: Array<number | string | null | undefined>): number[]
     .filter((value) => Number.isInteger(value) && value > 0);
 }
 
+async function canManageSectionGrade(
+  req: Request,
+  gradeLevelId: number,
+): Promise<boolean> {
+  const scope = await getSectionManagementGradeScope(req);
+  return isGradeLevelWithinScope(scope, gradeLevelId);
+}
+
+function sendGradeScopeForbidden(res: Response): void {
+  res.status(403).json({
+    message: "You can only manage sections and learners in your assigned grade level.",
+  });
+}
+
 const VALID_PROGRAM_TYPES = new Set([
   "REGULAR",
   "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
@@ -97,9 +117,17 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     ? parseInt(String(req.params.ayId))
     : req.schoolYearId;
   const { gradeLevelId, programType, sectionType } = req.query;
+  const coordinatorGradeLevelIds = isGradeLevelCoordinator(req)
+    ? await getGradeCoordinatorGradeLevelIds(req)
+    : null;
 
   if (!ayId) {
     res.json({ sections: [] });
+    return;
+  }
+
+  if (coordinatorGradeLevelIds?.length === 0) {
+    sendGradeScopeForbidden(res);
     return;
   }
 
@@ -107,12 +135,21 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   const isArchived = sy?.status === "ARCHIVED";
 
   if (gradeLevelId) {
+    const parsedGradeLevelId = parseInt(String(gradeLevelId));
+    if (
+      coordinatorGradeLevelIds !== null &&
+      !coordinatorGradeLevelIds.includes(parsedGradeLevelId)
+    ) {
+      sendGradeScopeForbidden(res);
+      return;
+    }
+
     const where: {
       gradeLevelId: number;
       schoolYearId: number;
       programType?: ApplicantType;
     } = {
-      gradeLevelId: parseInt(String(gradeLevelId)),
+      gradeLevelId: parsedGradeLevelId,
       schoolYearId: ayId,
     };
     if (programType) where.programType = programType as ApplicantType;
@@ -175,6 +212,10 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   }
 
   const gradeLevels = await prisma.gradeLevel.findMany({
+    where:
+      coordinatorGradeLevelIds === null
+        ? undefined
+        : { id: { in: coordinatorGradeLevelIds } },
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
@@ -246,6 +287,12 @@ export async function listSections(req: Request, res: Response): Promise<void> {
 }
 
 export async function listEligibleAdvisers(req: Request, res: Response) {
+  const managementScope = await getSectionManagementGradeScope(req);
+  if (managementScope?.length === 0) {
+    sendGradeScopeForbidden(res);
+    return;
+  }
+
   const schoolYearId = req.query.schoolYearId
     ? parseInt(String(req.query.schoolYearId))
     : req.schoolYearId;
@@ -320,6 +367,13 @@ export async function createSection(
       return;
     }
 
+    const parsedGradeLevelId = parseInt(String(gradeLevelId));
+    const parsedSchoolYearId = parseInt(String(schoolYearId));
+    if (!(await canManageSectionGrade(req, parsedGradeLevelId))) {
+      sendGradeScopeForbidden(res);
+      return;
+    }
+
     const normalizedProgramType =
       typeof programType === "string" && programType.trim().length > 0
         ? programType
@@ -330,8 +384,8 @@ export async function createSection(
       const limit = settings?.homogeneousSectionCount ?? 5;
       const count = await prisma.section.count({
         where: {
-          gradeLevelId: parseInt(String(gradeLevelId)),
-          schoolYearId: parseInt(String(schoolYearId)),
+          gradeLevelId: parsedGradeLevelId,
+          schoolYearId: parsedSchoolYearId,
           isHomogeneous: true,
           programType: "REGULAR"
         }
@@ -348,8 +402,8 @@ export async function createSection(
         : ((
             await prisma.section.aggregate({
               where: {
-                gradeLevelId,
-                schoolYearId,
+                gradeLevelId: parsedGradeLevelId,
+                schoolYearId: parsedSchoolYearId,
                 programType: normalizedProgramType as ApplicantType,
               },
               _max: { sortOrder: true },
@@ -362,8 +416,8 @@ export async function createSection(
           name: normalizedName,
           sortOrder: resolvedSortOrder,
           maxCapacity: maxCapacity ?? 45,
-          gradeLevelId,
-          schoolYearId,
+          gradeLevelId: parsedGradeLevelId,
+          schoolYearId: parsedSchoolYearId,
           programType: normalizedProgramType as ApplicantType,
           isHomogeneous: Boolean(isHomogeneous),
           isSnake: Boolean(isSnake),
@@ -373,13 +427,13 @@ export async function createSection(
 
       if (advisingTeacherId) {
         const sy = await tx.schoolYear.findUnique({
-          where: { id: schoolYearId },
+          where: { id: parsedSchoolYearId },
         });
         await tx.sectionAdviser.create({
           data: {
             sectionId: s.id,
             teacherId: advisingTeacherId,
-            schoolYearId,
+            schoolYearId: parsedSchoolYearId,
             status: SectionAdviserStatus.ACTIVE,
             effectiveFrom: sy?.classOpeningDate || new Date(),
           },
@@ -390,7 +444,7 @@ export async function createSection(
           where: {
             uq_teacher_designations_teacher_sy: {
               teacherId: advisingTeacherId,
-              schoolYearId,
+              schoolYearId: parsedSchoolYearId,
             },
           },
           update: {
@@ -399,7 +453,7 @@ export async function createSection(
           },
           create: {
             teacherId: advisingTeacherId,
-            schoolYearId,
+            schoolYearId: parsedSchoolYearId,
             isClassAdviser: true,
             advisorySectionId: s.id,
           },
@@ -472,6 +526,11 @@ export async function updateSection(
 
     if (!existing) {
       res.status(404).json({ message: "Section not found" });
+      return;
+    }
+
+    if (!(await canManageSectionGrade(req, existing.gradeLevelId))) {
+      sendGradeScopeForbidden(res);
       return;
     }
 
@@ -660,6 +719,11 @@ export async function deleteSection(
     return;
   }
 
+  if (!(await canManageSectionGrade(req, section.gradeLevelId))) {
+    sendGradeScopeForbidden(res);
+    return;
+  }
+
   // Check if there are any enrollment records referencing this section
   const enrollmentCount = await prisma.enrollmentRecord.count({
     where: { sectionId: id },
@@ -831,6 +895,11 @@ export async function getUnsectionedPool(
     return;
   }
 
+  if (!(await canManageSectionGrade(req, parsedGradeLevelId))) {
+    sendGradeScopeForbidden(res);
+    return;
+  }
+
   try {
     const applications = await prisma.enrollmentApplication.findMany({
       where: {
@@ -933,6 +1002,34 @@ export async function inlineSlotLearner(
     return;
   }
 
+  if (!(await canManageSectionGrade(req, section.gradeLevelId))) {
+    sendGradeScopeForbidden(res);
+    return;
+  }
+
+  if (section.schoolYearId !== schoolYearId) {
+    res.status(422).json({ message: "The selected section belongs to a different school year." });
+    return;
+  }
+
+  const applicationForPlacement = await prisma.enrollmentApplication.findUnique({
+    where: { id: enrollmentApplicationId },
+    select: { gradeLevelId: true, schoolYearId: true },
+  });
+  if (!applicationForPlacement) {
+    res.status(404).json({ message: "Enrollment application not found." });
+    return;
+  }
+  if (
+    applicationForPlacement.gradeLevelId !== section.gradeLevelId ||
+    applicationForPlacement.schoolYearId !== section.schoolYearId
+  ) {
+    res.status(422).json({
+      message: "The learner and selected section must belong to the same grade level and school year.",
+    });
+    return;
+  }
+
   if (section._count.enrollmentRecords >= section.maxCapacity && !isCapacityOverride) {
     res.status(409).json({
       message: "Section capacity reached",
@@ -1031,6 +1128,11 @@ export async function handoverAdviser(req: Request, res: Response) {
 
     if (!section) {
       return res.status(404).json({ message: "Section not found" });
+    }
+
+    if (!(await canManageSectionGrade(req, section.gradeLevelId))) {
+      sendGradeScopeForbidden(res);
+      return;
     }
 
     const currentActive = section.advisers[0];
@@ -1153,6 +1255,21 @@ export async function transferLearner(req: Request, res: Response) {
       return res
         .status(422)
         .json({ message: "Learner is not currently enrolled in any section" });
+    }
+
+    if (!(await canManageSectionGrade(req, application.gradeLevelId))) {
+      sendGradeScopeForbidden(res);
+      return;
+    }
+
+    if (
+      targetSection &&
+      (targetSection.gradeLevelId !== application.gradeLevelId ||
+        targetSection.schoolYearId !== application.schoolYearId)
+    ) {
+      return res.status(422).json({
+        message: "The destination section must match the learner's grade level and school year.",
+      });
     }
 
     const oldSectionName = application.enrollmentRecord.section.name;

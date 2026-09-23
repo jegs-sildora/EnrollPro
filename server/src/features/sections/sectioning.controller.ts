@@ -5,6 +5,10 @@ import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
 import { EosyStatus, Prisma, SectioningMethod } from "../../generated/prisma/index.js";
 import { getAllowedSectionProgramsForPlacement } from "@enrollpro/shared";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+import {
+  getSectionManagementGradeScope,
+  isGradeLevelWithinScope,
+} from "./grade-level-scope.service.js";
 
 const INACTIVE_EOSY_STATUSES: EosyStatus[] = [
   EosyStatus.TRANSFERRED_OUT,
@@ -18,46 +22,12 @@ const activeSectionEnrollmentFilter: Prisma.EnrollmentRecordWhereInput = {
   ],
 }
 
-const gradeCoordinatorRoleToOrder = {
-  "GRADE 7 COORDINATOR": 7,
-  "GRADE 8 COORDINATOR": 8,
-  "GRADE 9 COORDINATOR": 9,
-  "GRADE 10 COORDINATOR": 10,
-} as const;
-
-const unrestrictedSectioningRoles = new Set(["SYSTEM_ADMIN", "HEAD_REGISTRAR"]);
-
-async function getSectioningGradeScope(req: Request): Promise<number[] | null> {
-  const roles = req.user?.roles ?? [];
-  if (roles.some((role) => unrestrictedSectioningRoles.has(role))) return null;
-
-  const ancillaryRoles = req.user?.ancillaryRoles ?? [];
-  const gradeOrders = Object.entries(gradeCoordinatorRoleToOrder)
-    .filter(([role]) => ancillaryRoles.includes(role))
-    .map(([, displayOrder]) => displayOrder);
-
-  if (gradeOrders.length === 0) return [];
-
-  const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { displayOrder: { in: gradeOrders } },
-    select: { id: true },
-  });
-  return gradeLevels.map((gradeLevel) => gradeLevel.id);
-}
-
 function parseRequestedGradeLevelId(value: unknown): number | null | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== "string") return null;
 
   const gradeLevelId = Number(value);
   return Number.isInteger(gradeLevelId) && gradeLevelId > 0 ? gradeLevelId : null;
-}
-
-function isGradeLevelAllowed(
-  scopedGradeLevelIds: number[] | null,
-  gradeLevelId: number,
-): boolean {
-  return scopedGradeLevelIds === null || scopedGradeLevelIds.includes(gradeLevelId);
 }
 
 function broadcastSectioningInvalidation({
@@ -102,13 +72,13 @@ export async function getSectionsSummary(req: Request, res: Response) {
       return res.status(400).json({ message: "A valid gradeLevelId is required." });
     }
 
-    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
     if (scopedGradeLevelIds?.length === 0) {
       return res.status(403).json({ message: "You are not authorized to manage Section Assignment." });
     }
     if (
       requestedGradeLevelId !== undefined &&
-      !isGradeLevelAllowed(scopedGradeLevelIds, requestedGradeLevelId)
+      !isGradeLevelWithinScope(scopedGradeLevelIds, requestedGradeLevelId)
     ) {
       return res.status(403).json({ message: "You can only manage learners in your assigned grade level." });
     }
@@ -189,13 +159,13 @@ export async function getSectioningPool(req: Request, res: Response) {
       return res.status(400).json({ message: "A valid gradeLevelId is required." });
     }
 
-    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
     if (scopedGradeLevelIds?.length === 0) {
       return res.status(403).json({ message: "You are not authorized to manage Section Assignment." });
     }
     if (
       requestedGradeLevelId !== undefined &&
-      !isGradeLevelAllowed(scopedGradeLevelIds, requestedGradeLevelId)
+      !isGradeLevelWithinScope(scopedGradeLevelIds, requestedGradeLevelId)
     ) {
       return res.status(403).json({ message: "You can only manage learners in your assigned grade level." });
     }
@@ -308,8 +278,8 @@ export async function assignBulk(req: Request, res: Response) {
 
     if (!section) return res.status(404).json({ message: "Section not found." });
 
-    const scopedGradeLevelIds = await getSectioningGradeScope(req);
-    if (!isGradeLevelAllowed(scopedGradeLevelIds, section.gradeLevelId)) {
+    const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
+    if (!isGradeLevelWithinScope(scopedGradeLevelIds, section.gradeLevelId)) {
       return res.status(403).json({ message: "You can only assign learners within your assigned grade level." });
     }
 
@@ -609,10 +579,10 @@ export async function commitDraft(req: Request, res: Response) {
       prisma.schoolSetting.findFirst({ select: { systemPhase: true } }),
     ]);
 
-    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
     if (
       scopedGradeLevelIds?.length === 0 ||
-      sections.some((section) => !isGradeLevelAllowed(scopedGradeLevelIds, section.gradeLevelId))
+      sections.some((section) => !isGradeLevelWithinScope(scopedGradeLevelIds, section.gradeLevelId))
     ) {
       return res.status(403).json({
         message: "You can only assign learners within your assigned grade level.",
