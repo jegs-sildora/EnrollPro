@@ -142,7 +142,12 @@ export function WalkInEncodePanel() {
   const userRoles = useAuthStore((s) => s.user?.roles ?? []);
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
   const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
-  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar;
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
+    !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 9 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 10 COORDINATOR");
 
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
@@ -159,7 +164,7 @@ export function WalkInEncodePanel() {
     enabled: isStrictClassAdviser && !!activeSyId,
   });
 
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  
   
   let assignedGradeLevelId: number | null = null;
   if (isStrictClassAdviser && advisoryData?.section?.gradeLevelId) {

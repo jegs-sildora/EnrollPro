@@ -317,6 +317,8 @@ export function VerificationWorkspace() {
     data: pendingVerifications = [],
     isLoading,
     isPending,
+    isError: isPendingVerificationsError,
+    error: pendingVerificationsError,
   } = useQuery({
     queryKey: ["enrollment", "pending-verifications", assignedGradeLevelId],
     queryFn: () =>
@@ -913,7 +915,19 @@ export function VerificationWorkspace() {
               })()}
             </div>
             <div className="flex-1 overflow-y-auto">
-              {filteredVerifications.length === 0 ? (
+              {isPendingVerificationsError ? (
+                <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                  <span className="font-bold text-base leading-tight text-foreground">
+                    Unable to load enrollment applications
+                  </span>
+                  <span className="max-w-sm text-sm font-medium text-muted-foreground">
+                    {isAxiosError<ApiErrorResponse>(pendingVerificationsError)
+                      ? pendingVerificationsError.response?.data?.message ?? "Please refresh the page and try again."
+                      : "Please refresh the page and try again."}
+                  </span>
+                </div>
+              ) : filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   {activeSearchQuery ? (
                     <Search className="h-8 w-8 text-foreground" />

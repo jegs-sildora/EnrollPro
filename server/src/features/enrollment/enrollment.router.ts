@@ -21,38 +21,48 @@ import { directEncodeWalkInSchema, scpAssessmentUpdateSchema } from "@enrollpro/
 
 const router: Router = Router();
 
+const enrollmentProcessorRoles = [
+  "HEAD_REGISTRAR",
+  "SYSTEM_ADMIN",
+  "CLASS_ADVISER",
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+] as const;
+
 router.post(
   "/finalize-intake",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   finalizeIntake,
 );
 
 router.get(
   "/pending-verifications",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   getPendingVerifications,
 );
 
 router.patch(
   "/:applicationId/flag-deficient",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   flagDeficient,
 );
 
 router.patch(
   "/:applicationId/cancel",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   cancelApplication,
 );
 
 router.patch(
   "/:applicationId/restore",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   restoreApplication,
 );
 
@@ -66,14 +76,14 @@ router.delete(
 router.patch(
   "/:applicationId/revert",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   revertApplication,
 );
 
 router.post(
   "/walk-in",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
+  authorize(...enrollmentProcessorRoles),
   validate(directEncodeWalkInSchema),
   directEncodeWalkIn,
 );
@@ -81,14 +91,14 @@ router.post(
 router.get(
   "/walk-in/atlas-subjects",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"),
+  authorize(...enrollmentProcessorRoles),
   getWalkInAtlasSubjects,
 );
 
 router.patch(
   "/:applicationId/complete-requirements",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   completeRequirements,
 );
 

@@ -408,7 +408,11 @@ export default function ChangePassword() {
         const isStrictClassAdviser =
           roles.includes("CLASS_ADVISER") &&
           !roles.includes("SYSTEM_ADMIN") &&
-          !roles.includes("HEAD_REGISTRAR");
+          !roles.includes("HEAD_REGISTRAR") &&
+          !roles.includes("GRADE 7 COORDINATOR") &&
+          !roles.includes("GRADE 8 COORDINATOR") &&
+          !roles.includes("GRADE 9 COORDINATOR") &&
+          !roles.includes("GRADE 10 COORDINATOR");
 
         const finalHome = isStrictClassAdviser
           ? "/dashboard"

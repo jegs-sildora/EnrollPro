@@ -387,7 +387,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
   const onSubmit = async (data: ScpFormData) => {
     try {
-      const response = await api.post("/applications", data);
+      const response = await api.post("/applications/admissions", data);
       
       hasSubmittedRef.current = true;
       sessionStorage.removeItem(SCP_FORM_STATE_KEY);

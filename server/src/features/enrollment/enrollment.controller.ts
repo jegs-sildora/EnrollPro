@@ -13,6 +13,7 @@ import {
   type AtlasSubjectCatalogItem,
 } from "../integration/atlas-subject-catalog.service.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
+import { getAdviserGradeLevelId } from "../teachers/adviser-scope.service.js";
 
 interface StaffIntakeContext {
   schoolYearId: number;
@@ -31,6 +32,57 @@ interface ResolvedWalkInSubjectCatalog {
   subjectGradeLevel: number;
   subjectGradeLevelId: number;
   subjects: AtlasSubjectCatalogItem[];
+}
+
+const gradeCoordinatorRoles = [
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+] as const;
+
+function getCoordinatorGradeOrder(req: Request): number | null {
+  const ancillaryRoles = req.user?.ancillaryRoles ?? [];
+  const roleIndex = gradeCoordinatorRoles.findIndex((role) => ancillaryRoles.includes(role));
+  return roleIndex === -1 ? null : roleIndex + 7;
+}
+
+async function getCoordinatorGradeLevelId(req: Request): Promise<number | null> {
+  const gradeOrder = getCoordinatorGradeOrder(req);
+  if (gradeOrder === null) return null;
+
+  const gradeLevel = await prisma.gradeLevel.findFirst({
+    where: { displayOrder: gradeOrder },
+    select: { id: true },
+  });
+  return gradeLevel?.id ?? null;
+}
+
+async function assertEnrollmentGradeScope(
+  req: Request,
+  schoolYearId: number,
+  gradeLevelId: number,
+): Promise<void> {
+  const roles = req.user?.roles ?? [];
+  if (roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR")) return;
+
+  const coordinatorGradeLevelId = await getCoordinatorGradeLevelId(req);
+  if (coordinatorGradeLevelId !== null) {
+    if (coordinatorGradeLevelId !== gradeLevelId) {
+      throw new AppError(403, "You can only manage learners in your assigned grade level.");
+    }
+    return;
+  }
+
+  if (roles.includes("CLASS_ADVISER")) {
+    const adviserGradeLevelId = await getAdviserGradeLevelId(req.user!.userId, schoolYearId);
+    if (adviserGradeLevelId !== gradeLevelId) {
+      throw new AppError(403, "You can only manage learners in your assigned advisory grade level.");
+    }
+    return;
+  }
+
+  throw new AppError(403, "You are not authorized to manage enrollment applications.");
 }
 
 async function assertStaffIntakeAllowed(): Promise<StaffIntakeContext> {
@@ -117,37 +169,19 @@ async function resolveWalkInSubjectCatalog(
   };
 }
 
-import { getAdviserGradeLevelId } from "../teachers/adviser-scope.service.js";
-
 export async function getWalkInAtlasSubjects(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    await assertStaffIntakeAllowed();
+    const intakeContext = await assertStaffIntakeAllowed();
     const gradeLevelId = Number(req.query.gradeLevelId);
     if (!Number.isInteger(gradeLevelId) || gradeLevelId <= 0) {
       throw new AppError(400, "A valid gradeLevelId is required.");
     }
 
-    const isStrictClassAdviser =
-      req.user!.roles.includes("CLASS_ADVISER") &&
-      !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
-
-    if (isStrictClassAdviser) {
-      const activeResolution = await resolveActiveSchoolYearState();
-      const adviserGradeId = activeResolution.state === "VALID" 
-        ? await getAdviserGradeLevelId(req.user!.userId, activeResolution.active.schoolYearId)
-        : null;
-      if (gradeLevelId !== adviserGradeId) {
-        throw new AppError(
-          403,
-          "You can only access subjects for your assigned advisory grade level.",
-        );
-      }
-    }
+    await assertEnrollmentGradeScope(req, intakeContext.schoolYearId, gradeLevelId);
 
     const programType = parseWalkInProgramType(req.query.programType);
     const catalog = await resolveWalkInSubjectCatalog(
@@ -239,6 +273,12 @@ export async function finalizeIntake(req: Request, res: Response) {
   if (!application) {
     throw new AppError(404, "Enrollment application not found.");
   }
+
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+  );
 
   if (application.status !== "PENDING_VERIFICATION") {
     throw new AppError(
@@ -371,14 +411,12 @@ export async function getPendingVerifications(req: Request, res: Response) {
     return res.status(400).json({ message: "Active school year not found." });
   }
 
-  const isStrictClassAdviser =
-    req.user!.roles.includes("CLASS_ADVISER") &&
-    !req.user!.roles.includes("SYSTEM_ADMIN") &&
-    !req.user!.roles.includes("HEAD_REGISTRAR");
-
   let finalGradeLevelId: number | undefined;
+  const coordinatorGradeLevelId = await getCoordinatorGradeLevelId(req);
 
-  if (isStrictClassAdviser) {
+  if (coordinatorGradeLevelId !== null) {
+    finalGradeLevelId = coordinatorGradeLevelId;
+  } else if (req.user!.roles.includes("CLASS_ADVISER")) {
     const adviserGradeId = await getAdviserGradeLevelId(
       req.user!.userId,
       schoolYearId,
@@ -388,7 +426,11 @@ export async function getPendingVerifications(req: Request, res: Response) {
     }
     finalGradeLevelId = adviserGradeId;
   } else if (req.query.gradeLevelId) {
-    finalGradeLevelId = Number(req.query.gradeLevelId);
+    const requestedGradeLevelId = Number(req.query.gradeLevelId);
+    if (!Number.isInteger(requestedGradeLevelId) || requestedGradeLevelId <= 0) {
+      return res.status(400).json({ message: "A valid gradeLevelId is required." });
+    }
+    finalGradeLevelId = requestedGradeLevelId;
   }
 
   const applications = await prisma.enrollmentApplication.findMany({
@@ -402,6 +444,9 @@ export async function getPendingVerifications(req: Request, res: Response) {
       },
       OR: [
         { applicantType: { in: ["REGULAR", "LATE_ENROLLEE"] } },
+        { scpAdmission: { assessmentResult: "QUALIFIED" } },
+        // Compatibility for enrollment records created before SCP admission
+        // assessments moved to the dedicated ScpAdmission model.
         { scpProfile: { assessmentResult: "QUALIFIED" } },
       ],
       ...(finalGradeLevelId ? { gradeLevelId: finalGradeLevelId } : {}),
@@ -463,6 +508,8 @@ export async function flagDeficient(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
+  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+
   await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
@@ -515,6 +562,8 @@ export async function cancelApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
+  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+
   if (application.status !== "PENDING_VERIFICATION") {
     throw new AppError(
       409,
@@ -559,6 +608,8 @@ export async function restoreApplication(req: Request, res: Response) {
   if (!application) {
     throw new AppError(404, "Enrollment application not found.");
   }
+
+  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
 
   if (application.status !== "WITHDRAWN") {
     throw new AppError(
@@ -662,6 +713,8 @@ export async function revertApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
+  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+
   if (application.status !== "READY_FOR_SECTIONING" && application.status !== "OFFICIALLY_ENROLLED") {
     throw new AppError(
       409,
@@ -716,40 +769,7 @@ export async function directEncodeWalkIn(
 
     const schoolYearId = intakeContext.schoolYearId;
 
-    const isStrictClassAdviser =
-      req.user!.roles.includes("CLASS_ADVISER") &&
-      !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
-
-    if (isStrictClassAdviser) {
-      const adviserGradeId = await getAdviserGradeLevelId(req.user!.userId, schoolYearId);
-      if (gradeLevelId !== adviserGradeId) {
-        throw new AppError(
-          403,
-          "You can only encode walk-in applications for your assigned advisory grade level.",
-        );
-      }
-    }
-
-    const ancillaryRoles = req.user!.ancillaryRoles || [];
-    const isGrade7Coordinator = ancillaryRoles.includes("GRADE 7 COORDINATOR");
-    const isGrade8Coordinator = ancillaryRoles.includes("GRADE 8 COORDINATOR");
-    const isGrade9Coordinator = ancillaryRoles.includes("GRADE 9 COORDINATOR");
-    const isGrade10Coordinator = ancillaryRoles.includes("GRADE 10 COORDINATOR");
-
-    if (isGrade7Coordinator || isGrade8Coordinator || isGrade9Coordinator || isGrade10Coordinator) {
-      const grade = await prisma.gradeLevel.findUnique({ where: { id: gradeLevelId } });
-      if (!grade) throw new AppError(400, "Invalid grade level.");
-
-      if (
-        (isGrade7Coordinator && grade.name !== "Grade 7") ||
-        (isGrade8Coordinator && grade.name !== "Grade 8") ||
-        (isGrade9Coordinator && grade.name !== "Grade 9") ||
-        (isGrade10Coordinator && grade.name !== "Grade 10")
-      ) {
-        throw new AppError(403, `You are not authorized to enroll students in ${grade.name}.`);
-      }
-    }
+    await assertEnrollmentGradeScope(req, schoolYearId, gradeLevelId);
     const applicantType = parseWalkInProgramType(assignedProgram);
     let backSubjectSelection: {
       gradeLevelId: number;
@@ -947,6 +967,8 @@ export async function completeRequirements(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
+  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+
   if (
     application.status !== "READY_FOR_SECTIONING" &&
     application.status !== "OFFICIALLY_ENROLLED"
@@ -1061,17 +1083,16 @@ export async function saveScpAssessment(req: Request, res: Response, next: NextF
 
     const { requirementsStatus, writtenExamStatus, writtenExamScore, interviewStatus, assessmentResult } = req.body;
 
-    const application = await prisma.enrollmentApplication.findUnique({
+    const application = await prisma.scpAdmission.findUnique({
       where: { id: applicationId },
-      include: { scpProfile: true },
     });
 
-    if (!application || !application.scpProfile) {
+    if (!application) {
       throw new AppError(404, "SCP Profile not found for this application.");
     }
 
-    const updatedProfile = await prisma.enrollmentScpProfile.update({
-      where: { applicationId },
+    const updatedProfile = await prisma.scpAdmission.update({
+      where: { id: applicationId },
       data: {
         requirementsStatus,
         writtenExamStatus,

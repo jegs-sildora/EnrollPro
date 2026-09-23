@@ -133,6 +133,13 @@ interface ApiMessageResponse {
   message?: string;
 }
 
+function getApiMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiMessageResponse>(error)) {
+    return error.response?.data.message ?? fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 interface DraftGenderCounts {
   boys: number;
   girls: number;
@@ -628,7 +635,7 @@ export function SectioningWorkspace() {
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["school-years", "active", "grade-levels"],
     queryFn: async () => {
-      const res = await api.get("/school-years/grade-levels");
+      const res = await api.get<GradeLevelsResponse>("/school-years/grade-levels");
       return res.data;
     },
     staleTime: 60_000,
@@ -640,14 +647,19 @@ export function SectioningWorkspace() {
   const assignedGradeLevelId = useMemo(() => {
     if (!activeSchoolYear?.gradeLevels) return null;
     if (isAdminOrRegistrar) return null;
-    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((gradeLevel) => gradeLevel.name === "Grade 7")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((gradeLevel) => gradeLevel.name === "Grade 8")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((gradeLevel) => gradeLevel.name === "Grade 9")?.id ?? null;
+    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((gradeLevel) => gradeLevel.name === "Grade 10")?.id ?? null;
     return null;
   }, [isAdminOrRegistrar, ancillaryRoles, activeSchoolYear?.gradeLevels]);
 
-  const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
+  const {
+    data: sectionsData,
+    isLoading: sectionsInitialLoading,
+    error: sectionsError,
+    refetch: refetchSections,
+  } = useQuery({
     queryKey: ["sectioning", "sections-summary", assignedGradeLevelId],
     queryFn: () =>
       api
@@ -660,7 +672,12 @@ export function SectioningWorkspace() {
     staleTime: 3_000,
   });
 
-  const { data: poolData, isLoading: poolInitialLoading } = useQuery({
+  const {
+    data: poolData,
+    isLoading: poolInitialLoading,
+    error: poolError,
+    refetch: refetchPool,
+  } = useQuery({
     queryKey: ["sectioning", "pool", assignedGradeLevelId],
     queryFn: () =>
       api.get<PoolLearner[]>("/sectioning/pool", {
@@ -1238,6 +1255,29 @@ export function SectioningWorkspace() {
 
   if (loading) {
     return <TwoPanelSkeleton />;
+  }
+
+  const sectioningLoadError = sectionsError ?? poolError;
+  if (sectioningLoadError) {
+    return (
+      <Card className="flex min-h-[420px] flex-col items-center justify-center gap-4 border-border p-8 text-center shadow-sm">
+        <AlertTriangle className="h-10 w-10 text-destructive" />
+        <div className="space-y-1">
+          <CardTitle className="text-xl">Unable to load Section Assignment</CardTitle>
+          <CardDescription className="text-base text-foreground">
+            {getApiMessage(sectioningLoadError, "Could not load learners and sections.")}
+          </CardDescription>
+        </div>
+        <Button
+          type="button"
+          onClick={() => {
+            void Promise.all([refetchSections(), refetchPool()]);
+          }}
+        >
+          Try Again
+        </Button>
+      </Card>
+    );
   }
 
   const displayedRosters =

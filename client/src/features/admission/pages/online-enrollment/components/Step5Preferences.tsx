@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { AlertCircle, BookOpen, Info } from "lucide-react";
+import { AlertCircle, BookOpen, Info, CheckCircle2, Lock, Loader2 } from "lucide-react";
 
 import type { EnrollmentFormData } from "../types";
 import {
@@ -92,6 +92,7 @@ export default function Step5Enrollment() {
   const sportsList = watch("sportsList");
   const foreignLanguage = watch("foreignLanguage");
   const reportedGa = watch("generalAverage");
+  const isValidatingLrn = watch("isValidatingLrn");
 
   const [inputGaValue, setInputGaValue] = useState<string>("");
 
@@ -412,32 +413,38 @@ export default function Step5Enrollment() {
               </Label>
             </div>
 
-            <Select
-              disabled={true}
-              value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
-              onValueChange={(val) => {
-                if (val === "REGULAR") {
-                  setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
-                  setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
-                  setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
-                } else {
-                  setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
-                  setValue("scpType", val as ScpTypeValue, { shouldValidate: true, shouldDirty: true });
-                }
-              }}
-            >
-              <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase disabled:opacity-100 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                <SelectValue placeholder="Select Preferred Curricular Program" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="REGULAR">Regular Basic Education Curriculum (BEC)</SelectItem>
-                {availableScpPrograms.map((program) => (
-                  <SelectItem key={program.id} value={program.id}>
-                    {program.label} ({SCP_ACRONYMS[program.id]})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isValidatingLrn ? (
+              <div className="w-full bg-muted border border-border rounded-md p-4 flex flex-col justify-center shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin shrink-0" />
+                  <span className="text-base font-bold text-muted-foreground">Verifying program eligibility...</span>
+                </div>
+              </div>
+            ) : isQualifiedScp ? (
+              <div className="space-y-1.5 mt-2">
+                <div className="w-full bg-green-50 border border-green-200 rounded-md p-4 flex flex-col justify-center shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                    <span className="text-base font-bold text-green-900 uppercase">
+                      {SCP_LABELS[scpProgram as keyof typeof SCP_LABELS] || scpProgram} ({SCP_ACRONYMS[scpProgram as keyof typeof SCP_ACRONYMS]})
+                    </span>
+                  </div>
+                </div>
+                <p className="font-bold text-green-700 pl-1">
+                  Verified: System auto-assigned based on Official Admission Results.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5 mt-2">
+                <div className="w-full bg-muted border border-border rounded-md p-3 flex flex-col justify-center shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base font-bold text-foreground uppercase">
+                      Regular Basic Education Curriculum (BEC)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
           <AnimatePresence>
             {/* We no longer show the manual checkbox warning since it's auto-verified */}

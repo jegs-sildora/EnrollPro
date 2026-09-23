@@ -89,11 +89,10 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
     return
   }
 
-  const applications = await prisma.enrollmentApplication.findMany({
+  const admissions = await prisma.scpAdmission.findMany({
     where: {
       schoolYearId,
-      status: { in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING"] },
-      applicantType: { in: programs },
+      program: { in: programs },
     },
     include: {
       learner: {
@@ -107,7 +106,6 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
           studentPhoto: true,
         },
       },
-      scpProfile: true,
     },
     orderBy: [
       { learner: { lastName: "asc" } },
@@ -115,7 +113,22 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
     ],
   })
 
-  res.json(applications)
+  // Map to legacy application structure so frontend LearnerAdmissionIndex works without changes
+  const mapped = admissions.map((adm) => ({
+    id: adm.id,
+    learner: adm.learner,
+    scpProfile: {
+      requirementsStatus: adm.requirementsStatus,
+      writtenExamStatus: adm.writtenExamStatus,
+      writtenExamScore: adm.writtenExamScore,
+      interviewStatus: adm.interviewStatus,
+      assessmentResult: adm.assessmentResult,
+    },
+    createdAt: adm.createdAt,
+    finalResult: adm.assessmentResult,
+  }))
+
+  res.json(mapped)
 }
 
 export const bulkSaveScpAssessments = async (req: Request, res: Response): Promise<void> => {
@@ -141,12 +154,11 @@ export const bulkSaveScpAssessments = async (req: Request, res: Response): Promi
   }
 
   const applicationIds = updates.map(({ applicationId }) => applicationId)
-  const eligibleApplications = await prisma.enrollmentApplication.count({
+  const eligibleApplications = await prisma.scpAdmission.count({
     where: {
       id: { in: applicationIds },
       schoolYearId,
-      applicantType: program,
-      scpProfile: { isNot: null },
+      program,
     },
   })
 
@@ -158,8 +170,8 @@ export const bulkSaveScpAssessments = async (req: Request, res: Response): Promi
     // 1. Initial save of edits
     await Promise.all(
       updates.map((update) =>
-        tx.enrollmentScpProfile.update({
-          where: { applicationId: update.applicationId },
+        tx.scpAdmission.update({
+          where: { id: update.applicationId },
           data: {
             requirementsStatus: update.requirementsStatus,
             writtenExamStatus: update.requirementsStatus === "PASSED" ? update.writtenExamStatus : "PENDING",
@@ -171,13 +183,10 @@ export const bulkSaveScpAssessments = async (req: Request, res: Response): Promi
     )
 
     // 2. Fetch all profiles for the given program
-    const allProfiles = await tx.enrollmentScpProfile.findMany({
+    const allProfiles = await tx.scpAdmission.findMany({
       where: {
-        application: {
-          schoolYearId,
-          applicantType: program,
-          status: { in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING"] },
-        },
+        schoolYearId,
+        program,
       },
     })
 
@@ -211,7 +220,7 @@ export const bulkSaveScpAssessments = async (req: Request, res: Response): Promi
       const newStatus = i < maxSlots ? "QUALIFIED" : "WAITLISTED"
       if (eligible[i].assessmentResult !== newStatus) {
         finalUpdates.push(
-          tx.enrollmentScpProfile.update({
+          tx.scpAdmission.update({
             where: { id: eligible[i].id },
             data: { assessmentResult: newStatus },
           })
@@ -223,7 +232,7 @@ export const bulkSaveScpAssessments = async (req: Request, res: Response): Promi
       const newStatus = getAssessmentResult(p.requirementsStatus, p.writtenExamStatus, p.interviewStatus)
       if (p.assessmentResult !== newStatus) {
         finalUpdates.push(
-          tx.enrollmentScpProfile.update({
+          tx.scpAdmission.update({
             where: { id: p.id },
             data: { assessmentResult: newStatus },
           })
@@ -304,38 +313,34 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
   }
 
   await prisma.$transaction(async (tx) => {
-    const scpProfile = await tx.enrollmentScpProfile.findUnique({
-      where: { applicationId },
-      include: { application: true }
+    const scpAdmission = await tx.scpAdmission.findUnique({
+      where: { id: applicationId },
     })
 
-    if (!scpProfile || scpProfile.assessmentResult !== "QUALIFIED") {
+    if (!scpAdmission || scpAdmission.assessmentResult !== "QUALIFIED") {
       throw new AppError(400, "Only qualified applicants can be forfeited.")
     }
     
-    if (scpProfile.application.schoolYearId !== schoolYearId) {
+    if (scpAdmission.schoolYearId !== schoolYearId) {
       throw new AppError(400, "Application belongs to a different school year.")
     }
 
-    const program = scpProfile.application.applicantType
+    const program = scpAdmission.program
     if (!program) {
       throw new AppError(400, "Applicant does not have an applied program.")
     }
 
     // 1. Mark as forfeited
-    await tx.enrollmentScpProfile.update({
-      where: { id: scpProfile.id },
+    await tx.scpAdmission.update({
+      where: { id: scpAdmission.id },
       data: { assessmentResult: "FORFEITED" }
     })
 
     // 2. Find next waitlisted
-    const nextWaitlisted = await tx.enrollmentScpProfile.findFirst({
+    const nextWaitlisted = await tx.scpAdmission.findFirst({
       where: {
-        application: {
-          schoolYearId,
-          applicantType: program,
-          status: { notIn: ["REJECTED", "WITHDRAWN", "DROPPED"] }
-        },
+        schoolYearId,
+        program,
         assessmentResult: "WAITLISTED",
       },
       orderBy: [
@@ -346,7 +351,7 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
 
     // 3. Promote if found
     if (nextWaitlisted) {
-      await tx.enrollmentScpProfile.update({
+      await tx.scpAdmission.update({
         where: { id: nextWaitlisted.id },
         data: { assessmentResult: "QUALIFIED" }
       })
@@ -368,20 +373,19 @@ export const restoreScpApplication = async (req: Request, res: Response): Promis
   }
 
   const resultStatus = await prisma.$transaction(async (tx) => {
-    const scpProfile = await tx.enrollmentScpProfile.findUnique({
-      where: { applicationId },
-      include: { application: true }
+    const scpAdmission = await tx.scpAdmission.findUnique({
+      where: { id: applicationId },
     })
 
-    if (!scpProfile || scpProfile.assessmentResult !== "FORFEITED") {
+    if (!scpAdmission || scpAdmission.assessmentResult !== "FORFEITED") {
       throw new AppError(400, "Only forfeited applicants can be restored.")
     }
 
-    if (scpProfile.application.schoolYearId !== schoolYearId) {
+    if (scpAdmission.schoolYearId !== schoolYearId) {
       throw new AppError(400, "Application belongs to a different school year.")
     }
 
-    const program = scpProfile.application.applicantType
+    const program = scpAdmission.program
     if (!program) {
       throw new AppError(400, "Applicant does not have an applied program.")
     }
@@ -394,13 +398,10 @@ export const restoreScpApplication = async (req: Request, res: Response): Promis
     else if (program === "SPECIAL_PROGRAM_IN_SPORTS") maxSlots = settings?.spsCapacity ?? 0
 
     // 2. Count current occupancy (QUALIFIED applicants)
-    const occupancy = await tx.enrollmentScpProfile.count({
+    const occupancy = await tx.scpAdmission.count({
       where: {
-        application: {
-          schoolYearId,
-          applicantType: program,
-          status: { in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING"] },
-        },
+        schoolYearId,
+        program,
         assessmentResult: "QUALIFIED",
       },
     })
@@ -409,8 +410,8 @@ export const restoreScpApplication = async (req: Request, res: Response): Promis
     const newStatus = occupancy < maxSlots ? "QUALIFIED" : "WAITLISTED"
 
     // 4. Update the applicant
-    await tx.enrollmentScpProfile.update({
-      where: { id: scpProfile.id },
+    await tx.scpAdmission.update({
+      where: { id: scpAdmission.id },
       data: { assessmentResult: newStatus }
     })
 

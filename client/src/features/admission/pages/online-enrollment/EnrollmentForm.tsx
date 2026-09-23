@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+
 import { Input } from "@/shared/ui/input";
 import { ArrowLeft, AlertCircle, ShieldCheck, Info, Trash2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -415,6 +415,7 @@ export default function EnrollmentForm({
         primaryContact,
         guardianRelationship,
         hasExecutedAffidavit: _hasExecutedAffidavit,
+        isScpApplication: _isScpApplication,
         ...payloadBase
       } = uppercaseData as EnrollmentFormData & {
         contactNumber: string;
@@ -424,6 +425,7 @@ export default function EnrollmentForm({
       };
 
       void _hasExecutedAffidavit;
+      void _isScpApplication;
 
       const mother = { ...payloadBase.mother };
       const father = { ...payloadBase.father };
@@ -501,7 +503,7 @@ export default function EnrollmentForm({
       };
 
       const response = await api.post<ApplicationSubmitResponse>(
-        "/applications",
+        "/applications/enrollments",
         payload,
       );
 
@@ -598,148 +600,131 @@ export default function EnrollmentForm({
         </Button>
       )}
 
-      {/* Duplicate Modal */}
-      <Dialog open={duplicateModalOpen} onOpenChange={(open) => {
-        if (!open) {
-          setDuplicateModalOpen(false);
-          setDuplicateAction(null);
-          setTrackingNumberInput("");
+      <ConfirmationModal
+        open={duplicateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDuplicateModalOpen(false);
+            setDuplicateAction(null);
+            setTrackingNumberInput("");
+          }
+        }}
+        variant="danger"
+        title="Duplicate Enrollment Detected"
+        description={
+          <>
+            An enrollment application already exists for this learner. To prevent duplicate records in the system, you cannot submit a new application. Do you want to overwrite the existing pending record with the new information you just entered?
+          </>
         }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Existing Application Found</DialogTitle>
-            <DialogDescription>
-              We found an existing pending application for this Learner. Would you like to update the existing record or submit a new one?
-            </DialogDescription>
-          </DialogHeader>
+        confirmText="Overwrite Existing Record"
+        cancelText="Cancel Submission"
+        loading={isSubmitting}
+        onConfirm={async () => {
+          setDuplicateModalOpen(false);
+          setIsSubmitting(true);
+          setSubmitError("");
+          try {
+            const data = methods.getValues();
+            const uppercaseData = toUpperCaseRecursive(data);
 
-          <div className="flex flex-col gap-4 py-4">
-            {!duplicateAction ? (
-              <div className="flex flex-col gap-3">
-                <Button
-                  onClick={() => setDuplicateAction("update")}
-                  className="w-full justify-start"
-                  variant="outline"
-                >
-                  Update Existing Application
-                </Button>
-                <Button
-                  onClick={() => {
-                    setDuplicateAction("new");
-                    setDuplicateModalOpen(false);
-                    const data = methods.getValues();
-                    void onSubmit({ ...data, bypassDuplicate: true });
-                  }}
-                  className="w-full justify-start"
-                  variant="default"
-                >
-                  Submit as New Application
-                </Button>
-              </div>
-            ) : duplicateAction === "update" ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Original Tracking Number</Label>
-                  <Input
-                    value={trackingNumberInput}
-                    onChange={(e) => setTrackingNumberInput(e.target.value)}
-                    placeholder="Enter Tracking Number (e.g., EN-26-XXXXXX)"
-                  />
-                  <p className="text-base text-muted-foreground">You can find this in the email sent or success screen from your original application.</p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={() => setDuplicateAction(null)}>Back</Button>
-                  <Button onClick={async () => {
-                    if (!trackingNumberInput.trim()) {
-                      sileo.error({ title: "Error", description: "Tracking number is required." });
-                      return;
-                    }
-                    setDuplicateModalOpen(false);
-                    setIsSubmitting(true);
-                    setSubmitError("");
-                    try {
-                      const data = methods.getValues();
-                      const uppercaseData = toUpperCaseRecursive(data);
+            const {
+              contactNumber,
+              primaryContact,
+              guardianRelationship,
+              hasExecutedAffidavit: _hasExecutedAffidavit,
+              isScpApplication: _isScpApplication,
+              ...payloadBase
+            } = uppercaseData as EnrollmentFormData & {
+              contactNumber: string;
+              primaryContact: "MOTHER" | "FATHER" | "GUARDIAN";
+              hasExecutedAffidavit?: boolean;
+              guardianRelationship?: string;
+            };
 
-                      const mother = { ...uppercaseData.mother };
-                      const father = { ...uppercaseData.father };
-                      const guardian = uppercaseData.guardian ? { ...uppercaseData.guardian } : null;
+            void _hasExecutedAffidavit;
+            void _isScpApplication;
 
-                      if (uppercaseData.primaryContact === "MOTHER") mother.contactNumber = uppercaseData.contactNumber;
-                      if (uppercaseData.primaryContact === "FATHER") father.contactNumber = uppercaseData.contactNumber;
-                      if (uppercaseData.primaryContact === "GUARDIAN" && guardian) guardian.contactNumber = uppercaseData.contactNumber;
-                      if (guardian && uppercaseData.guardianRelationship?.trim()) guardian.relationship = uppercaseData.guardianRelationship;
+            const mother = { ...payloadBase.mother };
+            const father = { ...payloadBase.father };
+            const guardian = payloadBase.guardian ? { ...payloadBase.guardian } : null;
 
-                      const hasGuardianData = guardian !== null && [guardian.firstName, guardian.lastName, guardian.middleName, guardian.contactNumber, guardian.relationship].some((value) => String(value ?? "").trim().length > 0);
+            if (primaryContact === "MOTHER") mother.contactNumber = contactNumber;
+            if (primaryContact === "FATHER") father.contactNumber = contactNumber;
+            if (primaryContact === "GUARDIAN" && guardian) guardian.contactNumber = contactNumber;
+            if (guardian && guardianRelationship?.trim()) guardian.relationship = guardianRelationship;
 
-                      const mapAddress = (addr: AddressPayload | null | undefined) => {
-                        if (!addr) return null;
-                        return {
-                          houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,
-                          sitio: undefined,
-                          barangay: addr.barangay,
-                          cityMunicipality: addr.cityMunicipality,
-                          province: addr.province,
-                          region: addr.region,
-                        };
-                      };
+            const hasGuardianData = guardian !== null && [guardian.firstName, guardian.lastName, guardian.middleName, guardian.contactNumber, guardian.relationship].some((value) => String(value ?? "").trim().length > 0);
 
-                      const payload = {
-                        ...uppercaseData,
-                        lrn: data.hasNoLrn ? null : String(data.lrn ?? "").trim() || null,
-                        mother,
-                        father,
-                        guardian: hasGuardianData ? guardian : null,
-                        birthdate: data.birthdate instanceof Date ? data.birthdate.toISOString() : data.birthdate,
-                        currentAddress: mapAddress(uppercaseData.currentAddress),
-                        permanentAddress: uppercaseData.isPermanentSameAsCurrent ? mapAddress(uppercaseData.currentAddress) : mapAddress(uppercaseData.permanentAddress),
-                        originalTrackingNumber: trackingNumberInput,
-                      };
+            interface AddressPayload {
+              houseNo?: string;
+              street?: string;
+              barangay?: string;
+              cityMunicipality?: string;
+              province?: string;
+              region?: string;
+            }
+      
+            const mapAddress = (addr: AddressPayload | null | undefined) => {
+              if (!addr) return null;
+              return {
+                houseNoStreet: addr.houseNo || undefined,
+                sitio: addr.street || undefined,
+                barangay: addr.barangay,
+                cityMunicipality: addr.cityMunicipality,
+                province: addr.province,
+                region: addr.region,
+              };
+            };
 
-                      const response = await api.post<ApplicationSubmitResponse>("/applications/update-existing", payload);
-                      sileo.success({
-                        title: "Application Updated!",
-                        description: `Your tracking number remains ${response.data.trackingNumber}.`,
-                      });
-                      if (onSuccess) {
-                        onSuccess({
-                          trackingNumber: response.data.trackingNumber,
-                          applicantType: response.data.applicantType,
-                          programType: response.data.programType,
-                          status: response.data.status,
-                          currentStep: response.data.currentStep,
-                          learnerName: `${data.firstName} ${data.lastName}`,
-                        });
-                      }
-                      reset({ ...DEFAULT_VALUES });
-                      localStorage.removeItem(DRAFT_KEY);
-                      localStorage.removeItem("enrollpro_apply_consent");
-                    } catch (error: unknown) {
-                      const responseMessage =
-                        typeof error === "object" &&
-                          error !== null &&
-                          "response" in error
-                          ? (
-                            error as {
-                              response?: { data?: { message?: string } };
-                            }
-                          ).response?.data?.message
-                          : undefined;
-                      setSubmitError(
-                        responseMessage || "Failed to update application.",
-                      );
-                      scrollToTopInstant();
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}>Confirm Update</Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
+            const payload = {
+              ...payloadBase,
+              lrn: data.hasNoLrn ? null : String(data.lrn ?? "").trim() || null,
+              mother,
+              father,
+              guardian: hasGuardianData ? guardian : null,
+              birthdate: data.birthdate instanceof Date ? data.birthdate.toISOString() : data.birthdate,
+              currentAddress: mapAddress(uppercaseData.currentAddress),
+              permanentAddress: uppercaseData.isPermanentSameAsCurrent ? mapAddress(uppercaseData.currentAddress) : mapAddress(uppercaseData.permanentAddress),
+            };
+
+            const response = await api.put<ApplicationSubmitResponse>("/applications/update-existing", payload);
+            sileo.success({
+              title: "Application Updated!",
+              description: `Your tracking number remains ${response.data.trackingNumber}.`,
+            });
+            if (onSuccess) {
+              onSuccess({
+                trackingNumber: response.data.trackingNumber,
+                applicantType: response.data.applicantType,
+                programType: response.data.programType,
+                status: response.data.status,
+                currentStep: response.data.currentStep,
+                learnerName: `${data.firstName} ${data.lastName}`,
+              });
+            }
+            reset({ ...DEFAULT_VALUES });
+            localStorage.removeItem(DRAFT_KEY);
+            localStorage.removeItem("enrollpro_apply_consent");
+          } catch (error: unknown) {
+            const responseMessage =
+              typeof error === "object" &&
+                error !== null &&
+                "response" in error
+                ? (
+                  error as {
+                    response?: { data?: { message?: string } };
+                  }
+                ).response?.data?.message
+                : undefined;
+            setSubmitError(
+              responseMessage || "Failed to update application.",
+            );
+            scrollToTopInstant();
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+      />
 
       <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
         <CardContent className="p-6 md:p-10">

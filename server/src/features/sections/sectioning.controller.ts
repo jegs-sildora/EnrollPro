@@ -18,6 +18,48 @@ const activeSectionEnrollmentFilter: Prisma.EnrollmentRecordWhereInput = {
   ],
 }
 
+const gradeCoordinatorRoleToOrder = {
+  "GRADE 7 COORDINATOR": 7,
+  "GRADE 8 COORDINATOR": 8,
+  "GRADE 9 COORDINATOR": 9,
+  "GRADE 10 COORDINATOR": 10,
+} as const;
+
+const unrestrictedSectioningRoles = new Set(["SYSTEM_ADMIN", "HEAD_REGISTRAR"]);
+
+async function getSectioningGradeScope(req: Request): Promise<number[] | null> {
+  const roles = req.user?.roles ?? [];
+  if (roles.some((role) => unrestrictedSectioningRoles.has(role))) return null;
+
+  const ancillaryRoles = req.user?.ancillaryRoles ?? [];
+  const gradeOrders = Object.entries(gradeCoordinatorRoleToOrder)
+    .filter(([role]) => ancillaryRoles.includes(role))
+    .map(([, displayOrder]) => displayOrder);
+
+  if (gradeOrders.length === 0) return [];
+
+  const gradeLevels = await prisma.gradeLevel.findMany({
+    where: { displayOrder: { in: gradeOrders } },
+    select: { id: true },
+  });
+  return gradeLevels.map((gradeLevel) => gradeLevel.id);
+}
+
+function parseRequestedGradeLevelId(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") return null;
+
+  const gradeLevelId = Number(value);
+  return Number.isInteger(gradeLevelId) && gradeLevelId > 0 ? gradeLevelId : null;
+}
+
+function isGradeLevelAllowed(
+  scopedGradeLevelIds: number[] | null,
+  gradeLevelId: number,
+): boolean {
+  return scopedGradeLevelIds === null || scopedGradeLevelIds.includes(gradeLevelId);
+}
+
 function broadcastSectioningInvalidation({
   schoolYearId,
   sectionIds,
@@ -50,14 +92,33 @@ export async function getSectionsSummary(req: Request, res: Response) {
     const schoolYearId = req.query.schoolYearId
       ? Number(req.query.schoolYearId)
       : req.schoolYearId;
-    const { gradeLevelId } = req.query;
+    const requestedGradeLevelId = parseRequestedGradeLevelId(req.query.gradeLevelId);
 
     if (!schoolYearId) {
       return res.status(400).json({ message: "Active school year not found." });
     }
 
+    if (requestedGradeLevelId === null) {
+      return res.status(400).json({ message: "A valid gradeLevelId is required." });
+    }
+
+    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    if (scopedGradeLevelIds?.length === 0) {
+      return res.status(403).json({ message: "You are not authorized to manage Section Assignment." });
+    }
+    if (
+      requestedGradeLevelId !== undefined &&
+      !isGradeLevelAllowed(scopedGradeLevelIds, requestedGradeLevelId)
+    ) {
+      return res.status(403).json({ message: "You can only manage learners in your assigned grade level." });
+    }
+
     const where: Prisma.SectionWhereInput = { schoolYearId };
-    if (gradeLevelId) where.gradeLevelId = Number(gradeLevelId);
+    if (requestedGradeLevelId !== undefined) {
+      where.gradeLevelId = requestedGradeLevelId;
+    } else if (scopedGradeLevelIds !== null) {
+      where.gradeLevelId = { in: scopedGradeLevelIds };
+    }
 
     const sections = await prisma.section.findMany({
       where,
@@ -115,7 +176,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
  */
 export async function getSectioningPool(req: Request, res: Response) {
   try {
-    const { gradeLevelId } = req.query;
+    const requestedGradeLevelId = parseRequestedGradeLevelId(req.query.gradeLevelId);
     const schoolYearId = req.query.schoolYearId
       ? Number(req.query.schoolYearId)
       : req.schoolYearId;
@@ -124,13 +185,32 @@ export async function getSectioningPool(req: Request, res: Response) {
       return res.status(400).json({ message: "Active school year required." });
     }
 
+    if (requestedGradeLevelId === null) {
+      return res.status(400).json({ message: "A valid gradeLevelId is required." });
+    }
+
+    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    if (scopedGradeLevelIds?.length === 0) {
+      return res.status(403).json({ message: "You are not authorized to manage Section Assignment." });
+    }
+    if (
+      requestedGradeLevelId !== undefined &&
+      !isGradeLevelAllowed(scopedGradeLevelIds, requestedGradeLevelId)
+    ) {
+      return res.status(403).json({ message: "You can only manage learners in your assigned grade level." });
+    }
+
     const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
       status: "READY_FOR_SECTIONING",
       enrollmentRecord: null, // Critical: Only learners not yet assigned
     };
 
-    if (gradeLevelId) where.gradeLevelId = Number(gradeLevelId);
+    if (requestedGradeLevelId !== undefined) {
+      where.gradeLevelId = requestedGradeLevelId;
+    } else if (scopedGradeLevelIds !== null) {
+      where.gradeLevelId = { in: scopedGradeLevelIds };
+    }
 
     const applications = await prisma.enrollmentApplication.findMany({
       where,
@@ -227,6 +307,11 @@ export async function assignBulk(req: Request, res: Response) {
     ]);
 
     if (!section) return res.status(404).json({ message: "Section not found." });
+
+    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    if (!isGradeLevelAllowed(scopedGradeLevelIds, section.gradeLevelId)) {
+      return res.status(403).json({ message: "You can only assign learners within your assigned grade level." });
+    }
 
     // 2. Capacity Guard (Rule: Hard cap 50 learners)
     const currentCount = section.enrollmentRecords.length;
@@ -523,6 +608,16 @@ export async function commitDraft(req: Request, res: Response) {
       }),
       prisma.schoolSetting.findFirst({ select: { systemPhase: true } }),
     ]);
+
+    const scopedGradeLevelIds = await getSectioningGradeScope(req);
+    if (
+      scopedGradeLevelIds?.length === 0 ||
+      sections.some((section) => !isGradeLevelAllowed(scopedGradeLevelIds, section.gradeLevelId))
+    ) {
+      return res.status(403).json({
+        message: "You can only assign learners within your assigned grade level.",
+      });
+    }
 
     const sectionsById = new Map(sections.map((section) => [section.id, section]));
     const applicationsById = new Map(

@@ -28,6 +28,16 @@ async function main() {
       "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
     ] as const;
 
+    // 1. Fetch from decoupled ScpAdmission model
+    const scpAdmissions = await prisma.scpAdmission.findMany({
+      where: {
+        schoolYearId: activeSchoolYearId,
+        program: { in: applicantTypes as any }
+      },
+      select: { learnerId: true }
+    });
+
+    // 2. Fetch from legacy EnrollmentApplication model (for backward compatibility during wipes)
     const scpApplications = await prisma.enrollmentApplication.findMany({
       where: {
         schoolYearId: activeSchoolYearId,
@@ -36,13 +46,26 @@ async function main() {
       select: { learnerId: true }
     });
 
-    const learnerIds = scpApplications.map(app => app.learnerId);
+    const learnerIds = [
+      ...scpAdmissions.map(app => app.learnerId),
+      ...scpApplications.map(app => app.learnerId)
+    ];
 
-    if (learnerIds.length === 0) {
+    const uniqueLearnerIds = Array.from(new Set(learnerIds));
+
+    if (uniqueLearnerIds.length === 0) {
       console.log("✅ No SCP applicants found for the active school year.");
-      return;
     }
 
+    // 3. Delete from ScpAdmission
+    const { count: admissionCount } = await prisma.scpAdmission.deleteMany({
+      where: {
+        schoolYearId: activeSchoolYearId,
+        program: { in: applicantTypes as any }
+      }
+    });
+
+    // 4. Delete from EnrollmentApplication (legacy)
     const { count: appCount } = await prisma.enrollmentApplication.deleteMany({
       where: {
         schoolYearId: activeSchoolYearId,
@@ -50,11 +73,27 @@ async function main() {
       }
     });
 
-    const { count: learnerCount } = await prisma.learner.deleteMany({
-      where: { id: { in: learnerIds } }
+    // 5. Delete associated learners
+    let learnerCount = 0;
+    if (uniqueLearnerIds.length > 0) {
+      const result = await prisma.learner.deleteMany({
+        where: { id: { in: uniqueLearnerIds } }
+      });
+      learnerCount = result.count;
+    }
+
+    // 6. UNLOCK the official rosters
+    await prisma.schoolYear.update({
+      where: { id: activeSchoolYearId },
+      data: {
+        steRosterLocked: false,
+        spaRosterLocked: false,
+        spsRosterLocked: false,
+      }
     });
 
-    console.log(`✅ Successfully wiped ${appCount} SCP applications and ${learnerCount} Learner records for the active school year (ID: ${activeSchoolYearId}).`);
+    console.log(`✅ Successfully wiped ${admissionCount} SCP admissions, ${appCount} legacy SCP applications, and ${learnerCount} Learner records for the active school year (ID: ${activeSchoolYearId}).`);
+    console.log(`🔓 Successfully unlocked the Official List of Qualified Applicants (STE, SPA, SPS).`);
   } catch (error) {
     console.error("❌ Failed to wipe SCP applicants:", error);
   }

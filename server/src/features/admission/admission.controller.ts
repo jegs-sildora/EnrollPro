@@ -89,14 +89,54 @@ function buildTrackingState(
   };
 }
 
+
 export async function trackApplication(req: Request, res: Response) {
   try {
-    const trackingNumber = String(req.params.trackingNumber ?? "")
-      .trim()
-      .toUpperCase();
+    const trackingNumber = String(req.params.trackingNumber ?? "").trim().toUpperCase();
 
     if (!/^[A-Z0-9-]{8,24}$/.test(trackingNumber)) {
       res.status(400).json({ message: "Enter a valid tracking number." });
+      return;
+    }
+
+    if (trackingNumber.startsWith("ADM-")) {
+      const admission = await prisma.scpAdmission.findUnique({
+        where: { trackingNumber },
+        select: {
+          trackingNumber: true,
+          program: true,
+          createdAt: true,
+          assessmentResult: true,
+          requirementsStatus: true,
+          writtenExamStatus: true,
+          interviewStatus: true,
+          learner: {
+            select: { firstName: true, middleName: true, lastName: true },
+          },
+        },
+      });
+
+      if (!admission) {
+        res.status(404).json({ message: "No application found for the provided Tracking Number." });
+        return;
+      }
+
+      const { learner, ...appData } = admission;
+
+      res.status(200).json({
+        trackingNumber: appData.trackingNumber,
+        firstName: learner.firstName,
+        middleName: learner.middleName,
+        lastName: learner.lastName,
+        gradeLevel: { name: "Grade 7" },
+        createdAt: appData.createdAt,
+        program: appData.program,
+        verification_status: appData.requirementsStatus,
+        exam_status: appData.writtenExamStatus,
+        interview_status: appData.interviewStatus,
+        final_result: appData.assessmentResult,
+        application_type: "ADMISSION",
+      });
       return;
     }
 
@@ -109,7 +149,7 @@ export async function trackApplication(req: Request, res: Response) {
         createdAt: true,
         complianceStatus: true,
         learnerType: true,
-        scpProfile: {
+        scpAdmission: {
           select: { 
             assessmentResult: true, 
             requirementsStatus: true,
@@ -118,11 +158,7 @@ export async function trackApplication(req: Request, res: Response) {
           },
         },
         learner: {
-          select: {
-            firstName: true,
-            middleName: true,
-            lastName: true,
-          },
+          select: { firstName: true, middleName: true, lastName: true },
         },
         gradeLevel: {
           select: { name: true },
@@ -130,149 +166,56 @@ export async function trackApplication(req: Request, res: Response) {
         enrollmentRecord: {
           select: {
             enrolledAt: true,
-            section: {
-              select: { name: true },
-            },
+            section: { select: { name: true } },
           },
         },
       },
     });
 
     if (!application) {
-      res.status(404).json({
-        message: "No enrollment application matches that tracking number.",
-      });
+      res.status(404).json({ message: "No application found for the provided Tracking Number." });
       return;
     }
 
-    const isScp = isSpecialCurricularProgramType(application.applicantType);
-    let application_type: "ADMISSION" | "ENROLLMENT" = "ENROLLMENT";
-    if (application.trackingNumber?.startsWith("ADM-")) {
-      application_type = "ADMISSION";
-    } else if (application.trackingNumber?.startsWith("ENR-")) {
+    const { learner, enrollmentRecord, gradeLevel, scpAdmission, ...appData } = application;
+    const applicantName = `${learner.firstName} ${learner.middleName ? learner.middleName + ' ' : ''}${learner.lastName}`;
+    
+    let application_type = "ENROLLMENT";
+    if (appData.applicantType !== "REGULAR" && appData.learnerType !== "NEW_ENROLLEE" && appData.learnerType !== "TRANSFEREE") {
+      // Actually it's just ENROLLMENT now because admission is separated!
       application_type = "ENROLLMENT";
-    } else {
-      // Fallback for edge cases, though migration script ran
-      application_type = (isScp && !application.learnerType) ? "ADMISSION" : "ENROLLMENT";
     }
-    
+
     let current_step = 1;
-    let status = "PENDING";
-    let verification_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
-    let exam_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
-    let interview_status: "PENDING" | "PASSED" | "FAILED" = "PENDING";
-    let final_result: "PENDING" | "QUALIFIED" | "DISQUALIFIED" | "WAITLISTED" = "PENDING";
-    
-    if (application_type === "ADMISSION") {
-      // Helper to prevent TS control-flow narrowing on union types
-      const asState = (v: string | undefined): "PENDING" | "PASSED" | "FAILED" =>
-        (v === "PASSED" || v === "FAILED") ? v : "PENDING";
-      const asResult = (v: string | undefined): "PENDING" | "QUALIFIED" | "DISQUALIFIED" | "WAITLISTED" =>
-        (v === "QUALIFIED" || v === "DISQUALIFIED" || v === "WAITLISTED") ? v : "PENDING";
-
-      final_result = asResult(application.scpProfile?.assessmentResult);
-
-      // Step 1: Document Verification
-      if (application.complianceStatus === "COMPLIED" || application.scpProfile?.requirementsStatus === "PASSED") {
-        verification_status = "PASSED";
-      } else if (application.scpProfile?.requirementsStatus === "FAILED") {
-        verification_status = "FAILED";
-      }
-
-      // Step 2: Examination / Audition
-      exam_status = asState(application.scpProfile?.writtenExamStatus);
-
-      // Step 3: Panel Interview
-      interview_status = asState(application.scpProfile?.interviewStatus);
-
-      // "Fail Fast" rule: if exam failed, skip interview and jump to terminal
-      if (exam_status === "FAILED") {
-        interview_status = "FAILED";
-        if (final_result === "PENDING") {
-          final_result = "DISQUALIFIED";
-        }
-      }
-
-      // Infer statuses from terminal final_result if backend hasn't graded individually
-      if (final_result !== "PENDING") {
-        if (exam_status === "PENDING") {
-          exam_status = final_result === "DISQUALIFIED" ? "FAILED" : "PASSED";
-        }
-        if (interview_status === "PENDING") {
-          interview_status = final_result === "DISQUALIFIED" ? "FAILED" : "PASSED";
-        }
-      }
-
-      // Compute current_step (1-4) using snapshots to avoid TS narrowing
-      const fResult = asResult(final_result);
-      const eStatus = asState(exam_status);
-      const iStatus = asState(interview_status);
-
-      if (fResult !== "PENDING") {
-        current_step = 4;
-        status = fResult === "QUALIFIED" ? "PASSED" : fResult === "WAITLISTED" ? "WAITLISTED" : "FAILED";
-      } else if (verification_status !== "PASSED") {
-        current_step = 1;
-        status = verification_status === "FAILED" ? "FAILED" : "PENDING";
-      } else if (eStatus === "PENDING") {
-        current_step = 2;
-        status = "PENDING";
-      } else if (eStatus === "FAILED") {
-        current_step = 4;
-        status = "FAILED";
-      } else if (iStatus === "PENDING") {
-        current_step = 3;
-        status = "PENDING";
-      } else if (iStatus === "PASSED") {
-        current_step = 4;
-        status = "PENDING";
-      } else {
-        current_step = 4;
-        status = "FAILED";
-      }
-    } else {
-      if (application.status === "OFFICIALLY_ENROLLED") {
-        current_step = 3;
-        status = "PASSED";
-      } else if (
-        application.status === "READY_FOR_SECTIONING" ||
-        application.status === "PENDING_CONFIRMATION" ||
-        application.status === "REMEDIAL_RESOLVED"
-      ) {
-        current_step = 2;
-        status = "PENDING";
-      }
+    if (appData.status === "READY_FOR_SECTIONING" || appData.status === "PENDING_CONFIRMATION") {
+      current_step = 2;
+    } else if (appData.status === "OFFICIALLY_ENROLLED") {
+      current_step = 3;
     }
 
-    res.json({
-      trackingNumber: application.trackingNumber,
-      // Pass these down first so old UI doesn't completely break, but we overwrite status
-      ...buildTrackingState(application.status, application.applicantType),
-      applicantType: application.applicantType,
+    res.status(200).json({
+      trackingNumber: appData.trackingNumber,
+      applicantName,
+      firstName: learner.firstName,
+      middleName: learner.middleName,
+      lastName: learner.lastName,
+      createdAt: appData.createdAt,
+      status: appData.status,
+      complianceStatus: appData.complianceStatus,
+      applicantType: appData.applicantType,
+      gradeLevel: { name: gradeLevel.name },
+      scpAdmissionStatus: scpAdmission?.assessmentResult || null,
+      scpProgram: scpAdmission ? appData.applicantType : null,
+      enrollment: enrollmentRecord ? {
+        section: { name: enrollmentRecord.section?.name || "" },
+        enrolledAt: enrollmentRecord.enrolledAt,
+      } : null,
       application_type,
       current_step,
-      status,
-      verification_status,
-      exam_status,
-      interview_status,
-      final_result,
-      complianceStatus: application.complianceStatus,
-      scpAssessmentResult: application.scpProfile?.assessmentResult ?? null,
-      firstName: application.learner.firstName,
-      middleName: application.learner.middleName,
-      lastName: application.learner.lastName,
-      gradeLevel: application.gradeLevel,
-      createdAt: application.createdAt,
-      enrollment: application.enrollmentRecord
-        ? {
-            section: application.enrollmentRecord.section,
-            enrolledAt: application.enrollmentRecord.enrolledAt,
-          }
-        : null,
     });
   } catch (error) {
     console.error("Failed to track application:", error);
-    res.status(500).json({ message: "Could not retrieve the application." });
+    res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -295,6 +238,7 @@ export async function validateLrn(req: Request, res: Response) {
     res.status(500).json({ message: "Could not validate LRN." });
   }
 }
+
 
 export async function getLearnerProfile(req: Request, res: Response) {
   try {
@@ -327,6 +271,15 @@ export async function getLearnerProfile(req: Request, res: Response) {
             previousSchool: true,
           },
         },
+        scpAdmissions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            addresses: true,
+            familyMembers: true,
+            previousSchool: true,
+          }
+        }
       },
     });
 
@@ -336,8 +289,33 @@ export async function getLearnerProfile(req: Request, res: Response) {
     }
 
     const application = learner.enrollmentApplications[0];
+    const admission = learner.scpAdmissions[0];
+    
+    // Choose the most recent source for demographic data
+    let demographicSource: typeof application | typeof admission | null = null;
+    if (application && admission) {
+      demographicSource = application.createdAt > admission.createdAt ? application : admission;
+    } else {
+      demographicSource = application || admission;
+    }
+
     const isActiveYearApp = application?.schoolYearId === setting.activeSchoolYearId;
-    const isScp = isActiveYearApp && isSpecialCurricularProgramType(application?.applicantType);
+    const isScp = isActiveYearApp && application?.applicantType !== "REGULAR";
+
+    // Only return QUALIFIED SCP program to enforce locking, otherwise default to what they had
+    let scpAdmissionStatus = null;
+    if (admission?.schoolYearId === setting.activeSchoolYearId) {
+      scpAdmissionStatus = admission.assessmentResult;
+    } else if (isScp && application?.scpProfile) {
+      scpAdmissionStatus = application.scpProfile.assessmentResult;
+    }
+
+    let scpProgram = null;
+    if (scpAdmissionStatus === "QUALIFIED" && admission) {
+      scpProgram = admission.program;
+    } else if (isScp) {
+      scpProgram = application.applicantType;
+    }
 
     res.json({
       // Core Learner Demographics
@@ -366,102 +344,40 @@ export async function getLearnerProfile(req: Request, res: Response) {
       studentPhoto: learner.studentPhoto,
 
       // Previous Application Data (for auto-filling addresses, family, previous school)
-      addresses: application?.addresses || [],
-      familyMembers: application?.familyMembers || [],
-      previousSchool: application?.previousSchool || null,
+      addresses: demographicSource?.addresses || [],
+      familyMembers: demographicSource?.familyMembers || [],
+      previousSchool: demographicSource?.previousSchool || null,
 
-      // SCP Eligibility (strictly from active school year)
-      scpProgram: isScp ? application.applicantType : null,
-      scpAdmissionStatus: isScp ? application.scpProfile?.assessmentResult : null,
+      // SCP Status
+      scpAdmissionStatus,
+      scpProgram,
     });
   } catch (error) {
     console.error("Failed to fetch learner profile:", error);
-    res.status(500).json({ message: "Could not fetch learner profile." });
+    res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export async function submitApplication(req: Request, res: Response) {
+export async function submitAdmission(req: Request, res: Response) {
   try {
-    const isScp = req.body.isScpApplication === true;
-    const schema = isScp ? scpAdmissionSubmitSchema : applicationSubmitSchema;
-    const parsed = schema.safeParse(req.body);
+    const parsed = scpAdmissionSubmitSchema.safeParse(req.body);
     if (!parsed.success) {
-      console.error("VALIDATION ERRORS:", JSON.stringify(parsed.error.format(), null, 2));
-      res.status(400).json({
-        message: "Validation failed",
-        errors: parsed.error.format(),
-      });
+      res.status(400).json({ message: "Validation failed", errors: parsed.error.format() });
       return;
     }
+    const data = parsed.data as ScpAdmissionSubmit;
 
-    const data = parsed.data;
-    const scpData = isScp ? (data as ScpAdmissionSubmit) : null;
-
-    // Get active school year
-    const schoolSetting = await getOpenPublicEnrollmentSetting(res, isScp);
+    const schoolSetting = await getOpenPublicEnrollmentSetting(res, true);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
-    // --- SCP VALIDATION FOR ENROLLMENT FORM ---
-    // If this is a regular enrollment submission (not SCP screening form),
-    // and the user has selected an SCP program, we MUST verify they are actually QUALIFIED in the database.
-    if (!isScp && "scpType" in data && data.scpType && isSpecialCurricularProgramType(data.scpType)) {
-      if (data.hasNoLrn || !data.lrn) {
-        res.status(403).json({
-          message: "Validation failed",
-          errors: {
-            scpType: { _errors: ["You cannot select an SCP program without a valid LRN and prior qualification."] }
-          },
-        });
-        return;
-      }
-      
-      const learner = await prisma.learner.findUnique({
-        where: { lrn: data.lrn },
-        include: {
-          enrollmentApplications: {
-            where: { schoolYearId: activeSchoolYearId, applicantType: data.scpType as ApplicantType },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            include: { scpProfile: true },
-          }
-        }
-      });
-      
-      const scpApp = learner?.enrollmentApplications?.[0];
-      if (!scpApp || scpApp.scpProfile?.assessmentResult !== "QUALIFIED") {
-        res.status(403).json({
-          message: "Validation failed",
-          errors: {
-            scpType: { _errors: ["Unauthorized: Learner is not officially qualified for the selected program in the finalized admission roster."] }
-          },
-        });
-        return;
-      }
-    }
-    // --- END SCP VALIDATION ---
-
-    // Get grade level id
-    const gradeLevelRecord = await prisma.gradeLevel.findFirst({
-      where: { name: `Grade ${data.gradeLevel}` },
-    });
-    if (!gradeLevelRecord) {
-      res.status(400).json({ message: "Invalid grade level." });
-      return;
-    }
-
-    // Find or create Learner
     let learner;
     const lrn = data.hasNoLrn ? null : data.lrn;
-
     if (lrn) {
-      learner = await prisma.learner.findUnique({
-        where: { lrn },
-      });
+      learner = await prisma.learner.findUnique({ where: { lrn } });
     }
 
-    const parsedDate = data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate);
-    const birthdateDate = normalizeDateToUtcNoon(parsedDate);
+    const birthdateDate = normalizeDateToUtcNoon(data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate));
 
     const learnerData = {
       firstName: data.firstName,
@@ -489,75 +405,38 @@ export async function submitApplication(req: Request, res: Response) {
     };
 
     if (learner) {
-      learner = await prisma.learner.update({
-        where: { id: learner.id },
-        data: learnerData,
-      });
+      learner = await prisma.learner.update({ where: { id: learner.id }, data: learnerData });
     } else {
-      learner = await prisma.learner.create({
-        data: learnerData,
-      });
+      learner = await prisma.learner.create({ data: learnerData });
     }
 
-    // Check if already applied
-    const existingApplication = await prisma.enrollmentApplication.findFirst({
-      where: {
-        learnerId: learner.id,
-        schoolYearId: activeSchoolYearId,
-      },
+    const existingAdmission = await prisma.scpAdmission.findFirst({
+      where: { learnerId: learner.id, schoolYearId: activeSchoolYearId }
     });
 
-    let duplicateFlag = false;
-
-    if (existingApplication) {
-      if (existingApplication.status === "PENDING_VERIFICATION") {
-        if (!data.bypassDuplicate) {
-          res.status(409).json({ duplicate_detected: true, requires_auth: true, message: "Learner already has a pending application for this school year." });
-          return;
-        } else {
-          // bypassDuplicate is true, mark both as duplicate
-          duplicateFlag = true;
-          await prisma.enrollmentApplication.updateMany({
-            where: { learnerId: learner.id, schoolYearId: activeSchoolYearId },
-            data: { duplicateFlag: true },
-          });
-        }
-      } else {
-        res.status(400).json({ message: "Learner already has an application for this school year." });
-        return;
-      }
+    if (existingAdmission) {
+      res.status(409).json({ duplicate_detected: true, requires_auth: true, message: "Learner already has an admission record for this school year." });
+      return;
     }
 
-    // Generate Application Tracking Number
-    const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split("-")[0] || new Date().getFullYear().toString();
+    const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split('-')[0] || new Date().getFullYear().toString();
     const programType = data.scpType || "REGULAR";
-    const programAcronym = programType === "REGULAR" ? "BEC" : 
-                           programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
+    const programAcronym = programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
                            programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                            programType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
     const paddedId = String(learner.id).padStart(7, '0');
-    const trackingNumber = isScp 
-      ? `ADM-${programAcronym}${yearPrefix}${paddedId}` 
-      : `ENR-${programAcronym}${yearPrefix}${paddedId}`;
+    const trackingNumber = `ADM-${programAcronym}${yearPrefix}${paddedId}`;
 
-    const application = await prisma.enrollmentApplication.create({
+    const admission = await prisma.scpAdmission.create({
       data: {
         learnerId: learner.id,
         schoolYearId: activeSchoolYearId,
-        gradeLevelId: gradeLevelRecord.id,
-        applicantType: data.scpType || "REGULAR",
-        learnerType: data.learnerType,
-        admissionChannel: "ONLINE",
+        program: data.scpType as ApplicantType,
         trackingNumber,
-        learningModalities: data.learningModalities,
-        isPrivacyConsentGiven: data.isPrivacyConsentGiven,
-        intakeHeightCm: data.intakeHeightCm || null,
-        intakeWeightKg: data.intakeWeightKg || null,
-        status: "PENDING_VERIFICATION",
-        duplicateFlag,
-        hasNoMother: !data.mother?.firstName,
-        hasNoFather: !data.father?.firstName,
-        isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
+        grade5GeneralAverage: data.grade5GeneralAverage,
+        underSpecialScienceCurriculum: data.underSpecialScienceCurriculum ?? false,
+        artsSpecialization: data.artsSpecialization || null,
+        chosenSport: data.chosenSport || null,
         
         addresses: {
           create: [
@@ -571,17 +450,15 @@ export async function submitApplication(req: Request, res: Response) {
               region: data.currentAddress.region,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
-              ? [
-                  {
-                    addressType: "PERMANENT" as const,
-                    houseNoStreet: data.permanentAddress.houseNoStreet || null,
-                    sitio: data.permanentAddress.sitio || null,
-                    barangay: data.permanentAddress.barangay,
-                    cityMunicipality: data.permanentAddress.cityMunicipality,
-                    province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
-                    region: data.permanentAddress.region,
-                  },
-                ]
+              ? [{
+                  addressType: "PERMANENT" as const,
+                  houseNoStreet: data.permanentAddress.houseNoStreet || null,
+                  sitio: data.permanentAddress.sitio || null,
+                  barangay: data.permanentAddress.barangay,
+                  cityMunicipality: data.permanentAddress.cityMunicipality,
+                  province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                  region: data.permanentAddress.region,
+                }]
               : []),
           ],
         },
@@ -608,16 +485,14 @@ export async function submitApplication(req: Request, res: Response) {
                 }]
               : []),
             ...(data.guardian?.firstName
-              ? [
-                  {
-                    relationship: "GUARDIAN" as const,
-                    firstName: data.guardian.firstName,
-                    lastName: data.guardian.lastName || "",
-                    middleName: data.guardian.middleName || null,
-                    contactNumber: data.guardian.contactNumber || null,
-                    email: data.guardian.email || null,
-                  },
-                ]
+              ? [{
+                  relationship: "GUARDIAN" as const,
+                  firstName: data.guardian.firstName,
+                  lastName: data.guardian.lastName || "",
+                  middleName: data.guardian.middleName || null,
+                  contactNumber: data.guardian.contactNumber || null,
+                  email: data.guardian.email || null,
+                }]
               : []),
           ],
         },
@@ -628,23 +503,207 @@ export async function submitApplication(req: Request, res: Response) {
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,
-            
             transferCertificateNo: data.transferCertificateNo || null,
           },
+        }
+      }
+    });
+
+    res.status(201).json({
+      message: "Admission submitted successfully",
+      trackingNumber: admission.trackingNumber,
+      id: admission.id,
+      ...buildTrackingState("PENDING_VERIFICATION", data.scpType as ApplicantType),
+    });
+  } catch (error) {
+    console.error("Failed to submit admission:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function submitEnrollment(req: Request, res: Response) {
+  try {
+    const parsed = applicationSubmitSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Validation failed", errors: parsed.error.format() });
+      return;
+    }
+    const data = parsed.data;
+
+    const schoolSetting = await getOpenPublicEnrollmentSetting(res, false);
+    if (!schoolSetting) return;
+    const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+
+    let learner;
+    const lrn = data.hasNoLrn ? null : data.lrn;
+    if (lrn) {
+      learner = await prisma.learner.findUnique({ where: { lrn } });
+    }
+
+    const birthdateDate = normalizeDateToUtcNoon(data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate));
+
+    const learnerData = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      middleName: data.middleName || null,
+      extensionName: data.extensionName || null,
+      birthdate: birthdateDate,
+      sex: data.sex,
+      placeOfBirth: data.placeOfBirth,
+      motherTongue: data.motherTongue,
+      religion: data.religion || null,
+      isIpCommunity: data.isIpCommunity,
+      ipGroupName: data.ipGroupName || null,
+      is4PsBeneficiary: data.is4PsBeneficiary,
+      householdId4Ps: data.householdId4Ps || null,
+      isBalikAral: data.isBalikAral,
+      lastYearEnrolled: data.lastYearEnrolled || null,
+      isLearnerWithDisability: data.isLearnerWithDisability,
+      specialNeedsCategory: data.specialNeedsCategory || null,
+      hasPwdId: data.hasPwdId,
+      disabilityTypes: data.disabilityTypes,
+      lrn: lrn || null,
+      studentPhoto: data.studentPhoto || null,
+      psaBirthCertNumber: data.psaBirthCertNumber || null,
+    };
+
+    if (learner) {
+      learner = await prisma.learner.update({ where: { id: learner.id }, data: learnerData });
+    } else {
+      learner = await prisma.learner.create({ data: learnerData });
+    }
+
+    // DUPLICATE ENROLLMENT CHECK (The Block)
+    const existingEnrollment = await prisma.enrollmentApplication.findFirst({
+      where: { learnerId: learner.id, schoolYearId: activeSchoolYearId },
+    });
+
+    if (existingEnrollment) {
+      if (existingEnrollment.status === "PENDING_VERIFICATION") {
+        res.status(409).json({ duplicate_detected: true, requires_auth: true, message: "Learner already has a pending application for this school year." });
+        return;
+      } else {
+        res.status(400).json({ message: "Learner already has an application for this school year." });
+        return;
+      }
+    }
+
+    // ADMISSION CROSS-REFERENCE (The Facilitator)
+    let assignedProgram = "REGULAR";
+    let scpAdmissionId = null;
+
+    const admission = await prisma.scpAdmission.findFirst({
+      where: { learnerId: learner.id, schoolYearId: activeSchoolYearId }
+    });
+
+    if (admission && admission.assessmentResult === "QUALIFIED") {
+      assignedProgram = admission.program;
+      scpAdmissionId = admission.id;
+    }
+
+    const gradeLevelRecord = await prisma.gradeLevel.findFirst({
+      where: { name: `Grade ${data.gradeLevel}` },
+    });
+    if (!gradeLevelRecord) {
+      res.status(400).json({ message: "Invalid grade level." });
+      return;
+    }
+
+    const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split("-")[0] || new Date().getFullYear().toString();
+    const programAcronym = assignedProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
+                           assignedProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
+                           assignedProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
+    const paddedId = String(learner.id).padStart(7, '0');
+    const trackingNumber = `ENR-${programAcronym}${yearPrefix}${paddedId}`;
+
+    const application = await prisma.enrollmentApplication.create({
+      data: {
+        learnerId: learner.id,
+        schoolYearId: activeSchoolYearId,
+        gradeLevelId: gradeLevelRecord.id,
+        applicantType: assignedProgram as ApplicantType,
+        learnerType: data.learnerType,
+        admissionChannel: "ONLINE",
+        trackingNumber,
+        scpAdmissionId,
+        learningModalities: data.learningModalities,
+        isPrivacyConsentGiven: data.isPrivacyConsentGiven,
+        intakeHeightCm: data.intakeHeightCm || null,
+        intakeWeightKg: data.intakeWeightKg || null,
+        status: "PENDING_VERIFICATION",
+        duplicateFlag: false,
+        hasNoMother: !data.mother?.firstName,
+        hasNoFather: !data.father?.firstName,
+        isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
+        
+        addresses: {
+          create: [
+            {
+              addressType: "CURRENT",
+              houseNoStreet: data.currentAddress.houseNoStreet || null,
+              sitio: data.currentAddress.sitio || null,
+              barangay: data.currentAddress.barangay,
+              cityMunicipality: data.currentAddress.cityMunicipality,
+              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
+              region: data.currentAddress.region,
+            },
+            ...(data.permanentAddress && data.permanentAddress.barangay
+              ? [{
+                  addressType: "PERMANENT" as const,
+                  houseNoStreet: data.permanentAddress.houseNoStreet || null,
+                  sitio: data.permanentAddress.sitio || null,
+                  barangay: data.permanentAddress.barangay,
+                  cityMunicipality: data.permanentAddress.cityMunicipality,
+                  province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                  region: data.permanentAddress.region,
+                }]
+              : []),
+          ],
         },
-        ...(scpData
-          ? {
-              scpProfile: {
-                create: {
-                  grade5GeneralAverage: scpData.grade5GeneralAverage,
-                  underSpecialScienceCurriculum:
-                    scpData.underSpecialScienceCurriculum ?? false,
-                  artsSpecialization: scpData.artsSpecialization || null,
-                  chosenSport: scpData.chosenSport || null,
-                },
-              },
-            }
-          : {}),
+        familyMembers: {
+          create: [
+            ...(data.mother.firstName && data.mother.lastName
+              ? [{
+                  relationship: "MOTHER" as const,
+                  firstName: data.mother.firstName,
+                  lastName: data.mother.lastName,
+                  middleName: data.mother.middleName || null,
+                  contactNumber: data.mother.contactNumber || null,
+                  email: data.mother.email || null,
+                }]
+              : []),
+            ...(data.father.firstName && data.father.lastName
+              ? [{
+                  relationship: "FATHER" as const,
+                  firstName: data.father.firstName,
+                  lastName: data.father.lastName,
+                  middleName: data.father.middleName || null,
+                  contactNumber: data.father.contactNumber || null,
+                  email: data.father.email || null,
+                }]
+              : []),
+            ...(data.guardian?.firstName
+              ? [{
+                  relationship: "GUARDIAN" as const,
+                  firstName: data.guardian.firstName,
+                  lastName: data.guardian.lastName || "",
+                  middleName: data.guardian.middleName || null,
+                  contactNumber: data.guardian.contactNumber || null,
+                  email: data.guardian.email || null,
+                }]
+              : []),
+          ],
+        },
+        previousSchool: {
+          create: {
+            schoolName: data.lastSchoolName,
+            schoolId: data.lastSchoolId || null,
+            schoolAddress: data.lastSchoolAddress || null,
+            schoolType: data.lastSchoolType,
+            generalAverage: data.generalAverage || null,
+            transferCertificateNo: data.transferCertificateNo || null,
+          },
+        }
       },
     });
 
@@ -655,7 +714,7 @@ export async function submitApplication(req: Request, res: Response) {
       ...buildTrackingState(application.status, application.applicantType),
     });
   } catch (error) {
-    console.error("Failed to submit application:", error);
+    console.error("Failed to submit enrollment:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -741,7 +800,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
     // Clean up related records (addresses, family members, previous school) to recreate them
     await prisma.applicationAddress.deleteMany({ where: { enrollmentId: existingApplication.id } });
     await prisma.applicationFamilyMember.deleteMany({ where: { enrollmentId: existingApplication.id } });
-    await prisma.enrollmentPreviousSchool.deleteMany({ where: { applicationId: existingApplication.id } });
+    await prisma.enrollmentPreviousSchool.deleteMany({ where: { enrollmentId: existingApplication.id } });
 
     const application = await prisma.enrollmentApplication.update({
       where: { id: existingApplication.id },

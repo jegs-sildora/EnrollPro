@@ -55,6 +55,7 @@ interface ApplicationStatus extends ApplicationTrackResponse {
     section: { name: string };
     enrolledAt: string;
   } | null;
+  program?: string;
 }
 
 interface StatusPresentation {
@@ -238,9 +239,11 @@ export default function TrackApplication({
   const presentation =
     STATUS_PRESENTATION[normalizedStatus] ?? STATUS_PRESENTATION.IN_REVIEW;
   const StatusIcon = presentation.icon;
-  const programLabel = application
-    ? LEARNING_PROGRAM_LABELS[application.applicantType] ??
-    application.applicantType.replaceAll("_", " ")
+  // Compute programLabel early so hero banner terminal titles can reference it
+  const programOrApplicantType = application?.applicantType || application?.program || "";
+  const programLabel = programOrApplicantType
+    ? LEARNING_PROGRAM_LABELS[programOrApplicantType as any] ??
+    programOrApplicantType.replaceAll("_", " ")
     : "";
 
   return (
@@ -251,7 +254,7 @@ export default function TrackApplication({
         }}
         className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-        Back to Selection
+        Back to Admission Form
       </Button>
       <Card className="w-full overflow-hidden rounded-lg border-2 border-primary/5 shadow-xl">
         <CardHeader className="bg-primary p-8 text-center text-primary-foreground">

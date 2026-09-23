@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
       {children}
       <DialogPrimitive.Close className={cn(
-        "absolute right-4 top-4 rounded-full p-2 text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none",
+        "absolute right-4 top-3 rounded-full p-2 text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none",
         motionClassNames.closeButton,
       )}>
         <X strokeWidth={3} className="h-5 w-5" />

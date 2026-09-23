@@ -60,6 +60,7 @@ interface ApplicationStatus extends ApplicationTrackResponse {
     section: { name: string };
     enrolledAt: string;
   } | null;
+  program?: string;
 }
 
 interface StatusPresentation {
@@ -241,9 +242,10 @@ export default function TrackApplication({
   let StatusIcon = presentation.icon;
 
   // Compute programLabel early so hero banner terminal titles can reference it
-  const programLabel = application
-    ? LEARNING_PROGRAM_LABELS[application.applicantType] ??
-    application.applicantType.replaceAll("_", " ")
+  const programOrApplicantType = application?.applicantType || application?.program || "";
+  const programLabel = programOrApplicantType
+    ? LEARNING_PROGRAM_LABELS[programOrApplicantType as any] ??
+    programOrApplicantType.replaceAll("_", " ")
     : "";
 
   if (application?.application_type === "ADMISSION") {
@@ -360,11 +362,11 @@ export default function TrackApplication({
         <div className="mx-auto w-full max-w-4xl p-4 md:p-8">
           <Button
             onClick={() => {
-              navigate("/online-admission");
+              navigate("/scp-admission");
             }}
             className="mb-6 group font-bold uppercase bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all px-6">
             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Selection
+            Back to Admission Form
           </Button>
           <Card className="w-full overflow-hidden rounded-lg border-2 border-emerald-100 shadow-xl">
             <CardHeader className="bg-emerald-600 p-8 text-center text-white">

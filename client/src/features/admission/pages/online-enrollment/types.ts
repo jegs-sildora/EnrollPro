@@ -70,6 +70,7 @@ export const EnrollmentFormSchema = z
       .optional()
       .or(z.literal("")),
     hasNoLrn: z.boolean().default(false),
+    isValidatingLrn: z.boolean().default(false).optional(),
     psaBirthCertNumber: z.string().optional(),
 
     // Section 2: Grade Level & Program

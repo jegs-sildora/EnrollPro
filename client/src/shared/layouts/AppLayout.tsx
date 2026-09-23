@@ -642,11 +642,16 @@ function AppSidebar() {
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
   );
   const isRegistrar = isHeadRegistrar;
-  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar;
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
+    !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 9 COORDINATOR") &&
+    !ancillaryRoles.includes("GRADE 10 COORDINATOR");
   const isTeacher = useAuthStore(
     (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  
   const isGradeCoordinator = ancillaryRoles.some(role => role.includes("COORDINATOR"));
   const [companionCatalog, setCompanionCatalog] = useState<
     CompanionSsoCatalogItem[]
@@ -957,17 +962,7 @@ function AppSidebar() {
                 </>
               )}
 
-              {!isStrictClassAdviser && isTeacher && (
-                <>
-                  <NavDivider label="Management" />
-                  <NavItem
-                    to="/learners"
-                    icon={BookOpen}
-                    label="Learner Directory"
-                    pathname={pathname}
-                  />
-                </>
-              )}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

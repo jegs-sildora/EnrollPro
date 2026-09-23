@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from "express";
 import {
-  submitApplication,
+  submitAdmission,
+  submitEnrollment,
   trackApplication,
   updateExistingApplication,
   validateLrn,
@@ -9,8 +10,9 @@ import {
 
 const router: ExpressRouter = Router();
 
-router.post("/", submitApplication);
-router.post("/update-existing", updateExistingApplication);
+router.post("/admissions", submitAdmission);
+router.post("/enrollments", submitEnrollment);
+router.put("/update-existing", updateExistingApplication);
 router.get("/track/:trackingNumber", trackApplication);
 router.get("/validate-lrn/:lrn", validateLrn);
 router.get("/learner-profile/:lrn", getLearnerProfile);

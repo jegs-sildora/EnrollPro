@@ -24,7 +24,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 import { useAuthStore } from "@/store/auth.slice"
@@ -471,14 +470,23 @@ export default function LearnerAdmissionIndex() {
         const application = row.original
         const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
-        if (isRosterLocked) return (
-          <div className="flex flex-col items-center justify-center py-2 font-bold uppercase leading-tight">
-            <span>{currentState.writtenExamStatus}</span>
-            {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && currentState.writtenExamScore !== "" && (
-              <span className="text-foreground text-sm mt-0.5">SCORE: {currentState.writtenExamScore}</span>
-            )}
-          </div>
-        )
+        if (isRosterLocked) {
+          if (currentState.requirementsStatus !== "PASSED") {
+            return (
+              <div className="flex flex-col items-center justify-center py-2 font-bold uppercase leading-tight">
+                <span className="text-foreground">---</span>
+              </div>
+            )
+          }
+          return (
+            <div className="flex flex-col items-center justify-center py-2 font-bold uppercase leading-tight">
+              <span>{currentState.writtenExamStatus}</span>
+              {currentState.writtenExamStatus === "PASSED" && currentState.writtenExamScore !== null && currentState.writtenExamScore !== "" && (
+                <span className="text-foreground text-sm mt-0.5">SCORE: {currentState.writtenExamScore}</span>
+              )}
+            </div>
+          )
+        }
         return (
           <div className="flex items-center justify-center gap-2 py-2">
             <Select
@@ -528,7 +536,12 @@ export default function LearnerAdmissionIndex() {
         const application = row.original
         const { edits, updateEdit, isRosterLocked } = table.options.meta as any
         const currentState = edits[application.id] ?? getInitialEdit(application)
-        if (isRosterLocked) return <div className="text-center font-bold py-2 uppercase">{currentState.interviewStatus === "PASSED" ? "Passed" : currentState.interviewStatus === "FAILED" ? "Failed" : "Pending"}</div>
+        if (isRosterLocked) {
+          if (currentState.requirementsStatus !== "PASSED" || currentState.writtenExamStatus !== "PASSED") {
+            return <div className="text-center font-bold py-2 uppercase"><span className="text-foreground">---</span></div>
+          }
+          return <div className="text-center font-bold py-2 uppercase">{currentState.interviewStatus === "PASSED" ? "Passed" : currentState.interviewStatus === "FAILED" ? "Failed" : "Pending"}</div>
+        }
         return (
           <div className="flex justify-center py-2">
             <Select
@@ -582,7 +595,7 @@ export default function LearnerAdmissionIndex() {
                       setIsForfeitModalOpen(true)
                     }}
                   >
-                    Forfeit Slot
+                    FORFEIT SLOT
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -789,31 +802,14 @@ export default function LearnerAdmissionIndex() {
                     {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Results
                   </Button>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="inline-flex">
-                          <Button 
-                            onClick={() => setIsLockModalOpen(true)} 
-                            disabled={!canLockRoster}
-                            className={cn(
-                              "h-12 whitespace-nowrap font-bold shrink-0", 
-                              canLockRoster ? "bg-primary text-primary-foreground" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            )}
-                          >
-                            Finalize & Lock Roster
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {!canLockRoster && (
-                        <TooltipContent>
-                          <p>All applicants must have a complete assessment result (e.g. Passed, Failed) before locking.</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                ) : canLockRoster ? (
+                  <Button 
+                    onClick={() => setIsLockModalOpen(true)} 
+                    className="h-12 whitespace-nowrap font-bold shrink-0 bg-primary text-primary-foreground"
+                  >
+                    Finalize & Lock Roster
+                  </Button>
+                ) : null}
               </div>
             )}
           </div>

@@ -39,6 +39,19 @@ import { useState, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 
+interface LearnerProfileAddress {
+  addressType: "CURRENT" | "PERMANENT";
+  houseNoStreet?: string | null;
+  street?: string | null;
+  sitio?: string | null;
+  region?: string | null;
+  province?: string | null;
+  cityMunicipality?: string | null;
+  barangay?: string | null;
+  country?: string | null;
+  zipCode?: string | null;
+}
+
 const MOTHER_TONGUE_OPTIONS = [
   { value: "Tagalog", label: "Tagalog" },
   { value: "Cebuano", label: "Cebuano" },
@@ -161,12 +174,14 @@ export default function Step1Personal() {
 
     if (!lrn || lrn.length !== 12 || hasNoLrn) {
       setIsValidatingLrn(false);
+      setValue("isValidatingLrn", false, { shouldDirty: false });
       setDuplicateDetected(false);
       setLearnerFound(false);
       return;
     }
 
     setIsValidatingLrn(true);
+    setValue("isValidatingLrn", true, { shouldDirty: false });
     setDuplicateDetected(false);
     setLearnerFound(false);
 
@@ -209,9 +224,11 @@ export default function Step1Personal() {
           if (profile.psaBirthCertNumber) setValue("psaBirthCertNumber", profile.psaBirthCertNumber, { shouldValidate: true, shouldDirty: true });
           if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
 
-          const mapAddress = (addr: any) => ({
+          const mapAddress = (addr: LearnerProfileAddress) => ({
             houseNo: addr.houseNoStreet || "",
-            street: addr.street || "",
+            // New admission records store Sitio/Purok in `sitio`. Keep the
+            // legacy `street` fallback so existing enrollment records still prefill.
+            street: addr.sitio || addr.street || "",
             region: addr.region || "",
             province: addr.province || "",
             cityMunicipality: addr.cityMunicipality || "",
@@ -222,10 +239,11 @@ export default function Step1Personal() {
 
           // 2. Addresses
           if (profile.addresses?.length > 0) {
-            const current = profile.addresses.find((a: any) => a.addressType === "CURRENT");
+            const addresses = profile.addresses as LearnerProfileAddress[];
+            const current = addresses.find((address) => address.addressType === "CURRENT");
             if (current) setValue("currentAddress", mapAddress(current), { shouldValidate: true, shouldDirty: true });
             
-            const permanent = profile.addresses.find((a: any) => a.addressType === "PERMANENT");
+            const permanent = addresses.find((address) => address.addressType === "PERMANENT");
             if (permanent) setValue("permanentAddress", mapAddress(permanent), { shouldValidate: true, shouldDirty: true });
           }
 
@@ -283,7 +301,10 @@ export default function Step1Personal() {
         }
       })
       .finally(() => {
-        if (active) setIsValidatingLrn(false);
+        if (active) {
+          setIsValidatingLrn(false);
+          setValue("isValidatingLrn", false, { shouldDirty: false });
+        }
       });
 
     return () => {

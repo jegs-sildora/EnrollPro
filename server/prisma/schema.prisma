@@ -208,6 +208,7 @@ model SchoolYear {
   term3Label             String                  @default("TERM 3") @map("term3_label")
   term4Label             String                  @default("QUARTER 4") @map("term4_label")
   activeTerm             String?                 @map("active_term")
+  scpAdmissions          ScpAdmission[]
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
@@ -330,6 +331,7 @@ model Learner {
   hasPsaBirthCertificate       Boolean                 @default(false) @map("has_psa_birth_certificate")
   status                       LearnerStatus           @default(ACTIVE)
   userId                       Int?                    @unique(map: "uq_learners_user_id") @map("user_id")
+  scpAdmissions                ScpAdmission[]
   enrollmentApplications       EnrollmentApplication[]
   enrollmentRecords            EnrollmentRecord[]
   healthRecords                HealthRecord[]
@@ -399,6 +401,8 @@ model EnrollmentApplication {
   enrollmentRecord           EnrollmentRecord?
   backSubjects               EnrollmentBackSubject[]
   scpProfile                 EnrollmentScpProfile?
+  scpAdmissionId             Int?                      @unique @map("scp_admission_id")
+  scpAdmission               ScpAdmission?             @relation(fields: [scpAdmissionId], references: [id])
 
   @@unique([learnerId, schoolYearId], name: "uq_enrollment_learner_sy")
   @@index([status, schoolYearId], map: "idx_enrollment_apps_status_sy")
@@ -426,16 +430,18 @@ model EnrollmentBackSubject {
 /// Previous school record linked to enrollment application
 model EnrollmentPreviousSchool {
   id                    Int                   @id @default(autoincrement())
-  applicationId         Int                   @unique(map: "uq_enrollment_prev_school_app_id") @map("application_id")
+  enrollmentId          Int?                  @unique(map: "uq_enrollment_prev_school_app_id") @map("enrollment_id")
   schoolName            String?               @map("school_name")
   schoolId              String?               @map("school_id")
   schoolAddress         String?               @map("school_address")
   schoolType            String?               @map("school_type")
   generalAverage        Float?                @map("general_average")
   transferCertificateNo String?               @map("transfer_certificate_no")
-  application           EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  enrollment            EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  scpAdmissionId        Int?                   @unique @map("scp_admission_id")
+  scpAdmission          ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
 
-  @@map("enrollment_previous_schools")
+  @@map("application_previous_schools")
 }
 
 /// Special Curricular Program online admission details
@@ -456,6 +462,36 @@ model EnrollmentScpProfile {
   @@map("enrollment_scp_profiles")
 }
 
+/// Special Curricular Program online admission screening
+model ScpAdmission {
+  id                            Int                   @id @default(autoincrement())
+  learnerId                     Int                   @map("learner_id")
+  schoolYearId                  Int                   @map("school_year_id")
+  program                       ApplicantType         @map("program")
+  trackingNumber                String                @unique(map: "uq_scp_admission_tracking_number") @map("tracking_number")
+  grade5GeneralAverage          Float                 @map("grade_5_general_average")
+  underSpecialScienceCurriculum Boolean               @default(false) @map("under_special_science_curriculum")
+  artsSpecialization            String?               @map("arts_specialization")
+  chosenSport                   String?               @map("chosen_sport")
+  requirementsStatus            ScpAssessmentState    @default(PENDING) @map("requirements_status")
+  writtenExamStatus             ScpAssessmentState    @default(PENDING) @map("written_exam_status")
+  writtenExamScore              Float?                @map("written_exam_score")
+  interviewStatus               ScpAssessmentState    @default(PENDING) @map("interview_status")
+  assessmentResult              ScpAssessmentResult   @default(PENDING) @map("assessment_result")
+  createdAt                     DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  learner                       Learner               @relation(fields: [learnerId], references: [id])
+  schoolYear                    SchoolYear            @relation(fields: [schoolYearId], references: [id])
+  enrollmentApplication         EnrollmentApplication?
+  addresses                     ApplicationAddress[]
+  familyMembers                 ApplicationFamilyMember[]
+  previousSchool                EnrollmentPreviousSchool?
+
+  @@unique([learnerId, schoolYearId], name: "uq_scp_admission_learner_sy")
+  @@map("scp_admissions")
+}
+
 /// Address linked to an application
 model ApplicationAddress {
   id               Int                    @id @default(autoincrement())
@@ -471,8 +507,11 @@ model ApplicationAddress {
   country          String?                @default("PHILIPPINES")
   zipCode          String?                @map("zip_code")
   enrollment       EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  scpAdmissionId   Int?                   @map("scp_admission_id")
+  scpAdmission     ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
 
   @@unique([enrollmentId, addressType], name: "uq_enrollment_addresses_type")
+  @@unique([scpAdmissionId, addressType], name: "uq_scp_admission_addresses_type")
   @@map("application_addresses")
 }
 
@@ -489,8 +528,11 @@ model ApplicationFamilyMember {
   email         String?
   maidenName    String?                @map("maiden_name")
   enrollment    EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  scpAdmissionId Int?                  @map("scp_admission_id")
+  scpAdmission  ScpAdmission?          @relation(fields: [scpAdmissionId], references: [id], onDelete: Cascade)
 
   @@unique([enrollmentId, relationship], name: "uq_enrollment_family_members_rel")
+  @@unique([scpAdmissionId, relationship], name: "uq_scp_admission_family_members_rel")
   @@map("application_family_members")
 }
 

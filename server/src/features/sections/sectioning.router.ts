@@ -11,9 +11,18 @@ import { staffIntakePhaseGuard } from "../../middleware/staff-intake-phase.guard
 
 const router: Router = Router();
 
-// All sectioning operations require Registrar or Admin access
+const sectioningRoles = [
+  "HEAD_REGISTRAR",
+  "SYSTEM_ADMIN",
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+] as const;
+
+// Grade coordinators may section learners only within their assigned grade.
 router.use(authenticate);
-router.use(authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"));
+router.use(authorize(...sectioningRoles));
 
 router.get("/sections-summary", getSectionsSummary);
 router.get("/pool", getSectioningPool);

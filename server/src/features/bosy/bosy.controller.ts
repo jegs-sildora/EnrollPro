@@ -82,7 +82,11 @@ export async function getBosyReadiness(
     const isStrictClassAdviser =
       req.user!.roles.includes("CLASS_ADVISER") &&
       !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
+      !req.user!.roles.includes("HEAD_REGISTRAR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 7 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 8 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 9 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 10 COORDINATOR");
 
     if (isStrictClassAdviser) {
       const adviserGradeId = await getAdviserGradeLevelId(
@@ -170,7 +174,11 @@ export async function getBosyQueue(
     const isStrictClassAdviser =
       req.user!.roles.includes("CLASS_ADVISER") &&
       !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
+      !req.user!.roles.includes("HEAD_REGISTRAR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 7 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 8 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 9 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 10 COORDINATOR");
 
     if (isStrictClassAdviser) {
       const adviserGradeId = await getAdviserGradeLevelId(
@@ -218,7 +226,11 @@ export async function confirmReturnHandler(
     const isStrictClassAdviser =
       req.user!.roles.includes("CLASS_ADVISER") &&
       !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
+      !req.user!.roles.includes("HEAD_REGISTRAR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 7 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 8 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 9 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 10 COORDINATOR");
 
     if (isStrictClassAdviser) {
       const application = await prisma.enrollmentApplication.findUnique({
@@ -402,7 +414,11 @@ export async function bulkConfirmReturnHandler(
     const isStrictClassAdviser =
       req.user!.roles.includes("CLASS_ADVISER") &&
       !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
+      !req.user!.roles.includes("HEAD_REGISTRAR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 7 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 8 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 9 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 10 COORDINATOR");
 
     if (isStrictClassAdviser) {
       const adviserGradeId = await getAdviserGradeLevelId(
@@ -482,7 +498,11 @@ export async function getPreviousSectionsHandler(
     const isStrictClassAdviser =
       req.user!.roles.includes("CLASS_ADVISER") &&
       !req.user!.roles.includes("SYSTEM_ADMIN") &&
-      !req.user!.roles.includes("HEAD_REGISTRAR");
+      !req.user!.roles.includes("HEAD_REGISTRAR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 7 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 8 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 9 COORDINATOR") &&
+      !(req.user!.ancillaryRoles ?? []).includes("GRADE 10 COORDINATOR");
 
     let targetGradeOrder: number | undefined;
 
