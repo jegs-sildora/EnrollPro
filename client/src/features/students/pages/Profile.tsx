@@ -91,11 +91,29 @@ export default function StudentProfile() {
 
   const handleTransferOut = async (payload: StudentTransferOutPayload) => {
     try {
-      await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
-        transferDate: payload.transferDate,
-        destinationSchool: payload.destinationSchool,
-        reasonNote: payload.reasonNote || undefined,
-      });
+      if (payload.evidenceFiles && payload.evidenceFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("transferDate", payload.transferDate);
+        formData.append("destinationSchool", payload.destinationSchool);
+        if (payload.reasonNote) {
+          formData.append("reasonNote", payload.reasonNote);
+        }
+        payload.evidenceFiles.forEach(file => {
+          formData.append("evidence", file);
+        });
+
+        await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
+          transferDate: payload.transferDate,
+          destinationSchool: payload.destinationSchool,
+          reasonNote: payload.reasonNote || undefined,
+        });
+      }
       sileo.success({
         title: "Learner transferred out",
         description: "The learner record and active class list were updated.",
@@ -108,11 +126,29 @@ export default function StudentProfile() {
 
   const handleDropout = async (payload: StudentDropoutPayload) => {
     try {
-      await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
-        dropOutDate: payload.dropOutDate,
-        reasonCode: payload.reasonCode,
-        reasonNote: payload.interventionNotes || undefined,
-      });
+      if (payload.evidenceFiles && payload.evidenceFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("dropOutDate", payload.dropOutDate);
+        formData.append("reasonCode", payload.reasonCode);
+        if (payload.interventionNotes) {
+          formData.append("reasonNote", payload.interventionNotes);
+        }
+        payload.evidenceFiles.forEach(file => {
+          formData.append("evidence", file);
+        });
+        
+        await api.post(`/students/${payload.student.id}/lifecycle/dropout`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
+          dropOutDate: payload.dropOutDate,
+          reasonCode: payload.reasonCode,
+          reasonNote: payload.interventionNotes || undefined,
+        });
+      }
       sileo.success({
         title: "Learner marked as dropped out",
         description: "The learner record and active class list were updated.",

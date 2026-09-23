@@ -13,6 +13,10 @@ import {
   Venus,
   Mars,
   Maximize2,
+  UploadCloud,
+  X,
+  File,
+  Image as ImageIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -199,6 +203,7 @@ export interface StudentTransferOutPayload {
   transferDate: string;
   destinationSchool: string;
   reasonNote: string;
+  evidenceFiles?: File[];
 }
 
 export interface StudentDropoutPayload {
@@ -206,6 +211,7 @@ export interface StudentDropoutPayload {
   dropOutDate: string;
   reasonCode: string;
   interventionNotes: string;
+  evidenceFiles?: File[];
 }
 
 export function StudentDetailPanel({
@@ -234,7 +240,22 @@ export function StudentDetailPanel({
     useState<string>("LACK_OF_INTEREST");
   const [dropoutOtherReason, setDropoutOtherReason] = useState("");
   const [dropoutInterventionNotes, setDropoutInterventionNotes] = useState("");
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
+  
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (previewFile) {
+      const url = URL.createObjectURL(previewFile);
+      setPreviewFileUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewFileUrl(null);
+    }
+  }, [previewFile]);
 
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [reactivateReason, setReactivateReason] = useState("");
@@ -268,14 +289,61 @@ export function StudentDetailPanel({
   const handleTransferOutSubmit = () => {
     if (!student) return;
 
+    if (evidenceFiles.length > 0 && !transferOutReason.trim()) {
+      sileo.error({
+        title: "Validation Error",
+        description: "Please provide a reason for transfer when attaching evidence.",
+      });
+      return;
+    }
+
     onTransferOut?.({
       student,
       transferDate: transferOutDate,
       destinationSchool: transferOutSchoolName.toUpperCase(),
       reasonNote: transferOutReason.toUpperCase(),
+      evidenceFiles: evidenceFiles.length > 0 ? evidenceFiles : undefined,
     });
     setShowTransferOutDialog(false);
+    setEvidenceFiles([]);
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      setEvidenceFiles(prev => {
+        const newFiles = [...prev, ...droppedFiles].slice(0, 3);
+        return newFiles;
+      });
+    }
+  }, []);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
+      setEvidenceFiles(prev => {
+        const newFiles = [...prev, ...selectedFiles].slice(0, 3);
+        return newFiles;
+      });
+    }
+  }, []);
+
+  const removeFile = useCallback((indexToRemove: number) => {
+    setEvidenceFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  }, []);
 
   const handleDropoutSubmit = () => {
     if (!student || !dropoutDate || !dropoutReasonCode) return;
@@ -288,15 +356,25 @@ export function StudentDetailPanel({
       return;
     }
 
+    if (evidenceFiles.length > 0 && !dropoutInterventionNotes.trim()) {
+      sileo.error({
+        title: "Validation Error",
+        description: "Please provide intervention notes for the attached evidence.",
+      });
+      return;
+    }
+
     if (onDropout) {
       onDropout({
         student,
         dropOutDate: dropoutDate,
         reasonCode: dropoutReasonCode === "OTHERS" ? `OTHERS: ${dropoutOtherReason.trim().toUpperCase()}` : dropoutReasonCode,
         interventionNotes: dropoutInterventionNotes.toUpperCase(),
+        evidenceFiles: evidenceFiles.length > 0 ? evidenceFiles : undefined,
       });
     }
     setShowDropoutDialog(false);
+    setEvidenceFiles([]);
   };
   const [error, setError] = useState<string | null>(null);
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
@@ -927,7 +1005,7 @@ export function StudentDetailPanel({
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       {showHeader && (
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold relative">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold">
           <div>
             <SheetTitle className="text-base sm:text-lg text-primary-foreground font-bold  uppercase flex items-center gap-2">
               {isJhsCompleter ? (
@@ -945,25 +1023,37 @@ export function StudentDetailPanel({
               )}
             </SheetTitle>
           </div>
-          {onExpand && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => onExpand(student?.lrn || student?.id)}
-                    className="absolute right-18 top-3 rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
-                  >
-                    <Maximize2 className="h-5 w-5" />
-                    <span className="sr-only">Expand</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Expand to full page</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          <div className="flex items-center gap-1">
+            {onExpand && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => onExpand(student?.lrn || student?.id)}
+                      className="rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
+                    >
+                      <Maximize2 className="h-5 w-5" />
+                      <span className="sr-only">Expand</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Expand to full page</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2 disabled:pointer-events-none"
+              >
+                <X strokeWidth={3} className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -2148,6 +2238,9 @@ export function StudentDetailPanel({
                   setTransferOutDate(format(new Date(), "yyyy-MM-dd"));
                   setTransferOutSchoolName("");
                   setTransferOutReason("");
+                  setEvidenceFiles([]);
+                } else {
+                  setEvidenceFiles([]);
                 }
                 setShowTransferOutDialog(open);
               }}>
@@ -2159,51 +2252,130 @@ export function StudentDetailPanel({
                   Transferred Out
                 </Button>
               </DialogTrigger>
-              <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
-                <div className="p-6 pb-2">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-bold text-foreground">
-                      Transfer Learner Record
-                    </DialogTitle>
-                  </DialogHeader>
-                </div>
-                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6">
-                  This will permanently remove the learner from the active
-                  homeroom masterlist.
-                </div>
-                <div className="space-y-4 px-6 pb-0">
+              <DialogContent showClose={false} aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="flex flex-row items-center justify-between p-3 sm:p-4 shrink-0 bg-amber-600 font-bold relative">
+                  <DialogTitle className="text-base sm:text-lg text-white font-bold uppercase flex items-center gap-2">
+                    Transfer Learner Record
+                  </DialogTitle>
+                  <button
+                    type="button"
+                    onClick={() => setShowTransferOutDialog(false)}
+                    className="rounded-full p-2 text-white hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 disabled:pointer-events-none"
+                  >
+                    <X strokeWidth={3} className="h-5 w-5" />
+                    <span className="sr-only">Close</span>
+                  </button>
+                </DialogHeader>
+                <div className="overflow-y-auto max-h-[60vh] flex-1 pb-6 pt-4">
+                  <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6 mb-6">
+                    This will permanently remove the learner from the active
+                    homeroom masterlist.
+                  </div>
+                  <div className="space-y-4 px-6 pb-0">
                   <div className="space-y-2">
-                    <Label>
+                    <Label className="font-bold">
                       Destination School{" "}
                       <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground font-bold"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground uppercase"
                       placeholder="e.g., Bacolod City National High School"
                       value={transferOutSchoolName}
                       onChange={(e) => setTransferOutSchoolName(e.target.value.toUpperCase())}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>
+                    <Label className="font-bold">
                       Official Date of Transfer{" "}
                       <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <HybridDatePicker
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-semibold"
                       value={transferOutDate}
                       onChange={setTransferOutDate}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Reason for Transfer (Optional)</Label>
+                    <Label className="font-bold">
+                      Reason for Transfer
+                      {evidenceFiles.length > 0 ? <span className="text-red-500 ml-1">*</span> : <span className="text-muted-foreground ml-1 font-normal">(Optional)</span>}
+                    </Label>
                     <Input
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground !font-bold"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground uppercase"
                       placeholder="Optional reason"
                       value={transferOutReason}
                       onChange={(e) => setTransferOutReason(e.target.value.toUpperCase())}
                     />
                   </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="font-bold">Digital Evidence (Optional)</Label>
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:bg-muted/50",
+                        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                      )}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={handleFileInput}
+                        title=""
+                      />
+                      <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm font-medium text-foreground text-center">
+                        Click or drag files here to upload
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center mt-1">
+                        Supported: PDF, JPG, PNG (Max 3 files, 5MB each)
+                      </p>
+                    </div>
+                    
+                    {evidenceFiles.length > 0 && (
+                      <div className="flex flex-col gap-2 mt-3">
+                        {evidenceFiles.map((file, idx) => (
+                          <div 
+                            key={idx} 
+                            className="flex items-center justify-between p-2 rounded-md bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/80 transition-colors"
+                            onClick={() => setPreviewFile(file)}
+                          >
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              {file.type.startsWith('image/') ? (
+                                <ImageIcon className="h-4 w-4 text-primary shrink-0" />
+                              ) : (
+                                <File className="h-4 w-4 text-primary shrink-0" />
+                              )}
+                              <span className="text-sm font-medium truncate" title={file.name}>
+                                {file.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                              </span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFile(idx);
+                                if (previewFile === file) {
+                                  setPreviewFile(null);
+                                }
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button
@@ -2231,89 +2403,168 @@ export function StudentDetailPanel({
                   variant="outline"
                   className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-red-50 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-200 shadow-sm">
                   <BadgeAlert className="h-4 w-4 mr-2" />
-                  Dropped Out
+                  Dropped Out / NLPA
                 </Button>
               </DialogTrigger>
-              <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
-                <div className="p-6 pb-2">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-bold text-red-700">
-                      Process Learner Drop Out
-                    </DialogTitle>
-                  </DialogHeader>
-                </div>
-                <div className="text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded-md mx-6 mb-6">
-                  Warning: Dropping out a learner requires recorded intervention
-                  history. This action will finalize their status for the
-                  current school year.
-                </div>
-                <div className="space-y-4 px-6 pb-0">
-                  <div className="space-y-2">
-                    <Label>
-                      Date of Last Attendance{" "}
-                      <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <HybridDatePicker
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none"
-                      value={dropoutDate}
-                      onChange={setDropoutDate}
-                    />
+              <DialogContent showClose={false} aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="flex flex-row items-center justify-between p-3 sm:p-4 shrink-0 bg-primary font-bold relative">
+                  <DialogTitle className="text-base sm:text-lg text-primary-foreground font-bold uppercase flex items-center gap-2">
+                    Process Learner Drop Out / No Longer Participating in Learning Activities
+                  </DialogTitle>
+                  <button
+                    type="button"
+                    onClick={() => setShowDropoutDialog(false)}
+                    className="rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2 disabled:pointer-events-none"
+                  >
+                    <X strokeWidth={3} className="h-5 w-5" />
+                    <span className="sr-only">Close</span>
+                  </button>
+                </DialogHeader>
+                <div className="overflow-y-auto max-h-[60vh] flex-1 pb-6 pt-4">
+                  <div className="text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded-md mx-6 mb-6">
+                    Warning: Dropping out a learner requires recorded intervention
+                    history. This action will finalize their status for the
+                    current school year.
                   </div>
-                  <div className="space-y-2">
-                    <Label>
-                      Official Reason{" "}
-                      <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <div className="flex gap-3">
-                      <div className={dropoutReasonCode === "OTHERS" ? "w-1/2" : "w-full"}>
-                        <Select
-                          value={dropoutReasonCode}
-                          onValueChange={setDropoutReasonCode}>
-                          <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold uppercase">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="FINANCIAL_MATTERS">
-                              Financial
-                            </SelectItem>
-                            <SelectItem value="ILLNESS">Illness</SelectItem>
-                            <SelectItem value="FAMILY_MATTERS">
-                              Family Matters
-                            </SelectItem>
-                            <SelectItem value="CHILD_LABOR">Child Labor</SelectItem>
-                            <SelectItem value="RELOCATION">Relocation</SelectItem>
-                            <SelectItem value="LACK_OF_INTEREST">
-                              Lack of Interest
-                            </SelectItem>
-                            <SelectItem value="OTHERS">Others</SelectItem>
-                          </SelectContent>
-                        </Select>
+                  <div className="space-y-4 px-6 pb-0">
+                    <div className="space-y-2">
+                      <Label className="font-bold">
+                        Date of Last Attendance{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <HybridDatePicker
+                        className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-semibold"
+                        value={dropoutDate}
+                        onChange={setDropoutDate}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold">
+                        Official Reason{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <div className="flex gap-3">
+                        <div className={dropoutReasonCode === "OTHERS" ? "w-1/2" : "w-full"}>
+                          <Select
+                            value={dropoutReasonCode}
+                            onValueChange={setDropoutReasonCode}>
+                            <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none uppercase">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="FINANCIAL_MATTERS">
+                                Financial
+                              </SelectItem>
+                              <SelectItem value="ILLNESS">Illness</SelectItem>
+                              <SelectItem value="FAMILY_MATTERS">
+                                Family Matters
+                              </SelectItem>
+                              <SelectItem value="CHILD_LABOR">Child Labor</SelectItem>
+                              <SelectItem value="RELOCATION">Relocation</SelectItem>
+                              <SelectItem value="LACK_OF_INTEREST">
+                                Lack of Interest
+                              </SelectItem>
+                              <SelectItem value="OTHERS">Others</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {dropoutReasonCode === "OTHERS" && (
+                          <div className="w-1/2">
+                            <Input
+                              placeholder="Please specify"
+                              value={dropoutOtherReason}
+                              onChange={(e) => setDropoutOtherReason(e.target.value)}
+                              className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none uppercase"
+                            />
+                          </div>
+                        )}
                       </div>
-                      {dropoutReasonCode === "OTHERS" && (
-                        <div className="w-1/2">
-                          <Input
-                            placeholder="Please specify"
-                            value={dropoutOtherReason}
-                            onChange={(e) => setDropoutOtherReason(e.target.value)}
-                            className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold uppercase"
-                          />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold">
+                        Intervention Notes 
+                        {evidenceFiles.length > 0 ? <span className="text-red-500 ml-1">*</span> : <span className="text-muted-foreground ml-1 font-normal">(Optional)</span>}
+                      </Label>
+                      <Textarea
+                        className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground uppercase"
+                        placeholder="Brief details on home visitations/counseling done"
+                        value={dropoutInterventionNotes}
+                        onChange={(e) =>
+                          setDropoutInterventionNotes(e.target.value.toUpperCase())
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      <Label className="font-bold">Digital Evidence (Optional)</Label>
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:bg-muted/50",
+                          isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                        )}
+                      >
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={handleFileInput}
+                          title=""
+                        />
+                        <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm font-medium text-foreground text-center">
+                          Click or drag files here to upload
+                        </p>
+                        <p className="text-xs text-muted-foreground text-center mt-1">
+                          Supported: PDF, JPG, PNG (Max 3 files, 5MB each)
+                        </p>
+                      </div>
+                      
+                      {evidenceFiles.length > 0 && (
+                        <div className="flex flex-col gap-2 mt-3">
+                          {evidenceFiles.map((file, idx) => (
+                            <div 
+                              key={idx} 
+                              className="flex items-center justify-between p-2 rounded-md bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/80 transition-colors"
+                              onClick={() => setPreviewFile(file)}
+                            >
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                {file.type.startsWith('image/') ? (
+                                  <ImageIcon className="h-4 w-4 text-primary shrink-0" />
+                                ) : (
+                                  <File className="h-4 w-4 text-primary shrink-0" />
+                                )}
+                                <span className="text-sm font-medium truncate" title={file.name}>
+                                  {file.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                                </span>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFile(idx);
+                                  if (previewFile === file) {
+                                    setPreviewFile(null);
+                                  }
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Intervention Notes (Optional)</Label>
-                    <Textarea
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground font-bold"
-                      placeholder="Brief details on home visitations/counseling done"
-                      value={dropoutInterventionNotes}
-                      onChange={(e) =>
-                        setDropoutInterventionNotes(e.target.value.toUpperCase())
-                      }
-                    />
-                  </div>
                 </div>
-                <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
+                <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full shrink-0 mt-auto">
                   <Button
                     className="bg-muted text-gray-700"
                     variant="outline"
@@ -2327,6 +2578,33 @@ export function StudentDetailPanel({
                     disabled={!dropoutDate || !dropoutReasonCode}>
                     Finalize Drop Out
                   </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+              <DialogContent className="w-full max-w-4xl h-[90vh] p-0 overflow-hidden flex flex-col bg-background">
+                <div className="flex justify-between items-center p-4 border-b">
+                  <DialogTitle className="truncate pr-8 text-lg font-bold">
+                    {previewFile?.name}
+                  </DialogTitle>
+                </div>
+                <div className="flex-1 w-full relative bg-muted/30 flex items-center justify-center p-4 overflow-hidden">
+                  {previewFile?.type.startsWith('image/') ? (
+                    <img 
+                      src={previewFileUrl || ''} 
+                      className="max-w-full max-h-full object-contain rounded-md shadow-sm" 
+                      alt="Preview" 
+                    />
+                  ) : previewFile?.type === 'application/pdf' ? (
+                    <iframe 
+                      src={previewFileUrl || ''} 
+                      className="w-full h-full border-0 rounded-md shadow-sm" 
+                      title="PDF Preview"
+                    />
+                  ) : (
+                    <div className="text-muted-foreground">Preview not available for this file type.</div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
@@ -2344,7 +2622,7 @@ export function StudentDetailPanel({
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm">
+                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-primary text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 border-primary shadow-sm">
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Reactivate Learner
                 </Button>

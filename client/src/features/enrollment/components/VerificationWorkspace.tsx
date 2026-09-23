@@ -1752,7 +1752,7 @@ export function VerificationWorkspace() {
       <Dialog
         open={viewStudentId !== null}
         onOpenChange={(open) => !open && setViewStudentId(null)}>
-        <DialogContent
+        <DialogContent showClose={false}
           aria-describedby={undefined}
           className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
           {viewStudentId ? (

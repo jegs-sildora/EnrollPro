@@ -580,8 +580,10 @@ model EnrollmentRecord {
   transferOutDate          DateTime?             @map("transfer_out_date") @db.Date
   dropOutDate              DateTime?             @map("drop_out_date") @db.Date
   dropOutInterventionNotes String?               @map("drop_out_intervention_notes")
+  dropOutEvidenceURLs      String[]              @default([]) @map("drop_out_evidence_urls")
   transferOutSchoolName    String?               @map("transfer_out_school_name")
   transferOutReason        String?               @map("transfer_out_reason")
+  transferOutEvidenceURLs  String[]              @default([]) @map("transfer_out_evidence_urls")
   confirmationConsent      Boolean?              @map("confirmation_consent")
   contactNumber            String?               @map("contact_number")
   dateSectioned            DateTime?             @map("date_sectioned") @db.Timestamptz(6)

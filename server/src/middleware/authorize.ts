@@ -7,8 +7,14 @@ export const authorize = (...roles: string[]) => {
 			return;
 		}
 
-		const hasRole = req.user.roles?.some((role: string) => roles.includes(role));
-		const hasAncillaryRole = req.user.ancillaryRoles?.some((role: string) => roles.includes(role));
+		const expandedRoles = roles.flatMap(role => 
+			role === "GRADE_LEVEL_COORDINATOR" 
+				? ["GRADE_LEVEL_COORDINATOR", "GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR", "GRADE LEVEL CHAIRMAN"] 
+				: [role]
+		);
+
+		const hasRole = req.user.roles?.some((role: string) => expandedRoles.includes(role));
+		const hasAncillaryRole = req.user.ancillaryRoles?.some((role: string) => expandedRoles.includes(role));
 
 		if (!hasRole && !hasAncillaryRole) {
 			res.status(403).json({ message: 'Forbidden' });

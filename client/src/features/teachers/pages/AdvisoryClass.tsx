@@ -380,7 +380,7 @@ export default function AdvisoryClass() {
         onOpenChange={(open) => {
           if (!open) setSelectedStudentId(null);
         }}>
-        <DialogContent
+        <DialogContent showClose={false}
           aria-describedby={undefined}
           className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
           {selectedStudentId ? (

@@ -601,6 +601,8 @@ const resolveApplicationId = async (
       const { dropOutDate, reasonCode, reasonNote } = req.body;
       const record = applicant.enrollmentRecord;
 
+      const evidenceURLs = (req.files as Express.Multer.File[])?.map(file => `/uploads/${file.filename}`) || [];
+
       await prisma.$transaction(async (tx) => {
         if (record) {
           await tx.enrollmentRecord.update({
@@ -610,6 +612,7 @@ const resolveApplicationId = async (
               dropOutReason: reasonCode, 
               dropOutDate: dropOutDate ? new Date(dropOutDate) : null,
               dropOutInterventionNotes: reasonNote || null,
+              dropOutEvidenceURLs: evidenceURLs,
             },
           });
         }
@@ -678,6 +681,8 @@ const resolveApplicationId = async (
       const { transferDate, destinationSchool, reasonNote } = req.body;
       const record = applicant.enrollmentRecord;
 
+      const evidenceURLs = (req.files as Express.Multer.File[])?.map(file => `/uploads/${file.filename}`) || [];
+
       await prisma.$transaction(async (tx) => {
         if (record) {
           await tx.enrollmentRecord.update({
@@ -687,6 +692,7 @@ const resolveApplicationId = async (
               transferOutDate: transferDate ? new Date(transferDate) : null,
               transferOutSchoolName: destinationSchool || null,
               transferOutReason: reasonNote || null,
+              transferOutEvidenceURLs: evidenceURLs,
             },
           });
         }
@@ -930,6 +936,7 @@ const resolveApplicationId = async (
               dropOutReason: null, 
               dropOutDate: null,
               dropOutInterventionNotes: null,
+              dropOutEvidenceURLs: [],
               transferOutDate: null,
               transferOutSchoolName: null,
               transferOutReason: null,

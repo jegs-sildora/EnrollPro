@@ -1,28 +1,39 @@
-# Prompt for Backend Logic Refactor: Decoupling Admission vs. Enrollment Validation
+# Prompt for UI/UX & Logic Implementation: NLPA / Drop Out Evidence Upload
 
 ## Role & Context
-Act as a Backend Developer. We need to fix a critical data validation bug in the `POST /api/enrollment` controller. 
+Act as a Frontend Developer. We are upgrading the `Process Learner Drop Out / NLPA` modal. 
 
-Currently, the system throws a `409 Conflict` (Duplicate Detected) if a user submitting the Enrollment Form already has a record in the `SCP Admission` roster. This is structurally incorrect. Admission is a prerequisite screening process; passing it means the learner is *required* to submit an enrollment form. The system is currently blocking our most qualified students from officially enrolling.
+In DepEd public schools, officially dropping a student requires documented proof of intervention (e.g., Home Visitation Forms, Parent-Teacher Conference logs, anecdotal records). We need to add a robust File Upload component to this modal so class advisers can attach digital evidence directly to the learner's drop-out record.
 
 ## Critical Directive
-Separate the validation queries for the `admissions` table and the `enrollments` table. An existing admission record must *facilitate* enrollment (by locking their program choice), not *block* it. Duplicate detection must strictly scope to the `enrollments` table for the active school year.
+Integrate a Drag-and-Drop file upload zone below the "Intervention Notes" field. Since adding this component will increase the height of the modal, ensure the modal body is vertically scrollable while keeping the header and footer (action buttons) fixed/sticky so they are always accessible.
 
-## Backend Validation Logic Requirements
+## UI Component & State Logic Requirements
 
-Please rewrite the validation checks in the enrollment submission controller to follow this exact sequence:
+Please implement the following UI additions and form logic:
 
-### 1. The Duplicate Enrollment Check (The Block)
-*   **Query:** Check the `enrollments` table where `lrn = request.body.lrn` AND `school_year_id = current_active_year`.
-*   **Action:** If a record is found here, it means the parent already enrolled the child for this specific school year. 
-*   **Response:** Throw the `409 Conflict` error, which will trigger the "Duplicate Enrollment Detected" modal on the frontend.
+### 1. The Drag-and-Drop Upload Zone
+*   **Placement:** Directly below the `Intervention Notes` textarea.
+*   **Visual Design:** Render a dashed-border rectangular container with a light gray or muted background.
+*   **Icons & Text:** Center a standard "Cloud Upload" or "Document" icon inside.
+    *   *Primary Text:* `Drag and drop files here, or click to browse.`
+    *   *Helper Text (Crucial for DepEd context):* `Attach intervention evidence (e.g., scanned Home Visitation Forms, Parent Agreements, or Anecdotal Records).`
+    *   *Constraint Text:* `Maximum 3 files. Accepted formats: PDF, JPG, PNG (Max 5MB each).`
 
-### 2. The Admission Cross-Reference (The Facilitator)
-*   **Query:** If the enrollment check passes (no duplicate enrollment found), check the `scp_admissions` table for the same LRN.
-*   **Action:** 
-    *   If an admission record is found with `FINAL RESULT: QUALIFIED`, accept the enrollment submission but strictly override the payload's `curricular_program` to match their qualified SCP program (to prevent frontend tampering).
-    *   If no admission record is found, accept the enrollment submission but strictly default the `curricular_program` to `Regular BEC`.
-*   **Response:** Proceed with the database `INSERT` into the `enrollments` table and return a `201 Created` success response.
+### 2. File Preview & Management State
+Once a user selects or drops a file, the UI must provide clear feedback:
+*   **File List:** Below (or replacing) the drag-and-drop zone, render a sleek vertical list of the attached files.
+*   **Item Row:** Each uploaded file should display:
+    *   A small file-type icon (e.g., a PDF icon or image thumbnail).
+    *   The truncated file name (e.g., `Home_Visitation_Juan...pdf`).
+    *   The file size (e.g., `1.2 MB`).
+    *   A red `X` or Trash icon on the far right to allow the user to easily remove the file before final submission.
 
-### 3. Data Integrity & Migration
-Ensure there is a clear foreign key or conceptual relationship between an `enrollment` record and its preceding `admission` record, but do not combine them into a single state machine. A learner can exist in the admission table and never enroll (e.g., they moved to another city), or they can exist in the enrollment table without ever going through admission (e.g., a Regular BEC student).
+### 3. Form Validation & Logic Upgrades
+Upgrading this UI requires upgrading the validation logic:
+*   **Conditional Requirement:** If the user attaches a file, the `Intervention Notes` field should dynamically become *Required* (remove the "Optional" label). They must provide a brief written context for the evidence they are submitting.
+*   **Upload Handling:** Ensure the form submission logic handles `multipart/form-data` correctly. The files should be uploaded to the server/cloud storage, and the resulting file URLs/IDs should be appended to the drop-out transaction payload.
+
+### 4. Modal Layout Protection
+*   Apply `overflow-y: auto` and a `max-height` (e.g., `max-h-[60vh]`) to the modal's internal body container. 
+*   Ensure the modal footer containing the `Cancel` and `Finalize Drop Out` buttons remains permanently visible at the bottom, regardless of how many files are added to the list above it.

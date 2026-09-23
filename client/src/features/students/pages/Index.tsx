@@ -779,11 +779,29 @@ export default function Students() {
   const handlePanelTransferOut = async (payload: StudentTransferOutPayload) => {
     setActionSubmitting(true);
     try {
-      await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
-        transferDate: payload.transferDate,
-        destinationSchool: payload.destinationSchool,
-        reasonNote: payload.reasonNote || undefined,
-      });
+      if (payload.evidenceFiles && payload.evidenceFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("transferDate", payload.transferDate);
+        formData.append("destinationSchool", payload.destinationSchool);
+        if (payload.reasonNote) {
+          formData.append("reasonNote", payload.reasonNote);
+        }
+        payload.evidenceFiles.forEach(file => {
+          formData.append("evidence", file);
+        });
+
+        await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
+          transferDate: payload.transferDate,
+          destinationSchool: payload.destinationSchool,
+          reasonNote: payload.reasonNote || undefined,
+        });
+      }
 
       sileo.success({
         title: "Transferred out",
@@ -801,11 +819,29 @@ export default function Students() {
   const handlePanelDropout = async (payload: StudentDropoutPayload) => {
     setActionSubmitting(true);
     try {
-      await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
-        dropOutDate: payload.dropOutDate,
-        reasonCode: payload.reasonCode,
-        reasonNote: payload.interventionNotes || undefined,
-      });
+      if (payload.evidenceFiles && payload.evidenceFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("dropOutDate", payload.dropOutDate);
+        formData.append("reasonCode", payload.reasonCode);
+        if (payload.interventionNotes) {
+          formData.append("reasonNote", payload.interventionNotes);
+        }
+        payload.evidenceFiles.forEach(file => {
+          formData.append("evidence", file);
+        });
+        
+        await api.post(`/students/${payload.student.id}/lifecycle/dropout`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
+          dropOutDate: payload.dropOutDate,
+          reasonCode: payload.reasonCode,
+          reasonNote: payload.interventionNotes || undefined,
+        });
+      }
 
       sileo.success({
         title: "Dropped out",
@@ -1788,6 +1824,7 @@ export default function Students() {
           }
         }}>
         <DialogContent
+          showClose={false}
           aria-describedby={undefined}
           className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
           {selectedStudentId !== null && (
