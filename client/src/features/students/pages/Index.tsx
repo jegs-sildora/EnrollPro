@@ -43,6 +43,7 @@ import {
   formatManilaDate,
   formatScpType,
   getGradeLevelBadgeStyles, formatGradeLevel,
+  getGradeLevelButtonStyles,
   SCP_ACRONYMS,
   cn,
 } from "@/shared/lib/utils";
@@ -1185,7 +1186,10 @@ export default function Students() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer"
+                className={cn(
+                  "h-9 items-center justify-center rounded-lg border px-4 text-sm transition-all border-2 font-bold cursor-pointer",
+                  getGradeLevelButtonStyles(row.original.gradeLevel)
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewDetails(row.original.id);
@@ -1577,9 +1581,12 @@ export default function Students() {
 
                     <div className="mt-3 flex items-center gap-2">
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
-                        className="h-9 flex-1 font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                        className={cn(
+                          "h-9 flex-1 font-bold border-2 transition-all",
+                          getGradeLevelButtonStyles(student.gradeLevel)
+                        )}
                         onClick={() => handleViewDetails(student.id)}>
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View

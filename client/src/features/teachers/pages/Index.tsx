@@ -15,7 +15,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
-import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel, getGradeLevelButtonStyles } from "@/shared/lib/utils";
 import { Eye } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
 import { useAuthStore } from "@/store/auth.slice";
@@ -827,7 +827,12 @@ export default function Teachers() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer"
+                className={cn(
+                  "h-9 items-center justify-center rounded-md border px-4 transition-all border-2 font-bold cursor-pointer",
+                  row.original.designation?.advisorySection?.gradeLevelName
+                    ? getGradeLevelButtonStyles(row.original.designation.advisorySection.gradeLevelName)
+                    : "bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   setViewingTeacher(row.original);

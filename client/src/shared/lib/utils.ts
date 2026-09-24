@@ -22,6 +22,23 @@ export const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined):
   return "bg-gray-50 text-gray-700 border-gray-200";
 };
 
+export const getGradeLevelButtonStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "text-emerald-700 border-emerald-700 bg-emerald-50 hover:bg-emerald-700 hover:text-white";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "text-amber-700 border-amber-700 bg-amber-50 hover:bg-amber-700 hover:text-white";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "text-rose-700 border-rose-700 bg-rose-50 hover:bg-rose-700 hover:text-white";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "text-indigo-700 border-indigo-700 bg-indigo-50 hover:bg-indigo-700 hover:text-white";
+  }
+  return "text-gray-700 border-gray-700 bg-gray-50 hover:bg-gray-700 hover:text-white";
+};
+
 export const formatGradeLevel = (gradeLevel: string | null | undefined): string => {
   if (!gradeLevel) return "";
   return gradeLevel.replace(/Grade\s+/i, "G");

@@ -16,6 +16,12 @@ export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
 
   if (!student) return null;
 
+  const sortedHistory = student.academicHistory
+    ? [...student.academicHistory].sort((a: AcademicHistory, b: AcademicHistory) => {
+        return (b.school_year || "").localeCompare(a.school_year || "");
+      })
+    : [];
+
   return (
     <div className="space-y-6">
       {/* Previous School */}
@@ -28,13 +34,13 @@ export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
           Official School Form 9 (SF9) - Historical Academic Records
         </div>
         <div className="text-base leading-tight bg-muted/10 p-4">
-          {student.academicHistory && student.academicHistory.length > 0 ? (
+          {sortedHistory.length > 0 ? (
             <div className="flex flex-col gap-4">
-              {student.academicHistory.map((history: AcademicHistory, idx: number) => (
+              {sortedHistory.map((history: AcademicHistory, idx: number) => (
                 <AcademicHistoryAccordion
                   key={idx}
                   history={history}
-                  isDefaultOpen={targetYear ? (history.school_year === targetYear || history.school_year.includes(targetYear) || targetYear.includes(history.school_year)) : idx === 0}
+                  isDefaultOpen={idx === 0}
                 />
               ))}
             </div>
