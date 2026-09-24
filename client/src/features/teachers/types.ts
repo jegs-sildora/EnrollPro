@@ -57,6 +57,7 @@ export interface Teacher {
     lastLoginAt: string | null;
     mustChangePassword: boolean;
     roles?: string[];
+    accessExpirationDate?: string | null;
   } | null;
 }
 

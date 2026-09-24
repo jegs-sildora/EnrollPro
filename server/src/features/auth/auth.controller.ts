@@ -10,6 +10,7 @@ import {
 } from "./default-password.service.js";
 import type { Role } from "@enrollpro/shared";
 import { normalizeApplicationRoles } from "./application-role.service.js";
+import { blockExpiredContractAccess } from "./access-expiration.service.js";
 
 export type AuthUser = {
   id: number;
@@ -23,6 +24,7 @@ export type AuthUser = {
   mustChangePassword: boolean;
   isActive: boolean;
   lastLoginAt: Date | null;
+  accessExpirationDate?: Date | null;
 };
 
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
@@ -375,12 +377,18 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const ancillaryRoles = await getAncillaryRoles(user.id);
+  if (!passwordValid) {
+    res.status(401).json({ message: "Invalid employee ID or password" });
+    return;
+  }
 
-  const authUser: AuthUser = {
-    ...user,
-    ancillaryRoles
-  };
+  if (await blockExpiredContractAccess(user)) {
+    res.status(401).json({
+      code: "CONTRACT_ACCESS_EXPIRED",
+      message: "Your contract access has expired",
+    });
+    return;
+  }
 
   if (!user.isActive) {
     res.status(401).json({
@@ -390,10 +398,12 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  if (!passwordValid) {
-    res.status(401).json({ message: "Invalid employee ID or password" });
-    return;
-  }
+  const ancillaryRoles = await getAncillaryRoles(user.id);
+
+  const authUser: AuthUser = {
+    ...user,
+    ancillaryRoles
+  };
 
   const now = new Date();
   const updatedUser = await prisma.user.update({
@@ -645,14 +655,23 @@ export async function verifyCredentials(
       return;
     }
 
-    if (!user.isActive) {
-      res.status(401).json({ valid: false, message: "Account is inactive" });
-      return;
-    }
-
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       res.status(401).json({ valid: false, message: "Invalid password" });
+      return;
+    }
+
+    if (await blockExpiredContractAccess(user)) {
+      res.status(401).json({
+        valid: false,
+        code: "CONTRACT_ACCESS_EXPIRED",
+        message: "Your contract access has expired",
+      });
+      return;
+    }
+
+    if (!user.isActive) {
+      res.status(401).json({ valid: false, message: "Account is inactive" });
       return;
     }
 

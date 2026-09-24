@@ -51,6 +51,7 @@ export interface DataTableProps<TData, TValue> {
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
   virtualize?: boolean;
+  manualSorting?: boolean;
   estimatedRowHeight?: number;
   containerHeight?: string;
   rowSelection?: Record<string, boolean>;
@@ -206,6 +207,7 @@ export function DataTable<TData, TValue>({
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
   virtualize = true,
+    manualSorting,
   estimatedRowHeight = 45,
   containerHeight = "65vh",
   rowSelection: externalRowSelection,
@@ -246,6 +248,7 @@ export function DataTable<TData, TValue>({
     getRowId,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+      manualSorting,
     onSortingChange: externalOnSortingChange ?? setInternalSorting,
     onRowSelectionChange:
       externalOnRowSelectionChange ?? setInternalRowSelection,

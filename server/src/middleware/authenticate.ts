@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { getAuditContext } from "../lib/context.js";
+import { blockExpiredContractAccess } from "../features/auth/access-expiration.service.js";
 
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
 
@@ -100,8 +101,16 @@ async function performAuth(
   try {
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { isActive: true },
+      select: { id: true, isActive: true, accessExpirationDate: true },
     });
+
+    if (user && await blockExpiredContractAccess(user)) {
+      res.status(401).json({
+        code: "CONTRACT_ACCESS_EXPIRED",
+        message: "Your contract access has expired",
+      });
+      return;
+    }
 
     if (!user || !user.isActive) {
       res.status(401).json({
@@ -172,8 +181,15 @@ export async function optionalAuthenticate(
 
   const user = await prisma.user.findUnique({
     where: { id: decoded.userId },
-    select: { isActive: true },
+    select: { id: true, isActive: true, accessExpirationDate: true },
   })
+  if (user && await blockExpiredContractAccess(user)) {
+    res.status(401).json({
+      code: "CONTRACT_ACCESS_EXPIRED",
+      message: "Your contract access has expired",
+    })
+    return
+  }
   if (!user?.isActive) {
     res.status(401).json({
       code: "ACCOUNT_INACTIVE",
@@ -224,8 +240,16 @@ export function authenticateFromCookies(
       try {
         const user = await prisma.user.findUnique({
           where: { id: decoded.userId },
-          select: { isActive: true },
+          select: { id: true, isActive: true, accessExpirationDate: true },
         });
+
+        if (user && await blockExpiredContractAccess(user)) {
+          res.status(401).json({
+            code: "CONTRACT_ACCESS_EXPIRED",
+            message: "Your contract access has expired",
+          });
+          return;
+        }
 
         if (!user || !user.isActive) {
           continue;

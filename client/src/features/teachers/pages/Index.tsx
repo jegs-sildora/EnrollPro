@@ -540,6 +540,13 @@ export default function Teachers() {
     }
 
     sorted.sort((a, b) => {
+      // Always push inactive/on leave personnel to the bottom
+      const isActiveA = a.isActive ?? (a.serviceStatus === "ACTIVE" || !a.serviceStatus);
+      const isActiveB = b.isActive ?? (b.serviceStatus === "ACTIVE" || !b.serviceStatus);
+
+      if (isActiveA && !isActiveB) return -1;
+      if (!isActiveA && isActiveB) return 1;
+
       let valA = "";
       let valB = "";
 
@@ -1185,6 +1192,7 @@ export default function Teachers() {
             containerHeight="100%"
             sorting={sorting}
             onSortingChange={onSortingChange}
+            manualSorting={true}
             getRowClassName={() => "group"}
           />
         </div>

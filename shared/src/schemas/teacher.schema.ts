@@ -97,8 +97,11 @@ export const teacherSchemaBase = z
       .optional()
       .nullable(),
     employeeId: z
-      .string()
-      .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits"),
+      .preprocess(
+        (value) => value === "" || value === undefined ? null : value,
+        z.string().regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits").nullable(),
+      )
+      .optional(),
     contactNumber: z.string().regex(/^09\d{2}-\d{3}-\d{4}$/, "Enter an 11-digit mobile number in the format 09XX-XXX-XXXX."),
     specialization: z
       .preprocess(
@@ -177,7 +180,19 @@ export const teacherSchemaBase = z
         z.union([teacherDepartmentSchema, z.null()]),
       )
       .optional(),
+    departments: z.array(teacherDepartmentSchema).optional().default([]),
     plantillaPosition: optionalUpperText.optional(),
+    ancillaryRoles: z
+      .array(
+        z.string().trim().min(1).transform((value) => value.normalize("NFC").toUpperCase()),
+      )
+      .optional()
+      .default([]),
+    accessExpirationDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Access expiration date must be in YYYY-MM-DD format")
+      .optional()
+      .nullable(),
   })
   .strict();
 

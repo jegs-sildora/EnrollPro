@@ -814,7 +814,7 @@ interface MrfLearnerIdentity {
 
 interface MrfTeacherIdentity {
   teacherId: number;
-  employeeId: string;
+  employeeId: string | null;
   firstName: string;
   lastName: string;
   middleName: string | null;

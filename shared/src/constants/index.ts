@@ -686,6 +686,8 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "ADMINISTRATIVE ASSISTANT II PROPERTY CUSTODIAN",
   "LGU CONTRACTUAL UTILITY WORKER",
   "LOCAL SCHOOL BOARD CONTRACTUAL",
+  "SUBSTITUTE TEACHER",
+  "LGU HIRE",
 ] as const;
 
 export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
@@ -722,6 +724,8 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
   { value: "ADMINISTRATIVE ASSISTANT II PROPERTY CUSTODIAN", label: "Administrative Assistant II Property Custodian" },
   { value: "LGU CONTRACTUAL UTILITY WORKER", label: "LGU Contractual Utility Worker" },
   { value: "LOCAL SCHOOL BOARD CONTRACTUAL", label: "Local School Board Contractual" },
+  { value: "SUBSTITUTE TEACHER", label: "Substitute Teacher" },
+  { value: "LGU HIRE", label: "LGU Hire" },
 ] as const;
 
 export const ADMIN_STAFF_POOL = [
@@ -751,6 +755,8 @@ export const TEACHING_POOL = [
   "HEAD TEACHER V",
   "HEAD TEACHER VI",
   "TEACHER IN CHARGE",
+  "SUBSTITUTE TEACHER",
+  "LGU HIRE",
 ] as const;
 export const EXECUTIVE_POOL = [
   "ASSISTANT PRINCIPAL I",
@@ -873,7 +879,7 @@ export const TEACHER_NATURE_OF_APPOINTMENT_OPTIONS = [
   { value: "REGULAR_PERMANENT", label: "Regular / Permanent" },
   { value: "PROVISIONAL", label: "Provisional" },
   { value: "SUBSTITUTE", label: "Substitute" },
-  { value: "CONTRACTUAL", label: "Contractual" },
+  { value: "CONTRACTUAL", label: "Contractual (Local School Board)" },
   { value: "VOLUNTEER", label: "Volunteer" },
   { value: "LOCAL_SCHOOL_BOARD", label: "Local School Board" },
   { value: "OTHER", label: "Other Appointment" },
@@ -890,7 +896,7 @@ export const TEACHER_FUNDING_SOURCE_VALUES = [
 
 export const TEACHER_FUNDING_SOURCE_OPTIONS = [
   { value: "NATIONAL", label: "National" },
-  { value: "SPECIAL_EDUCATION_FUND", label: "Special Education Fund (SEF)" },
+  { value: "SPECIAL_EDUCATION_FUND", label: "Local / SEF" },
   { value: "LOCAL_SCHOOL_BOARD", label: "Local School Board" },
   { value: "PTA", label: "PTA" },
   { value: "NGO", label: "NGO" },

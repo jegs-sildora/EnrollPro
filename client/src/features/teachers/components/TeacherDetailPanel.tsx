@@ -6,23 +6,18 @@ import { zodResolver } from "@/shared/lib/zodResolver";
 import {
   Briefcase,
   GraduationCap,
-  RefreshCw,
   User as UserIcon,
   UserRoundPen,
   Smartphone,
   Mars,
   Venus,
   ShieldAlert,
-  Clock,
-  Plus,
-  Trash2,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/shared/ui/dialog";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -50,11 +45,10 @@ import type {
   TeacherFundingSource,
   TeacherNatureOfAppointment,
 } from "../types";
-import { formatAdvisorySectionSummary, formatTeacherName, toSentenceCase } from "../utils";
+import { formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
@@ -90,6 +84,22 @@ interface ApiErrorResponse {
   };
 }
 
+const TEMPORARY_APPOINTMENT_VALUES = new Set<TeacherNatureOfAppointment>([
+  "SUBSTITUTE",
+  "CONTRACTUAL",
+  "LOCAL_SCHOOL_BOARD",
+]);
+
+const TEMPORARY_PLANTILLA_OPTIONS = [
+  { value: "SUBSTITUTE TEACHER", label: "Substitute Teacher" },
+  { value: "LGU HIRE", label: "LGU Hire" },
+] as const;
+
+function isTemporaryAppointment(
+  value: TeacherNatureOfAppointment | null | undefined,
+): boolean {
+  return value ? TEMPORARY_APPOINTMENT_VALUES.has(value) : false;
+}
 
 
 const formSchema = z
@@ -102,11 +112,7 @@ const formSchema = z
     birthdate: z.string().min(1, "Select the date of birth.").nullable(),
 
     personnelType: z.enum(["TEACHING", "NON_TEACHING"]).nullable(),
-    employeeId: z
-      .string()
-      .trim()
-      .regex(/^\d{7}$/, "Enter the 7-digit DepEd Employee ID.")
-      .nullable(),
+    employeeId: z.string().trim().optional().nullable(),
     plantillaPosition: z.string().min(1, "Select the DepEd position (plantilla)."),
     departments: z.array(z.string()).default([]),
     functionalAssignment: z.string().optional().nullable(),
@@ -153,11 +159,37 @@ const formSchema = z
     serviceEffectiveDate: z.string().optional().nullable(),
     serviceRemarks: z.string().optional().nullable(),
     portalActive: z.boolean().optional(),
+    accessExpirationDate: z.string().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     const isMRF = data.roles.includes("MRF");
     const isTeacherRole = data.roles.includes("TEACHER") || data.roles.includes("CLASS_ADVISER");
     const shouldRequireSF7 = !(isMRF && !isTeacherRole);
+    const isTemporary = isTemporaryAppointment(data.natureOfAppointment);
+
+    if (!isTemporary && !data.employeeId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter the 7-digit DepEd Employee ID.",
+        path: ["employeeId"],
+      });
+    }
+
+    if (data.employeeId && !/^\d{7}$/.test(data.employeeId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter the 7-digit DepEd Employee ID.",
+        path: ["employeeId"],
+      });
+    }
+
+    if (isTemporary && !data.accessExpirationDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select the contract end date.",
+        path: ["accessExpirationDate"],
+      });
+    }
 
     if (shouldRequireSF7) {
       if (!data.undergraduateDegree || data.undergraduateDegree.trim().length === 0) {
@@ -195,6 +227,17 @@ function formatDateInput(value: string | null | undefined): string {
   return value ? new Date(value).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
 }
 
+function formatManilaDateInput(value: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+  return `${values.get("year")}-${values.get("month")}-${values.get("day")}`;
+}
+
 function getApiErrorMessage(error: unknown, fallback: string): string {
   if (!error || typeof error !== "object") {
     return fallback;
@@ -217,8 +260,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     storageKey: "teacher-detail-modal",
   });
   const { confirmOrRun } = useUnsavedChangesPrompt();
-  const { ayId } = useSchoolYearContext();
-
   const _isTeachingStaff = useMemo(() => {
     return teacher?.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
   }, [teacher]);
@@ -301,6 +342,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       serviceEffectiveDate: new Date().toISOString().slice(0, 10),
       serviceRemarks: "",
       portalActive: true,
+      accessExpirationDate: null,
     },
   });
 
@@ -319,6 +361,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   }, [isFormTeachingStaff, setValue]);
 
   const formPlantillaPosition = watch("plantillaPosition");
+  const formNatureOfAppointment = watch("natureOfAppointment");
+  const isTemporaryPersonnel = isTemporaryAppointment(formNatureOfAppointment);
+  const formAccessExpirationDate = watch("accessExpirationDate");
   const formServiceStatus = watch("serviceStatus");
   const formFirstName = watch("firstName");
   const formLastName = watch("lastName");
@@ -360,6 +405,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
         serviceRemarks: serviceMetadata.serviceRemarks || "",
         portalActive: teacher.userAccount?.isActive ?? teacher.isActive ?? true,
+        accessExpirationDate: teacher.userAccount?.accessExpirationDate
+          ? formatManilaDateInput(teacher.userAccount.accessExpirationDate)
+          : null,
       });
     } else {
       reset({
@@ -389,6 +437,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         serviceEffectiveDate: new Date().toISOString().slice(0, 10),
         serviceRemarks: "",
         portalActive: true,
+        accessExpirationDate: null,
       });
     }
   }, [teacher, reset, open]);
@@ -409,15 +458,31 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     return getDesignationPool(formRoles);
   }, [formRoles]);
 
+  const plantillaOptions = useMemo(() => {
+    const baseOptions = designationPool.length > 0
+      ? designationPool.map((option) => ({ value: option, label: option }))
+      : [...DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS];
+    const options = new Map(baseOptions.map((option) => [option.value, option]));
+    TEMPORARY_PLANTILLA_OPTIONS.forEach((option) => options.set(option.value, option));
+    return Array.from(options.values());
+  }, [designationPool]);
+
   useEffect(() => {
     if (
       formPlantillaPosition &&
       designationPool.length > 0 &&
-      !designationPool.includes(formPlantillaPosition)
+      !designationPool.includes(formPlantillaPosition) &&
+      !TEMPORARY_PLANTILLA_OPTIONS.some((option) => option.value === formPlantillaPosition)
     ) {
       setValue("plantillaPosition", "", { shouldDirty: true });
     }
   }, [formRoles, formPlantillaPosition, designationPool, setValue]);
+
+  useEffect(() => {
+    if (!isTemporaryPersonnel && formAccessExpirationDate) {
+      setValue("accessExpirationDate", null, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [formAccessExpirationDate, isTemporaryPersonnel, setValue]);
 
   const discardProfileChanges = useCallback(() => {
     reset();
@@ -472,6 +537,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         serviceStatus: data.serviceStatus,
         serviceEffectiveDate: data.serviceEffectiveDate,
         serviceRemarks: data.serviceRemarks,
+        accessExpirationDate: isTemporaryAppointment(data.natureOfAppointment)
+          ? data.accessExpirationDate
+          : null,
       };
 
       if (isAdding) {
@@ -1115,7 +1183,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       <div className="px-5 pb-5 pt-4 space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">DepEd Employee ID <span className="text-destructive">*</span></Label>
+                            <Label className="text-base font-bold uppercase text-foreground">
+                              DepEd Employee ID {!isTemporaryPersonnel && <span className="text-destructive">*</span>}
+                            </Label>
                             <Controller
                               name="employeeId"
                               control={control}
@@ -1134,6 +1204,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               )}
                             />
                             <AnimatedError error={errors.employeeId?.message as string || errors.employeeId as unknown as string} />
+                            {isTemporaryPersonnel && (
+                              <p className="text-sm text-foreground">
+                                Optional for Substitute/LSB personnel.
+                              </p>
+                            )}
                           </div>
 
                           <div className="space-y-1.5">
@@ -1143,11 +1218,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               control={control}
                               render={({ field }) => (
                                 <SearchableCombobox
-                                  items={[
-                                    ...(designationPool.length > 0
-                                      ? designationPool.map(opt => ({ value: opt, label: opt }))
-                                      : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
-                                  ]}
+                                  items={plantillaOptions}
                                   value={field.value || ""}
                                   onChange={(value) => field.onChange(value)}
                                   disabled={!isEditing}
@@ -1469,6 +1540,34 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               )}
                             />
                           </div>
+
+                          {isTemporaryPersonnel && (
+                            <div className="space-y-1.5 pt-2">
+                              <Label className="text-base font-bold uppercase text-foreground">
+                                Contract End Date / Access Expiration <span className="text-destructive">*</span>
+                              </Label>
+                              <Controller
+                                name="accessExpirationDate"
+                                control={control}
+                                render={({ field }) => (
+                                  <HybridDatePicker
+                                    disabled={!isEditing}
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    minDate={new Date()}
+                                    className={cn(
+                                      "h-11 font-bold text-base leading-tight",
+                                      errors.accessExpirationDate && "border-destructive focus-visible:ring-destructive",
+                                    )}
+                                  />
+                                )}
+                              />
+                              <p className="text-sm text-foreground">
+                                Portal access will automatically be blocked at midnight on this date.
+                              </p>
+                              <AnimatedError error={errors.accessExpirationDate?.message as string} />
+                            </div>
+                          )}
 
                           <div className="space-y-2 pt-2">
                             <Label className="text-base font-bold uppercase text-foreground">

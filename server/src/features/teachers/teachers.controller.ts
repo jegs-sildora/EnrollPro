@@ -61,6 +61,25 @@ function parseDateOnly(val: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+const TEMPORARY_APPOINTMENT_VALUES = new Set([
+  "SUBSTITUTE",
+  "CONTRACTUAL",
+  "LOCAL_SCHOOL_BOARD",
+]);
+
+function isTemporaryAppointment(value: unknown): boolean {
+  return typeof value === "string" && TEMPORARY_APPOINTMENT_VALUES.has(value);
+}
+
+function parseAccessExpirationDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const expiration = new Date(`${value}T00:00:00+08:00`);
+  return Number.isNaN(expiration.getTime()) ? null : expiration;
+}
+
 const WEEKDAY_ORDER: Record<string, number> = {
   MONDAY: 1,
   TUESDAY: 2,
@@ -199,6 +218,7 @@ export async function index(req: Request, res: Response) {
             lastLoginAt: true,
             mustChangePassword: true,
             roles: true,
+            accessExpirationDate: true,
           },
         },
         teacherDesignations: {
@@ -255,6 +275,9 @@ export async function index(req: Request, res: Response) {
               : null,
             mustChangePassword: teacher.user.mustChangePassword,
             roles: teacher.user.roles,
+            accessExpirationDate: teacher.user.accessExpirationDate
+              ? teacher.user.accessExpirationDate.toISOString()
+              : null,
           }
           : null,
         designation: designation
@@ -337,31 +360,6 @@ export async function show(req: Request, res: Response) {
   }
 }
 
-interface TeacherUpsertPayload {
-  firstName: string;
-  lastName: string;
-  middleName?: string | null;
-  suffix?: string | null;
-  email: string;
-  employeeId: string;
-  contactNumber?: string | null;
-  sex: "MALE" | "FEMALE";
-  specialization?: string | null;
-  departments?: string[];
-  plantillaPosition?: string | null;
-  birthdate?: string | null;
-  personnelType?: string | null;
-  functionalAssignment?: string | null;
-  undergraduateDegree?: string | null;
-  postgraduateDegree?: string | null;
-  majorSpecialization?: string | null;
-  minorSpecialization?: string | null;
-  indigenousCommunity?: string | null;
-  natureOfAppointment?: string | null;
-  fundingSource?: string | null;
-  ancillaryRoles?: string[];
-}
-
 export async function store(req: Request, res: Response) {
   try {
     const {
@@ -388,6 +386,7 @@ export async function store(req: Request, res: Response) {
       fundingSource,
       password,
       portalActive,
+      accessExpirationDate,
       roles,
       serviceStatus,
       serviceEffectiveDate,
@@ -397,18 +396,35 @@ export async function store(req: Request, res: Response) {
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
     const normalizedLastName = normalizeRequiredUpperText(lastName);
-    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
+    const normalizedEmployeeId = normalizeOptionalUpperText(employeeId);
     const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
+    const isTemporary = isTemporaryAppointment(natureOfAppointment);
+    const parsedAccessExpirationDate = isTemporary
+      ? parseAccessExpirationDate(accessExpirationDate)
+      : null;
 
-    if (
-      !normalizedFirstName ||
-      !normalizedLastName ||
-      !normalizedEmployeeId
-    ) {
+    if (!normalizedFirstName || !normalizedLastName) {
       return res.status(400).json({
-        message:
-          "First name, last name, and employee ID are required",
+        message: "First name and last name are required",
+      });
+    }
+
+    if (!isTemporary && !normalizedEmployeeId) {
+      return res.status(400).json({
+        message: "Employee ID is required for regular personnel",
+      });
+    }
+
+    if (normalizedEmployeeId && !/^\d{7}$/.test(normalizedEmployeeId)) {
+      return res.status(400).json({
+        message: "Employee ID must be exactly 7 numeric digits",
+      });
+    }
+
+    if (isTemporary && !parsedAccessExpirationDate) {
+      return res.status(400).json({
+        message: "Contract end date / access expiration is required for temporary personnel",
       });
     }
 
@@ -424,10 +440,12 @@ export async function store(req: Request, res: Response) {
       const defaultPasswordHash = await bcrypt.hash(password || "DepEd2026!", 10);
 
       // 1. Create/Upsert the User record for system login
-      const existingUser = await tx.user.findUnique({
-        where: { employeeId: normalizedEmployeeId },
-        select: { id: true, roles: true },
-      });
+      const existingUser = normalizedEmployeeId
+        ? await tx.user.findUnique({
+          where: { employeeId: normalizedEmployeeId },
+          select: { id: true, roles: true },
+        })
+        : null;
 
       if (existingUser && existingUser.roles.includes("SYSTEM_ADMIN")) {
         throw new Error(
@@ -435,34 +453,43 @@ export async function store(req: Request, res: Response) {
         );
       }
 
-      const upsertedUser = await tx.user.upsert({
-        where: { employeeId: normalizedEmployeeId },
-        update: {
-          firstName: normalizedFirstName,
-          lastName: normalizedLastName,
-          middleName: normalizeOptionalUpperText(middleName),
-          suffix: normalizeOptionalUpperText(suffix),
-          email: normalizedEmail,
-          sex: sex === "MALE" ? "MALE" : "FEMALE",
-          designation: "SUBJECT TEACHER",
-          isActive: portalActive !== undefined ? portalActive : true,
-        },
-        create: {
-          firstName: normalizedFirstName,
-          lastName: normalizedLastName,
-          middleName: normalizeOptionalUpperText(middleName),
-          email: normalizedEmail,
-          employeeId: normalizedEmployeeId,
-          accountName: normalizedEmployeeId,
-          password: defaultPasswordHash,
-          roles: roles && roles.length > 0 ? roles : ["TEACHER"],
-          sex: sex === "MALE" ? "MALE" : "FEMALE",
-          isActive: portalActive !== undefined ? portalActive : (serviceStatus === "ACTIVE"),
-          designation: "SUBJECT TEACHER",
-          mustChangePassword: true,
-        },
-        select: { id: true },
-      });
+      const userData = {
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        middleName: normalizeOptionalUpperText(middleName),
+        suffix: normalizeOptionalUpperText(suffix),
+        email: normalizedEmail,
+        employeeId: normalizedEmployeeId,
+        sex: sex === "MALE" ? "MALE" as const : "FEMALE" as const,
+        designation: "SUBJECT TEACHER",
+        isActive: portalActive !== undefined
+          ? portalActive
+          : serviceStatus
+            ? serviceStatus === "ACTIVE"
+            : true,
+        accessExpirationDate: parsedAccessExpirationDate,
+      };
+
+      const upsertedUser = existingUser
+        ? await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            ...userData,
+            ...(normalizedEmployeeId ? { accountName: normalizedEmployeeId } : {}),
+            ...(roles && roles.length > 0 ? { roles } : {}),
+          },
+          select: { id: true },
+        })
+        : await tx.user.create({
+          data: {
+            ...userData,
+            accountName: normalizedEmployeeId,
+            password: defaultPasswordHash,
+            roles: roles && roles.length > 0 ? roles : ["TEACHER"],
+            mustChangePassword: true,
+          },
+          select: { id: true },
+        });
 
       // 2. Create the Teacher profile linked to the User
       const t = await tx.teacher.create({
@@ -487,6 +514,8 @@ export async function store(req: Request, res: Response) {
           majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
           minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
+          serviceEffectiveDate: parseDateOnly(serviceEffectiveDate),
+          serviceRemarks: serviceRemarks || null,
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
           ...(serviceStatus ? { serviceStatus } : {}),
@@ -572,6 +601,7 @@ export async function update(req: Request, res: Response) {
       indigenousCommunity,
       natureOfAppointment,
       fundingSource,
+      accessExpirationDate,
       ancillaryRoles,
     } = req.body;
 
@@ -582,18 +612,35 @@ export async function update(req: Request, res: Response) {
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
     const normalizedLastName = normalizeRequiredUpperText(lastName);
-    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
+    const normalizedEmployeeId = normalizeOptionalUpperText(employeeId);
     const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
+    const isTemporary = isTemporaryAppointment(natureOfAppointment);
+    const parsedAccessExpirationDate = isTemporary
+      ? parseAccessExpirationDate(accessExpirationDate)
+      : null;
 
-    if (
-      !normalizedFirstName ||
-      !normalizedLastName ||
-      !normalizedEmployeeId
-    ) {
+    if (!normalizedFirstName || !normalizedLastName) {
       return res.status(400).json({
-        message:
-          "First name, last name, and employee ID are required",
+        message: "First name and last name are required",
+      });
+    }
+
+    if (!isTemporary && !normalizedEmployeeId) {
+      return res.status(400).json({
+        message: "Employee ID is required for regular personnel",
+      });
+    }
+
+    if (normalizedEmployeeId && !/^\d{7}$/.test(normalizedEmployeeId)) {
+      return res.status(400).json({
+        message: "Employee ID must be exactly 7 numeric digits",
+      });
+    }
+
+    if (isTemporary && !parsedAccessExpirationDate) {
+      return res.status(400).json({
+        message: "Contract end date / access expiration is required for temporary personnel",
       });
     }
 
@@ -607,9 +654,16 @@ export async function update(req: Request, res: Response) {
 
     const updatedTeacher = await prisma.$transaction(async (tx) => {
       // 1. Update the User record if it exists (linked by employeeId)
-      await tx.user.updateMany({
-        where: { employeeId: existing.employeeId },
-        data: {
+      const linkedUserWhere = existing.userId
+        ? { id: existing.userId }
+        : existing.employeeId
+          ? { employeeId: existing.employeeId }
+          : null;
+
+      if (linkedUserWhere) {
+        await tx.user.updateMany({
+          where: linkedUserWhere,
+          data: {
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
@@ -617,10 +671,12 @@ export async function update(req: Request, res: Response) {
           email: normalizedEmail,
           sex: req.body.sex === "MALE" ? "MALE" : "FEMALE",
           employeeId: normalizedEmployeeId,
+          accessExpirationDate: parsedAccessExpirationDate,
           ...(roles ? { roles } : {}),
           ...(serviceStatus ? { isActive: serviceStatus === "ACTIVE" } : {}),
-        },
-      });
+          },
+        });
+      }
 
       // 2. Update the Teacher profile
       const t = await tx.teacher.update({
@@ -646,6 +702,8 @@ export async function update(req: Request, res: Response) {
           majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
           minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
+          serviceEffectiveDate: parseDateOnly(serviceEffectiveDate),
+          serviceRemarks: serviceRemarks || null,
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
         },
@@ -672,7 +730,7 @@ export async function update(req: Request, res: Response) {
 
       // Sync subjects
       // Backfill userId link if missing (for teachers created before the migration)
-      if (!t.userId) {
+      if (!t.userId && normalizedEmployeeId) {
         const linkedUser = await tx.user.findFirst({
           where: { employeeId: normalizedEmployeeId },
           select: { id: true },
@@ -826,10 +884,17 @@ export async function deactivate(req: Request, res: Response) {
 
     const teacher = await prisma.$transaction(async (tx) => {
       // 1. Deactivate the User record
-      await tx.user.updateMany({
-        where: { employeeId: existing.employeeId },
-        data: { isActive: false },
-      });
+      if (existing.userId) {
+        await tx.user.update({
+          where: { id: existing.userId },
+          data: { isActive: false },
+        });
+      } else if (existing.employeeId) {
+        await tx.user.updateMany({
+          where: { employeeId: existing.employeeId },
+          data: { isActive: false },
+        });
+      }
 
       // 2. Deactivate the Teacher profile
       return await tx.teacher.update({
@@ -870,10 +935,17 @@ export async function reactivate(req: Request, res: Response) {
 
     const teacher = await prisma.$transaction(async (tx) => {
       // 1. Reactivate the User record
-      await tx.user.updateMany({
-        where: { employeeId: existing.employeeId },
-        data: { isActive: true },
-      });
+      if (existing.userId) {
+        await tx.user.update({
+          where: { id: existing.userId },
+          data: { isActive: true },
+        });
+      } else if (existing.employeeId) {
+        await tx.user.updateMany({
+          where: { employeeId: existing.employeeId },
+          data: { isActive: true },
+        });
+      }
 
       // 2. Reactivate the Teacher profile
       return await tx.teacher.update({
@@ -925,10 +997,17 @@ export async function updateServiceStatus(req: Request, res: Response) {
     const isActive = status === "ACTIVE";
 
     const teacher = await prisma.$transaction(async (tx) => {
-      await tx.user.updateMany({
-        where: { employeeId: existing.employeeId },
-        data: { isActive },
-      });
+      if (existing.userId) {
+        await tx.user.update({
+          where: { id: existing.userId },
+          data: { isActive },
+        });
+      } else if (existing.employeeId) {
+        await tx.user.updateMany({
+          where: { employeeId: existing.employeeId },
+          data: { isActive },
+        });
+      }
 
       return await tx.teacher.update({
         where: { id },
@@ -1278,31 +1357,37 @@ export async function resetPassword(req: Request, res: Response) {
 
     let userId = teacher.userId;
     if (!userId) {
-      const email = teacher.email || `${teacher.employeeId}@noemail.deped.local`;
-      const upsertedUser = await prisma.user.upsert({
-        where: { employeeId: teacher.employeeId },
-        update: {
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          middleName: teacher.middleName,
-          email,
-          sex: teacher.sex,
-          isActive: true,
-        },
-        create: {
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          middleName: teacher.middleName,
-          email,
-          employeeId: teacher.employeeId,
-          accountName: teacher.employeeId,
-          password: hashedPassword,
-          roles: [Role.TEACHER],
-          sex: teacher.sex,
-          isActive: true,
-          mustChangePassword: true,
-        },
-      });
+      const userData = {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        middleName: teacher.middleName,
+        email: teacher.email,
+        sex: teacher.sex,
+        isActive: true,
+      };
+      const upsertedUser = teacher.employeeId
+        ? await prisma.user.upsert({
+          where: { employeeId: teacher.employeeId },
+          update: userData,
+          create: {
+            ...userData,
+            employeeId: teacher.employeeId,
+            accountName: teacher.employeeId,
+            password: hashedPassword,
+            roles: [Role.TEACHER],
+            mustChangePassword: true,
+          },
+        })
+        : await prisma.user.create({
+          data: {
+            ...userData,
+            employeeId: null,
+            accountName: null,
+            password: hashedPassword,
+            roles: [Role.TEACHER],
+            mustChangePassword: true,
+          },
+        });
       userId = upsertedUser.id;
       await prisma.teacher.update({ where: { id }, data: { userId } });
     }
@@ -1347,31 +1432,37 @@ export async function togglePortalAccess(req: Request, res: Response) {
     let userId = teacher.userId;
     if (!userId) {
       const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
-      const email = teacher.email || `${teacher.employeeId}@noemail.deped.local`;
-      const upsertedUser = await prisma.user.upsert({
-        where: { employeeId: teacher.employeeId },
-        update: {
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          middleName: teacher.middleName,
-          email,
-          sex: teacher.sex,
-          isActive,
-        },
-        create: {
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          middleName: teacher.middleName,
-          email,
-          employeeId: teacher.employeeId,
-          accountName: teacher.employeeId,
-          password: defaultPasswordHash,
-          roles: [Role.TEACHER],
-          sex: teacher.sex,
-          isActive,
-          mustChangePassword: true,
-        },
-      });
+      const userData = {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        middleName: teacher.middleName,
+        email: teacher.email,
+        sex: teacher.sex,
+        isActive,
+      };
+      const upsertedUser = teacher.employeeId
+        ? await prisma.user.upsert({
+          where: { employeeId: teacher.employeeId },
+          update: userData,
+          create: {
+            ...userData,
+            employeeId: teacher.employeeId,
+            accountName: teacher.employeeId,
+            password: defaultPasswordHash,
+            roles: [Role.TEACHER],
+            mustChangePassword: true,
+          },
+        })
+        : await prisma.user.create({
+          data: {
+            ...userData,
+            employeeId: null,
+            accountName: null,
+            password: defaultPasswordHash,
+            roles: [Role.TEACHER],
+            mustChangePassword: true,
+          },
+        });
       userId = upsertedUser.id;
       await prisma.teacher.update({ where: { id }, data: { userId } });
     } else {

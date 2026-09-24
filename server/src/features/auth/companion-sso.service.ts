@@ -63,7 +63,7 @@ interface SsoUser {
     status: string;
   } | null;
   teacherProfile: {
-    employeeId: string;
+    employeeId: string | null;
   } | null;
 }
 
