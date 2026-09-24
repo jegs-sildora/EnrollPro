@@ -11,6 +11,7 @@ export const learnerLoginSchema = z.object({
 });
 
 export const learnerSetupPasswordSchema = z.object({
+  currentPassword: z.string().optional(),
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 

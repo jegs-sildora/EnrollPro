@@ -26,6 +26,7 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
+import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -1749,27 +1750,13 @@ export function VerificationWorkspace() {
         onConfirm={() => deleteMutation.mutate()}
       />
 
-      <Dialog
-        open={viewStudentId !== null}
-        onOpenChange={(open) => !open && setViewStudentId(null)}>
-        <DialogContent showClose={false}
-          aria-describedby={undefined}
-          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
-          {viewStudentId ? (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <StudentDetailPanel
-                id={viewStudentId}
-                onClose={() => setViewStudentId(null)}
-                hideEnrollmentInfo={true}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {viewStudentId !== null && (
+        <StudentDetailModal
+          id={viewStudentId}
+          onClose={() => setViewStudentId(null)}
+          hideEnrollmentInfo={true}
+        />
+      )}
 
       <ConfirmationModal
         open={restoreModalOpen}

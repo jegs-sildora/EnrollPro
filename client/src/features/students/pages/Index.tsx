@@ -90,6 +90,7 @@ import {
   type StudentDropoutPayload,
   type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
+import { StudentDetailModal } from "../components/StudentDetailModal";
 import {
   Popover,
   PopoverContent,
@@ -1823,33 +1824,16 @@ export default function Students() {
       </Tabs>
 
       {/* Student Detail Panel */}
-      <Dialog
-        open={selectedStudentId !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            confirmOrRun(() => setSelectedStudentId(null));
-          }
-        }}>
-        <DialogContent
-          showClose={false}
-          aria-describedby={undefined}
-          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
-          {selectedStudentId !== null && (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <StudentDetailPanel
-                id={selectedStudentId}
-                schoolYearId={ayId}
-                onClose={() => setSelectedStudentId(null)}
-                onRefreshData={refreshTables}
-                onTransferOut={handlePanelTransferOut}
-                onDropout={handlePanelDropout}
-                onExpand={(identifier) => navigate(`/learner/${identifier ?? selectedStudentId}`)}
-                canEditProfile={false}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StudentDetailModal
+        id={selectedStudentId}
+        schoolYearId={ayId}
+        onClose={() => setSelectedStudentId(null)}
+        onRefreshData={refreshTables}
+        onTransferOut={handlePanelTransferOut}
+        onDropout={handlePanelDropout}
+        onExpand={(identifier) => navigate(`/learner/${identifier ?? selectedStudentId}`)}
+        canEditProfile={false}
+      />
 
       <Dialog
         open={showTransferOutDialog}

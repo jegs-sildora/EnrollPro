@@ -11,16 +11,19 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from "@/shared/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
+import { X } from "lucide-react";
+import { cn, getGradeLevelSolidBgStyles } from "@/shared/lib/utils";
 import type { SectionFormState, TeacherOption } from "../types";
 
 type SectionFormField = keyof SectionFormState;
 
-interface SectionFormSheetProps {
+interface SectionFormModalProps {
   mode: "create" | "edit";
   open: boolean;
   title: string;
@@ -38,7 +41,7 @@ interface SectionFormSheetProps {
   gradeLevelName?: string;
 }
 
-export const SectionFormSheet = memo(function SectionFormSheet({
+export const SectionFormModal = memo(function SectionFormModal({
   mode,
   open,
   title,
@@ -54,35 +57,66 @@ export const SectionFormSheet = memo(function SectionFormSheet({
   teachers,
   loadingTeachers = false,
   gradeLevelName,
-}: SectionFormSheetProps) {
+}: SectionFormModalProps) {
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(40, { centered: true });
   const submitLabel = mode === "create" ? "Create Section" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
 
   const initials = gradeLevelName ? gradeLevelName.replace(/[^0-9]/g, "") || "GL" : "S";
 
   return (
-    <Sheet
+    <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <SheetContent
-        className="p-0 flex flex-col h-full border-l-0 overflow-hidden bg-background">
+      <DialogContent
+        showClose={false}
+        aria-describedby={undefined}
+        className="p-0 flex flex-col h-[90vh] md:h-[95vh] border overflow-visible w-full sm:w-auto sm:max-w-none max-w-[95vw]"
+        style={isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined}
+      >
+        {/* Left Resize Handle */}
+        <div
+          onMouseDown={startResizing}
+          className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group rounded-l-md"
+        >
+          <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+        </div>
 
-        {/* Sticky Header with Accent */}
-        <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
+        {/* Right Resize Handle */}
+        <div
+          onMouseDown={startResizingRight}
+          className="absolute right-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group rounded-r-md"
+        >
+          <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+        </div>
+
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background rounded-md">
+
+        <div className={cn("px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between text-white", getGradeLevelSolidBgStyles(gradeLevelName))}>
           <div className="flex items-center gap-4">
-            <div className="size-14 rounded-2xl bg-primary-foreground/10 flex items-center justify-center font-bold text-primary-foreground text-xl uppercase border border-primary-foreground/20 shadow-md">
+            <div className="size-14 rounded-2xl bg-white/20 flex items-center justify-center font-bold text-white text-xl uppercase border border-white/30 shadow-md">
               {initials}
             </div>
             <div className="space-y-0.5">
-              <SheetTitle className="text-base font-bold text-primary-foreground uppercase leading-none">
-                {title}
-              </SheetTitle>
-              <SheetDescription className="text-base font-bold text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
-                <Library className="size-3" />
-                {description}
-              </SheetDescription>
+              <DialogTitle className={cn("font-bold text-white uppercase leading-none", mode === "edit" ? "text-xl" : "text-base")}>
+                {mode === "edit" ? `EDIT SECTION ${formData.name || ""}`.trim() : title}
+              </DialogTitle>
+              {mode === "create" && (
+                <DialogDescription className="text-base font-bold text-white/90 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+                  <Library className="size-3" />
+                  {description}
+                </DialogDescription>
+              )}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full p-2 text-white hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 disabled:pointer-events-none"
+          >
+            <X strokeWidth={3} className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </button>
         </div>
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
@@ -106,7 +140,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                         <Input
                           value={gradeLevelName || "N/A"}
                           readOnly
-                          className="font-bold bg-muted/50"
+                          className="font-bold bg-muted/50 uppercase"
                         />
                       </div>
 
@@ -150,7 +184,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                           );
                           onFieldChange("name", titleCased);
                         }}
-                        className="font-bold text-base placeholder:text-foreground/30"
+                        className="font-bold text-base placeholder:text-foreground/30 uppercase"
                       />
                     </div>
                   </div>
@@ -262,8 +296,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
               )}
             </Button>
           </div>
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 });

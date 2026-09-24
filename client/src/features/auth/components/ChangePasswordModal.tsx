@@ -1,7 +1,7 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { motion, AnimatePresence } from "motion/react";
 import { memo, useState, useEffect, useMemo, useCallback } from "react";
-import { Navigate, useSearchParams } from "react-router";
+import { Navigate, useSearchParams, useNavigate } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@/shared/lib/zodResolver";
@@ -33,8 +33,9 @@ import {
 } from "@/shared/ui/card";
 import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
-const schema = z
+const createSchema = (requireCurrentPassword?: boolean) => z
   .object({
+    ...(requireCurrentPassword ? { currentPassword: z.string().min(1, "Current password is required") } : {}),
     newPassword: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -52,7 +53,7 @@ const schema = z
 // --- Shared Reusable Form Component ---
 
 interface ChangePasswordFormProps {
-  onSubmit: (newPassword: string) => Promise<void>;
+  onSubmit: (newPassword: string, currentPassword?: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   setError: (err: string | null) => void;
@@ -60,6 +61,8 @@ interface ChangePasswordFormProps {
   confirmLabel?: string;
   submitLabel?: string;
   loadingLabel?: string;
+  requireCurrentPassword?: boolean;
+  onCancel?: () => void;
   children?: React.ReactNode;
 }
 
@@ -97,9 +100,21 @@ export function ChangePasswordForm({
   confirmLabel = "Confirm New Password",
   submitLabel = "Set Password & Enter Portal",
   loadingLabel = "Updating Password...",
+  requireCurrentPassword,
+  onCancel,
   children,
 }: ChangePasswordFormProps) {
   const [showPw, setShowPw] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+
+  const schema = useMemo(() => createSchema(requireCurrentPassword), [requireCurrentPassword]);
+  type FormSchema = z.infer<typeof schema>;
+
+  const defaultValues = useMemo(() => ({
+    ...(requireCurrentPassword ? { currentPassword: "" } : {}),
+    newPassword: "",
+    confirmPassword: "",
+  }), [requireCurrentPassword]);
 
   const {
     register,
@@ -108,9 +123,10 @@ export function ChangePasswordForm({
     watch,
     reset,
     formState: { errors, isDirty },
-  } = useForm<z.infer<typeof schema>>({
+  } = useForm<FormSchema>({
     resolver: zodResolver(schema),
     mode: "onChange",
+    defaultValues,
   });
 
   const newPasswordValue = useWatch({ control, name: "newPassword", defaultValue: "" });
@@ -136,8 +152,8 @@ export function ChangePasswordForm({
     [newPasswordValue, confirmPasswordValue],
   );
 
-  const handleFormSubmit = async (data: z.infer<typeof schema>) => {
-    await onSubmit(data.newPassword);
+  const handleFormSubmit = async (data: FormSchema) => {
+    await onSubmit(data.newPassword, 'currentPassword' in data ? (data as any).currentPassword : undefined);
   };
 
   const handleDiscard = useCallback(() => reset(), [reset]);
@@ -154,6 +170,30 @@ export function ChangePasswordForm({
     <form onSubmit={handleSubmit(handleFormSubmit)}>
       {children}
       <div className="space-y-4">
+        {requireCurrentPassword && (
+          <div className="space-y-2">
+            <Label htmlFor="currentPassword" className="text-base leading-tight font-bold">Current Password</Label>
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                id="currentPassword"
+                type={showCurrentPw ? "text" : "password"}
+                placeholder="••••••••••••"
+                className={`font-bold h-12 pl-10 pr-10 bg-muted/30 border-border rounded-xl ${errors.currentPassword ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+                {...register("currentPassword")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPw(!showCurrentPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}>
+                {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <AnimatedError error={errors.currentPassword?.message as string || errors.currentPassword as unknown as string} />
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="newPassword" className="text-base leading-tight font-bold">{passwordLabel}</Label>
           <div className="relative group">
@@ -206,14 +246,35 @@ export function ChangePasswordForm({
           )}
         </AnimatePresence>
 
-        <Button
-          type="submit"
-          className="w-full h-12 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
-          disabled={loading}>
-          {loading ? (
-            <><Loader2 className="mr-2 h-5 w-5 " />{loadingLabel}</>
-          ) : submitLabel}
-        </Button>
+        {onCancel ? (
+          <div className="flex gap-4 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="w-1/2 h-12 font-bold text-base leading-tight rounded-xl transition-all duration-300"
+              disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="w-1/2 h-12 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+              disabled={loading}>
+              {loading ? (
+                <><Loader2 className="mr-2 h-5 w-5 " />{loadingLabel}</>
+              ) : submitLabel}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="submit"
+            className="w-full h-12 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+            disabled={loading}>
+            {loading ? (
+              <><Loader2 className="mr-2 h-5 w-5 " />{loadingLabel}</>
+            ) : submitLabel}
+          </Button>
+        )}
       </div>
     </form>
   );
@@ -269,6 +330,7 @@ export default function ChangePassword() {
   const staffAuth = useAuthStore();
   const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
+  const navigate = useNavigate();
 
   const [searchParams] = useSearchParams();
   const origin = searchParams.get("origin");
@@ -315,19 +377,14 @@ export default function ChangePassword() {
     return <Navigate to="/learner/login" replace />;
   }
 
-  if (
-    !isExternalHandoff
-    && !isLearner
-    && !(user as { mustChangePassword?: boolean }).mustChangePassword
-  ) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  const isVoluntaryPersonnelChange = !isExternalHandoff && !isLearner && !(user as { mustChangePassword?: boolean }).mustChangePassword;
+  const isVoluntaryLearnerChange = isLearner && !learnerAuth.requiresPasswordReset;
 
-  if (isLearner && !learnerAuth.requiresPasswordReset) {
-    return <Navigate to="/learner/portal" replace />;
-  }
+  const isVoluntaryChange = isVoluntaryPersonnelChange || isVoluntaryLearnerChange;
 
-  const handleSubmit = async (newPassword: string) => {
+
+
+  const handleSubmit = async (newPassword: string, currentPassword?: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -368,7 +425,7 @@ export default function ChangePassword() {
         const learnerApi = getLearnerApi(token);
         const response = await learnerApi.post<LearnerPasswordChangeResponse>(
           "/learner/change-password",
-          { newPassword },
+          { newPassword, currentPassword },
         );
 
         const lu = user as { lrn: string; middleName: string | null; schoolName: string; schoolAcronym: string; gradeLevelName: string | null; sectionName: string | null };
@@ -396,7 +453,7 @@ export default function ChangePassword() {
           window.location.replace("/learner/portal");
         }, 500);
       } else if (user) {
-        const res = await api.patch("/auth/change-password", { newPassword });
+        const res = await api.patch("/auth/change-password", { newPassword, currentPassword });
 
         staffAuth.setAuth(res.data.user);
         sileo.success({
@@ -497,10 +554,12 @@ export default function ChangePassword() {
               loading={loading}
               error={error}
               setError={setError}
-              passwordLabel="Official Password"
-              confirmLabel="Confirm Official Password"
-              submitLabel="Activate Account & Enter System"
-              loadingLabel="Updating Official Password..."
+              passwordLabel={isVoluntaryChange ? "New Password" : "Official Password"}
+              confirmLabel={isVoluntaryChange ? "Confirm New Password" : "Confirm Official Password"}
+              submitLabel={isVoluntaryChange ? "Update Password" : "Activate Account & Enter System"}
+              loadingLabel={isVoluntaryChange ? "Updating Password..." : "Updating Official Password..."}
+              requireCurrentPassword={isVoluntaryChange}
+              onCancel={isVoluntaryChange ? () => navigate(-1) : undefined}
             />
           </CardContent>
         </Card>

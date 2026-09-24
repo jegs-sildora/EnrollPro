@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
+import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/shared/ui/table";
@@ -871,33 +872,17 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
       )}
 
       {/* Student Detail Panel */}
-      <Dialog
-        open={selectedStudentId !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedStudentId(null);
-        }}>
-        <DialogContent showClose={false}
-          aria-describedby={undefined}
-          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
-          {selectedStudentId ? (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <StudentDetailPanel
-                id={selectedStudentId}
-                schoolYearId={section?.schoolYearId}
-                onClose={() => setSelectedStudentId(null)}
-                onRefreshData={fetchMasterlistData}
-                onTransferOut={() => { }}
-                onDropout={() => { }}
-                canEditProfile={false}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedStudentId && (
+        <StudentDetailModal
+          id={selectedStudentId}
+          schoolYearId={section?.schoolYearId}
+          onClose={() => setSelectedStudentId(null)}
+          onRefreshData={fetchMasterlistData}
+          onTransferOut={() => { }}
+          onDropout={() => { }}
+          canEditProfile={false}
+        />
+      )}
     </PageTransition>
   );
 }

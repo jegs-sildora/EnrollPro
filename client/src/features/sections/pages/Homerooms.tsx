@@ -6,12 +6,14 @@ import {
   Plus,
   CalendarDays,
   UserCheck,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { Button } from "@/shared/ui/button";
-import { SectionFormSheet } from "../components/SectionFormSheet";
+import { SectionFormModal } from "../components/SectionFormModal";
 import { useHeaderStore } from "@/store/header.slice";
 import type { SectionFormState, SectionItem, TeacherOption } from "../types";
 import { SectionHandoverModal } from "../components/SectionHandoverModal";
@@ -106,7 +108,7 @@ const SECTION_CATEGORY_CONFIG: Record<
     addDescription: "Add a ranked Top 5 BEC section.",
   },
   BEC_HETEROGENEOUS: {
-    title: "Basic Education Curriculum (BEC) — Heterogeneous",
+    title: "Basic Education Curriculum (BEC)",
     curriculumProgram: "REGULAR_HETERO",
     isHomogeneous: false,
     addDescription: "Add a heterogeneous BEC section.",
@@ -268,6 +270,7 @@ function SectionCard({
   onDraftAdviserCancel,
   allDraftTeacherIds,
   hasAnyPendingChanges,
+  isEosyClosing,
 }: {
   section: SectionItem;
   onEdit: () => void;
@@ -282,6 +285,7 @@ function SectionCard({
   onDraftAdviserCancel?: () => void;
   allDraftTeacherIds?: Set<string>;
   hasAnyPendingChanges?: boolean;
+  isEosyClosing?: boolean;
 }) {
   const pct =
     section.fillPercent ??
@@ -364,38 +368,64 @@ function SectionCard({
         </div>
         {canMutate && (
           <div className="flex gap-1 shrink-0">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-2 text-sm font-bold"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isCardDisabled) return;
-                onEdit();
-              }}>
-              Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-2 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isCardDisabled) return;
-                onDelete();
-              }}>
-              Remove
-            </Button>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-foreground hover:bg-muted hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isCardDisabled) return;
+                      onEdit();
+                    }}>
+                    <Pencil strokeWidth={3} className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-bold text-sm">Edit</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block" tabIndex={0}>
+                    <Button
+                      size="lg"
+                      variant="ghost"
+                      disabled={section.enrolledCount > 0}
+                      className="h-8 w-8 p-0 text-destructive/70 hover:bg-destructive/10 hover:text-destructive font-bold disabled:opacity-50 disabled:pointer-events-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isCardDisabled || section.enrolledCount > 0) return;
+                        onDelete();
+                      }}>
+                      <Trash2 strokeWidth={3} className="h-4 w-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-bold text-sm">
+                    {section.enrolledCount > 0
+                      ? "Cannot remove section with enrolled learners"
+                      : "Remove"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
       </div>
 
       <div className="mt-auto space-y-4">
-        <div className="flex items-center justify-between border-t border-border/50 pt-4">
+        <div className="flex items-center border-t border-border/50 pt-4">
           <div className="flex items-center gap-2 w-full">
-            <div className="flex flex-col w-full min-w-0 pr-2">
-              <span className="font-bold uppercase text-foreground mb-0.5">
-                Adviser
+            <div className={cn("flex w-full min-w-0 pr-2", isEosyClosing ? "flex-row justify-between items-center" : "flex-col")}>
+              <span className={cn("font-bold uppercase text-foreground", isEosyClosing ? "text-sm" : "mb-0.5")}>
+                Adviser:
               </span>
               {canMutate ? (
                 <div onClick={(e) => e.stopPropagation()} className="w-full -ml-2">
@@ -543,9 +573,10 @@ export default function Homerooms() {
               }}
               onViewMasterlist={() => navigate(`/sections/view-masterlist/${s.id}`)}
               canMutate={canMutate}
+              isEosyClosing={systemPhase === "EOSY_CLOSING"}
             />
           ))}
-          {(!isHistoricalReadOnly || hasOverride) && (
+          {canMutate && (
             <button
               type="button"
               onClick={() =>
@@ -565,11 +596,9 @@ export default function Homerooms() {
                 Add Section
               </span>
               <span className="max-w-xs text-center text-sm  normal-case">
-                {!canMutate
-                  ? "Section changes are unavailable during EOSY closing."
-                  : canAddCategory
-                    ? categoryConfig.addDescription
-                    : "Enable an SCP in System Configuration first."}
+                {canAddCategory
+                  ? categoryConfig.addDescription
+                  : "Enable an SCP in System Configuration first."}
               </span>
             </button>
           )}
@@ -1254,7 +1283,7 @@ export default function Homerooms() {
         </Tabs>
       )}
 
-      <SectionFormSheet
+      <SectionFormModal
         mode={formSheetMode}
         open={isFormSheetOpen}
         onOpenChange={(open) => {

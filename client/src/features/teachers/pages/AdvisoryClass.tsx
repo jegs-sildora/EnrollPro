@@ -36,6 +36,7 @@ import {
   DialogContent,
 } from "@/shared/ui/dialog";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
+import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { useHeaderStore } from "@/store/header.slice";
@@ -375,30 +376,14 @@ export default function AdvisoryClass() {
       </Card>
 
       {/* Student Detail Panel */}
-      <Dialog
-        open={selectedStudentId !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedStudentId(null);
-        }}>
-        <DialogContent showClose={false}
-          aria-describedby={undefined}
-          className="p-0 flex flex-col overflow-hidden w-[95vw] sm:w-full max-w-5xl h-[90vh]">
-          {selectedStudentId ? (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <StudentDetailPanel
-                id={selectedStudentId}
-                onClose={() => setSelectedStudentId(null)}
-                onRefreshData={() => refetch()}
-                canEditProfile={false}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedStudentId !== null && (
+        <StudentDetailModal
+          id={selectedStudentId}
+          onClose={() => setSelectedStudentId(null)}
+          onRefreshData={() => refetch()}
+          canEditProfile={false}
+        />
+      )}
     </PageTransition>
   );
 }

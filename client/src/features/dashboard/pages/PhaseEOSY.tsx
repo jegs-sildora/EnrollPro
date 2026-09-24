@@ -1,4 +1,5 @@
-import { AlertTriangle, Award, Check, ClipboardCheck, FileCheck2, GraduationCap } from "lucide-react"
+import { AlertTriangle, Award, Check, ClipboardCheck, FileCheck2, GraduationCap, HelpCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useNavigate, Link } from "react-router"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
@@ -48,32 +49,61 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
       <Card className="border-slate-200 bg-card shadow-sm">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-          <CardTitle className="text-xl font-extrabold">
+          <CardTitle className="text-xl font-extrabold flex items-center gap-2">
             Rollover Readiness Checklist
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>All requirements must be satisfied before transitioning to the next school year</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </CardTitle>
-          <p className="text-foreground text-sm">
-            All requirements must be satisfied before transitioning to the next school year
-          </p>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link to="/eosy?status=pending" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
+            <Link to="/eosy?status=pending" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
               <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {readiness.pendingSections === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+                {readiness.pendingSections === 0 ? <Check className="size-4" strokeWidth={2} /> : <AlertTriangle className="size-4" strokeWidth={2} />}
               </div>
               <div>
-                <p className="font-bold text-foreground text-lg">Section Finalization</p>
-                <p className="text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">Section Finalization</p>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" onClick={(e) => e.preventDefault()} />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>All class advisers must submit and finalize their EOSY records</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             </Link>
 
-            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
-              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.incompleteLearnerOutcomes === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {readiness.incompleteLearnerOutcomes === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
+              <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.incompleteLearnerOutcomes === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {readiness.incompleteLearnerOutcomes === 0 ? <Check className="size-4" strokeWidth={2} /> : <AlertTriangle className="size-4" strokeWidth={2} />}
               </div>
               <div>
-                <p className="font-bold text-foreground text-lg">EOSY Grade Synchronization</p>
-                <p className="text-foreground text-sm">All learner grades must be resolved and synced</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">EOSY Grade Synchronization</p>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" onClick={(e) => e.preventDefault()} />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>All learner grades must be resolved and synced</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             </Link>
 

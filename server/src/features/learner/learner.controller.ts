@@ -257,7 +257,7 @@ export async function learnerSetupPassword(req: Request, res: Response): Promise
     return;
   }
 
-  const { newPassword } = req.body as { newPassword: string };
+  const { newPassword, currentPassword } = req.body as { newPassword: string; currentPassword?: string };
 
   const learner = await prisma.learner.findUnique({
     where: { id: learnerPayload.learnerId },
@@ -273,6 +273,18 @@ export async function learnerSetupPassword(req: Request, res: Response): Promise
   if (!user) {
     res.status(404).json({ code: "NOT_FOUND", message: "User account not found." });
     return;
+  }
+
+  if (!user.mustChangePassword) {
+    if (!currentPassword) {
+      res.status(400).json({ code: "BAD_REQUEST", message: "Current password is required." });
+      return;
+    }
+    const isCurrentPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordCorrect) {
+      res.status(401).json({ code: "UNAUTHORIZED", message: "Current password is incorrect." });
+      return;
+    }
   }
 
   const isSamePassword = await bcrypt.compare(newPassword, user.password);

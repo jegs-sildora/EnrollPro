@@ -39,6 +39,23 @@ export const getGradeLevelButtonStyles = (gradeLevel: string | null | undefined)
   return "text-gray-700 border-gray-700 bg-gray-50 hover:bg-gray-700 hover:text-white";
 };
 
+export const getGradeLevelSolidBgStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-600";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-600";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-600";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-indigo-600";
+  }
+  return "bg-primary";
+};
+
 export const formatGradeLevel = (gradeLevel: string | null | undefined): string => {
   if (!gradeLevel) return "";
   return gradeLevel.replace(/Grade\s+/i, "G");
