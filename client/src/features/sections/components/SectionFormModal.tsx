@@ -58,7 +58,10 @@ export const SectionFormModal = memo(function SectionFormModal({
   loadingTeachers = false,
   gradeLevelName,
 }: SectionFormModalProps) {
-  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(40, { centered: true });
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(40, {
+    centered: true,
+    storageKey: "section-form-modal",
+  });
   const submitLabel = mode === "create" ? "Create Section" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
 

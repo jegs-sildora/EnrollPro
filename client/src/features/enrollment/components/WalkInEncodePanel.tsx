@@ -137,7 +137,10 @@ export function WalkInEncodePanel() {
   const queryClient = useQueryClient();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
-  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(80, { centered: true });
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(80, {
+    centered: true,
+    storageKey: "walk-in-enrollment-modal",
+  });
 
   const userRoles = useAuthStore((s) => s.user?.roles ?? []);
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");

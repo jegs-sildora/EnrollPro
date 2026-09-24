@@ -74,7 +74,9 @@ export default function InsertLateEnrolleeDrawer({
   onSuccess,
 }: InsertLateEnrolleeDrawerProps) {
   const { classOpeningDate } = useSettingsStore();
-  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
+  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel(50, {
+    storageKey: "late-enrollee-drawer",
+  });
   const {
     inputValue: search,
     setInputValue: setSearch,

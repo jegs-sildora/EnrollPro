@@ -18,7 +18,7 @@ import adminRoutes from "./features/admin/admin.router.js";
 import auditLogRoutes from "./features/audit-logs/audit-logs.router.js";
 import teachersRoutes from "./features/teachers/teachers.router.js";
 import learnerRoutes from "./features/learner/learner.router.js";
-import { admissionRoutes } from "./features/admission/admission.router.js";
+import { admissionRoutes, walkInAdmissionRoutes } from "./features/admission/admission.router.js";
 
 import eosyRoutes from "./features/enrollment/eosy.router.js";
 import teacherAdvisoryRoutes from "./features/teachers/teacher-advisory.router.js";
@@ -153,6 +153,7 @@ apiRouter.use("/audit-logs", auditLogRoutes);
 apiRouter.use("/teachers", teachersRoutes);
 apiRouter.use("/learner", learnerRoutes);
 apiRouter.use("/applications", admissionRoutes);
+apiRouter.use("/admissions", walkInAdmissionRoutes);
 
 apiRouter.use("/eosy", eosyRoutes);
 apiRouter.use("/teacher-advisory", teacherAdvisoryRoutes);

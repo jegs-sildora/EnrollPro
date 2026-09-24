@@ -212,7 +212,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   onOpenChange,
   onSaveSuccess,
 }: TeacherDetailPanelProps) {
-  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, { centered: true });
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, {
+    centered: true,
+    storageKey: "teacher-detail-modal",
+  });
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { ayId } = useSchoolYearContext();
 

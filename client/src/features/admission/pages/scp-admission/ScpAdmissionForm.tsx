@@ -24,8 +24,53 @@ import { cn } from "@/shared/lib/utils";
 import type { z } from "zod";
 import { useUnsavedChanges, useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 import { differenceInYears, format, isAfter, isBefore, isValid as isValidDate, parse } from "date-fns";
+import { isAxiosError } from "axios";
+import { sileo } from "sileo";
 
 type ScpFormData = z.infer<typeof scpAdmissionSubmitSchema>;
+export type ScpProgram = NonNullable<ScpFormData["scpType"]>;
+
+interface LearnerProfileAddress {
+  addressType: string;
+  houseNoStreet?: string | null;
+  sitio?: string | null;
+  barangay?: string | null;
+  cityMunicipality?: string | null;
+  province?: string | null;
+  region?: string | null;
+}
+
+interface LearnerProfileResponse {
+  studentPhoto?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleName?: string | null;
+  extensionName?: string | null;
+  birthdate?: string | null;
+  sex?: ScpFormData["sex"];
+  placeOfBirth?: string | null;
+  religion?: string | null;
+  motherTongue?: string | null;
+  isIpCommunity?: boolean;
+  ipGroupName?: string | null;
+  is4PsBeneficiary?: boolean;
+  householdId4Ps?: string | null;
+  isLearnerWithDisability?: boolean;
+  hasPwdId?: boolean;
+  specialNeedsCategory?: ScpFormData["specialNeedsCategory"];
+  disabilityTypes?: ScpFormData["disabilityTypes"];
+  addresses?: LearnerProfileAddress[];
+  previousSchool?: {
+    schoolName?: string | null;
+    schoolId?: string | null;
+    schoolAddress?: string | null;
+    schoolType?: ScpFormData["lastSchoolType"];
+  } | null;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+}
 
 const MOTHER_TONGUE_OPTIONS = [
   "Tagalog", "Cebuano", "Hiligaynon (Ilonggo)", "Ilocano (Iloko)",
@@ -90,11 +135,16 @@ interface Props {
   intakeChoice: "NEW" | "RETURNING";
   onSuccess: (data: ApplicationSubmitResponse) => void;
   onCancel: () => void;
+  mode?: "PUBLIC" | "STAFF_WALK_IN";
+  initialProgram?: ScpProgram;
 }
 
-const getEmptyValues = (intakeChoice: "NEW" | "RETURNING"): Partial<ScpFormData> => ({
+const getEmptyValues = (
+  intakeChoice: "NEW" | "RETURNING",
+  initialProgram?: ScpProgram,
+): Partial<ScpFormData> => ({
   isScpApplication: true,
-  scpType: undefined,
+  scpType: initialProgram,
   isPrivacyConsentGiven: false,
   learnerType: intakeChoice === "RETURNING" ? "RETURNING" : "NEW_ENROLLEE",
   gradeLevel: "7",
@@ -137,12 +187,19 @@ const getEmptyValues = (intakeChoice: "NEW" | "RETURNING"): Partial<ScpFormData>
 
 export const SCP_FORM_STATE_KEY = "scp_admission_form_state";
 
-export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: Props) {
-  const savedState = sessionStorage.getItem(SCP_FORM_STATE_KEY);
-  let parsedSavedState = null;
+export default function ScpAdmissionForm({
+  intakeChoice,
+  onSuccess,
+  onCancel,
+  mode = "PUBLIC",
+  initialProgram,
+}: Props) {
+  const isStaffWalkIn = mode === "STAFF_WALK_IN";
+  const savedState = isStaffWalkIn ? null : sessionStorage.getItem(SCP_FORM_STATE_KEY);
+  let parsedSavedState: Partial<ScpFormData> | null = null;
   try {
     if (savedState) {
-      parsedSavedState = JSON.parse(savedState);
+      parsedSavedState = JSON.parse(savedState) as Partial<ScpFormData>;
     }
   } catch (e) { console.error('Failed to parse saved state', e); }
 
@@ -150,7 +207,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
     resolver: zodResolver(scpAdmissionSubmitSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
-    defaultValues: parsedSavedState || getEmptyValues(intakeChoice),
+    defaultValues: parsedSavedState ?? getEmptyValues(intakeChoice, initialProgram),
   });
 
 
@@ -160,16 +217,17 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       // Only save if a specific field was changed by the user
-      if (name && !hasSubmittedRef.current) {
+      if (!isStaffWalkIn && name && !hasSubmittedRef.current) {
         // Exclude studentPhoto from persistence since File objects can't be serialized cleanly
-        const { studentPhoto, ...rest } = value;
-        sessionStorage.setItem(SCP_FORM_STATE_KEY, JSON.stringify(rest));
+        const persistedValue = { ...value };
+        delete persistedValue.studentPhoto;
+        sessionStorage.setItem(SCP_FORM_STATE_KEY, JSON.stringify(persistedValue));
       }
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [form, isStaffWalkIn]);
 
-  const { control, handleSubmit, setValue, clearErrors, trigger } = form;
+  const { control, handleSubmit, setValue, clearErrors } = form;
   const selectedScp = useWatch({ control, name: "scpType" });
   const birthdateStr = useWatch({ control, name: "birthdate" });
   const studentPhoto = useWatch({ control, name: "studentPhoto" });
@@ -188,15 +246,15 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
   const { confirmOrRun } = useUnsavedChangesPrompt();
   
   const discardScpDraft = useCallback(() => {
-    form.reset(getEmptyValues(intakeChoice) as ScpFormData);
-    sessionStorage.removeItem(SCP_FORM_STATE_KEY);
+    form.reset(getEmptyValues(intakeChoice, initialProgram) as ScpFormData);
+    if (!isStaffWalkIn) sessionStorage.removeItem(SCP_FORM_STATE_KEY);
     setValue("studentPhoto", "");
-  }, [form, intakeChoice, setValue]);
+  }, [form, initialProgram, intakeChoice, isStaffWalkIn, setValue]);
 
   useUnsavedChanges({
     id: "scp-admission-form",
     label: "SCP Admission Form",
-    isDirty: isDirty || parsedSavedState !== null,
+    isDirty: isDirty || (!isStaffWalkIn && parsedSavedState !== null),
     isSubmitting,
     onDiscard: discardScpDraft,
   });
@@ -269,7 +327,6 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
     if (!lrn || lrn.length !== 12 || hasNoLrn) {
       // Keep the duplicate-check indicators synchronized with the LRN field.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsValidatingLrn(false);
       setDuplicateDetected(false);
       return;
@@ -298,7 +355,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
       return;
     }
 
-    api.get(`/applications/learner-profile/${lrn}`)
+    api.get<LearnerProfileResponse>(`/applications/learner-profile/${lrn}`)
       .then((res) => {
         if (!active) return;
         const profile = res.data;
@@ -312,7 +369,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
         if (profile.birthdate) {
           const d = new Date(profile.birthdate);
           if (!isNaN(d.getTime())) {
-            setValue("birthdate", d as any, { shouldValidate: true, shouldDirty: true });
+            setValue("birthdate", d, { shouldValidate: true, shouldDirty: true });
             setDateInput(format(d, "MM/dd/yyyy"));
             setCalendarMonth(d);
           }
@@ -338,7 +395,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
         }
 
         if (profile.addresses && Array.isArray(profile.addresses)) {
-          const current = profile.addresses.find((a: any) => a.addressType === "CURRENT");
+          const current = profile.addresses.find((address) => address.addressType === "CURRENT");
           if (current) {
             setValue("currentAddress", {
               houseNoStreet: current.houseNoStreet || "",
@@ -387,15 +444,26 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
   const onSubmit = async (data: ScpFormData) => {
     try {
-      const response = await api.post("/applications/admissions", data);
+      const endpoint = isStaffWalkIn
+        ? "/admissions/walk-in"
+        : "/applications/admissions";
+      const response = await api.post<ApplicationSubmitResponse>(endpoint, data);
       
       hasSubmittedRef.current = true;
-      sessionStorage.removeItem(SCP_FORM_STATE_KEY);
+      if (!isStaffWalkIn) sessionStorage.removeItem(SCP_FORM_STATE_KEY);
       
       onSuccess(response.data);
     } catch (error) {
       console.error(error);
-      alert("Submission failed. Please check the fields and try again.");
+      const fallbackMessage = "Submission failed. Please check the fields and try again.";
+      const message = isAxiosError<ApiErrorResponse>(error)
+        ? error.response?.data?.message ?? fallbackMessage
+        : fallbackMessage;
+      if (isStaffWalkIn) {
+        sileo.error({ title: "Unable to Encode Walk-in", description: message });
+      } else {
+        alert(message);
+      }
     }
   };
 
@@ -462,14 +530,14 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
         className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6"
       >
         <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        Back to Privacy Notice
+        {isStaffWalkIn ? "Cancel Walk-in Encoding" : "Back to Privacy Notice"}
       </Button>
 
       <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
         <CardContent className="p-6 md:p-10">
           <div className="mb-8 pb-6 border-b border-border/50">
             <h2 className="text-xl font-bold text-foreground leading-tight">
-              Learner Admission Form
+              {isStaffWalkIn ? "Walk-in SCP Admission Form" : "Learner Admission Form"}
             </h2>
             <p className="text-base leading-tight text-foreground mt-0.5">
               Please complete all required fields below.
@@ -491,7 +559,11 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
                     render={({ field, fieldState }) => (
                       <FormItem>
                         <FormLabel className="text-base leading-tight font-bold text-foreground">Select Special Curricular Program <span className="text-destructive">*</span></FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select
+                          disabled={isStaffWalkIn}
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
                           <FormControl>
                             <SelectTrigger className={cn("h-11 font-bold uppercase", fieldState.error && "border-destructive focus:ring-destructive")}>
                               <SelectValue placeholder="SELECT SPECIAL CURRICULAR PROGRAM" />
@@ -1106,7 +1178,7 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
 
                 <div className="flex flex-col items-center gap-4">
                   <Button type="button" disabled={isSubmitting} onClick={handleAttemptSubmit} className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
-                    Submit Registration
+                    {isStaffWalkIn ? "Submit Walk-in Application" : "Submit Registration"}
                   </Button>
                   <p className="text-base text-foreground flex items-center gap-1.5 italic">
                     <Info className="w-3.5 h-3.5" />
@@ -1123,10 +1195,12 @@ export default function ScpAdmissionForm({ intakeChoice, onSuccess, onCancel }: 
         onOpenChange={(open) => {
           if (!isSubmitting) setIsConfirmDialogOpen(open);
         }}
-        title="Confirm Admission Submission"
-        description="You are about to submit this online admission form. Please confirm all details are complete and accurate."
+        title={isStaffWalkIn ? "Confirm Walk-in Application" : "Confirm Admission Submission"}
+        description={isStaffWalkIn
+          ? "You are about to encode this walk-in SCP application. Please confirm all details are complete and accurate."
+          : "You are about to submit this online admission form. Please confirm all details are complete and accurate."}
         onConfirm={confirmSubmit}
-        confirmText="Yes, Submit Application"
+        confirmText={isStaffWalkIn ? "Yes, Encode Application" : "Yes, Submit Application"}
         loading={isSubmitting}
         variant="primary"
       />

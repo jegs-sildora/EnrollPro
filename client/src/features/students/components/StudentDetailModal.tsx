@@ -2,14 +2,16 @@ import { Dialog, DialogContent } from "@/shared/ui/dialog";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 import { StudentDetailPanel } from "./StudentDetailPanel";
-import type { StudentTransferOutPayload, StudentDropoutPayload, StudentDetail } from "./StudentDetailPanel";
 
 import type { ComponentProps } from "react";
 
 type Props = ComponentProps<typeof StudentDetailPanel>;
 
 export function StudentDetailModal(props: Props) {
-  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, { centered: true });
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, {
+    centered: true,
+    storageKey: "student-detail-modal",
+  });
   const { confirmOrRun } = useUnsavedChangesPrompt();
 
   return (

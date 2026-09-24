@@ -22,9 +22,8 @@ interface ActiveEnrollmentSetting {
   activeSchoolYear: SchoolYear
 }
 
-async function getOpenPublicEnrollmentSetting(
+async function getActiveEnrollmentSetting(
   res: Response,
-  isScp: boolean = false
 ): Promise<ActiveEnrollmentSetting | null> {
   const setting = await prisma.schoolSetting.findFirst({
     where: { activeSchoolYearId: { not: null } },
@@ -35,6 +34,20 @@ async function getOpenPublicEnrollmentSetting(
     res.status(400).json({ message: "No active school year is configured." });
     return null;
   }
+
+  return {
+    activeSchoolYearId: setting.activeSchoolYearId,
+    systemPhase: setting.systemPhase,
+    activeSchoolYear: setting.activeSchoolYear,
+  };
+}
+
+async function getOpenPublicEnrollmentSetting(
+  res: Response,
+  isScp: boolean = false
+): Promise<ActiveEnrollmentSetting | null> {
+  const setting = await getActiveEnrollmentSetting(res);
+  if (!setting) return null;
 
   if (isScp) {
     if (!isScpAdmissionOpen(setting.activeSchoolYear)) {
@@ -60,6 +73,37 @@ async function getOpenPublicEnrollmentSetting(
     systemPhase: setting.systemPhase,
     activeSchoolYear: setting.activeSchoolYear,
   };
+}
+
+function isScpRosterLocked(
+  schoolYear: SchoolYear,
+  program: ApplicantType,
+): boolean {
+  return (
+    program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING"
+      ? schoolYear.steRosterLocked
+      : program === "SPECIAL_PROGRAM_IN_THE_ARTS"
+        ? schoolYear.spaRosterLocked
+        : program === "SPECIAL_PROGRAM_IN_SPORTS"
+          ? schoolYear.spsRosterLocked
+          : false
+  );
+}
+
+interface AddressForForm {
+  cityMunicipality: string | null
+  province: string | null
+}
+
+function normalizeAddressForForm<TAddress extends AddressForForm>(address: TAddress): TAddress {
+  const cityMunicipality = address.cityMunicipality?.trim().toUpperCase()
+  const province = address.province?.trim().toUpperCase()
+
+  if (cityMunicipality === "CITY OF BACOLOD" && province === "CITY OF BACOLOD") {
+    return { ...address, province: "NEGROS OCCIDENTAL" }
+  }
+
+  return address
 }
 
 
@@ -344,7 +388,7 @@ export async function getLearnerProfile(req: Request, res: Response) {
       studentPhoto: learner.studentPhoto,
 
       // Previous Application Data (for auto-filling addresses, family, previous school)
-      addresses: demographicSource?.addresses || [],
+      addresses: (demographicSource?.addresses ?? []).map(normalizeAddressForForm),
       familyMembers: demographicSource?.familyMembers || [],
       previousSchool: demographicSource?.previousSchool || null,
 
@@ -358,7 +402,11 @@ export async function getLearnerProfile(req: Request, res: Response) {
   }
 }
 
-export async function submitAdmission(req: Request, res: Response) {
+async function processAdmissionSubmission(
+  req: Request,
+  res: Response,
+  isStaffWalkIn: boolean,
+): Promise<void> {
   try {
     const parsed = scpAdmissionSubmitSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -367,9 +415,22 @@ export async function submitAdmission(req: Request, res: Response) {
     }
     const data = parsed.data as ScpAdmissionSubmit;
 
-    const schoolSetting = await getOpenPublicEnrollmentSetting(res, true);
+    const schoolSetting = isStaffWalkIn
+      ? await getActiveEnrollmentSetting(res)
+      : await getOpenPublicEnrollmentSetting(res, true);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+
+    if (
+      isStaffWalkIn &&
+      isScpRosterLocked(schoolSetting.activeSchoolYear, data.scpType as ApplicantType)
+    ) {
+      res.status(403).json({
+        code: "SCP_ROSTER_LOCKED",
+        message: "Cannot encode walk-ins while the roster is finalized.",
+      });
+      return;
+    }
 
     let learner;
     const lrn = data.hasNoLrn ? null : data.lrn;
@@ -446,7 +507,7 @@ export async function submitAdmission(req: Request, res: Response) {
               sitio: data.currentAddress.sitio || null,
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
+              province: data.currentAddress.province,
               region: data.currentAddress.region,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
@@ -456,7 +517,7 @@ export async function submitAdmission(req: Request, res: Response) {
                   sitio: data.permanentAddress.sitio || null,
                   barangay: data.permanentAddress.barangay,
                   cityMunicipality: data.permanentAddress.cityMunicipality,
-                  province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                  province: data.permanentAddress.province,
                   region: data.permanentAddress.region,
                 }]
               : []),
@@ -519,6 +580,17 @@ export async function submitAdmission(req: Request, res: Response) {
     console.error("Failed to submit admission:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+}
+
+export async function submitAdmission(req: Request, res: Response): Promise<void> {
+  await processAdmissionSubmission(req, res, false);
+}
+
+export async function submitWalkInAdmission(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  await processAdmissionSubmission(req, res, true);
 }
 
 export async function submitEnrollment(req: Request, res: Response) {
@@ -644,7 +716,7 @@ export async function submitEnrollment(req: Request, res: Response) {
               sitio: data.currentAddress.sitio || null,
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
+              province: data.currentAddress.province,
               region: data.currentAddress.region,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
@@ -654,7 +726,7 @@ export async function submitEnrollment(req: Request, res: Response) {
                   sitio: data.permanentAddress.sitio || null,
                   barangay: data.permanentAddress.barangay,
                   cityMunicipality: data.permanentAddress.cityMunicipality,
-                  province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                  province: data.permanentAddress.province,
                   region: data.permanentAddress.region,
                 }]
               : []),
@@ -823,7 +895,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
               sitio: data.currentAddress.sitio || null,
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
+              province: data.currentAddress.province,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
               ? [
@@ -833,7 +905,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
                     sitio: data.permanentAddress.sitio || null,
                     barangay: data.permanentAddress.barangay,
                     cityMunicipality: data.permanentAddress.cityMunicipality,
-                    province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
+                    province: data.permanentAddress.province,
                   },
                 ]
               : []),

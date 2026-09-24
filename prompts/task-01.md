@@ -1,39 +1,34 @@
-# Prompt for UI/UX & Logic Implementation: NLPA / Drop Out Evidence Upload
+# Prompt for UI/UX & Logic Implementation: Walk-in Encoding Action Placement
 
 ## Role & Context
-Act as a Frontend Developer. We are upgrading the `Process Learner Drop Out / NLPA` modal. 
+Act as a Frontend Developer. We are integrating an `Encode Walk-in` action into the `SCP Admission` portal. 
 
-In DepEd public schools, officially dropping a student requires documented proof of intervention (e.g., Home Visitation Forms, Parent-Teacher Conference logs, anecdotal records). We need to add a robust File Upload component to this modal so class advisers can attach digital evidence directly to the learner's drop-out record.
+In DepEd, Program Coordinators frequently need to manually encode walk-in applicants who did not use the online portal. We need to place this action where it is highly visible when the table is empty, and neatly organized when the table is full, without visually clashing with the existing "Finalize & Lock Roster" button.
 
 ## Critical Directive
-Integrate a Drag-and-Drop file upload zone below the "Intervention Notes" field. Since adding this component will increase the height of the modal, ensure the modal body is vertically scrollable while keeping the header and footer (action buttons) fixed/sticky so they are always accessible.
+Implement a dual-placement strategy. Use a dedicated "Empty State" component when there are zero records, and a toolbar button when records exist. Ensure strict state locking so walk-ins cannot be encoded after the roster is finalized.
 
-## UI Component & State Logic Requirements
+## UI Component & Layout Requirements
 
-Please implement the following UI additions and form logic:
+Please implement the following layout and state variations:
 
-### 1. The Drag-and-Drop Upload Zone
-*   **Placement:** Directly below the `Intervention Notes` textarea.
-*   **Visual Design:** Render a dashed-border rectangular container with a light gray or muted background.
-*   **Icons & Text:** Center a standard "Cloud Upload" or "Document" icon inside.
-    *   *Primary Text:* `Drag and drop files here, or click to browse.`
-    *   *Helper Text (Crucial for DepEd context):* `Attach intervention evidence (e.g., scanned Home Visitation Forms, Parent Agreements, or Anecdotal Records).`
-    *   *Constraint Text:* `Maximum 3 files. Accepted formats: PDF, JPG, PNG (Max 5MB each).`
+### 1. The Zero-Data Empty State (Center Screen)
+When the API returns an empty array (no applicants encoded yet):
+*   **Layout:** Render a standard Empty State container in the middle of the table body area.
+*   **Visuals:** Add a subtle, relevant illustration (e.g., an empty folder or a clipboard).
+*   **Copy:** 
+    *   *Heading:* `No Applicants Found`
+    *   *Subtext:* `There are no applicants currently registered for this program. Wait for online submissions or manually encode a walk-in.`
+*   **Action:** Render a large, solid Primary button in the center: `+ Encode Walk-in Applicant`.
 
-### 2. File Preview & Management State
-Once a user selects or drops a file, the UI must provide clear feedback:
-*   **File List:** Below (or replacing) the drag-and-drop zone, render a sleek vertical list of the attached files.
-*   **Item Row:** Each uploaded file should display:
-    *   A small file-type icon (e.g., a PDF icon or image thumbnail).
-    *   The truncated file name (e.g., `Home_Visitation_Juan...pdf`).
-    *   The file size (e.g., `1.2 MB`).
-    *   A red `X` or Trash icon on the far right to allow the user to easily remove the file before final submission.
+### 2. The Populated Table Toolbar (Top Right)
+When the table has 1 or more applicants (as seen in the current UI):
+*   **Placement:** Inject the button into the top-right action area of the table header, positioned immediately to the *left* of the `Finalize & Lock Roster` button.
+*   **Styling (Visual Hierarchy):** Because `Finalize & Lock Roster` is a solid red button, make the `+ Encode Walk-in` button a **Ghost or Outline button** (e.g., transparent background with a primary-colored border and text). This prevents two heavy, solid buttons from competing for the user's attention.
+*   **Label:** Keep it concise: `+ Encode Walk-in`.
 
-### 3. Form Validation & Logic Upgrades
-Upgrading this UI requires upgrading the validation logic:
-*   **Conditional Requirement:** If the user attaches a file, the `Intervention Notes` field should dynamically become *Required* (remove the "Optional" label). They must provide a brief written context for the evidence they are submitting.
-*   **Upload Handling:** Ensure the form submission logic handles `multipart/form-data` correctly. The files should be uploaded to the server/cloud storage, and the resulting file URLs/IDs should be appended to the drop-out transaction payload.
-
-### 4. Modal Layout Protection
-*   Apply `overflow-y: auto` and a `max-height` (e.g., `max-h-[60vh]`) to the modal's internal body container. 
-*   Ensure the modal footer containing the `Cancel` and `Finalize Drop Out` buttons remains permanently visible at the bottom, regardless of how many files are added to the list above it.
+### 3. State Management (The Roster Lock)
+Data integrity is critical. 
+*   **Logic:** If the current program's roster status is marked as `LOCKED` or `FINALIZED`, the `+ Encode Walk-in` button MUST be disabled (grayed out) or completely hidden.
+*   **Tooltip (Optional):** If disabled, add a hover tooltip stating: *"Cannot encode walk-ins while the roster is finalized."*
+*   **Backend Guard:** Ensure the `POST /api/admissions/walk-in` endpoint checks the roster status and rejects the payload with a `403 Forbidden` if the coordinator attempts to bypass the UI lock.

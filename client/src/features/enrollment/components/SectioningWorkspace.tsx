@@ -593,7 +593,9 @@ const createDraftPlacement = (
 };
 export function SectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
-  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(45);
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(45, {
+    storageKey: "sectioning-workspace-pane",
+  });
 
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);

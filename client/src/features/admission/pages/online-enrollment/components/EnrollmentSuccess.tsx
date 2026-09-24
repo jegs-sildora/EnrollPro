@@ -9,7 +9,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import {
   CheckCircle2,
-  Home,
   Info,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
@@ -28,17 +27,20 @@ type EnrollmentSuccessProps = Pick<
 > & {
   learnerName?: string;
   onBackHome?: () => void;
+  presentation?: "PUBLIC" | "STAFF_WALK_IN";
 };
 
 export default function EnrollmentSuccess({
   trackingNumber,
   learnerName,
   onBackHome,
+  presentation = "PUBLIC",
 }: EnrollmentSuccessProps) {
   const [copied, setCopied] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { enrollOpenDate, enrollCloseDate } = useSettingsStore();
   const navigate = useNavigate();
+  const isStaffWalkIn = presentation === "STAFF_WALK_IN";
 
   const formattedDates = enrollOpenDate && enrollCloseDate
     ? `${format(new Date(enrollOpenDate), "MMMM d")} and ${format(new Date(enrollCloseDate), "MMMM d, yyyy")}`
@@ -46,6 +48,8 @@ export default function EnrollmentSuccess({
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
+    if (isStaffWalkIn) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "F5" || (e.ctrlKey && e.key === "r") || (e.metaKey && e.key === "r")) {
@@ -68,7 +72,7 @@ export default function EnrollmentSuccess({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [showConfirmModal]);
+  }, [isStaffWalkIn, showConfirmModal]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(trackingNumber);
@@ -84,15 +88,21 @@ export default function EnrollmentSuccess({
             <CheckCircle2 className="w-16 h-16 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold text-primary">
-            Application Submitted
+            {isStaffWalkIn ? "Walk-in Application Encoded" : "Application Submitted"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          <div className="text-center text-lg text-foreground  mb-6">
-            Your record is now <span className="font-bold text-primary">Pending Verification</span>.
-            <br /><br />
-            Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
-          </div>
+          {isStaffWalkIn ? (
+            <div className="mb-6 text-center text-lg text-foreground">
+              The learner&apos;s SCP application was successfully recorded and is ready for screening.
+            </div>
+          ) : (
+            <div className="text-center text-lg text-foreground mb-6">
+              Your record is now <span className="font-bold text-primary">Pending Verification</span>.
+              <br /><br />
+              Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
+            </div>
+          )}
 
           <div
             onClick={handleCopy}
@@ -127,10 +137,13 @@ export default function EnrollmentSuccess({
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
             <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-base leading-relaxed text-left">
-              Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar.
+              {isStaffWalkIn
+                ? "Write this tracking number on a piece of paper and give it to the learner. The learner can use it to track the application status."
+                : "Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar."}
             </p>
           </div>
 
+          {!isStaffWalkIn && (
           <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
             <Button
               type="button"
@@ -149,10 +162,11 @@ export default function EnrollmentSuccess({
               Track Application
             </Button>
           </div>
+          )}
         </CardContent>
       </Card>
 
-      <ConfirmationModal
+      {!isStaffWalkIn && <ConfirmationModal
         open={showConfirmModal}
         onOpenChange={setShowConfirmModal}
         title="Confirm Navigation"
@@ -162,7 +176,7 @@ export default function EnrollmentSuccess({
           if (onBackHome) onBackHome();
         }}
         variant="warning"
-      />
+      />}
     </div>
   );
 }

@@ -17,7 +17,12 @@ export const authorizeScpProgram = (req: Request, res: Response, next: NextFunct
 	}
 
 	// Try to extract program from query, body, or params.
-	const requestedProgram = req.query.program || req.body.program || req.query.program_id || req.body.program_id;
+	const requestedProgram =
+		req.query.program ||
+		req.body.program ||
+		req.body.scpType ||
+		req.query.program_id ||
+		req.body.program_id;
 
 	if (!requestedProgram) {
 		res.status(403).json({ message: 'Forbidden: Missing program identification for role validation.' });

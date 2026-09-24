@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/shared/lib/queryKeys"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ClipboardCheck, Loader2, Search, SlidersHorizontal, Info, Lock, MoreHorizontal } from "lucide-react"
+import { ClipboardCheck, Loader2, Search, SlidersHorizontal, Info, Lock, MoreHorizontal, Plus, X } from "lucide-react"
 import { motion } from "motion/react"
 import { sileo } from "sileo"
 
@@ -15,7 +15,6 @@ import { Badge } from "@/shared/ui/badge"
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
-import { Checkbox } from "@/shared/ui/checkbox"
 import { DataTable } from "@/shared/ui/data-table"
 import { TableRow, TableCell } from "@/shared/ui/table"
 import { Input } from "@/shared/ui/input"
@@ -24,10 +23,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
+import ScpAdmissionForm, { type ScpProgram } from "@/features/admission/pages/scp-admission/ScpAdmissionForm"
+import EnrollmentSuccess from "@/features/admission/pages/online-enrollment/components/EnrollmentSuccess"
+import type { ApplicationSubmitResponse } from "@enrollpro/shared"
 import { useHeaderStore } from "@/store/header.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 import { useAuthStore } from "@/store/auth.slice"
-type ScpProgram = "SCIENCE_TECHNOLOGY_AND_ENGINEERING" | "SPECIAL_PROGRAM_IN_THE_ARTS" | "SPECIAL_PROGRAM_IN_SPORTS"
 type AssessmentResult = "PENDING" | "QUALIFIED" | "WAITLISTED" | "DISQUALIFIED" | "FORFEITED"
 
 interface ProgramTab { id: ScpProgram; label: string }
@@ -76,6 +78,34 @@ interface AssessmentUpdate {
 interface BulkAssessmentPayload {
   program: ScpProgram
   updates: AssessmentUpdate[]
+}
+
+interface RankedApplication extends Application {
+  baseResult: AssessmentResult
+  finalResult: AssessmentResult
+  calculatedRowNumber?: number
+}
+
+interface CustomHeaderRow {
+  id: number
+  isCustomHeaderRow: true
+  headerType: "QUALIFYING" | "UNQUALIFIED"
+}
+
+type ApplicationTableRow = RankedApplication | CustomHeaderRow
+
+interface AssessmentTableMeta {
+  edits: Record<number, EditState>
+  updateEdit: (application: Application, patch: Partial<EditState>) => void
+  isRosterLocked: boolean
+}
+
+function isCustomHeaderRow(row: ApplicationTableRow): row is CustomHeaderRow {
+  return "isCustomHeaderRow" in row && row.isCustomHeaderRow
+}
+
+function getApplicationRow(row: ApplicationTableRow): RankedApplication | null {
+  return isCustomHeaderRow(row) ? null : row
 }
 
 function getInitialEdit(application: Application): EditState {
@@ -127,10 +157,12 @@ export default function LearnerAdmissionIndex() {
   const [forfeitTarget, setForfeitTarget] = useState<{ id: number; name: string } | null>(null)
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false)
   const [restoreTarget, setRestoreTarget] = useState<{ id: number; name: string } | null>(null)
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false)
+  const [walkInSuccess, setWalkInSuccess] = useState<ApplicationSubmitResponse | null>(null)
   const user = useAuthStore((state) => state.user)
-  const roles = user?.roles ?? []
-  const ancillaryRoles = user?.ancillaryRoles ?? []
-  const isGlobalAdmin = roles.some((r) => 
+  const roles = useMemo(() => user?.roles ?? [], [user?.roles])
+  const ancillaryRoles = useMemo(() => user?.ancillaryRoles ?? [], [user?.ancillaryRoles])
+  const isGlobalAdmin = roles.some((r) =>
     ["SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "HEAD_REGISTRAR"].includes(r)
   )
 
@@ -152,15 +184,15 @@ export default function LearnerAdmissionIndex() {
     ? selectedTab
     : activePrograms[0]?.id ?? ""
 
-  const isRosterLocked = 
+  const isRosterLocked =
     (activeTab === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && steRosterLocked) ||
     (activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" && spaRosterLocked) ||
     (activeTab === "SPECIAL_PROGRAM_IN_SPORTS" && spsRosterLocked) || false
 
-  const maxSlots = 
+  const maxSlots =
     activeTab === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? steCapacity :
-    activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" ? spaCapacity :
-    activeTab === "SPECIAL_PROGRAM_IN_SPORTS" ? spsCapacity : null
+      activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" ? spaCapacity :
+        activeTab === "SPECIAL_PROGRAM_IN_SPORTS" ? spsCapacity : null
 
   useEffect(() => {
     setTitle("SCP Admission")
@@ -232,9 +264,9 @@ export default function LearnerAdmissionIndex() {
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.publicSettings })
       await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
-      sileo.success({ 
-        title: "Application Restored", 
-        description: `Application restored. The learner is now ${data.status === 'QUALIFIED' ? 'Qualified' : 'Waitlisted'}.` 
+      sileo.success({
+        title: "Application Restored",
+        description: `Application restored. The learner is now ${data.status === 'QUALIFIED' ? 'Qualified' : 'Waitlisted'}.`
       })
       setIsRestoreModalOpen(false)
       setRestoreTarget(null)
@@ -262,7 +294,7 @@ export default function LearnerAdmissionIndex() {
     },
   })
 
-  const rankedApplicants = useMemo(() => {
+  const rankedApplicants = useMemo<RankedApplication[]>(() => {
     const withBaseResult = applicants.map((app) => {
       const edit = edits[app.id]
       const baseResult = edit
@@ -299,7 +331,7 @@ export default function LearnerAdmissionIndex() {
     })
   }, [applicants, edits, maxSlots])
 
-  const filteredApplicants = useMemo(() => {
+  const filteredApplicants = useMemo<ApplicationTableRow[]>(() => {
     const search = searchTerm.trim().toLocaleLowerCase()
     const result = rankedApplicants.filter((application) => {
       const fullName = [application.learner.firstName, application.learner.middleName, application.learner.lastName]
@@ -308,22 +340,22 @@ export default function LearnerAdmissionIndex() {
       const res = application.finalResult
       return matchesSearch && (assessmentFilter === "all" || res === assessmentFilter)
     })
-    
-    const firstDisqualifiedIndex = result.findIndex((app: any) => {
+
+    const firstDisqualifiedIndex = result.findIndex((app) => {
       return app.finalResult === "DISQUALIFIED"
     })
 
-    const resultWithHeaders = [...result]
+    const resultWithHeaders: ApplicationTableRow[] = [...result]
 
     if (firstDisqualifiedIndex !== -1) {
       resultWithHeaders.splice(firstDisqualifiedIndex, 0, {
         isCustomHeaderRow: true,
         headerType: "UNQUALIFIED",
         id: -2,
-      } as any)
+      })
     }
 
-    const hasQualifying = result.some((app: any) => {
+    const hasQualifying = result.some((app) => {
       return app.finalResult !== "DISQUALIFIED"
     })
 
@@ -332,19 +364,19 @@ export default function LearnerAdmissionIndex() {
         isCustomHeaderRow: true,
         headerType: "QUALIFYING",
         id: -1,
-      } as any)
+      })
     }
 
     let currentGroupNumber = 0;
-    return resultWithHeaders.map(app => {
-      if ((app as any).isCustomHeaderRow) {
+    return resultWithHeaders.map((app): ApplicationTableRow => {
+      if (isCustomHeaderRow(app)) {
         currentGroupNumber = 0;
         return app;
       }
       currentGroupNumber++;
       return { ...app, calculatedRowNumber: currentGroupNumber };
-    }) as Application[];
-  }, [applicants, assessmentFilter, edits, searchTerm, activeTab])
+    });
+  }, [assessmentFilter, rankedApplicants, searchTerm])
 
   const paginatedApplicants = useMemo(() => {
     const start = (page - 1) * limit
@@ -364,9 +396,9 @@ export default function LearnerAdmissionIndex() {
         edit.interviewStatus !== initial.interviewStatus
       )
     })
-    
+
     if (hasEdits) return true;
-    
+
     return rankedApplicants.some(app => (app.scpProfile?.assessmentResult ?? "PENDING") !== app.finalResult)
   }, [edits, applicants, rankedApplicants])
 
@@ -393,7 +425,7 @@ export default function LearnerAdmissionIndex() {
     })
   }
 
-  const columns: ColumnDef<Application>[] = useMemo(() => [
+  const columns: ColumnDef<ApplicationTableRow>[] = useMemo(() => [
     {
       id: "rowNumber",
       size: 70,
@@ -401,7 +433,10 @@ export default function LearnerAdmissionIndex() {
       maxSize: 70,
       meta: { className: "text-center", headerClassName: "text-center", pin: "left" },
       header: "#",
-      cell: ({ row }) => (row.original as any).calculatedRowNumber || ((page - 1) * limit + row.index + 1),
+      cell: ({ row }) => {
+        const application = getApplicationRow(row.original)
+        return application?.calculatedRowNumber ?? ((page - 1) * limit + row.index + 1)
+      },
     },
     {
       id: "applicant",
@@ -410,7 +445,9 @@ export default function LearnerAdmissionIndex() {
       meta: { pin: "left" },
       header: "APPLICANT NAME & LRN",
       cell: ({ row }) => {
-        const learner = row.original.learner
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const learner = application.learner
         return (
           <div className="flex min-w-0 items-center gap-3 py-2 text-left">
             <UserPhoto
@@ -437,8 +474,9 @@ export default function LearnerAdmissionIndex() {
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "PASSED REQUIREMENTS",
       cell: ({ row, table }) => {
-        const application = row.original
-        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as AssessmentTableMeta
         const currentState = edits[application.id] ?? getInitialEdit(application)
         if (isRosterLocked) return <div className="text-center font-bold py-2 uppercase">{currentState.requirementsStatus === "PASSED" ? "Passed" : currentState.requirementsStatus === "FAILED" ? "Failed" : "Pending"}</div>
         return (
@@ -467,8 +505,9 @@ export default function LearnerAdmissionIndex() {
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "WRITTEN EXAM",
       cell: ({ row, table }) => {
-        const application = row.original
-        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as AssessmentTableMeta
         const currentState = edits[application.id] ?? getInitialEdit(application)
         if (isRosterLocked) {
           if (currentState.requirementsStatus !== "PASSED") {
@@ -533,8 +572,9 @@ export default function LearnerAdmissionIndex() {
       meta: { className: "text-center", headerClassName: "text-center" },
       header: "INTERVIEW",
       cell: ({ row, table }) => {
-        const application = row.original
-        const { edits, updateEdit, isRosterLocked } = table.options.meta as any
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const { edits, updateEdit, isRosterLocked } = table.options.meta as AssessmentTableMeta
         const currentState = edits[application.id] ?? getInitialEdit(application)
         if (isRosterLocked) {
           if (currentState.requirementsStatus !== "PASSED" || currentState.writtenExamStatus !== "PASSED") {
@@ -573,9 +613,10 @@ export default function LearnerAdmissionIndex() {
       meta: { className: "text-center", headerClassName: "text-center", pin: "right" },
       header: "FINAL RESULT",
       cell: ({ row }) => {
-        const application = row.original as any
-        const result = application.finalResult ?? "PENDING"
-        
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const result = application.finalResult
+
         return (
           <div className="flex items-center justify-center gap-2 uppercase relative">
             <ResultBadge result={result} />
@@ -629,7 +670,7 @@ export default function LearnerAdmissionIndex() {
 
   const handleSaveBulk = () => {
     const updatesMap = new Map<number, AssessmentUpdate>();
-    
+
     Object.entries(edits).forEach(([idStr, edit]) => {
       const applicationId = Number(idStr)
       const rankedApp = rankedApplicants.find(a => a.id === applicationId)
@@ -655,7 +696,7 @@ export default function LearnerAdmissionIndex() {
         })
       }
     })
-    
+
     const updates = Array.from(updatesMap.values())
 
     const hasInvalidScore = updates.some(({ writtenExamScore }) =>
@@ -716,15 +757,15 @@ export default function LearnerAdmissionIndex() {
         </TabsList>
 
         {isRosterLocked && (
-        <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
-          <Info className="h-4 w-4 text-emerald-600" />
-          <AlertTitle>Official List of Qualified Applicants</AlertTitle>
-          <AlertDescription className="text-sm">
-            All {maxSlots || "N/A"} slots are filled and the list is now final. If a student backs out, use the row menu to forfeit their slot and automatically promote a waitlisted applicant.
-          </AlertDescription>
-        </Alert>
-      )}
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-none bg-card shadow-sm">
+          <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
+            <Info className="h-4 w-4 text-emerald-600" />
+            <AlertTitle>Official List of Qualified Applicants</AlertTitle>
+            <AlertDescription className="text-sm">
+              All {maxSlots || "N/A"} slots are filled and the list is now final. If a student backs out, use the row menu to forfeit their slot and automatically promote a waitlisted applicant.
+            </AlertDescription>
+          </Alert>
+        )}
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-none bg-card shadow-sm">
           <div className="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-gray-50 p-2 sm:p-3">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -788,7 +829,7 @@ export default function LearnerAdmissionIndex() {
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             {isRosterLocked ? (
               <div className="flex items-center gap-2 shrink-0">
                 <Button className="h-12 whitespace-nowrap font-bold bg-primary text-primary-foreground" onClick={() => setIsUnlockModalOpen(true)}>
@@ -797,14 +838,28 @@ export default function LearnerAdmissionIndex() {
               </div>
             ) : (
               <div className="flex items-center gap-2 shrink-0">
+                {applicants.length > 0 && !canLockRoster && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => {
+                      setWalkInSuccess(null)
+                      setIsWalkInOpen(true)
+                    }}
+                    className="h-12 whitespace-nowrap font-bold bg-primary text-primary-foreground"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Encode Walk-in
+                  </Button>
+                )}
                 {hasChanges ? (
                   <Button onClick={handleSaveBulk} disabled={updateMutation.isPending} className="h-12 whitespace-nowrap font-bold shrink-0">
                     {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Results
                   </Button>
                 ) : canLockRoster ? (
-                  <Button 
-                    onClick={() => setIsLockModalOpen(true)} 
+                  <Button
+                    onClick={() => setIsLockModalOpen(true)}
                     className="h-12 whitespace-nowrap font-bold shrink-0 bg-primary text-primary-foreground"
                   >
                     Finalize & Lock Roster
@@ -816,53 +871,170 @@ export default function LearnerAdmissionIndex() {
 
           <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
             <div className="min-h-0 flex-1 overflow-auto bg/5">
-              <DataTable<Application, unknown>
-                key={activeTab}
-                columns={columns}
-                data={paginatedApplicants}
-                getRowId={(row) => row.id ? row.id.toString() : Math.random().toString()}
-                isHeaderRow={(row) => (row as any).isCustomHeaderRow === true}
-                renderHeaderRow={(row, columnsCount) => {
-                  const headerType = (row as any).headerType;
-                  const programLabel = activePrograms.find(p => p.id === activeTab)?.label?.toUpperCase() || "";
-                  
-                  if (headerType === "QUALIFYING") {
-                    const headerText = isRosterLocked
-                      ? `TOP ${maxSlots || ""} QUALIFIED ${programLabel}`
-                      : `${programLabel} UNDER SCREENING`;
-                      
+              {!isFetching && applicants.length === 0 ? (
+                <div className="flex h-full min-h-[420px] flex-col items-center justify-center px-6 text-center">
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <ClipboardCheck className="h-8 w-8" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-foreground">No Applicants Found</h2>
+                  <p className="mt-2 max-w-lg text-base text-muted-foreground">
+                    There are no applicants currently registered for this program. Wait for online submissions or manually encode a walk-in.
+                  </p>
+                  <Button
+                    type="button"
+                    size="lg"
+                    disabled={isRosterLocked}
+                    title={isRosterLocked ? "Cannot encode walk-ins while the roster is finalized." : undefined}
+                    onClick={() => {
+                      setWalkInSuccess(null)
+                      setIsWalkInOpen(true)
+                    }}
+                    className="mt-6 min-w-72 text-base font-bold"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Encode Walk-in Applicant
+                  </Button>
+                </div>
+              ) : (
+                <DataTable<ApplicationTableRow, unknown>
+                  key={activeTab}
+                  columns={columns}
+                  data={paginatedApplicants}
+                  getRowId={(row) => row.id.toString()}
+                  isHeaderRow={isCustomHeaderRow}
+                  renderHeaderRow={(row, columnsCount) => {
+                    if (!isCustomHeaderRow(row)) return null
+                    const headerType = row.headerType;
+                    const programLabel = activePrograms.find(p => p.id === activeTab)?.label?.toUpperCase() || "";
+
+                    if (headerType === "QUALIFYING") {
+                      const headerText = isRosterLocked
+                        ? `TOP ${maxSlots || ""} QUALIFIED ${programLabel}`
+                        : `${programLabel} UNDER SCREENING`;
+
+                      return (
+                        <TableRow className="bg-emerald-50 hover:bg-emerald-50" key={`qualifying-header-${row.id}`}>
+                          <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-emerald-800 uppercase border-y border-emerald-200">
+                            {headerText}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    }
+
                     return (
-                      <TableRow className="bg-emerald-50 hover:bg-emerald-50" key={`qualifying-header-${(row as any).id}`}>
-                        <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-emerald-800 uppercase border-y border-emerald-200">
-                          {headerText}
+                      <TableRow className="bg-red-50 hover:bg-red-50" key={`unqualified-header-${row.id}`}>
+                        <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-red-800 uppercase border-y border-red-200">
+                          UNQUALIFIED {programLabel}
                         </TableCell>
                       </TableRow>
                     )
-                  }
-                  
-                  return (
-                    <TableRow className="bg-red-50 hover:bg-red-50" key={`unqualified-header-${(row as any).id}`}>
-                      <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-red-800 uppercase border-y border-red-200">
-                        UNQUALIFIED {programLabel}
-                      </TableCell>
-                    </TableRow>
-                  )
-                }}
-                meta={{ edits, updateEdit, isRosterLocked }}
-                loading={isFetching}
-                loadingBehavior="delayed"
-                virtualize={false}
-                className="h-full rounded-md border-none"
-                tableClassName="min-w-[1450px] table-fixed"
-                containerHeight="100%"
-                noResultsMessage="No applicants found for the selected filters."
-                striped={false}
-              />
+                  }}
+                  meta={{ edits, updateEdit, isRosterLocked }}
+                  loading={isFetching}
+                  loadingBehavior="delayed"
+                  virtualize={false}
+                  className="h-full rounded-md border-none"
+                  tableClassName="min-w-[1450px] table-fixed"
+                  containerHeight="100%"
+                  noResultsMessage="No applicants found for the selected filters."
+                  striped={false}
+                />
+              )}
             </div>
             <PaginationBar total={filteredApplicants.length} page={page} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1) }} itemName="Applicants" />
           </CardContent>
         </Card>
       </Tabs>
+      <Dialog
+        open={isWalkInOpen}
+        onOpenChange={(open) => {
+          if (open) setIsWalkInOpen(true)
+        }}
+      >
+        <DialogContent
+          showClose={false}
+          aria-describedby={undefined}
+          className="flex h-[90vh] w-[95vw] max-w-6xl flex-col overflow-hidden p-0"
+        >
+          <DialogHeader className="shrink-0 border-b bg-muted/30 px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold uppercase tracking-tight">
+                <Plus className="h-6 w-6 text-primary" />
+                Walk-in SCP Admission
+              </DialogTitle>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close walk-in admission"
+                onClick={() => {
+                  setWalkInSuccess(null)
+                  setIsWalkInOpen(false)
+                }}
+              >
+                <X className="h-5 w-5 rounded-full" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+            <div className="relative min-h-full px-6 py-6">
+              <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                <svg
+                  className="absolute inset-0 h-full w-full opacity-[0.04]"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <defs>
+                    <pattern
+                      id="pixel-grid-walk-in-admission"
+                      x="0"
+                      y="0"
+                      width="80"
+                      height="80"
+                      patternUnits="userSpaceOnUse"
+                    >
+                      <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                      <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                      <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                      <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#pixel-grid-walk-in-admission)" />
+                </svg>
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+                  }}
+                />
+              </div>
+              <div className="relative z-10">
+            {walkInSuccess ? (
+              <EnrollmentSuccess
+                trackingNumber={walkInSuccess.trackingNumber}
+                applicantType={walkInSuccess.applicantType}
+                programType={walkInSuccess.programType}
+                status={walkInSuccess.status}
+                currentStep={walkInSuccess.currentStep}
+                presentation="STAFF_WALK_IN"
+              />
+            ) : activeTab ? (
+              <ScpAdmissionForm
+                key={activeTab}
+                intakeChoice="NEW"
+                mode="STAFF_WALK_IN"
+                initialProgram={activeTab}
+                onCancel={() => setIsWalkInOpen(false)}
+                onSuccess={(payload) => {
+                  setWalkInSuccess(payload)
+                  void queryClient.invalidateQueries({ queryKey: ["scp-applicants", activeTab] })
+                }}
+              />
+            ) : null}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <ConfirmationModal
         open={isLockModalOpen}
         onOpenChange={setIsLockModalOpen}

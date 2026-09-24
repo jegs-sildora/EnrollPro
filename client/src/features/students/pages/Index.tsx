@@ -306,7 +306,7 @@ export default function Students() {
   const queryClient = useQueryClient();
 
   const { panelPercentage, isDesktopViewport, startResizing } =
-    useResizablePanel();
+    useResizablePanel(50, { storageKey: "learner-directory-detail-pane" });
 
   const {
     inputValue: search,

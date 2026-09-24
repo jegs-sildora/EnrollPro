@@ -23,7 +23,7 @@ import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useAuthStore } from "@/store/auth.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, getGradeLevelButtonStyles, getGradeLevelSolidBgStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
@@ -155,7 +155,9 @@ export function VerificationWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const queryClient = useQueryClient();
 
-  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(35);
+  const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(35, {
+    storageKey: "enrollment-verification-pane",
+  });
 
   const [processing, setProcessing] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
@@ -1010,17 +1012,17 @@ export function VerificationWorkspace() {
             {selectedApp ? (
               <>
                 {/* STICKY HEADER */}
-                <div className="shrink-0 px-6 md:px-12 pt-4 pb-4 border-b border-border bg-card z-10 w-full flex flex-wrap justify-between items-center gap-4 shadow-sm relative">
-                  <div className="flex items-center gap-3">
+                <div className="relative z-10 grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 border-b border-border bg-card px-6 py-4 shadow-sm md:px-12">
+                  <div className="flex min-w-0 items-center gap-3">
                     <UserPhoto
                       photo={selectedApp.learner.studentPhoto}
                       containerClassName="w-18 h-18 rounded-full shadow-sm border shrink-0 border-2 border-primary"
                       className="w-full h-full object-cover"
                       alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
                     />
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-2xl font-extrabold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
+                    <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <h2 className="min-w-0 break-words text-2xl font-extrabold uppercase leading-none tracking-tight text-foreground">
                           {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                         </h2>
                         {selectedApp.learner.sex === "MALE" ? (
@@ -1037,7 +1039,10 @@ export function VerificationWorkspace() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer shrink-0" 
+                    className={cn(
+                      "h-10 shrink-0 self-center justify-self-end rounded-lg border-2 px-5 text-sm font-bold shadow-sm transition-all cursor-pointer",
+                      getGradeLevelButtonStyles(selectedApp.gradeLevel.name),
+                    )}
                     onClick={() => setViewStudentId(selectedApp.learner.id)}
                   >
                     <Eye className="w-4 h-4 mr-2" />
