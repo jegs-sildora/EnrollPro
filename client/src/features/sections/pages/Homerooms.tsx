@@ -380,7 +380,7 @@ function SectionCard({
                       if (isCardDisabled) return;
                       onEdit();
                     }}>
-                    <Pencil strokeWidth={3} className="h-4 w-4" />
+                    <Pencil strokeWidth={2} className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -403,7 +403,7 @@ function SectionCard({
                         if (isCardDisabled || section.enrolledCount > 0) return;
                         onDelete();
                       }}>
-                      <Trash2 strokeWidth={3} className="h-4 w-4" />
+                      <Trash2 strokeWidth={2} className="h-4 w-4" />
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -713,6 +713,7 @@ export default function Homerooms() {
     useState<SectionCategory | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [teachersFetched, setTeachersFetched] = useState(false);
   const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>(
     [],
   );
@@ -901,6 +902,7 @@ export default function Homerooms() {
       if (!ayId) return;
 
       setLoadingTeachers(true);
+      setTeachersFetched(false);
       try {
         const params = new URLSearchParams({
           schoolYearId: String(ayId),
@@ -923,6 +925,7 @@ export default function Homerooms() {
         );
       } finally {
         setLoadingTeachers(false);
+        setTeachersFetched(true);
       }
     },
     [ayId, teachers],
@@ -945,6 +948,7 @@ export default function Homerooms() {
   useEffect(() => {
     if (!isFormSheetOpen) return;
     if (sectionFormData.adviserId === "none") return;
+    if (!teachersFetched) return;
 
     const hasSelectedTeacher = availableTeachers.some(
       (teacher) => String(teacher.id) === sectionFormData.adviserId,
@@ -953,7 +957,7 @@ export default function Homerooms() {
     if (!hasSelectedTeacher) {
       setSectionFormData((prev) => ({ ...prev, adviserId: "none" }));
     }
-  }, [availableTeachers, isFormSheetOpen, sectionFormData.adviserId]);
+  }, [availableTeachers, isFormSheetOpen, sectionFormData.adviserId, teachersFetched]);
 
   const handleOpenCreate = useCallback(
     (
@@ -1011,9 +1015,9 @@ export default function Homerooms() {
         curriculumProgram: section.programType === "REGULAR" ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO") : section.programType,
         programType: section.programType,
         isHomogeneous: section.isHomogeneous,
-        adviserId: section.advisingTeacher
+        adviserId: draftAdvisers[section.id] || (section.advisingTeacher
           ? section.advisingTeacher.id.toString()
-          : "none",
+          : "none"),
         maxCapacity: section.maxCapacity,
       };
       setSectionFormData(nextFormData);
@@ -1021,7 +1025,7 @@ export default function Homerooms() {
 
       setIsFormSheetOpen(true);
     },
-    [],
+    [draftAdvisers],
   );
 
   const isSectionFormDirty = useMemo(
@@ -1293,15 +1297,7 @@ export default function Homerooms() {
           }
           requestCloseSectionForm();
         }}
-        title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
-        description={
-          formSheetMode === "create"
-            ? `Add a ${createCategory
-              ? SECTION_CATEGORY_CONFIG[createCategory].title
-              : "section"
-            } masterlist for ${createGlName}.`
-            : `Update configuration for section ${sectionFormData.name}.`
-        }
+        title={formSheetMode === "create" ? `ADD NEW ${createGlName} SECTION` : "EDIT SECTION"}
         formData={sectionFormData}
         onFieldChange={handleFieldChange}
         onSubmit={handleFormSubmit}

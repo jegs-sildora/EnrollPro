@@ -115,10 +115,11 @@ const SCP_LABELS: Record<string, string> = {
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering (STE)",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts (SPA)",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports (SPS)",
-  SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism (SPJ)",
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language (SPFL)",
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "Technical Vocational Education (SPTVE)",
 };
+
+interface ActiveAcademicProgramsResponse {
+  programs: string[];
+}
 
 const getGradeTextColor = (gradeName: string) => {
   const name = gradeName.toUpperCase();
@@ -347,10 +348,25 @@ export function VerificationWorkspace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: publicSettings } = useQuery({
-    queryKey: queryKeys.publicSettings,
-    queryFn: () => api.get("/settings/public").then((res) => res.data),
+  const { data: activeAcademicPrograms } = useQuery({
+    queryKey: queryKeys.activeAcademicPrograms,
+    queryFn: () => api.get<ActiveAcademicProgramsResponse>("/settings/programs").then((res) => res.data),
   });
+
+  const activeProgramOptions = useMemo(
+    () => (activeAcademicPrograms?.programs ?? ["REGULAR"])
+      .filter((program) => Object.hasOwn(SCP_LABELS, program))
+      .map((program) => ({ value: program, label: SCP_LABELS[program] })),
+    [activeAcademicPrograms?.programs],
+  );
+
+  useEffect(() => {
+    if (!activeAcademicPrograms) return;
+    if (activeAcademicPrograms.programs.includes(assignedProgram)) return;
+
+    setAssignedProgram("REGULAR");
+    setAssignedSectionId(undefined);
+  }, [activeAcademicPrograms, assignedProgram]);
 
   const filteredVerifications = useMemo(() => {
     let result = pendingVerifications;
@@ -447,28 +463,27 @@ export function VerificationWorkspace() {
   useEffect(() => {
     if (!selectedApp) {
       setDuplicateInfo(null);
+      setShowDuplicateModal(false);
       return;
     }
 
     const lrnVal = selectedApp.learner.lrn ? selectedApp.learner.lrn.trim() : "";
-    const fName = selectedApp.learner.firstName.trim();
-    const lName = selectedApp.learner.lastName.trim();
-    const bDate = selectedApp.learner.birthdate;
+    const hasValidLrn = /^\d{12}$/.test(lrnVal);
 
-    const hasValidLrn = lrnVal.length === 12;
-    const hasValidDemographics = fName.length > 0 && lName.length > 0 && bDate && bDate.length > 0;
-
-    if (!hasValidLrn && !hasValidDemographics) {
+    if (!hasValidLrn) {
       setDuplicateInfo(null);
+      setShowDuplicateModal(false);
       return;
     }
 
+    let cancelled = false;
+
     api.post("/learner/check-duplicate", {
-      lrn: hasValidLrn ? lrnVal : undefined,
-      firstName: fName || undefined,
-      lastName: lName || undefined,
-      birthdate: bDate || undefined,
+      lrn: lrnVal,
+      excludeApplicationId: selectedApp.id,
     }).then((res) => {
+      if (cancelled) return;
+
       if (res.data?.duplicateFound) {
         const dupLearner = res.data.learner;
         const activeEnrollment = dupLearner.activeEnrollment;
@@ -477,14 +492,23 @@ export function VerificationWorkspace() {
           setShowDuplicateModal(true);
         } else {
           setDuplicateInfo(null);
+          setShowDuplicateModal(false);
         }
       } else {
         setDuplicateInfo(null);
+        setShowDuplicateModal(false);
       }
     }).catch((err) => {
+      if (cancelled) return;
+
       console.error("Duplicate check failed in VerificationWorkspace", err);
       setDuplicateInfo(null);
+      setShowDuplicateModal(false);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedApp]);
 
   useEffect(() => {
@@ -731,13 +755,11 @@ export function VerificationWorkspace() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
-                        <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
-                        <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
-                        <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
-                        <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
-                        <SelectItem value="SPECIAL_PROGRAM_IN_JOURNALISM" className="leading-tight font-bold">Special Program in Journalism</SelectItem>
-                        <SelectItem value="SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" className="leading-tight font-bold">Special Program in Foreign Language</SelectItem>
-                        <SelectItem value="SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION" className="leading-tight font-bold">Technical Vocational Education (SPTVE)</SelectItem>
+                        {activeProgramOptions.map(({ value, label }) => (
+                          <SelectItem key={value} value={value} className="leading-tight font-bold">
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1187,23 +1209,9 @@ export function VerificationWorkspace() {
                                 <SelectValue placeholder="Select Program" />
                               </SelectTrigger>
                               <SelectContent>
-                                {Object.entries(SCP_LABELS).map(([value, label]) => {
-                                  const show =
-                                    value === "REGULAR" ||
-                                    (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
-                                    (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
-                                    (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
-                                    value === "SPECIAL_PROGRAM_IN_JOURNALISM" ||
-                                    value === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" ||
-                                    value === "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION" ||
-                                    selectedApp.applicantType === value ||
-                                    assignedProgram === value;
-
-                                  if (show) {
-                                    return <SelectItem key={value} value={value}>{label}</SelectItem>;
-                                  }
-                                  return null;
-                                })}
+                                {activeProgramOptions.map(({ value, label }) => (
+                                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>

@@ -162,7 +162,7 @@ export function DashboardActionToolbar({
     >
       <div className="flex-1 min-w-0 lg:pr-2">
         <div className="flex items-center gap-2">
-          <p className="text-xl font-extrabold text-primary">
+          <p className="text-xl font-extrabold">
             Quick Actions
           </p>
           <TooltipProvider>

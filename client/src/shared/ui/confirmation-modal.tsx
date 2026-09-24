@@ -156,7 +156,7 @@ export function ConfirmationModal({
 
         {/* ── Header — centred ───────────────────────────────────────── */}
         <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-2xl font-extrabold ">{title}</DialogTitle>
+          <DialogTitle className="text-2xl font-extrabold uppercase">{title}</DialogTitle>
           <div className="space-y-4 w-full">
             <DialogDescription asChild>
               <div className="leading-relaxed text-foreground text-center w-full">

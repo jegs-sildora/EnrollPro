@@ -439,6 +439,16 @@ model EnrollmentApplication {
   @@map("enrollment_applications")
 }
 
+/// Permanently reserves public tracking numbers across admission and enrollment.
+/// Rows are intentionally retained so a previously issued number is never reused.
+model TrackingNumberReservation {
+  trackingNumber String   @id @map("tracking_number")
+  source         String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("tracking_number_reservations")
+}
+
 /// ATLAS-validated subject deficiencies declared on an incoming transferee's SF9.
 model EnrollmentBackSubject {
   id              Int                   @id @default(autoincrement())

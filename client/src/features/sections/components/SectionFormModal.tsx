@@ -18,7 +18,7 @@ import {
 } from "@/shared/ui/dialog";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { X } from "lucide-react";
-import { cn, getGradeLevelSolidBgStyles } from "@/shared/lib/utils";
+import { cn, getGradeLevelSolidBgStyles, getGradeLevelSolidButtonStyles } from "@/shared/lib/utils";
 import type { SectionFormState, TeacherOption } from "../types";
 
 type SectionFormField = keyof SectionFormState;
@@ -27,7 +27,6 @@ interface SectionFormModalProps {
   mode: "create" | "edit";
   open: boolean;
   title: string;
-  description: string;
   formData: SectionFormState;
   submitting: boolean;
   canSubmit: boolean;
@@ -45,7 +44,6 @@ export const SectionFormModal = memo(function SectionFormModal({
   mode,
   open,
   title,
-  description,
   formData,
   submitting,
   canSubmit,
@@ -97,19 +95,13 @@ export const SectionFormModal = memo(function SectionFormModal({
 
         <div className={cn("px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between text-white", getGradeLevelSolidBgStyles(gradeLevelName))}>
           <div className="flex items-center gap-4">
-            <div className="size-14 rounded-2xl bg-white/20 flex items-center justify-center font-bold text-white text-xl uppercase border border-white/30 shadow-md">
+            <div className="size-14 rounded-md bg-white/20 flex items-center justify-center font-bold text-white text-xl uppercase border border-white/30 shadow-md">
               {initials}
             </div>
             <div className="space-y-0.5">
-              <DialogTitle className={cn("font-bold text-white uppercase leading-none", mode === "edit" ? "text-xl" : "text-base")}>
+              <DialogTitle className="font-bold text-white uppercase leading-none text-xl">
                 {mode === "edit" ? `EDIT SECTION ${formData.name || ""}`.trim() : title}
               </DialogTitle>
-              {mode === "create" && (
-                <DialogDescription className="text-base font-bold text-white/90 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
-                  <Library className="size-3" />
-                  {description}
-                </DialogDescription>
-              )}
             </div>
           </div>
           <button
@@ -130,7 +122,7 @@ export const SectionFormModal = memo(function SectionFormModal({
                 <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-primary" />
-                    1. Section Identity
+                    Section Identity
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4">
@@ -199,7 +191,7 @@ export const SectionFormModal = memo(function SectionFormModal({
                 <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
-                    2. Advisory & Capacity
+                    Advisory & Capacity
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4">
@@ -277,18 +269,18 @@ export const SectionFormModal = memo(function SectionFormModal({
             </div>
           </div>
 
-          <div className="border-t px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end shrink-0">
+          <div className="border-t px-6 py-4 flex gap-3 shrink-0">
             <Button
               variant="outline"
               onClick={onCancel}
               disabled={submitting}
-              className="w-full sm:w-auto font-bold uppercase">
+              className="w-1/2 font-bold uppercase">
               Cancel
             </Button>
             <Button
               onClick={onSubmit}
               disabled={submitting || !canSubmit}
-              className="w-full sm:w-auto font-bold uppercase px-8">
+              className={cn("w-1/2 font-bold uppercase", getGradeLevelSolidButtonStyles(gradeLevelName))}>
               {submitting ? (
                 submittingLabel
               ) : (

@@ -104,6 +104,18 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
           lrn: true,
           sex: true,
           studentPhoto: true,
+          enrollmentApplications: {
+            where: { schoolYearId },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              status: true,
+              enrollmentRecord: {
+                select: { id: true },
+              },
+            },
+          },
         },
       },
     },
@@ -114,19 +126,35 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
   })
 
   // Map to legacy application structure so frontend LearnerAdmissionIndex works without changes
-  const mapped = admissions.map((adm) => ({
-    id: adm.id,
-    learner: adm.learner,
-    scpProfile: {
-      requirementsStatus: adm.requirementsStatus,
-      writtenExamStatus: adm.writtenExamStatus,
-      writtenExamScore: adm.writtenExamScore,
-      interviewStatus: adm.interviewStatus,
-      assessmentResult: adm.assessmentResult,
-    },
-    createdAt: adm.createdAt,
-    finalResult: adm.assessmentResult,
-  }))
+  const mapped = admissions.map((adm) => {
+    const [enrollmentApplication] = adm.learner.enrollmentApplications
+    const { enrollmentApplications: _enrollmentApplications, ...learner } = adm.learner
+
+    return {
+      id: adm.id,
+      learnerId: adm.learnerId,
+      schoolYearId: adm.schoolYearId,
+      applicantType: adm.program,
+      learner,
+      enrollmentApplication: enrollmentApplication
+        ? {
+            id: enrollmentApplication.id,
+            status: enrollmentApplication.status,
+            isSectioned: enrollmentApplication.enrollmentRecord !== null,
+          }
+        : null,
+      scpProfile: {
+        requirementsStatus: adm.requirementsStatus,
+        writtenExamStatus: adm.writtenExamStatus,
+        writtenExamScore: adm.writtenExamScore,
+        interviewStatus: adm.interviewStatus,
+        assessmentResult: adm.assessmentResult,
+        grade5GeneralAverage: adm.grade5GeneralAverage,
+      },
+      createdAt: adm.createdAt,
+      finalResult: adm.assessmentResult,
+    }
+  })
 
   res.json(mapped)
 }

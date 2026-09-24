@@ -2051,7 +2051,7 @@ export default function EosyUpdating() {
             <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <DialogTitle className="text-center text-xl font-bold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-extrabold uppercase">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
             <DialogDescription className="text-center pt-2 font-bold text-md">
               {activeGradeName.includes("10") ? (
                 `Are you sure you want to finalize ${descriptionTarget}? This will officially close the school year and generate their Junior High School completion records.`

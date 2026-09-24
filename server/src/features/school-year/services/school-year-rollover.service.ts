@@ -12,6 +12,7 @@ import {
 } from "../../integration/smart-outcome-envelope.js";
 import { checkSmartRemedialRolloverBlock } from "../../integration/smart-remedial.service.js";
 import { resolveRolloverDestination } from "./school-year-transition.service.js";
+import { reserveTrackingNumber } from "../../admission/tracking-number.service.js";
 
 type DatabaseClient = Pick<
   typeof prisma,
@@ -974,8 +975,13 @@ export async function executeSchoolYearRollover({
                                effectiveProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
                                effectiveProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                                effectiveProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
-        const paddedId = String(record.learnerId).padStart(7, '0');
-        const trackingNumber = `${programAcronym}${targetStartYear}${paddedId}`;
+        const trackingNumber = await reserveTrackingNumber(tx, {
+          source: "ENROLLMENT",
+          prefix: "ENR",
+          programAcronym,
+          schoolYearStart: targetStartYear,
+          learnerId: record.learnerId,
+        });
 
         const application = await tx.enrollmentApplication.create({
           data: {

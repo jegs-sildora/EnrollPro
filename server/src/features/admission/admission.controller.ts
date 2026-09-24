@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
-import type {
-  ApplicantType,
-  ApplicationStatus,
-  SchoolYear,
+import {
+  Prisma,
+  type ApplicantType,
+  type ApplicationStatus,
+  type SchoolYear,
 } from "../../generated/prisma/index.js";
 import {
   APPLICATION_STATUS_TO_TRACKING_STATUS,
@@ -15,11 +16,19 @@ import {
 } from "@enrollpro/shared";
 import { isPublicEnrollmentOpen, isScpAdmissionOpen } from "../settings/enrollment-gate.service.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
+import { reserveTrackingNumber } from "./tracking-number.service.js";
 
 interface ActiveEnrollmentSetting {
   activeSchoolYearId: number
   systemPhase: string
   activeSchoolYear: SchoolYear
+}
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
 }
 
 async function getActiveEnrollmentSetting(
@@ -485,11 +494,17 @@ async function processAdmissionSubmission(
     const programAcronym = programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
                            programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                            programType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
-    const paddedId = String(learner.id).padStart(7, '0');
-    const trackingNumber = `ADM-${programAcronym}${yearPrefix}${paddedId}`;
+    const admission = await prisma.$transaction(async (tx) => {
+      const trackingNumber = await reserveTrackingNumber(tx, {
+        source: "SCP_ADMISSION",
+        prefix: "ADM",
+        programAcronym,
+        schoolYearStart: yearPrefix,
+        learnerId: learner.id,
+      });
 
-    const admission = await prisma.scpAdmission.create({
-      data: {
+      return tx.scpAdmission.create({
+        data: {
         learnerId: learner.id,
         schoolYearId: activeSchoolYearId,
         program: data.scpType as ApplicantType,
@@ -567,7 +582,8 @@ async function processAdmissionSubmission(
             transferCertificateNo: data.transferCertificateNo || null,
           },
         }
-      }
+        }
+      });
     });
 
     res.status(201).json({
@@ -578,6 +594,13 @@ async function processAdmissionSubmission(
     });
   } catch (error) {
     console.error("Failed to submit admission:", error);
+    if (isUniqueConstraintViolation(error)) {
+      res.status(409).json({
+        duplicate_detected: true,
+        message: "An admission record already exists for this learner or tracking number.",
+      });
+      return;
+    }
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -685,11 +708,17 @@ export async function submitEnrollment(req: Request, res: Response) {
     const programAcronym = assignedProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : 
                            assignedProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                            assignedProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
-    const paddedId = String(learner.id).padStart(7, '0');
-    const trackingNumber = `ENR-${programAcronym}${yearPrefix}${paddedId}`;
+    const application = await prisma.$transaction(async (tx) => {
+      const trackingNumber = await reserveTrackingNumber(tx, {
+        source: "ENROLLMENT",
+        prefix: "ENR",
+        programAcronym,
+        schoolYearStart: yearPrefix,
+        learnerId: learner.id,
+      });
 
-    const application = await prisma.enrollmentApplication.create({
-      data: {
+      return tx.enrollmentApplication.create({
+        data: {
         learnerId: learner.id,
         schoolYearId: activeSchoolYearId,
         gradeLevelId: gradeLevelRecord.id,
@@ -776,7 +805,8 @@ export async function submitEnrollment(req: Request, res: Response) {
             transferCertificateNo: data.transferCertificateNo || null,
           },
         }
-      },
+        },
+      });
     });
 
     res.status(201).json({
@@ -787,6 +817,13 @@ export async function submitEnrollment(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Failed to submit enrollment:", error);
+    if (isUniqueConstraintViolation(error)) {
+      res.status(409).json({
+        duplicate_detected: true,
+        message: "An enrollment record already exists for this learner or tracking number.",
+      });
+      return;
+    }
     res.status(500).json({ message: "Internal server error" });
   }
 }

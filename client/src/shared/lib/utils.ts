@@ -56,6 +56,23 @@ export const getGradeLevelSolidBgStyles = (gradeLevel: string | null | undefined
   return "bg-primary";
 };
 
+export const getGradeLevelSolidButtonStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-600 hover:bg-emerald-700 text-white";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-600 hover:bg-amber-700 text-white";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-600 hover:bg-rose-700 text-white";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-indigo-600 hover:bg-indigo-700 text-white";
+  }
+  return "bg-primary hover:bg-primary/90 text-primary-foreground";
+};
+
 export const formatGradeLevel = (gradeLevel: string | null | undefined): string => {
   if (!gradeLevel) return "";
   return gradeLevel.replace(/Grade\s+/i, "G");

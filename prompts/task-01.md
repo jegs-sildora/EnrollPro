@@ -1,34 +1,43 @@
-# Prompt for UI/UX & Logic Implementation: Walk-in Encoding Action Placement
+# Prompt for UI/UX & Logic Implementation: Cross-Module Enrollment Visibility
 
 ## Role & Context
-Act as a Frontend Developer. We are integrating an `Encode Walk-in` action into the `SCP Admission` portal. 
+Act as a Full-Stack Developer. We are enhancing the `SCP Admission` table to solve a critical operational blind spot.
 
-In DepEd, Program Coordinators frequently need to manually encode walk-in applicants who did not use the online portal. We need to place this action where it is highly visible when the table is empty, and neatly organized when the table is full, without visually clashing with the existing "Finalize & Lock Roster" button.
+Currently, the table shows the admission `FINAL RESULT` (e.g., QUALIFIED, WAITLISTED), but Program Coordinators cannot see if these qualified learners have actually proceeded to officially enroll. We need to fetch the learner's corresponding enrollment record and display a lightweight "Enrollment Status" indicator directly on the admission roster, helping coordinators identify which slots are actually secured and which are pending/abandoned.
 
 ## Critical Directive
-Implement a dual-placement strategy. Use a dedicated "Empty State" component when there are zero records, and a toolbar button when records exist. Ensure strict state locking so walk-ins cannot be encoded after the roster is finalized.
+Do NOT add a new table column; this will overcrowd the layout. Inject a micro-badge (a small status pill) directly into the `APPLICANT NAME & LRN` column, positioned immediately below the LRN. This keeps the data dense, readable, and perfectly contextualized.
 
-## UI Component & Layout Requirements
+## UI Component & Logic Requirements
 
-Please implement the following layout and state variations:
+Please implement the following frontend UI and backend hydration logic:
 
-### 1. The Zero-Data Empty State (Center Screen)
-When the API returns an empty array (no applicants encoded yet):
-*   **Layout:** Render a standard Empty State container in the middle of the table body area.
-*   **Visuals:** Add a subtle, relevant illustration (e.g., an empty folder or a clipboard).
-*   **Copy:** 
-    *   *Heading:* `No Applicants Found`
-    *   *Subtext:* `There are no applicants currently registered for this program. Wait for online submissions or manually encode a walk-in.`
-*   **Action:** Render a large, solid Primary button in the center: `+ Encode Walk-in Applicant`.
+### 1. The Micro-Badge UI Component
+*   **Placement:** Inside the first data column, directly beneath the `LRN: XXXXXXXXXXXX` string. 
+*   **Styling:** Use a very small, rounded badge (e.g., `text-xs`, `px-2`, `py-0.5`). It must be visually distinct from the larger, heavier `FINAL RESULT` badges on the far right.
 
-### 2. The Populated Table Toolbar (Top Right)
-When the table has 1 or more applicants (as seen in the current UI):
-*   **Placement:** Inject the button into the top-right action area of the table header, positioned immediately to the *left* of the `Finalize & Lock Roster` button.
-*   **Styling (Visual Hierarchy):** Because `Finalize & Lock Roster` is a solid red button, make the `+ Encode Walk-in` button a **Ghost or Outline button** (e.g., transparent background with a primary-colored border and text). This prevents two heavy, solid buttons from competing for the user's attention.
-*   **Label:** Keep it concise: `+ Encode Walk-in`.
+### 2. State Mapping & Typography
+The badge must dynamically render based on the learner's linked `EnrollmentApplication` status for the active school year:
 
-### 3. State Management (The Roster Lock)
-Data integrity is critical. 
-*   **Logic:** If the current program's roster status is marked as `LOCKED` or `FINALIZED`, the `+ Encode Walk-in` button MUST be disabled (grayed out) or completely hidden.
-*   **Tooltip (Optional):** If disabled, add a hover tooltip stating: *"Cannot encode walk-ins while the roster is finalized."*
-*   **Backend Guard:** Ensure the `POST /api/admissions/walk-in` endpoint checks the roster status and rejects the payload with a `403 Forbidden` if the coordinator attempts to bypass the UI lock.
+*   **State A: No Enrollment Record (The Ghost)**
+    *   *Logic:* The learner is `QUALIFIED` in admissions, but no `enrollments` row exists for them yet.
+    *   *UI:* Gray/Muted background, dark gray text. 
+    *   *Label:* `Pending LESF Submission` or `Not Yet Enrolled`
+*   **State B: Enrollment Under Review (The Active Pipeline)**
+    *   *Logic:* The learner submitted the enrollment form, but the Grade Coordinator/Registrar hasn't verified it yet.
+    *   *UI:* Warning/Yellow background, dark amber text.
+    *   *Label:* `Enrollment For Verification`
+*   **State C: Officially Enrolled (The Secured Slot)**
+    *   *Logic:* The learner's enrollment is fully verified and they are sectioned.
+    *   *UI:* Success/Green background, dark green text.
+    *   *Label:* `Officially Enrolled`
+
+### 3. Backend Data Hydration (The Query)
+To make this work without spamming the database with N+1 queries, update the `GET /api/admissions/roster` controller:
+*   Perform a `LEFT JOIN` (or eager load/`include` depending on your ORM) on the `enrollments` table using the `learner_id` or `lrn` for the `current_school_year_id`.
+*   Append this enrollment state as a nested object or flat field in the admission roster JSON payload (e.g., `enrollment_status: "VERIFIED" | "PENDING" | null`).
+
+### 4. UX Polish: Actionable Tooltips
+Add a native HTML `title` or a library tooltip to the micro-badge.
+*   If `Pending LESF Submission`, the tooltip should say: *"This applicant has not yet submitted their official enrollment form. Follow up to secure their slot."*
+*   If `Officially Enrolled`, the tooltip should say: *"This learner is officially registered for the upcoming school year."*

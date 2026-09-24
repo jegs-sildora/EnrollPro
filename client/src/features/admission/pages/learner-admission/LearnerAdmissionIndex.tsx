@@ -60,6 +60,11 @@ interface Application {
   status: string
   learner: Learner
   scpProfile: ScpProfile | null
+  enrollmentApplication: {
+    id: number
+    status: string
+    isSectioned: boolean
+  } | null
 }
 interface EditState {
   requirementsStatus: ScpAssessmentState
@@ -137,6 +142,40 @@ function ResultBadge({ result }: { result: AssessmentResult }) {
   if (result === "DISQUALIFIED") return <Badge variant="destructive" className="text-base">Disqualified</Badge>
   if (result === "FORFEITED") return <Badge variant="outline" className="border-gray-500 text-gray-700 bg-gray-50 text-base">Forfeited</Badge>
   return <Badge variant="secondary" className="bg text-foreground text-base">Pending</Badge>
+}
+
+function EnrollmentStatusBadge({ application }: { application: RankedApplication }) {
+  const enrollment = application.enrollmentApplication
+
+  if (!enrollment) {
+    if (application.finalResult !== "QUALIFIED") return null
+
+    return (
+      <span
+        className="mt-1 inline-flex w-fit rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-sm font-bold leading-none text-slate-700 uppercase"
+      >
+        Pending LESF Submission
+      </span>
+    )
+  }
+
+  if (enrollment.status === "OFFICIALLY_ENROLLED" && enrollment.isSectioned) {
+    return (
+      <span
+        className="mt-1 inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-bold leading-none text-emerald-700 uppercase"
+      >
+        Officially Enrolled
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className="mt-1 inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-sm font-bold leading-none text-amber-800 uppercase"
+    >
+      Enrollment For Verification
+    </span>
+  )
 }
 
 export default function LearnerAdmissionIndex() {
@@ -459,9 +498,10 @@ export default function LearnerAdmissionIndex() {
                 {learner.lastName}, {learner.firstName}
                 {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
               </p>
-              <p className="text-sm ">
+              <p className="text-sm">
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
+              <EnrollmentStatusBadge application={application} />
             </div>
           </div>
         )
@@ -759,7 +799,7 @@ export default function LearnerAdmissionIndex() {
         {isRosterLocked && (
           <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
             <Info className="h-4 w-4 text-emerald-600" />
-            <AlertTitle>Official List of Qualified Applicants</AlertTitle>
+            <AlertTitle>OFFICIAL LIST OF QUALIFIED APPLICANTS</AlertTitle>
             <AlertDescription className="text-sm">
               All {maxSlots || "N/A"} slots are filled and the list is now final. If a student backs out, use the row menu to forfeit their slot and automatically promote a waitlisted applicant.
             </AlertDescription>

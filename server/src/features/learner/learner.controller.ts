@@ -619,10 +619,14 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
 
 export async function checkDuplicateLearner(req: Request, res: Response) {
   try {
-    const { lrn, firstName, lastName, birthdate } = req.body;
+    const lrn = typeof req.body?.lrn === "string" ? req.body.lrn.trim() : "";
+    const excludeApplicationId = Number(req.body?.excludeApplicationId);
+    const hasExcludedApplication = Number.isSafeInteger(excludeApplicationId) && excludeApplicationId > 0;
 
-    if (!lrn && (!firstName || !lastName || !birthdate)) {
-      res.status(400).json({ message: "Provide LRN or full demographic details" });
+    // LRN is the authoritative learner identity. Names and birthdates are not
+    // unique and must never trigger the enrollment sentinel by themselves.
+    if (!/^\d{12}$/.test(lrn)) {
+      res.json({ duplicateFound: false });
       return;
     }
 
@@ -635,34 +639,16 @@ export async function checkDuplicateLearner(req: Request, res: Response) {
       return;
     }
 
-    const parsedBirthdate = birthdate ? normalizeDateToUtcNoon(new Date(birthdate)) : undefined;
-
-    const matchConditions = new Array();
-    if (lrn && lrn.trim().length === 12) {
-      matchConditions.push({ lrn: lrn.trim() });
-    }
-    if (firstName && lastName && parsedBirthdate && !isNaN(parsedBirthdate.getTime())) {
-      matchConditions.push({
-        firstName: { equals: firstName.trim(), mode: "insensitive" },
-        lastName: { equals: lastName.trim(), mode: "insensitive" },
-        birthdate: parsedBirthdate,
-      });
-    }
-
-    if (matchConditions.length === 0) {
-      res.json({ duplicateFound: false });
-      return;
-    }
-
-    const learner = await prisma.learner.findFirst({
-      where: {
-        OR: matchConditions,
-      },
+    const learner = await prisma.learner.findUnique({
+      where: { lrn },
       include: {
         enrollmentApplications: {
           where: {
             schoolYearId: schoolSetting.activeSchoolYearId,
             status: { notIn: Array.of("REJECTED", "WITHDRAWN") },
+            ...(hasExcludedApplication
+              ? { id: { not: excludeApplicationId } }
+              : {}),
           },
           include: {
             gradeLevel: true,
@@ -676,12 +662,12 @@ export async function checkDuplicateLearner(req: Request, res: Response) {
       },
     });
 
-    if (!learner) {
+    const activeApp = learner?.enrollmentApplications.at(0);
+
+    if (!learner || !activeApp) {
       res.json({ duplicateFound: false });
       return;
     }
-
-    const activeApp = learner.enrollmentApplications.at(0);
 
     res.json({
       duplicateFound: true,
@@ -691,15 +677,13 @@ export async function checkDuplicateLearner(req: Request, res: Response) {
         lastName: learner.lastName,
         lrn: learner.lrn,
         birthdate: learner.birthdate,
-        activeEnrollment: activeApp
-          ? {
-              id: activeApp.id,
-              trackingNumber: activeApp.trackingNumber,
-              status: activeApp.status,
-              gradeLevelName: activeApp.gradeLevel.name,
-              sectionName: activeApp.enrollmentRecord?.section?.name ?? null,
-            }
-          : null,
+        activeEnrollment: {
+          id: activeApp.id,
+          trackingNumber: activeApp.trackingNumber,
+          status: activeApp.status,
+          gradeLevelName: activeApp.gradeLevel.name,
+          sectionName: activeApp.enrollmentRecord?.section?.name ?? null,
+        },
       },
     });
   } catch (error: unknown) {

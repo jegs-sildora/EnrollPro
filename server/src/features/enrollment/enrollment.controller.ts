@@ -120,6 +120,26 @@ function parseWalkInProgramType(value: unknown): ApplicantType {
   return value as ApplicantType;
 }
 
+async function assertEnrollmentProgramActive(program: ApplicantType): Promise<void> {
+  if (program === "REGULAR") return;
+
+  const settings = await prisma.schoolSetting.findFirst({
+    select: {
+      steEnabled: true,
+      spaEnabled: true,
+      spsEnabled: true,
+    },
+  });
+  const isActive =
+    (program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && settings?.steEnabled === true) ||
+    (program === "SPECIAL_PROGRAM_IN_THE_ARTS" && settings?.spaEnabled === true) ||
+    (program === "SPECIAL_PROGRAM_IN_SPORTS" && settings?.spsEnabled === true);
+
+  if (!isActive) {
+    throw new AppError(422, "The selected Special Curricular Program is not active.");
+  }
+}
+
 async function resolveWalkInSubjectCatalog(
   gradeLevelId: number,
   programType: ApplicantType,
@@ -184,6 +204,7 @@ export async function getWalkInAtlasSubjects(
     await assertEnrollmentGradeScope(req, intakeContext.schoolYearId, gradeLevelId);
 
     const programType = parseWalkInProgramType(req.query.programType);
+    await assertEnrollmentProgramActive(programType);
     const catalog = await resolveWalkInSubjectCatalog(
       gradeLevelId,
       programType,
@@ -280,6 +301,11 @@ export async function finalizeIntake(req: Request, res: Response) {
     application.gradeLevelId,
   );
 
+  const effectiveAssignedProgram = assignedProgram
+    ?? application.assignedProgram
+    ?? application.applicantType;
+  await assertEnrollmentProgramActive(effectiveAssignedProgram);
+
   if (application.status !== "PENDING_VERIFICATION") {
     throw new AppError(
       409,
@@ -298,7 +324,7 @@ export async function finalizeIntake(req: Request, res: Response) {
   if (application.learnerType === "TRANSFEREE" && sf9EligibilityStatus === "CONDITIONALLY_PROMOTED" && application.admissionChannel !== "F2F") {
     const catalog = await resolveWalkInSubjectCatalog(
       application.gradeLevelId,
-      application.applicantType,
+      effectiveAssignedProgram,
     );
     const catalogByCode = new Map(
       catalog.subjects.map((subject) => [subject.code, subject]),
@@ -333,7 +359,7 @@ export async function finalizeIntake(req: Request, res: Response) {
         confirmationConsent: checklistVerified,
         isMissingSf9: isMissingSf9 ?? false,
         isTemporarilyEnrolled: !checklistVerified,
-        assignedProgram: assignedProgram ?? undefined,
+        assignedProgram: effectiveAssignedProgram,
         isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
         academicStatus: sf9EligibilityStatus ?? undefined,
         isRemedialRequired: backSubjectSelection !== null ? true : undefined,
@@ -771,6 +797,7 @@ export async function directEncodeWalkIn(
 
     await assertEnrollmentGradeScope(req, schoolYearId, gradeLevelId);
     const applicantType = parseWalkInProgramType(assignedProgram);
+    await assertEnrollmentProgramActive(applicantType);
     let backSubjectSelection: {
       gradeLevelId: number;
       subjects: AtlasSubjectCatalogItem[];
