@@ -80,6 +80,25 @@ export const formatGradeLevel = (gradeLevel: string | null | undefined): string 
 
 
 export const MANILA_TIME_ZONE = "Asia/Manila";
+export const MOCKED_SYSTEM_DATE_KEY = "mocked_system_date";
+export const MOCKED_SYSTEM_DATE_ANCHOR_KEY = "mocked_system_date_anchor";
+
+export function getMockedSystemDate(): Date | null {
+  if (typeof window === "undefined") return null;
+
+  const storedDate = localStorage.getItem(MOCKED_SYSTEM_DATE_KEY);
+  if (!storedDate) return null;
+
+  const parsedDate = new Date(storedDate);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  const storedAnchor = localStorage.getItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
+  const anchorTimestamp = storedAnchor ? Number(storedAnchor) : Number.NaN;
+  if (!Number.isFinite(anchorTimestamp)) return parsedDate;
+
+  const elapsedMilliseconds = Math.max(0, Date.now() - anchorTimestamp);
+  return new Date(parsedDate.getTime() + elapsedMilliseconds);
+}
 
 export const SCP_LABELS: Record<string, string> = {
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
@@ -129,14 +148,7 @@ export function formatManilaDate(
  * In development, respects the Time Machine mocked date.
  */
 export function getManilaNow(): Date {
-  const mock = localStorage.getItem("mocked_system_date");
-  if (mock) {
-    const parsed = new Date(mock);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  return new Date();
+  return getMockedSystemDate() ?? new Date();
 }
 
 /**

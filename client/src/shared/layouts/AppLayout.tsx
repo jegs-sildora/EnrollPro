@@ -60,7 +60,12 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Separator } from "@/shared/ui/separator";
-import { cn, formatUserRole } from "@/shared/lib/utils";
+import {
+  cn,
+  formatUserRole,
+  MOCKED_SYSTEM_DATE_ANCHOR_KEY,
+  MOCKED_SYSTEM_DATE_KEY,
+} from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Switch } from "@/shared/ui/switch";
@@ -197,7 +202,8 @@ function UserNav() {
               const nextState = !showTimeMachineWidget;
               setShowTimeMachineWidget(nextState);
               if (!nextState) {
-                localStorage.removeItem("mocked_system_date");
+                localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
+                localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
                 window.location.reload();
               }
             }}
@@ -211,7 +217,8 @@ function UserNav() {
               onCheckedChange={(checked) => {
                 setShowTimeMachineWidget(checked);
                 if (!checked) {
-                  localStorage.removeItem("mocked_system_date");
+                  localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
+                  localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
                   window.location.reload();
                 }
               }}

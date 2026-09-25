@@ -1,7 +1,6 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { useEffect, useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Info, Mars, User, Venus } from "lucide-react";
 
 import type { EnrollmentFormData } from "../types";
@@ -12,7 +11,6 @@ import { Separator } from "@/shared/ui/separator";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { cn } from "@/shared/lib/utils";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
-import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 
 type ContactKey = "MOTHER" | "FATHER" | "GUARDIAN";
 
@@ -63,7 +61,6 @@ export default function Step2Family() {
   const data = watch();
   const hasNoMother = data.hasNoMother;
   const hasNoFather = data.hasNoFather;
-  const isPermanentSameAsCurrent = data.isPermanentSameAsCurrent;
   const isGuardianRequired = hasNoMother && hasNoFather;
 
   const motherInfoFilled =
@@ -133,186 +130,6 @@ export default function Step2Family() {
 
   return (
     <div className="space-y-12">
-
-      <div className="space-y-8">
-        <h3 className="text-base leading-tight font-bold uppercase  text-primary">
-          Current Home Address
-        </h3>
-
-        <PhilippineAddressSelector
-          value={{
-            region: data.currentAddress?.region ?? "",
-            province: data.currentAddress?.province ?? "",
-            cityMunicipality: data.currentAddress?.cityMunicipality ?? "",
-            barangay: data.currentAddress?.barangay ?? "",
-          }}
-          onChange={(updates) => {
-            Object.entries(updates).forEach(([field, val]) => {
-              if (val !== undefined) {
-                setValue(`currentAddress.${field}` as any, val, {
-                  shouldValidate: val !== "",
-                  shouldDirty: true,
-                });
-              }
-            });
-          }}
-          errors={{
-            region: errors.currentAddress?.region?.message,
-            province: errors.currentAddress?.province?.message,
-            cityMunicipality: errors.currentAddress?.cityMunicipality?.message,
-            barangay: errors.currentAddress?.barangay?.message,
-          }}
-          required
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.street"
-              className="text-base font-bold uppercase">
-              Sitio / Purok
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.street"
-              {...register("currentAddress.street")}
-              className="h-11 font-bold uppercase"
-              placeholder="e.g. SITIO CALAMBUGA"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.houseNo"
-              className="text-base font-bold uppercase">
-              House No. / Street
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.houseNo"
-              {...register("currentAddress.houseNo")}
-              className="h-11 font-bold uppercase"
-              placeholder="e.g. 123 OR RIZAL STREET"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3 pt-2">
-          <Checkbox
-            id="same-address"
-            checked={isPermanentSameAsCurrent}
-            onCheckedChange={(checked) =>
-              setValue("isPermanentSameAsCurrent", checked === true, {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
-            }
-            className="w-5 h-5 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-          />
-          <Label
-            htmlFor="same-address"
-            className="text-base leading-tight cursor-pointer select-none font-bold">
-            Permanent Address is same as Current Address
-          </Label>
-        </div>
-
-        <AnimatePresence>
-          {!isPermanentSameAsCurrent && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden">
-              <div className="pt-8 pb-1 space-y-6">
-                <h3 className="text-base leading-tight font-bold uppercase  text-primary">
-                  Permanent Address
-                </h3>
-
-                <PhilippineAddressSelector
-                  value={{
-                    region: data.permanentAddress?.region ?? "",
-                    province: data.permanentAddress?.province ?? "",
-                    cityMunicipality:
-                      data.permanentAddress?.cityMunicipality ?? "",
-                    barangay: data.permanentAddress?.barangay ?? "",
-                  }}
-                  onChange={(updates) => {
-                    Object.entries(updates).forEach(([field, val]) => {
-                      if (val !== undefined) {
-                        setValue(`permanentAddress.${field}` as any, val, {
-                          shouldValidate: val !== "",
-                          shouldDirty: true,
-                        });
-                      }
-                    });
-                  }}
-                  errors={{
-                    region: errors.permanentAddress?.region?.message,
-                    province: errors.permanentAddress?.province?.message,
-                    cityMunicipality:
-                      errors.permanentAddress?.cityMunicipality?.message,
-                    barangay: errors.permanentAddress?.barangay?.message,
-                  }}
-                />
-              </div>
-            
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="permanentAddress.street"
-                      className="text-base font-bold uppercase">
-                      Sitio / Purok
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.street"
-                      {...register("permanentAddress.street")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. MAGSAYSAY BLVD"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="permanentAddress.houseNo"
-                      className="text-base font-bold uppercase">
-                      House No. / Street
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.houseNo"
-                      {...register("permanentAddress.houseNo")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. 456"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
-                </div>
-
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <Separator className="opacity-50" />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -729,7 +546,7 @@ export default function Step2Family() {
         </div>
       </div>
 
-      {activeContactsCount > 0 && (
+      {activeContactsCount > 1 && (
         <>
           <Separator className="opacity-50" />
 

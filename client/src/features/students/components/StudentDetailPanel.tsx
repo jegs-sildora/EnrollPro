@@ -17,6 +17,7 @@ import {
   X,
   File,
   Image as ImageIcon,
+  Key,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -1131,13 +1132,20 @@ export function StudentDetailPanel({
 
             {/* Right Side: Action Button */}
             {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
-              <div className="shrink-0 ml-4 hidden sm:block">
+              <div className="shrink-0 ml-4 hidden sm:flex flex-col gap-2">
                 <Button
                   variant="outline"
-                  className="font-bold text-sm h-9 px-4 uppercase border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-sm rounded-md transition-all active:scale-[0.98]"
+                  className="font-bold text-sm h-9 px-4 uppercase border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-sm rounded-md transition-all active:scale-[0.98] w-full justify-start"
                   onClick={handleEditClick}>
                   <UserRoundPen className="mr-2 h-4 w-4 shrink-0" />
                   Edit Learner Data
+                </Button>
+                <Button
+                  variant="outline"
+                  className="font-bold text-sm h-9 px-4 uppercase border-muted-foreground text-muted-foreground hover:bg-muted/50 hover:text-foreground shadow-sm rounded-md transition-all active:scale-[0.98] w-full justify-start"
+                  onClick={handleResetPassword}>
+                  <Key className="mr-2 h-4 w-4 shrink-0" />
+                  Reset Password
                 </Button>
               </div>
             )}
@@ -1145,13 +1153,20 @@ export function StudentDetailPanel({
           
           {/* Mobile Edit Button */}
           {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
-            <div className="mt-4 sm:hidden flex w-full">
+            <div className="mt-4 sm:hidden flex flex-col gap-2 w-full">
                 <Button
                   variant="outline"
                   className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
                   onClick={handleEditClick}>
                   <UserRoundPen className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
                   Edit Learner Data
+                </Button>
+                <Button
+                  variant="outline"
+                  className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
+                  onClick={handleResetPassword}>
+                  <Key className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+                  Reset Password
                 </Button>
             </div>
           )}
@@ -2681,7 +2696,7 @@ export function StudentDetailPanel({
         open={showResetPasswordConfirm}
         onOpenChange={setShowResetPasswordConfirm}
         title="Confirm Password Reset"
-        description="Are you sure you want to reset this password?"
+        description="Are you sure you want to reset this password to its default password?"
         confirmText="Reset Password"
         cancelText="Cancel"
         onConfirm={handleResetPasswordConfirm}

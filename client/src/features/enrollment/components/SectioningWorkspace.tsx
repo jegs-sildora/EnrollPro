@@ -15,8 +15,6 @@ import {
   MoveRight,
   ArrowRightLeft,
   Trash2,
-  Mars,
-  Venus,
   SlidersHorizontal,
   Maximize2,
   Minimize2,
@@ -35,6 +33,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -215,12 +215,12 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
                   </span>
                 </div>
               </td>
-              <td className="p-1 text-center">
+              <td className="p-2 text-center">
                 <Badge className={cn(
                   "px-2",
-                  l.sex === "MALE" ? "px-1 bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "px-1 bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                  l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                 )}>
-                  {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
+                  {l.sex === "MALE" ? "M" : "F"}
                 </Badge>
               </td>
               <td className="p-3 text-center font-bold text-foreground">
@@ -1377,16 +1377,29 @@ export function SectioningWorkspace() {
   const normalMoveDestinationSections = normalMoveAction && normalMoveSourceSection
     ? currentGradeSections.filter((s) => s.id !== normalMoveAction.fromSectionId && s.programType === normalMoveSourceSection.programType)
     : [];
-  const compatibleSwapLearners = selectedDraftLearner
-    ? (draftPlacement?.rosters.flatMap((roster) =>
-      roster.learners.filter(
-        (learner) =>
-          learner.applicationId !== selectedDraftLearner.applicationId &&
+  const groupedCompatibleSwapLearners = selectedDraftLearner
+    ? (draftPlacement?.rosters
+        .filter((roster) =>
           getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
             roster.section.programType,
-          ),
-      ),
-    ) ?? [])
+          )
+        )
+        .map((roster) => ({
+          sectionName: roster.section.name,
+          programType: roster.section.programType,
+          learners: roster.learners
+            .filter(
+              (learner) =>
+                learner.applicationId !== selectedDraftLearner.applicationId
+            )
+            .sort((a, b) => {
+              const nameA = `${a.lastName}, ${a.firstName}`;
+              const nameB = `${b.lastName}, ${b.firstName}`;
+              return nameA.localeCompare(nameB);
+            }),
+        }))
+        .filter((group) => group.learners.length > 0)
+        .sort((a, b) => a.sectionName.localeCompare(b.sectionName)) ?? [])
     : [];
   const draftSectionByApplicationId = new Map<number, string>(
     draftPlacement?.rosters.flatMap((roster) =>
@@ -1411,7 +1424,7 @@ export function SectioningWorkspace() {
           }
         }}
       >
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-2 bg-muted border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger
               key={g.id}
@@ -1773,10 +1786,10 @@ export function SectioningWorkspace() {
                                         </span>
                                         <Badge
                                           className={cn(
-                                            "p-1",
+                                            "px-2",
                                             l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                           )}>
-                                          {l.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
+                                          {l.sex === "MALE" ? "M" : "F"}
                                         </Badge>
                                         {l.programType === "LATE_ENROLLEE" && (
                                           <Badge
@@ -2078,10 +2091,10 @@ export function SectioningWorkspace() {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-foreground">
                                   <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 px-2 gap-1 flex items-center">
-                                    <Mars className="h-4 w-4" />: {roster.genderCounts.boys}
+                                    M: {roster.genderCounts.boys}
                                   </Badge>
                                   <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 px-2 gap-1 flex items-center">
-                                    <Venus className="h-4 w-4" />: {roster.genderCounts.girls}
+                                    F: {roster.genderCounts.girls}
                                   </Badge>
                                   {draftPlacement && (
                                     <Badge variant="secondary">
@@ -2154,7 +2167,7 @@ export function SectioningWorkspace() {
                                                     ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2"
                                                     : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                                 )}>
-                                                {learner.sex === "MALE" ? <Mars className="h-4 w-4" /> : <Venus className="h-4 w-4" />}
+                                                {learner.sex === "MALE" ? "M" : "F"}
                                               </Badge>
                                             </td>
                                             <td className="p-3 font-bold text-center">
@@ -2189,7 +2202,7 @@ export function SectioningWorkspace() {
                                                       )
                                                     }>
                                                     <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                                    Swap Placement
+                                                    Swap Section
                                                   </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                               </DropdownMenu>
@@ -2373,7 +2386,7 @@ export function SectioningWorkspace() {
         onOpenChange={(open) => !open && setDraftMoveAction(null)}>
         <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Swap Placement</DialogTitle>
+            <DialogTitle>Swap Section</DialogTitle>
             <DialogDescription>
               Exchange this learner with another compatible learner in the
               draft.
@@ -2386,13 +2399,20 @@ export function SectioningWorkspace() {
               <SelectValue placeholder="Select learner to swap" />
             </SelectTrigger>
             <SelectContent>
-              {compatibleSwapLearners.map((learner) => (
-                <SelectItem
-                  key={learner.applicationId}
-                  value={String(learner.applicationId)}>
-                  {formatLearnerName(learner)} -{" "}
-                  {learner.genAve?.toFixed(2) ?? "No Gen Ave"}
-                </SelectItem>
+              {groupedCompatibleSwapLearners.map((group) => (
+                <SelectGroup key={group.sectionName}>
+                  <SelectLabel className="bg-muted text-primary/80 border-y uppercase">
+                    {(SCP_LABELS[group.programType] || group.programType)} - {group.sectionName}
+                  </SelectLabel>
+                  {group.learners.map((learner) => (
+                    <SelectItem
+                      key={learner.applicationId}
+                      value={String(learner.applicationId)}>
+                      {formatLearnerName(learner)} -{" "}
+                      {learner.genAve?.toFixed(2) ?? "No Gen Ave"}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -2405,7 +2425,7 @@ export function SectioningWorkspace() {
             <Button
               onClick={executeSwap}
               disabled={!swapApplicationId}>
-              Swap Placement
+              Swap Section
             </Button>
           </DialogFooter>
         </DialogContent>

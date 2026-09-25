@@ -94,7 +94,7 @@ interface RankedApplication extends Application {
 interface CustomHeaderRow {
   id: number
   isCustomHeaderRow: true
-  headerType: "QUALIFYING" | "UNQUALIFIED"
+  headerType: "QUALIFYING" | "WAITLISTED" | "UNQUALIFIED"
 }
 
 type ApplicationTableRow = RankedApplication | CustomHeaderRow
@@ -384,18 +384,27 @@ export default function LearnerAdmissionIndex() {
       return app.finalResult === "DISQUALIFIED"
     })
 
+    const firstWaitlistedIndex = result.findIndex((app) => {
+      return app.finalResult === "WAITLISTED"
+    })
+
     const resultWithHeaders: ApplicationTableRow[] = [...result]
 
-    if (firstDisqualifiedIndex !== -1) {
-      resultWithHeaders.splice(firstDisqualifiedIndex, 0, {
+    const insertions = []
+    if (firstDisqualifiedIndex !== -1) insertions.push({ index: firstDisqualifiedIndex, type: "UNQUALIFIED", id: -2 })
+    if (firstWaitlistedIndex !== -1) insertions.push({ index: firstWaitlistedIndex, type: "WAITLISTED", id: -3 })
+
+    // Insert from highest index first to avoid shifting issues
+    insertions.sort((a, b) => b.index - a.index).forEach(insert => {
+      resultWithHeaders.splice(insert.index, 0, {
         isCustomHeaderRow: true,
-        headerType: "UNQUALIFIED",
-        id: -2,
+        headerType: insert.type as "UNQUALIFIED" | "WAITLISTED",
+        id: insert.id,
       })
-    }
+    })
 
     const hasQualifying = result.some((app) => {
-      return app.finalResult !== "DISQUALIFIED"
+      return app.finalResult !== "DISQUALIFIED" && app.finalResult !== "WAITLISTED"
     })
 
     if (hasQualifying) {
@@ -956,6 +965,16 @@ export default function LearnerAdmissionIndex() {
                         <TableRow className="bg-emerald-50 hover:bg-emerald-50" key={`qualifying-header-${row.id}`}>
                           <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-emerald-800 uppercase border-y border-emerald-200">
                             {headerText}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    }
+                    
+                    if (headerType === "WAITLISTED") {
+                      return (
+                        <TableRow className="bg-amber-50 hover:bg-amber-50" key={`waitlisted-header-${row.id}`}>
+                          <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-amber-800 uppercase border-y border-amber-200">
+                            WAITLISTED {programLabel}
                           </TableCell>
                         </TableRow>
                       )

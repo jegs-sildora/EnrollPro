@@ -1,6 +1,6 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -8,6 +8,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
+import { motionClassNames } from "@/shared/lib/motion";
 import { useSettingsStore } from "@/store/settings.slice";
 import {
   AlertTriangle,
@@ -123,20 +124,22 @@ export function ConfirmationModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent
-        aria-describedby={undefined}
-        className={cn(
-          "w-full max-w-3xl rounded-lg p-8 overflow-hidden",
-          "bg-sidebar shadow-2xl",
-        )}
-        style={
-          applyOverride
-            ? ({
-              "--primary": "200 68% 9%",
-              "--primary-foreground": "0 0% 100%",
-            } as React.CSSProperties)
-            : {}
-        }>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className={cn("fixed inset-0 z-[9999] bg-black/72 backdrop-blur-[1px]", motionClassNames.overlay)} />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className={cn(
+            "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-sidebar p-8 shadow-2xl",
+            motionClassNames.dialogContent,
+          )}
+          style={
+            applyOverride
+              ? ({
+                "--primary": "200 68% 9%",
+                "--primary-foreground": "0 0% 100%",
+              } as React.CSSProperties)
+              : {}
+          }>
         {/* ── Icon badge ─────────────────────────────────────────────── */}
         <div className="flex justify-center mb-5">
           <span
@@ -222,7 +225,8 @@ export function ConfirmationModal({
             </Button>
           </DialogFooter>
         )}
-      </DialogContent>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
     </Dialog>
   );
 }

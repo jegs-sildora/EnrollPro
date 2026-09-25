@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth.slice";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 
 import { useSettingsStore } from "@/store/settings.slice";
+import { getMockedSystemDate } from "@/shared/lib/utils";
 
 const MIN_FETCH_LOADING_MS = 0;
 
@@ -96,9 +97,9 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${learnerToken}`;
   }
 
-  const mockDate = localStorage.getItem("mocked_system_date");
+  const mockDate = getMockedSystemDate();
   if (mockDate) {
-    config.headers.set("x-mock-date", mockDate);
+    config.headers.set("x-mock-date", mockDate.toISOString());
   }
 
   return config;
