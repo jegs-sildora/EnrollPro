@@ -103,6 +103,49 @@ export function getMockedSystemDate(): Date | null {
   return new Date(parsedDate.getTime() + elapsedMilliseconds);
 }
 
+function toManilaDateToken(date: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: MANILA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const partValue = (type: Intl.DateTimeFormatPartTypes): number =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return (
+    partValue("year") * 10000
+    + partValue("month") * 100
+    + partValue("day")
+  );
+}
+
+export function isWithinManilaDateRange(
+  currentDate: Date,
+  openDate: string | Date | null | undefined,
+  closeDate: string | Date | null | undefined,
+): boolean {
+  if (!openDate || !closeDate) return false;
+
+  const parsedOpenDate =
+    typeof openDate === "string" ? new Date(openDate) : openDate;
+  const parsedCloseDate =
+    typeof closeDate === "string" ? new Date(closeDate) : closeDate;
+
+  if (
+    Number.isNaN(parsedOpenDate.getTime())
+    || Number.isNaN(parsedCloseDate.getTime())
+  ) {
+    return false;
+  }
+
+  const currentToken = toManilaDateToken(currentDate);
+  return (
+    currentToken >= toManilaDateToken(parsedOpenDate)
+    && currentToken <= toManilaDateToken(parsedCloseDate)
+  );
+}
+
 export const SCP_LABELS: Record<string, string> = {
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",

@@ -887,7 +887,7 @@ export default function LearnerAdmissionIndex() {
               </div>
             ) : (
               <div className="flex items-center gap-2 shrink-0">
-                {applicants.length > 0 && !canLockRoster && (
+                {applicants.length > 0 && !canLockRoster && !hasChanges && (
                   <Button
                     type="button"
                     variant="default"
@@ -1000,7 +1000,7 @@ export default function LearnerAdmissionIndex() {
                 />
               )}
             </div>
-            <PaginationBar total={filteredApplicants.length} page={page} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1) }} itemName="Applicants" />
+            <PaginationBar total={filteredApplicants.filter(a => !isCustomHeaderRow(a)).length} page={page} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1) }} itemName="Applicants" />
           </CardContent>
         </Card>
       </Tabs>

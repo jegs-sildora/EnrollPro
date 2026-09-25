@@ -45,6 +45,7 @@ import {
   FileText,
   MoreHorizontal,
   SlidersHorizontal,
+  ArrowRight,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
@@ -58,7 +59,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatSectionProgramLabel } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { Badge } from "@/shared/ui/badge";
@@ -257,6 +258,23 @@ const getNextGradeName = (currentName: string) => {
   }
   return "the next grade level";
 };
+
+interface EosyTransitionListProps {
+  from: string;
+  to: string;
+}
+
+function EosyTransitionList({ from, to }: EosyTransitionListProps) {
+  return (
+    <ul className="mt-3 border-t border-current/15 pt-3">
+      <li className="flex items-center justify-center gap-2 text-center font-extrabold uppercase">
+        <span>{from}</span>
+        <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        <span>{to}</span>
+      </li>
+    </ul>
+  );
+}
 
 interface GeofencingPopoverProps {
   latitude: number | null | undefined;
@@ -1404,6 +1422,40 @@ export default function EosyUpdating() {
           const currentAve = r.finalAverage;
           const isScpDemoted = r.isScpDemoted;
           const currentDeficiencyNote = r.academicDeficiencyNote;
+          const currentGradeName = r.enrollmentApplication.gradeLevel?.name ?? activeGradeName;
+          const currentGradeLabel = currentGradeName.toUpperCase();
+          const incomingGradeLabel = `INCOMING ${getNextGradeName(currentGradeName)}`.toUpperCase();
+          const currentProgramLabel = formatSectionProgramLabel(
+            r.section.programType,
+            r.section.isHomogeneous,
+          ).toUpperCase() || "SCP";
+          const statusTransition: EosyTransitionListProps | null = (() => {
+            if (isScpDemoted && resolvedStatus === "PROMOTED" && !isGrade10) {
+              return { from: currentProgramLabel, to: "BEC" };
+            }
+
+            switch (resolvedStatus) {
+              case "PROMOTED":
+                return {
+                  from: currentGradeLabel,
+                  to: isGrade10 ? "JHS COMPLETER" : incomingGradeLabel,
+                };
+              case "PROMOTED_TO_BEC":
+                return { from: currentProgramLabel, to: "BEC" };
+              case "CONDITIONALLY_PROMOTED":
+                return { from: currentGradeLabel, to: incomingGradeLabel };
+              case "RETAINED":
+                return { from: currentGradeLabel, to: currentGradeLabel };
+              case "TRANSFERRED_OUT":
+                return { from: currentGradeLabel, to: "TRANSFERRED OUT" };
+              case "DROPPED_OUT":
+                return { from: currentGradeLabel, to: "DROPPED OUT" };
+              case "ACTION_REQUIRED":
+                return { from: currentGradeLabel, to: "PENDING DECISION" };
+              default:
+                return null;
+            }
+          })();
 
           const renderTooltip = (trigger: React.ReactNode) => {
             return (
@@ -1424,6 +1476,9 @@ export default function EosyUpdating() {
                         <li key={i}>{v.subject} ({v.actualGrade})</li>
                       ))}
                     </ul>
+                    {statusTransition ? (
+                      <EosyTransitionList {...statusTransition} />
+                    ) : null}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -1446,6 +1501,9 @@ export default function EosyUpdating() {
                     <p className="text-base leading-snug">
                       {reason}
                     </p>
+                    {statusTransition ? (
+                      <EosyTransitionList {...statusTransition} />
+                    ) : null}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -1460,8 +1518,8 @@ export default function EosyUpdating() {
               return renderRetainedTooltip(trigger);
             }
 
-            let title = "";
-            let description: React.ReactNode = "";
+            let title: string;
+            let description: React.ReactNode;
             let colorClass = "bg-green-50 border-green-300 text-green-900";
             let titleColorClass = "text-green-800 border-green-200";
 
@@ -1469,6 +1527,10 @@ export default function EosyUpdating() {
               case "PROMOTED":
                 title = isGrade10 ? "JHS COMPLETER" : "PROMOTED";
                 description = "Learner met all academic requirements and is eligible for the next grade level.";
+                break;
+              case "PROMOTED_TO_BEC":
+                title = "BEC LATERAL TRANSFER";
+                description = "Learner will continue in the Basic Education Curriculum (BEC) next school year.";
                 break;
               case "CONDITIONALLY_PROMOTED":
                 title = "CONDITIONALLY PROMOTED";
@@ -1522,6 +1584,9 @@ export default function EosyUpdating() {
                     <div className="text-base leading-snug">
                       {description}
                     </div>
+                    {statusTransition ? (
+                      <EosyTransitionList {...statusTransition} />
+                    ) : null}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -3,6 +3,34 @@ import { prisma } from "../../lib/prisma.js"
 import { AppError } from "../../lib/AppError.js"
 import { getSchoolYearRolloverReadiness } from "../school-year/services/school-year-rollover.service.js"
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js"
+import {
+  clearSystemDateOverride,
+  getSystemDateOverride,
+  setSystemDateOverride,
+} from "../../lib/date-wrapper.js"
+
+export function updateSystemDateOverride(req: Request, res: Response): void {
+  const value = typeof req.body === "object" && req.body !== null
+    ? (req.body as Record<string, unknown>).mockedDate
+    : null
+
+  if (typeof value !== "string") {
+    throw new AppError(400, "mockedDate must be an ISO date-time string.")
+  }
+
+  const mockedDate = new Date(value)
+  if (Number.isNaN(mockedDate.getTime())) {
+    throw new AppError(400, "mockedDate must be a valid ISO date-time string.")
+  }
+
+  setSystemDateOverride(mockedDate)
+  res.json({ mockedDate: getSystemDateOverride()?.toISOString() ?? null })
+}
+
+export function resetSystemDateOverride(_req: Request, res: Response): void {
+  clearSystemDateOverride()
+  res.status(204).send()
+}
 
 export async function getPublicConfig(
   _req: Request,

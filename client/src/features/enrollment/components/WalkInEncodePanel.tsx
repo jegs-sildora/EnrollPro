@@ -36,7 +36,8 @@ import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { AnimatedError } from "@/shared/components/AnimatedError";
-import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, X } from "lucide-react";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, Trash2, X } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
@@ -80,17 +81,61 @@ interface LearnerLookupResponse {
   firstName: string;
   lastName: string;
   middleName?: string | null;
+  extensionName?: string | null;
   birthdate?: string | null;
   sex?: "MALE" | "FEMALE";
+  motherTongue?: string | null;
+  studentPhoto?: string | null;
+  gradeLevelToEnroll?: string | null;
+  previousGenAve?: number | null;
+  promotionStatus?: "PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED" | null;
+  academicStatus?: "PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED" | null;
+  assignedProgram?: string | null;
+  hasPsaBirthCertificate?: boolean;
+  isMissingSf9?: boolean | null;
+  addresses?: Array<{
+    addressType: "CURRENT" | "PERMANENT";
+    houseNoStreet?: string | null;
+    street?: string | null;
+    sitio?: string | null;
+    barangay?: string | null;
+    cityMunicipality?: string | null;
+    province?: string | null;
+    region?: string | null;
+  }>;
   previousSchool?: {
     schoolName?: string | null;
+    schoolId?: string | null;
     generalAverage?: number | null;
   } | null;
   familyMembers?: Array<{
+    relationship: "MOTHER" | "FATHER" | "GUARDIAN";
     firstName: string;
     lastName: string;
+    middleName?: string | null;
     contactNumber?: string | null;
   }>;
+}
+
+type WalkInProgram = DirectEncodeWalkInPayload["assignedProgram"];
+
+const WALK_IN_PROGRAMS: ReadonlySet<string> = new Set<WalkInProgram>([
+  "REGULAR",
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+]);
+
+function isWalkInProgram(value: string | null | undefined): value is WalkInProgram {
+  return Boolean(value && WALK_IN_PROGRAMS.has(value));
+}
+
+function addressesMatch(
+  first: NonNullable<LearnerLookupResponse["addresses"]>[number],
+  second: NonNullable<LearnerLookupResponse["addresses"]>[number],
+): boolean {
+  const fields = ["houseNoStreet", "street", "sitio", "barangay", "cityMunicipality", "province", "region"] as const;
+  return fields.every((field) => (first[field] ?? "").trim().toUpperCase() === (second[field] ?? "").trim().toUpperCase());
 }
 
 interface ApiErrorResponse {
@@ -130,6 +175,7 @@ function getWalkInErrorMessage(error: unknown, fallback: string): string {
 export function WalkInEncodePanel() {
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
   const lastLookedUpLrn = useRef<string>("");
@@ -331,29 +377,68 @@ export function WalkInEncodePanel() {
       const res = await api.get<LearnerLookupResponse>(`/learner/lookup?lrn=${lrn}`);
       const data = res.data;
 
-      form.setValue("firstName", data.firstName);
-      form.setValue("lastName", data.lastName);
-      if (data.middleName) form.setValue("middleName", data.middleName);
-      if (data.birthdate) {
-        // Handle format YYYY-MM-DD
-        const d = new Date(data.birthdate);
-        form.setValue("birthdate", d.toISOString().split('T')[0]);
+      const updateOptions = { shouldDirty: true, shouldValidate: true } as const;
+      const currentAddress = data.addresses?.find((address) => address.addressType === "CURRENT")
+        ?? data.addresses?.[0];
+      const permanentAddress = data.addresses?.find((address) => address.addressType === "PERMANENT");
+      const primaryContact = data.familyMembers?.find((member) => member.relationship === "GUARDIAN")
+        ?? data.familyMembers?.find((member) => member.relationship === "MOTHER")
+        ?? data.familyMembers?.find((member) => member.relationship === "FATHER");
+      const incomingGrade = activeSchoolYear?.gradeLevels?.find(
+        (gradeLevel) => gradeLevel.name.trim().toUpperCase() === data.gradeLevelToEnroll?.trim().toUpperCase(),
+      );
+      const lookupProgram = isWalkInProgram(data.assignedProgram)
+        && programOptions.some((program) => program.val === data.assignedProgram)
+        ? data.assignedProgram
+        : "REGULAR";
+      const eligibilityStatus = data.academicStatus ?? data.promotionStatus;
+
+      form.setValue("firstName", data.firstName.trim(), updateOptions);
+      form.setValue("lastName", data.lastName.trim(), updateOptions);
+      form.setValue("middleName", data.middleName?.trim() ?? "", updateOptions);
+      form.setValue("extensionName", data.extensionName?.trim() ?? "", updateOptions);
+      form.setValue("birthdate", data.birthdate?.slice(0, 10) ?? "", updateOptions);
+      if (data.sex) form.setValue("sex", data.sex, updateOptions);
+      form.setValue("motherTongue", data.motherTongue?.trim() ?? "", updateOptions);
+      form.setValue("studentPhoto", data.studentPhoto ?? "", updateOptions);
+
+      form.setValue("addressStreet", currentAddress?.houseNoStreet?.trim() || currentAddress?.street?.trim() || "", updateOptions);
+      form.setValue("addressSitio", currentAddress?.sitio?.trim() ?? "", updateOptions);
+      form.setValue("addressRegion", currentAddress?.region?.trim() ?? "", updateOptions);
+      form.setValue("addressProvince", currentAddress?.province?.trim() ?? "", updateOptions);
+      form.setValue("addressCity", currentAddress?.cityMunicipality?.trim() ?? "", updateOptions);
+      form.setValue("addressBarangay", currentAddress?.barangay?.trim() ?? "", updateOptions);
+      form.setValue(
+        "permanentAddressSameAsCurrent",
+        Boolean(currentAddress && (!permanentAddress || addressesMatch(currentAddress, permanentAddress))),
+        updateOptions,
+      );
+
+      if (!assignedGradeLevelId && incomingGrade) {
+        form.setValue("gradeLevelId", incomingGrade.id, updateOptions);
       }
-      if (data.sex) form.setValue("sex", data.sex);
-      if (data.previousSchool) {
-        form.setValue("previousSchoolName", data.previousSchool.schoolName || "");
-        if (data.previousSchool.generalAverage) {
-          form.setValue("previousGenAve", data.previousSchool.generalAverage);
-        }
+      form.setValue("assignedProgram", lookupProgram, updateOptions);
+
+      form.setValue("previousSchoolName", data.previousSchool?.schoolName?.trim() ?? "", updateOptions);
+      form.setValue("originatingSchoolId", data.previousSchool?.schoolId?.trim() ?? "", updateOptions);
+      form.setValue(
+        "previousGenAve",
+        data.previousSchool?.generalAverage ?? data.previousGenAve ?? undefined,
+        updateOptions,
+      );
+
+      form.setValue("guardianFirstName", primaryContact?.firstName.trim() ?? "", updateOptions);
+      form.setValue("guardianMiddleName", primaryContact?.middleName?.trim() ?? "", updateOptions);
+      form.setValue("guardianLastName", primaryContact?.lastName.trim() ?? "", updateOptions);
+      form.setValue("guardianContact", primaryContact?.contactNumber?.trim() ?? "", updateOptions);
+      if (primaryContact) {
+        form.setValue("guardianRelationship", primaryContact.relationship, updateOptions);
       }
-      if (data.familyMembers && data.familyMembers.length > 0) {
-        const primary = data.familyMembers[0];
-        form.setValue("guardianFirstName", primary.firstName.trim());
-        form.setValue("guardianLastName", primary.lastName.trim());
-        form.setValue("guardianMiddleName", "");
-        if (primary.contactNumber) {
-          form.setValue("guardianContact", primary.contactNumber);
-        }
+
+      form.setValue("hasPsa", data.hasPsaBirthCertificate ?? false, updateOptions);
+      form.setValue("hasSf9", data.isMissingSf9 === false, updateOptions);
+      if (eligibilityStatus) {
+        form.setValue("sf9EligibilityStatus", eligibilityStatus, updateOptions);
       }
 
       sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
@@ -405,8 +490,17 @@ export function WalkInEncodePanel() {
   const resetPanelState = useCallback(() => {
     form.reset();
     setNoLrn(false);
+    setIsOtherMotherTongue(false);
+    setIsClearModalOpen(false);
     lastLookedUpLrn.current = "";
   }, [form]);
+
+  const clearForm = useCallback(() => {
+    resetPanelState();
+    if (assignedGradeLevelId) {
+      form.setValue("gradeLevelId", assignedGradeLevelId, { shouldValidate: true });
+    }
+  }, [assignedGradeLevelId, form, resetPanelState]);
 
   const closePanel = useCallback(() => {
     resetPanelState();
@@ -494,6 +588,16 @@ export function WalkInEncodePanel() {
             Walk-In Learner Enrollment
           </DialogTitle>
         </DialogHeader>
+        <ConfirmationModal
+          open={isClearModalOpen}
+          onOpenChange={setIsClearModalOpen}
+          title="Clear Entire Form?"
+          description="Are you sure you want to start over? This will permanently delete all the information entered in this walk-in enrollment form."
+          variant="danger"
+          confirmText="Yes, Clear Form"
+          cancelText="Cancel"
+          onConfirm={clearForm}
+        />
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0" autoComplete="off">
@@ -502,11 +606,22 @@ export function WalkInEncodePanel() {
                 <div className="space-y-4">
                   {/* LEARNER PROFILE BLOCK */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                    <div className="px-5 py-3 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border flex items-center justify-between gap-4">
                       <span className="flex items-center gap-2">
                         <User className="h-4 w-4 text-primary" />
                         Learner Profile
                       </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isSubmitting || isLookingUp}
+                        className="px-2 font-bold text-foreground hover:text-destructive"
+                        onClick={() => setIsClearModalOpen(true)}
+                      >
+                        <Trash2 className="mr-1.5 h-4 w-4" />
+                        Clear Form
+                      </Button>
                     </div>
                     <div className="px-5 pt-5 pb-1">
                       <div className={cn("grid gap-4 font-bold", isTransfereeOnlyCoordinator ? "grid-cols-1" : "grid-cols-3")}>

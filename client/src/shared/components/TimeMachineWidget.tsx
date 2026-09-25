@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Button } from "@/shared/ui/button";
 import { Clock } from "lucide-react";
@@ -12,14 +12,18 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import {
+  getMockedSystemDate,
   MOCKED_SYSTEM_DATE_ANCHOR_KEY,
   MOCKED_SYSTEM_DATE_KEY,
 } from "@/shared/lib/utils";
+import api from "@/shared/api/axiosInstance";
+import { sileo } from "sileo";
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, index) => String(index + 1));
 const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) =>
   String(index).padStart(2, "0"),
 );
 const SECOND_OPTIONS = MINUTE_OPTIONS;
+const SYSTEM_DATE_SYNC_TIMEOUT_MS = 3_000;
 
 interface MockDateTimeParts {
   date: string;
@@ -82,12 +86,27 @@ export function TimeMachineWidget() {
   const [hasMockOverride, setHasMockOverride] = useState(
     initialMockDateTime.hasOverride,
   );
+  useEffect(() => {
+    const mockedDate = getMockedSystemDate();
+    if (!mockedDate) return;
+
+    void api
+      .put("/system/date-override", {
+        mockedDate: mockedDate.toISOString(),
+      }, {
+        timeout: SYSTEM_DATE_SYNC_TIMEOUT_MS,
+      })
+      .catch(() => {
+        // The request header continues to provide a scoped fallback if the
+        // server is temporarily unavailable during local development.
+      });
+  }, []);
 
   const handleDateChange = (val: string) => {
     setMockDate(val);
   };
 
-  const applyMockedDateTime = () => {
+  const applyMockedDateTime = async () => {
     if (!mockDate) return;
 
     const hour12 = Number(mockHour);
@@ -100,15 +119,46 @@ export function TimeMachineWidget() {
     localStorage.setItem(MOCKED_SYSTEM_DATE_KEY, mockedTimestamp);
     localStorage.setItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY, String(Date.now()));
     setHasMockOverride(true);
-    window.location.reload();
+    try {
+      await api.put(
+        "/system/date-override",
+        {
+          mockedDate: new Date(mockedTimestamp).toISOString(),
+        },
+        { timeout: SYSTEM_DATE_SYNC_TIMEOUT_MS },
+      );
+    } catch (error: unknown) {
+      sileo.warning({
+        title: "Mock Time Applied Locally",
+        description:
+          error instanceof Error
+            ? `Server synchronization will retry after reload: ${error.message}`
+            : "Server synchronization will retry after reload.",
+      });
+    } finally {
+      window.location.reload();
+    }
   };
 
-  const resetToRealTime = () => {
-    setMockDate("");
-    localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
-    localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
-    setHasMockOverride(false);
-    window.location.reload();
+  const resetToRealTime = async () => {
+    try {
+      await api.delete("/system/date-override", {
+        timeout: SYSTEM_DATE_SYNC_TIMEOUT_MS,
+      });
+      setMockDate("");
+      localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
+      localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
+      setHasMockOverride(false);
+      window.location.reload();
+    } catch (error: unknown) {
+      sileo.error({
+        title: "Reset Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "The real system clock could not be restored.",
+      });
+    }
   };
 
   if (!showTimeMachineWidget) {
@@ -134,7 +184,7 @@ export function TimeMachineWidget() {
                 Time Machine
               </h4>
               <p className="text-xs text-muted-foreground mt-1">
-                Override the system date and time for testing term rollover. This only affects your local browser session.
+                Override the running system date and time for testing term rollover and public admission periods.
               </p>
             </div>
             

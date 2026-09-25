@@ -58,12 +58,13 @@ export function PhilippineAddressSelector({
       .get<{ data: AddressComboboxItem[] }>("/address/regions")
       .then((r) => {
         setRegions(r.data.data);
-        // If a region is pre-selected in the value, set it as selected
-        if (value.region && !selectedRegion) {
+        if (value.region) {
           const matched = r.data.data.find(x => x.name.toUpperCase() === value.region.toUpperCase());
-          if (matched) {
+          if (matched && matched.code !== selectedRegion?.code) {
             setSelectedRegion({ code: matched.code, name: matched.name });
           }
+        } else if (selectedRegion) {
+          setSelectedRegion(null);
         }
       })
       .catch(() => setRegions([]));
@@ -82,11 +83,13 @@ export function PhilippineAddressSelector({
       )
       .then((r) => {
         setProvinces(r.data.data);
-        if (value.province && !selectedProvince) {
+        if (value.province) {
           const matched = r.data.data.find(x => x.name.toUpperCase() === value.province.toUpperCase());
-          if (matched) {
+          if (matched && matched.code !== selectedProvince?.code) {
             setSelectedProvince({ code: matched.code, name: matched.name });
           }
+        } else if (selectedProvince) {
+          setSelectedProvince(null);
         }
       })
       .catch(() => setProvinces([]))
@@ -106,11 +109,13 @@ export function PhilippineAddressSelector({
       )
       .then((r) => {
         setCities(r.data.data);
-        if (value.cityMunicipality && !selectedCity) {
+        if (value.cityMunicipality) {
           const matched = r.data.data.find(x => x.name.toUpperCase() === value.cityMunicipality.toUpperCase());
-          if (matched) {
+          if (matched && matched.code !== selectedCity?.code) {
             setSelectedCity({ code: matched.code, name: matched.name });
           }
+        } else if (selectedCity) {
+          setSelectedCity(null);
         }
       })
       .catch(() => setCities([]))

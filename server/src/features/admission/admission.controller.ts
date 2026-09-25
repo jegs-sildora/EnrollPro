@@ -17,6 +17,7 @@ import {
 import { isPublicEnrollmentOpen, isScpAdmissionOpen } from "../settings/enrollment-gate.service.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import { reserveTrackingNumber } from "./tracking-number.service.js";
+import { getSystemDate } from "../../lib/date-wrapper.js";
 
 interface ActiveEnrollmentSetting {
   activeSchoolYearId: number
@@ -52,14 +53,16 @@ async function getActiveEnrollmentSetting(
 }
 
 async function getOpenPublicEnrollmentSetting(
+  req: Request,
   res: Response,
   isScp: boolean = false
 ): Promise<ActiveEnrollmentSetting | null> {
   const setting = await getActiveEnrollmentSetting(res);
   if (!setting) return null;
+  const currentDate = getSystemDate(req);
 
   if (isScp) {
-    if (!isScpAdmissionOpen(setting.activeSchoolYear)) {
+    if (!isScpAdmissionOpen(setting.activeSchoolYear, currentDate)) {
       res.status(403).json({
         code: "SCP_ADMISSION_CLOSED",
         message: "SCP Admission is currently closed.",
@@ -67,7 +70,11 @@ async function getOpenPublicEnrollmentSetting(
       return null;
     }
   } else {
-    if (!isPublicEnrollmentOpen(setting.activeSchoolYear, setting.systemPhase)) {
+    if (!isPublicEnrollmentOpen(
+      setting.activeSchoolYear,
+      setting.systemPhase,
+      currentDate,
+    )) {
       res.status(403).json({
         code: "PUBLIC_ENROLLMENT_CLOSED",
         message:
@@ -426,7 +433,7 @@ async function processAdmissionSubmission(
 
     const schoolSetting = isStaffWalkIn
       ? await getActiveEnrollmentSetting(res)
-      : await getOpenPublicEnrollmentSetting(res, true);
+      : await getOpenPublicEnrollmentSetting(req, res, true);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
@@ -625,7 +632,7 @@ export async function submitEnrollment(req: Request, res: Response) {
     }
     const data = parsed.data;
 
-    const schoolSetting = await getOpenPublicEnrollmentSetting(res, false);
+    const schoolSetting = await getOpenPublicEnrollmentSetting(req, res, false);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
@@ -842,7 +849,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
 
     const data = parsed.data;
     
-    const schoolSetting = await getOpenPublicEnrollmentSetting(res);
+    const schoolSetting = await getOpenPublicEnrollmentSetting(req, res);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 

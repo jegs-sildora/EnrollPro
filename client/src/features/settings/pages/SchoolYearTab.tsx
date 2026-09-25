@@ -1,3 +1,4 @@
+import { useManilaNow } from "@/shared/hooks/useManilaNow";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
 import { cn, getManilaNow, MOCKED_SYSTEM_DATE_KEY } from "@/shared/lib/utils";
@@ -181,6 +182,7 @@ function toManilaDateToken(value: string | Date): number {
 function getEnrollmentWindowStatus(
   openDate: string | null | undefined,
   closeDate: string | null | undefined,
+  systemNow: Date,
   isOfficialPhase: boolean = false,
   type: "ENROLLMENT" | "ADMISSION" = "ENROLLMENT"
 ) {
@@ -188,7 +190,7 @@ function getEnrollmentWindowStatus(
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
 
-  const todayToken = toManilaDateToken(getManilaNow());
+  const todayToken = toManilaDateToken(systemNow);
   const startToken = toManilaDateToken(openDate);
   const endToken = toManilaDateToken(closeDate);
 
@@ -634,25 +636,29 @@ export default function SchoolYearTab() {
 
 
 
+  const systemNow = useManilaNow();
+
   const enrollmentPhaseStatus = useMemo(
     () =>
       getEnrollmentWindowStatus(
-        activeYear?.enrollOpenDate ?? null,
-        activeYear?.enrollCloseDate ?? null,
+        localCalendarState.enrollOpenDate ?? null,
+        localCalendarState.enrollCloseDate ?? null,
+        systemNow,
         systemPhase === "OFFICIAL_ENROLLMENT"
       ),
-    [activeYear?.enrollCloseDate, activeYear?.enrollOpenDate, systemPhase],
+    [localCalendarState.enrollCloseDate, localCalendarState.enrollOpenDate, systemPhase, systemNow],
   );
 
   const scpAdmissionPhaseStatus = useMemo(
     () =>
       getEnrollmentWindowStatus(
-        activeYear?.scpAdmissionOpenDate ?? null,
-        activeYear?.scpAdmissionCloseDate ?? null,
+        localCalendarState.scpAdmissionOpenDate ?? null,
+        localCalendarState.scpAdmissionCloseDate ?? null,
+        systemNow,
         true, // SCP Admission doesn't necessarily depend on systemPhase in the same way, but let's assume it's always evaluated if dates are valid
         "ADMISSION"
       ),
-    [activeYear?.scpAdmissionCloseDate, activeYear?.scpAdmissionOpenDate],
+    [localCalendarState.scpAdmissionCloseDate, localCalendarState.scpAdmissionOpenDate, systemNow],
   );
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
@@ -1021,7 +1027,7 @@ export default function SchoolYearTab() {
                       { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
                       ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term, index, array) => {
-                      const todayToken = toManilaDateToken(getManilaNow());
+                      const todayToken = toManilaDateToken(systemNow);
                       const startToken = term.start ? toManilaDateToken(term.start) : null;
                       const endToken = term.end ? toManilaDateToken(term.end) : null;
                       

@@ -30,11 +30,12 @@ function toManilaDateToken(date: Date): number {
 export function isPublicEnrollmentOpen(
   year: Pick<SchoolYear, "enrollOpenDate" | "enrollCloseDate">,
   systemPhase?: string,
+  currentDate: Date = new Date(),
 ): boolean {
   if (systemPhase !== "OFFICIAL_ENROLLMENT") return false;
   if (!year.enrollOpenDate || !year.enrollCloseDate) return false;
 
-  const todayToken = toManilaDateToken(new Date());
+  const todayToken = toManilaDateToken(currentDate);
   return (
     todayToken >= toManilaDateToken(year.enrollOpenDate)
     && todayToken <= toManilaDateToken(year.enrollCloseDate)
@@ -43,10 +44,11 @@ export function isPublicEnrollmentOpen(
 
 export function isScpAdmissionOpen(
   year: Pick<SchoolYear, "scpAdmissionOpenDate" | "scpAdmissionCloseDate">,
+  currentDate: Date = new Date(),
 ): boolean {
   if (!year.scpAdmissionOpenDate || !year.scpAdmissionCloseDate) return false;
 
-  const todayToken = toManilaDateToken(new Date());
+  const todayToken = toManilaDateToken(currentDate);
   return (
     todayToken >= toManilaDateToken(year.scpAdmissionOpenDate)
     && todayToken <= toManilaDateToken(year.scpAdmissionCloseDate)
@@ -59,13 +61,14 @@ export function isStaffIntakeAllowed(systemPhase?: string): boolean {
 
 export function getEnrollmentPhase(
   year: SchoolYear,
-  systemPhase?: string
+  systemPhase?: string,
+  currentDate: Date = new Date(),
 ):
   | "REGULAR_ENROLLMENT"
   | "CLOSED" {
   if (systemPhase !== "OFFICIAL_ENROLLMENT") return "CLOSED";
 
-  const todayToken = toManilaDateToken(new Date());
+  const todayToken = toManilaDateToken(currentDate);
 
   if (
     year.enrollOpenDate &&

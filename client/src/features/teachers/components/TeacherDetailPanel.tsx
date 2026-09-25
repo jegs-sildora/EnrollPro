@@ -1452,7 +1452,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                             <div className="space-y-4">
                               <div className="mb-6 rounded-lg border border-border bg-muted/10 p-3">
-                                <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
+                                <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr] lg:items-end">
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-bold uppercase text-foreground">Bachelor Degree <span className="text-destructive">*</span></Label>
                                     <Controller

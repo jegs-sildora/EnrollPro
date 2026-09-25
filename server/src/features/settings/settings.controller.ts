@@ -18,6 +18,7 @@ import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 import { AppError } from "../../lib/AppError.js";
+import { getSystemDate } from "../../lib/date-wrapper.js";
 
 function broadcastSettingsInvalidation(): void {
   broadcastRealtimeInvalidation({
@@ -116,15 +117,16 @@ export async function getPublicSettings(
       });
     }
 
+    const currentDate = getSystemDate(req);
     const enrollmentPhase = contextSy
-      ? getEnrollmentPhase(contextSy, settings.systemPhase)
+      ? getEnrollmentPhase(contextSy, settings.systemPhase, currentDate)
       : "CLOSED";
     const isBosyEnrollmentOpen = contextSy
-      ? isPublicEnrollmentOpen(contextSy, settings.systemPhase)
+      ? isPublicEnrollmentOpen(contextSy, settings.systemPhase, currentDate)
       : false;
 
     const isScpAdmissionOpenFlag = contextSy
-      ? isScpAdmissionOpen(contextSy)
+      ? isScpAdmissionOpen(contextSy, currentDate)
       : false;
 
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;
@@ -182,6 +184,7 @@ export async function getPublicSettings(
       enrollmentPhase,
       isBosyEnrollmentOpen,
       isScpAdmissionOpen: isScpAdmissionOpenFlag,
+      currentSystemDate: currentDate.toISOString(),
       systemPhase: effectiveSystemStatus === "ARCHIVED" ? "EOSY_CLOSING" : settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
       activeCorrection,

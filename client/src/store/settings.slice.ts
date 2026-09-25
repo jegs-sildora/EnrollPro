@@ -50,6 +50,8 @@ export interface SettingsState {
   heterogeneousRoundRobin: boolean;
   isBosyEnrollmentOpen: boolean;
   isScpAdmissionOpen: boolean;
+  currentSystemDate: string | null;
+  currentSystemDateReceivedAt: number | null;
   enrollmentPhase:
     | "REGULAR_ENROLLMENT"
     | "CLOSED"
@@ -148,6 +150,8 @@ export const useSettingsStore = create<SettingsState>()(
       heterogeneousRoundRobin: true,
       isBosyEnrollmentOpen: false,
       isScpAdmissionOpen: false,
+      currentSystemDate: null,
+      currentSystemDateReceivedAt: null,
       enrollmentPhase: "CLOSED",
       systemPhase: null,
       systemStatus: "ACTIVE",
@@ -259,6 +263,8 @@ export const useSettingsStore = create<SettingsState>()(
           viewingSchoolYearId: _viewingSchoolYearId,
           viewingSchoolYearStatus: _viewingSchoolYearStatus,
           viewingSchoolYearLabel: _viewingSchoolYearLabel,
+          currentSystemDate: _currentSystemDate,
+          currentSystemDateReceivedAt: _currentSystemDateReceivedAt,
           // initialized must NOT be persisted — it must always start false
           // until the current session's /settings/public API call completes.
           // If persisted as true, AppLayout would incorrectly show NoSchoolYearState

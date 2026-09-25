@@ -1,14 +1,13 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { useEffect, useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import { AlertCircle, Info, Mars, User, Venus } from "lucide-react";
+import { AlertCircle, Mars, User, Venus } from "lucide-react";
 
 import type { EnrollmentFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Separator } from "@/shared/ui/separator";
-import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { cn } from "@/shared/lib/utils";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 
@@ -130,8 +129,14 @@ export default function Step2Family() {
 
   return (
     <div className="space-y-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
+        <div
+          className={cn(
+            "space-y-6 rounded-2xl border-2 p-6 transition-all",
+            hasNoMother
+              ? "border-border bg-muted shadow-sm"
+              : "border-primary bg-primary/5 shadow-md",
+          )}>
           <div className="flex items-center justify-between">
             <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Mother&apos;s Details
@@ -273,7 +278,13 @@ export default function Step2Family() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div
+          className={cn(
+            "space-y-6 rounded-2xl border-2 p-6 transition-all",
+            hasNoFather
+              ? "border-border bg-muted shadow-sm"
+              : "border-primary bg-primary/5 shadow-md",
+          )}>
           <div className="flex items-center justify-between">
             <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Father&apos;s Details

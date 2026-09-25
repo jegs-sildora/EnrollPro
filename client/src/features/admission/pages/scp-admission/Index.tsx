@@ -8,7 +8,8 @@ import ScpAdmissionForm, { SCP_FORM_STATE_KEY } from "./ScpAdmissionForm";
 import EnrollmentSuccess from "../online-enrollment/components/EnrollmentSuccess";
 import { AdmissionChoice } from "./components/AdmissionChoice";
 
-import { cn } from "@/shared/lib/utils";
+import { cn, isWithinManilaDateRange } from "@/shared/lib/utils";
+import { useManilaNow } from "@/shared/hooks/useManilaNow";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
@@ -47,9 +48,19 @@ export default function Apply() {
     systemPhase,
     facebookPageUrl,
     isScpAdmissionOpen,
+    scpAdmissionOpenDate,
+    scpAdmissionCloseDate,
   } = useSettingsStore();
+  const systemNow = useManilaNow();
   const isClassesOngoing = systemPhase === "CLASSES_ONGOING";
-  const isClosed = !isScpAdmissionOpen;
+  const isScpPeriodOpen = scpAdmissionOpenDate && scpAdmissionCloseDate
+    ? isWithinManilaDateRange(
+        systemNow,
+        scpAdmissionOpenDate,
+        scpAdmissionCloseDate,
+      )
+    : isScpAdmissionOpen;
+  const isClosed = !isScpPeriodOpen;
 
   const handleActionChoice = (choice: "APPLY" | "TRACK") => {
     if (choice === "TRACK") {

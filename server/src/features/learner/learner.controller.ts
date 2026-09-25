@@ -66,7 +66,7 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       where: { lrn },
       include: {
         enrollmentApplications: {
-          orderBy: { schoolYearId: "desc" },
+          orderBy: [{ schoolYearId: "desc" }, { createdAt: "desc" }],
           take: 2,
           include: {
             gradeLevel: true,
@@ -80,6 +80,15 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
             },
           },
         },
+        scpAdmissions: {
+          orderBy: [{ schoolYearId: "desc" }, { createdAt: "desc" }],
+          take: 1,
+          include: {
+            familyMembers: true,
+            previousSchool: true,
+            addresses: true,
+          },
+        },
       },
     });
 
@@ -89,6 +98,23 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
 
     const applications = learner.enrollmentApplications;
     const latestApp = applications[0];
+    const latestAdmission = learner.scpAdmissions[0];
+
+    const applicationIsNewer = Boolean(
+      latestApp &&
+      (!latestAdmission || latestApp.createdAt >= latestAdmission.createdAt),
+    );
+    const primaryProfile = applicationIsNewer ? latestApp : latestAdmission;
+    const secondaryProfile = applicationIsNewer ? latestAdmission : latestApp;
+    const addresses = primaryProfile?.addresses.length
+      ? primaryProfile.addresses
+      : (secondaryProfile?.addresses ?? []);
+    const familyMembers = primaryProfile?.familyMembers.length
+      ? primaryProfile.familyMembers
+      : (secondaryProfile?.familyMembers ?? []);
+    const previousSchool = primaryProfile?.previousSchool
+      ?? secondaryProfile?.previousSchool
+      ?? null;
 
     const officialRecord = applications.find(app =>
       app.enrollmentRecord?.section?.name &&
@@ -108,7 +134,18 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       } else {
         gradeLevelToEnroll = latestApp.gradeLevel.name;
       }
+    } else if (latestAdmission) {
+      gradeLevelToEnroll = "Grade 7";
     }
+
+    const assignedProgram = latestApp?.assignedProgram
+      ?? latestApp?.applicantType
+      ?? (latestAdmission?.assessmentResult === "QUALIFIED"
+        ? latestAdmission.program
+        : "REGULAR");
+
+    const previousGenAve = previousSchool?.generalAverage
+      ?? learner.previousGenAve;
 
     return res.json({
       id: learner.id,
@@ -120,16 +157,19 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       sex: learner.sex,
       gradeLevelToEnroll,
       previousSection: officialRecord?.enrollmentRecord?.section?.name ?? null,
-      previousGenAve: learner.previousGenAve,
+      previousGenAve,
       promotionStatus: learner.promotionStatus,
       studentPhoto: learner.studentPhoto,
-      familyMembers: latestApp?.familyMembers ?? [],
-      previousSchool: latestApp?.previousSchool ?? null,
+      familyMembers,
+      previousSchool,
       extensionName: learner.extensionName,
       motherTongue: learner.motherTongue,
-      hasPsaBirthCertificate: learner.hasPsaBirthCertificate,
-      addresses: latestApp?.addresses ?? [],
-      isMissingSf9: latestApp?.isMissingSf9 ?? false,
+      hasPsaBirthCertificate: learner.hasPsaBirthCertificate || Boolean(learner.psaBirthCertNumber),
+      addresses,
+      isMissingSf9: latestApp?.isMissingSf9 ?? null,
+      academicStatus: latestApp?.academicStatus ?? learner.promotionStatus,
+      assignedProgram,
+      scpAdmissionStatus: latestAdmission?.assessmentResult ?? null,
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);

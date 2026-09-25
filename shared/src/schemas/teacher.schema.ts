@@ -215,7 +215,19 @@ export const teacherSchemaBase = z
       .optional()
       .nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    const degree = data.undergraduateDegree || data.bachelor_degree;
+    const major = data.bachelorMajor || data.bachelor_major;
+    
+    if (degree && (!major || major.trim().length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Bachelor major/specialization is required when bachelor degree is provided",
+        path: ["bachelorMajor"],
+      });
+    }
+  });
 
 export const updateTeacherSchema = teacherSchemaBase.extend({
   serviceStatus: z.enum([

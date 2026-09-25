@@ -7,7 +7,8 @@ import EnrollmentForm from "./EnrollmentForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
 import { IntakeChoice } from "./components/IntakeChoice";
 
-import { cn } from "@/shared/lib/utils";
+import { cn, isWithinManilaDateRange } from "@/shared/lib/utils";
+import { useManilaNow } from "@/shared/hooks/useManilaNow";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
@@ -45,9 +46,16 @@ export default function Apply() {
     systemPhase,
     facebookPageUrl,
     isBosyEnrollmentOpen,
+    enrollOpenDate,
+    enrollCloseDate,
   } = useSettingsStore();
+  const systemNow = useManilaNow();
   const isClassesOngoing = systemPhase === "CLASSES_ONGOING";
-  const isClosed = !isBosyEnrollmentOpen;
+  const isEnrollmentPeriodOpen = enrollOpenDate && enrollCloseDate
+    ? systemPhase === "OFFICIAL_ENROLLMENT"
+      && isWithinManilaDateRange(systemNow, enrollOpenDate, enrollCloseDate)
+    : isBosyEnrollmentOpen;
+  const isClosed = !isEnrollmentPeriodOpen;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
