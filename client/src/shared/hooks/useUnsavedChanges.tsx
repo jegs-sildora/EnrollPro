@@ -325,6 +325,28 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hasDirtyChanges) return;
 
+    const handleRefreshShortcut = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      const isRefreshShortcut =
+        event.key === "F5" ||
+        ((event.ctrlKey || event.metaKey) && key === "r");
+
+      if (!isRefreshShortcut || event.repeat) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      confirmOrRun(() => window.location.reload());
+    };
+
+    document.addEventListener("keydown", handleRefreshShortcut, true);
+    return () => {
+      document.removeEventListener("keydown", handleRefreshShortcut, true);
+    };
+  }, [confirmOrRun, hasDirtyChanges]);
+
+  useEffect(() => {
+    if (!hasDirtyChanges) return;
+
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";

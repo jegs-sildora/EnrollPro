@@ -56,7 +56,7 @@ import {
 } from "@/shared/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Badge } from "@/shared/ui/badge";
-import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import {
   createFadeShiftVariants,
   createMotionTransition,
@@ -867,6 +867,7 @@ export default function BOSYPage() {
                                 <thead className="bg-gray-50 border-b">
                                   <tr>
                                     <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                    <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                     <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                   </tr>
                                 </thead>
@@ -882,6 +883,11 @@ export default function BOSYPage() {
                                       <p className="text-sm text-foreground">
                                         LRN: {confirmSingleTarget.lrn ?? "No LRN"}
                                       </p>
+                                    </td>
+                                    <td className="p-3 px-4 text-center border-r border-gray-100">
+                                      <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                                        {confirmSingleTarget.applicantType ? formatSectionProgramLabel(confirmSingleTarget.applicantType) : "BEC"}
+                                      </span>
                                     </td>
                                     <td className="p-3 px-4 text-center">
                                       <Badge
@@ -971,6 +977,7 @@ export default function BOSYPage() {
                               <thead className="bg-gray-50 border-b">
                                 <tr>
                                   <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
+                                  <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                   <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                 </tr>
                               </thead>
@@ -986,6 +993,11 @@ export default function BOSYPage() {
                                     <p className="text-sm text-foreground">
                                       LRN: {revokeTarget.lrn ?? "No LRN"}
                                     </p>
+                                  </td>
+                                  <td className="p-3 px-4 text-center border-r border-gray-100">
+                                    <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                                      {revokeTarget.applicantType ? formatSectionProgramLabel(revokeTarget.applicantType) : "BEC"}
+                                    </span>
                                   </td>
                                   <td className="p-3 px-4 text-center">
                                     <Badge

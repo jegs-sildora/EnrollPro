@@ -32,7 +32,6 @@ import {
 } from "@/shared/lib/utils";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
-  createFadeShiftVariants,
   createMotionTransition,
   createScaleFadeVariants,
   useMotionPreferences,
@@ -145,11 +144,11 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
   if (!s) {
     return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
   }
-  let title = "";
-  let description: React.ReactNode = "";
-  let colorClass = "bg-green-50 border border-green-300 text-green-900";
-  let titleColorClass = "text-green-800 border-green-200";
-  let hoverClass = "hover:bg-green-100";
+  let title: string;
+  let description: React.ReactNode;
+  let colorClass: string;
+  let titleColorClass: string;
+  let hoverClass: string;
 
   if (item.isScpDemoted && s === "RETAINED") {
     title = "Retention & Lateral Transfer";
@@ -510,18 +509,6 @@ export function QueueTable({
   busyActionIds,
   processedIds,
 }: QueueTableProps) {
-  const motionPreferences = useMotionPreferences();
-  const fadeVariants = createFadeShiftVariants(
-    motionPreferences,
-    "y",
-    "y",
-    "xs",
-  );
-  const isolatedFadeVariants = useMemo(() => ({
-    enter: fadeVariants.initial,
-    active: fadeVariants.animate,
-    leave: fadeVariants.exit,
-  }), [fadeVariants]);
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
       {
@@ -638,7 +625,6 @@ export function QueueTable({
         cell: ({ row }) => {
           const s = row.original.academicStatus;
           const genAve = formatGenAve(row.original.priorYearGenAve);
-          const deficiencyText = row.original.priorYearDeficiencyNote;
           if (!s)
             return (
               <div className="py-3 text-center text-base font-bold text-foreground">—</div>
@@ -746,33 +732,13 @@ export function QueueTable({
   ]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {loading ? (
-        <motion.div
-          key="loader"
-          variants={isolatedFadeVariants}
-          initial={motionPreferences.reduceMotion ? false : "enter"}
-          animate={motionPreferences.reduceMotion ? undefined : "active"}
-          exit={motionPreferences.reduceMotion ? undefined : "leave"}
-          transition={createMotionTransition(motionPreferences, "normal")}
-          className="w-full"
-        >
-          <DataTableSkeleton rows={50} columns={4} className="rounded-md" />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="content"
-          variants={isolatedFadeVariants}
-          initial={motionPreferences.reduceMotion ? false : "enter"}
-          animate={motionPreferences.reduceMotion ? undefined : "active"}
-          exit={motionPreferences.reduceMotion ? undefined : "leave"}
-          transition={createMotionTransition(motionPreferences, "normal")}
-          className="flex flex-col flex-1 h-full w-full min-h-0"
-        >
-          <motion.div
-            layout
-            className="space-y-3 md:hidden">
-            {isSearching ? (
+    <div className="flex flex-col flex-1 h-full w-full min-h-0">
+      <motion.div
+        layout
+        className="space-y-3 md:hidden">
+        {loading ? (
+          <DataTableSkeleton rows={10} columns={4} className="rounded-md" />
+        ) : isSearching ? (
               <div className="rounded-2xl border border-border bg-background">
                 <div className="flex h-64 flex-col items-center justify-center space-y-4">
                   <CheckCircle2 className="h-10 w-10 animate-pulse text-slate-400" />
@@ -782,90 +748,89 @@ export function QueueTable({
                   </div>
                 </div>
               </div>
-            ) : items.length > 0 ? (
-              <AnimatePresence mode="popLayout" initial={false}>
-                {items.map((item) => {
-                  const rowId = String(item.applicationId);
-                  const selected = Boolean(rowSelection[rowId]);
+        ) : items.length > 0 ? (
+          <AnimatePresence mode="popLayout" initial={false}>
+            {items.map((item) => {
+              const rowId = String(item.applicationId);
+              const selected = Boolean(rowSelection[rowId]);
 
-                  return (
-                    <QueueMobileCard
-                      key={rowId}
-                      item={item}
-                      queueState={queueState}
-                      allowActions={allowActions}
-                      selected={selected}
-                      onSelectionChange={(checked) =>
-                        onRowSelectionChange((prev) => ({
-                          ...prev,
-                          [rowId]: checked,
-                        }))
-                      }
-                      onConfirmSingle={onConfirmSingle}
-                      onTransferRequest={onTransferRequest}
-                      onRevokeConfirmation={onRevokeConfirmation}
-                      onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
-                      confirmingIds={confirmingIds}
-                      busyActionIds={busyActionIds}
-                    />
-                  );
-                })}
-              </AnimatePresence>
-            ) : (
-              <div className="rounded-2xl border border-border bg-background">
-                <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
-                  <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                  </div>
-                  <p className="text-base font-bold text-foreground">
-                    No continuing learners match this enrollment status.
-                  </p>
-                  <p className="px-4 text-center text-sm">
-                    Select another target grade or check the learner name or LRN.
-                  </p>
-                </div>
+              return (
+                <QueueMobileCard
+                  key={rowId}
+                  item={item}
+                  queueState={queueState}
+                  allowActions={allowActions}
+                  selected={selected}
+                  onSelectionChange={(checked) =>
+                    onRowSelectionChange((prev) => ({
+                      ...prev,
+                      [rowId]: checked,
+                    }))
+                  }
+                  onConfirmSingle={onConfirmSingle}
+                  onTransferRequest={onTransferRequest}
+                  onRevokeConfirmation={onRevokeConfirmation}
+                  onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
+                  confirmingIds={confirmingIds}
+                  busyActionIds={busyActionIds}
+                />
+              );
+            })}
+          </AnimatePresence>
+        ) : (
+          <div className="rounded-2xl border border-border bg-background">
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
+              <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
+                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               </div>
-            )}
-          </motion.div>
-
-          <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
-            <DataTable
-              containerHeight="100%"
-              className="border-x-0 border-b-0 border-t-0 rounded-md h-full flex-1"
-              tableClassName="w-full table-fixed"
-              emptyStateContent={
-                <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
-                  <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                  </div>
-                  <p className="text-base font-bold text-foreground">
-                    No continuing learners match this enrollment status.
-                  </p>
-                  <p className="text-sm">
-                    Select another target grade or check the learner name or LRN.
-                  </p>
-                </div>
-              }
-              columns={columns}
-              data={items}
-              getRowId={(row) => String(row.applicationId)}
-              forceEmptyState={Boolean(isSearching)}
-              rowSelection={rowSelection}
-              onRowSelectionChange={onRowSelectionChange}
-              getRowClassName={(row) =>
-                processedIds.has(row.applicationId)
-                  ? "opacity-0 scale-[0.98] transition-all duration-300 pointer-events-none"
-                  : "transition-all duration-300 ease-out"
-              }
-              prependBodyRow={
-                isSearching ? (
-                  <TableSearchIndicator colSpan={4} />
-                ) : null
-              }
-            />
+              <p className="text-base font-bold text-foreground">
+                No continuing learners match this enrollment status.
+              </p>
+              <p className="px-4 text-center text-sm">
+                Select another target grade or check the learner name or LRN.
+              </p>
+            </div>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </motion.div>
+
+      <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
+        <DataTable
+          containerHeight="100%"
+          className="border-x-0 border-b-0 border-t-0 rounded-md h-full flex-1"
+          tableClassName="w-full table-fixed"
+          loading={loading}
+          emptyStateContent={
+            <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
+              <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
+                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+              </div>
+              <p className="text-base font-bold text-foreground">
+                No continuing learners match this enrollment status.
+              </p>
+              <p className="text-sm">
+                Select another target grade or check the learner name or LRN.
+              </p>
+            </div>
+          }
+          columns={columns}
+          data={items}
+          getRowId={(row) => String(row.applicationId)}
+          forceEmptyState={Boolean(isSearching)}
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          getRowClassName={(row) =>
+            processedIds.has(row.applicationId)
+              ? "opacity-0 scale-[0.98] transition-all duration-300 pointer-events-none"
+              : "transition-all duration-300 ease-out"
+          }
+          prependBodyRow={
+            isSearching ? (
+              <TableSearchIndicator colSpan={4} />
+            ) : null
+          }
+        />
+      </div>
+    </div>
   );
 }

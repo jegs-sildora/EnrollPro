@@ -82,7 +82,6 @@ import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useAuthStore } from "@/store/auth.slice";
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 interface SectionSummary {
   id: number;
@@ -343,38 +342,6 @@ const _interleaveBySex = (learners: PoolLearner[]) => {
   return ordered;
 };
 
-const buildDraftSlots = (sections: SectionSummary[]) => {
-  const ordered = [...sections].sort(
-    (first, second) =>
-      first.sortOrder - second.sortOrder ||
-      first.name.localeCompare(second.name) ||
-      first.id - second.id,
-  );
-  const remainingBySection = new Map(
-    ordered.map((section) => [
-      section.id,
-      Math.max(0, section.maxCapacity - section.currentCount),
-    ]),
-  );
-  const slots: number[] = [];
-  let forward = true;
-
-  while (
-    ordered.some((section) => (remainingBySection.get(section.id) ?? 0) > 0)
-  ) {
-    const pass = forward ? ordered : [...ordered].reverse();
-    for (const section of pass) {
-      const remaining = remainingBySection.get(section.id) ?? 0;
-      if (remaining <= 0) continue;
-      slots.push(section.id);
-      remainingBySection.set(section.id, remaining - 1);
-    }
-    forward = !forward;
-  }
-
-  return slots;
-};
-
 const calculateGenderCounts = (
   section: SectionSummary,
   learners: DraftLearnerPlacement[],
@@ -632,7 +599,9 @@ export function SectioningWorkspace() {
   const queryClient = useQueryClient();
 
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
-  const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
+  const setActiveGradeLevelId = useCallback((id: string) => {
+    useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
+  }, []);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
   const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
   const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
@@ -665,7 +634,7 @@ export function SectioningWorkspace() {
     error: sectionsError,
     refetch: refetchSections,
   } = useQuery({
-    queryKey: ["sectioning", "sections-summary", assignedGradeLevelId],
+    queryKey: [...queryKeys.sectioningSections(), assignedGradeLevelId],
     queryFn: () =>
       api
         .get<SectionSummary[]>("/sectioning/sections-summary", {
@@ -683,7 +652,7 @@ export function SectioningWorkspace() {
     error: poolError,
     refetch: refetchPool,
   } = useQuery({
-    queryKey: ["sectioning", "pool", assignedGradeLevelId],
+    queryKey: [...queryKeys.sectioningPool(), assignedGradeLevelId],
     queryFn: () =>
       api.get<PoolLearner[]>("/sectioning/pool", {
         params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
@@ -1204,6 +1173,107 @@ export function SectioningWorkspace() {
         },
       );
       const skippedCount = response.data.skippedApplications.length;
+      const committedApplicationIds = new Set(
+        response.data.committedApplications.map(
+          (application) => application.applicationId,
+        ),
+      );
+      const committedPlacements = response.data.committedApplications.flatMap(
+        (committedApplication) => {
+          const roster = draftPlacement.rosters.find(
+            (item) => item.section.id === committedApplication.sectionId,
+          );
+          const learner = roster?.learners.find(
+            (item) =>
+              item.applicationId === committedApplication.applicationId,
+          );
+
+          return learner
+            ? [{ committedApplication, learner }]
+            : [];
+        },
+      );
+      const nextSections = sections.map((section) => {
+        const additions = committedPlacements.filter(
+          ({ committedApplication }) =>
+            committedApplication.sectionId === section.id,
+        );
+        if (additions.length === 0) return section;
+
+        return {
+          ...section,
+          currentCount: section.currentCount + additions.length,
+          boys:
+            section.boys +
+            additions.filter(({ learner }) => learner.sex === "MALE").length,
+          girls:
+            section.girls +
+            additions.filter(({ learner }) => learner.sex === "FEMALE").length,
+        };
+      });
+      const nextPool = pool.filter(
+        (learner) => !committedApplicationIds.has(learner.applicationId),
+      );
+
+      setSections(nextSections);
+      setPool(nextPool);
+      queryClient.setQueryData<SectionSummary[]>(
+        [...queryKeys.sectioningSections(), assignedGradeLevelId],
+        nextSections,
+      );
+      queryClient.setQueryData<PoolLearner[]>(
+        [...queryKeys.sectioningPool(), assignedGradeLevelId],
+        nextPool,
+      );
+
+      const affectedSectionIds = Array.from(
+        new Set(
+          response.data.committedApplications.map(
+            (application) => application.sectionId,
+          ),
+        ),
+      );
+      for (const sectionId of affectedSectionIds) {
+        const additions: InlineMasterlistLearner[] = committedPlacements
+          .filter(
+            ({ committedApplication }) =>
+              committedApplication.sectionId === sectionId,
+          )
+          .map(({ committedApplication, learner }) => ({
+            id: committedApplication.enrollmentRecordId,
+            enrollmentApplicationId: learner.applicationId,
+            lrn: learner.lrn,
+            firstName: learner.firstName,
+            lastName: learner.lastName,
+            middleName: learner.middleName,
+            sex: learner.sex,
+            genAve: learner.genAve,
+          }));
+
+        queryClient.setQueryData<InlineMasterlistResponse>(
+          ["section-masterlist", sectionId],
+          (current) => {
+            const existingLearners = current?.learners ?? [];
+            const existingApplicationIds = new Set(
+              existingLearners.map(
+                (learner) => learner.enrollmentApplicationId,
+              ),
+            );
+
+            return {
+              learners: [
+                ...existingLearners,
+                ...additions.filter(
+                  (learner) =>
+                    !existingApplicationIds.has(
+                      learner.enrollmentApplicationId,
+                    ),
+                ),
+              ],
+            };
+          },
+        );
+      }
 
       sileo.success({
         title: "Final Sectioning Committed",
@@ -1214,14 +1284,14 @@ export function SectioningWorkspace() {
       });
 
       setCommitDialogOpen(false);
-      discardDraft();
-      const affectedSectionIds = Array.from(
-        new Set(
-          response.data.committedApplications.map(
-            (application) => application.sectionId,
-          ),
-        ),
-      );
+      setDraftPlacement(null);
+      setExpandedSectionIds(new Set());
+      setDraftMoveAction(null);
+      setMoveDestinationSectionId("");
+      setSwapApplicationId("");
+      setAllowCapacityOverride(false);
+      setSelectedAppIds([]);
+      setTargetSectionId(null);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: queryKeys.sectioningPool(),
@@ -1653,7 +1723,7 @@ export function SectioningWorkspace() {
                                 className={cn(
                                   "group transition-colors",
                                   isDisabled
-                                    ? "opacity-50 cursor-not-allowed"
+                                    ? "cursor-not-allowed"
                                     : "cursor-pointer",
                                   isSelected && "bg-primary/5 hover:bg-primary/10",
                                 )}>
@@ -2420,47 +2490,7 @@ export function SectioningWorkspace() {
             <p className="text-foreground text-sm">
               This action will lock the assignments and update the official school records.
             </p>
-            {draftLearnerCount === 1 ? (
-              <div className="rounded-md border bg-muted/40 px-4 py-3 text-left">
-                {(() => {
-                  const learner = draftPlacement?.rosters[0]?.learners[0];
-                  const section = draftPlacement?.rosters[0]?.section;
-                  if (!learner || !section) return null;
-                  return (
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-base leading-tight font-medium text-foreground uppercase">
-                          {learner.lastName}, {learner.firstName}
-                          {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          LRN: {learner.lrn || "No LRN"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant="secondary" className="font-bold uppercase">
-                          {SCP_SHORT_LABELS[learner.programType] ?? learner.programType}
-                        </Badge>
-                        <div className="flex flex-col gap-1 items-end">
-                          <Badge
-                            variant="outline"
-                            className={cn("font-bold uppercase", getGradeLevelBadgeStyles(section.gradeLevel))}
-                          >
-                            {formatGradeLevel(section.gradeLevel)}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className="font-bold uppercase bg-background text-primary border-primary/30"
-                          >
-                            {section.name}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            ) : draftLearnerCount > 1 ? (
+            {draftLearnerCount > 0 ? (
               <div className="rounded-md border bg-white overflow-hidden flex flex-col text-left">
                 <div className="px-4 py-3 border-b bg-gray-50 flex justify-center items-center">
                   <p className="text-base leading-tight font-bold text-foreground">
