@@ -72,6 +72,7 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
             gradeLevel: true,
             familyMembers: true,
             previousSchool: true,
+            addresses: true,
             enrollmentRecord: {
               include: {
                 section: true,
@@ -124,6 +125,11 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       studentPhoto: learner.studentPhoto,
       familyMembers: latestApp?.familyMembers ?? [],
       previousSchool: latestApp?.previousSchool ?? null,
+      extensionName: learner.extensionName,
+      motherTongue: learner.motherTongue,
+      hasPsaBirthCertificate: learner.hasPsaBirthCertificate,
+      addresses: latestApp?.addresses ?? [],
+      isMissingSf9: latestApp?.isMissingSf9 ?? false,
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);

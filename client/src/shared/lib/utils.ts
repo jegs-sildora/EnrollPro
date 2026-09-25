@@ -94,7 +94,10 @@ export function getMockedSystemDate(): Date | null {
 
   const storedAnchor = localStorage.getItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
   const anchorTimestamp = storedAnchor ? Number(storedAnchor) : Number.NaN;
-  if (!Number.isFinite(anchorTimestamp)) return parsedDate;
+  if (!Number.isFinite(anchorTimestamp)) {
+    localStorage.setItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY, String(Date.now()));
+    return parsedDate;
+  }
 
   const elapsedMilliseconds = Math.max(0, Date.now() - anchorTimestamp);
   return new Date(parsedDate.getTime() + elapsedMilliseconds);
@@ -422,7 +425,7 @@ export function getAncillaryRoleColorClasses(
  */
 export function getImageUrl(photo: string | null | undefined): string | null {
   if (!photo) return null;
-  if (photo.startsWith("data:") || photo.startsWith("http")) return photo;
+  if (photo.startsWith("data:") || photo.startsWith("blob:") || photo.startsWith("http")) return photo;
 
   // Standardize backend origin detection
   let apiUrl = import.meta.env.VITE_API_URL || "";

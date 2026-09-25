@@ -924,13 +924,15 @@ export const TEACHER_UNDERGRADUATE_DEGREE_VALUES = [
   "BACHELOR OF ELEMENTARY EDUCATION",
   "BACHELOR OF ARTS",
   "BACHELOR OF SCIENCE",
+  "OTHER DEGREE WITH CERTIFICATE IN PROFESSIONAL EDUCATION",
 ] as const;
 
 export const TEACHER_UNDERGRADUATE_DEGREE_OPTIONS = [
-  { value: "BACHELOR OF SECONDARY EDUCATION", label: "Bachelor of Secondary Education" },
-  { value: "BACHELOR OF ELEMENTARY EDUCATION", label: "Bachelor of Elementary Education" },
-  { value: "BACHELOR OF ARTS", label: "Bachelor of Arts" },
-  { value: "BACHELOR OF SCIENCE", label: "Bachelor of Science" },
+  { value: "BACHELOR OF SECONDARY EDUCATION", label: "Bachelor of Secondary Education (BSEd)" },
+  { value: "BACHELOR OF ELEMENTARY EDUCATION", label: "Bachelor of Elementary Education (BEEd)" },
+  { value: "BACHELOR OF ARTS", label: "Bachelor of Arts (AB / BA)" },
+  { value: "BACHELOR OF SCIENCE", label: "Bachelor of Science (BS)" },
+  { value: "OTHER DEGREE WITH CERTIFICATE IN PROFESSIONAL EDUCATION", label: "Other Degree (with Certificate in Professional Education)" },
 ];
 
 export const TEACHER_POSTGRADUATE_DEGREE_VALUES = [
@@ -943,10 +945,10 @@ export const TEACHER_POSTGRADUATE_DEGREE_VALUES = [
 
 export const TEACHER_POSTGRADUATE_DEGREE_OPTIONS = [
   { value: "", label: "None" },
-  { value: "MASTER OF ARTS IN EDUCATION", label: "Master of Arts in Education" },
-  { value: "MASTER OF ARTS IN TEACHING", label: "Master of Arts in Teaching" },
-  { value: "DOCTOR OF EDUCATION", label: "Doctor of Education" },
-  { value: "DOCTOR OF PHILOSOPHY", label: "Doctor of Philosophy" },
+  { value: "MASTER OF ARTS IN EDUCATION", label: "Master of Arts in Education (MAEd)" },
+  { value: "MASTER OF ARTS IN TEACHING", label: "Master of Arts in Teaching (MAT)" },
+  { value: "DOCTOR OF PHILOSOPHY", label: "Doctor of Philosophy (PhD)" },
+  { value: "DOCTOR OF EDUCATION", label: "Doctor of Education (EdD)" },
 ];
 
 export const TEACHER_JHS_SPECIALIZATION_VALUES = [

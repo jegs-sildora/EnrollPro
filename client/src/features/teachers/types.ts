@@ -35,9 +35,12 @@ export interface Teacher {
   departments: string[];
   plantillaPosition: string | null;
   undergraduateDegree: string | null;
+  bachelorMajor: string | null;
+  bachelorMinor: string | null;
   postgraduateDegree: string | null;
   majorSpecialization: string | null;
   minorSpecialization: string | null;
+  postgraduateDegrees?: TeacherPostgraduateDegree[];
   indigenousCommunity: string | null;
   natureOfAppointment: TeacherNatureOfAppointment;
   fundingSource: TeacherFundingSource;
@@ -59,6 +62,13 @@ export interface Teacher {
     roles?: string[];
     accessExpirationDate?: string | null;
   } | null;
+}
+
+export interface TeacherPostgraduateDegree {
+  id?: number;
+  degree: string;
+  major: string | null;
+  minor: string | null;
 }
 
 export type TeacherNatureOfAppointment =

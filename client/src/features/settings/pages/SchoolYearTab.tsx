@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
-import { cn, getManilaNow } from "@/shared/lib/utils";
+import { cn, getManilaNow, MOCKED_SYSTEM_DATE_KEY } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
   AlertTriangle,
@@ -23,7 +23,6 @@ import { Label } from "@/shared/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -62,7 +61,6 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
-import { useActiveTerm } from "@/shared/hooks/useActiveTerm";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
@@ -279,8 +277,19 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 }
 
 export default function SchoolYearTab() {
-  const { activeTerm } = useActiveTerm();
   const { confirmOrRun } = useUnsavedChangesPrompt();
+  const [, setMockedClockTick] = useState(0);
+
+  useEffect(() => {
+    if (!localStorage.getItem(MOCKED_SYSTEM_DATE_KEY)) return;
+
+    const intervalId = window.setInterval(() => {
+      setMockedClockTick((current) => current + 1);
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const {
     setSettings,
     activeSchoolYearId,

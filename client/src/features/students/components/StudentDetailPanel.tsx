@@ -2118,7 +2118,7 @@ export function StudentDetailPanel({
                           )}
                         >
                           <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
-                          Allow Login (Active)
+                          ENABLE LOGIN
                         </button>
                         <button
                           type="button"
@@ -2132,7 +2132,7 @@ export function StudentDetailPanel({
                           )}
                         >
                           <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
-                          Block Login (Disabled)
+                          DISABLE LOGIN
                         </button>
                       </div>
                     </div>

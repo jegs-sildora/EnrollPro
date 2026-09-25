@@ -10,31 +10,32 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Seeding Default School Year (2026-2027)...");
-  console.log("📅 DepEd Term Configuration 3-Term System (Mandated DO 9, s. 2026)");
-  console.log("   Term 1: June 8 – September 15, 2026");
-  console.log("   Term 2: September 16 – December 18, 2026");
-  console.log("   Term 3: January 4 – April 8, 2027");
+  console.log("🌱 Seeding Default School Year (2022-2023)...");
+  console.log("📅 DepEd Term Configuration 3-Term System (Mandated DO 9, s. 2022)");
+  console.log("   Term 1: June 8 – September 15, 2022");
+  console.log("   Term 2: September 16 – December 18, 2022");
+  console.log("   Term 3: January 4 – April 8, 2023");
 
-  const yearLabel = "2026-2027";
+  const yearLabel = "2022-2023";
   const status: SchoolYearStatus = "ACTIVE";
   
   const sy = await prisma.schoolYear.upsert({
     where: { yearLabel },
-    update: { status },
+    update: { status, activeTerm: "T1" },
     create: {
       yearLabel,
       status,
-      classOpeningDate: new Date("2026-06-01T00:00:00Z"),
-      classEndDate: new Date("2027-03-31T00:00:00Z"),
-      enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
-      enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
-      term1Start: new Date("2026-06-08T04:00:00Z"),
-      term1End: new Date("2026-09-15T04:00:00Z"),
-      term2Start: new Date("2026-09-16T04:00:00Z"),
-      term2End: new Date("2026-12-18T04:00:00Z"),
-      term3Start: new Date("2027-01-04T04:00:00Z"),
-      term3End: new Date("2027-04-08T04:00:00Z"),
+      classOpeningDate: new Date("2022-06-01T00:00:00Z"),
+      classEndDate: new Date("2023-03-31T00:00:00Z"),
+      enrollOpenDate: new Date("2022-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2022-05-31T00:00:00Z"),
+      term1Start: new Date("2022-06-08T04:00:00Z"),
+      term1End: new Date("2022-09-15T04:00:00Z"),
+      term2Start: new Date("2022-09-16T04:00:00Z"),
+      term2End: new Date("2022-12-18T04:00:00Z"),
+      term3Start: new Date("2023-01-04T04:00:00Z"),
+      term3End: new Date("2023-04-08T04:00:00Z"),
+      activeTerm: "T1",
     },
   });
 
@@ -61,7 +62,7 @@ async function main() {
       where: { id: existingSettings.id },
       data: defaultSettings,
     });
-    console.log("✅ Updated SchoolSettings to use 2026-2027.");
+    console.log("✅ Updated SchoolSettings to use 2022-2023.");
   }
 
   console.log("🌱 Seeding Default Users...");

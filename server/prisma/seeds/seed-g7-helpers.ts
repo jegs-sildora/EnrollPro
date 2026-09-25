@@ -43,15 +43,27 @@ export interface FilipinoName {
 
 export function getFilipinoName(sex: Sex, index: number): FilipinoName {
   const firstNames = sex === Sex.MALE ? FILIPINO_MALE_FIRST_NAMES : FILIPINO_FEMALE_FIRST_NAMES;
+  
+  const fLen = firstNames.length;
+  const mLen = FILIPINO_SURNAMES.length;
+  const lLen = FILIPINO_SURNAMES.length;
+  
+  const fIdx = index % fLen;
+  const mIdx = Math.floor(index / fLen) % mLen;
+  const lIdx = Math.floor(index / (fLen * mLen)) % lLen;
+
+  // Offset last name if it matches middle name
+  const finalLIdx = lIdx === mIdx ? (lIdx + 1) % lLen : lIdx;
+
   return {
-    firstName: firstNames[index % firstNames.length],
-    middleName: FILIPINO_SURNAMES[(index * 2 + 3) % FILIPINO_SURNAMES.length],
-    lastName: FILIPINO_SURNAMES[(index * 3 + 1) % FILIPINO_SURNAMES.length],
+    firstName: firstNames[fIdx],
+    middleName: FILIPINO_SURNAMES[mIdx],
+    lastName: FILIPINO_SURNAMES[finalLIdx],
   };
 }
 
 export function getFilipinoParentName(sex: Sex, index: number): FilipinoName {
-  return getFilipinoName(sex, index + 7);
+  return getFilipinoName(sex, index + 500000);
 }
 
 export function createLRNGenerator(year: number) {

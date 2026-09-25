@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import path from "path";
+import { unlink } from "fs/promises";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { SectionAdviserStatus, Role, Weekday, Prisma } from "../../generated/prisma/index.js";
@@ -21,6 +23,41 @@ function normalizeOptionalUpperText(val: unknown): string | null {
   if (val === undefined || val === null || val === "" || val === "__NONE__")
     return null;
   return String(val).normalize("NFC").trim().toUpperCase();
+}
+
+interface PostgraduateDegreeInput {
+  degree: string;
+  major: string | null;
+  minor: string | null;
+}
+
+function normalizePostgraduateDegrees(value: unknown): PostgraduateDegreeInput[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((entry): PostgraduateDegreeInput[] => {
+    if (!entry || typeof entry !== "object") return [];
+    const record = entry as Record<string, unknown>;
+    const degree = normalizeOptionalUpperText(record.degree);
+    if (!degree) return [];
+    return [{
+      degree,
+      major: normalizeOptionalUpperText(record.major),
+      minor: normalizeOptionalUpperText(record.minor),
+    }];
+  });
+}
+
+async function removeUploadedTeacherPhoto(photoPath: string | null): Promise<void> {
+  if (!photoPath?.startsWith("/uploads/")) return;
+  const filename = path.basename(photoPath);
+  try {
+    await unlink(path.resolve("uploads", filename));
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+    if (code !== "ENOENT") throw error;
+  }
 }
 
 function normalizeAncillaryRoleFilter(value: unknown): string | null {
@@ -249,6 +286,7 @@ export async function index(req: Request, res: Response) {
       where: whereClause,
       include: {
         departments: true,
+        postgraduateDegrees: { orderBy: { sortOrder: "asc" } },
         user: {
           select: {
             id: true,
@@ -286,9 +324,17 @@ export async function index(req: Request, res: Response) {
         designationTitle: teacher.designation,
         specialization: teacher.specialization,
         undergraduateDegree: teacher.undergraduateDegree,
+        bachelorMajor: teacher.bachelorMajor,
+        bachelorMinor: teacher.bachelorMinor,
         postgraduateDegree: teacher.postgraduateDegree,
         majorSpecialization: teacher.majorSpecialization,
         minorSpecialization: teacher.minorSpecialization,
+        postgraduateDegrees: teacher.postgraduateDegrees.map((entry) => ({
+          id: entry.id,
+          degree: entry.degree,
+          major: entry.major,
+          minor: entry.minor,
+        })),
         indigenousCommunity: teacher.indigenousCommunity,
         natureOfAppointment: teacher.natureOfAppointment,
         fundingSource: teacher.fundingSource,
@@ -375,7 +421,10 @@ export async function show(req: Request, res: Response) {
   try {
     const teacher = await prisma.teacher.findUnique({
       where: { id },
-      include: { departments: true },
+      include: {
+        departments: true,
+        postgraduateDegrees: { orderBy: { sortOrder: "asc" } },
+      },
     });
 
     if (!teacher) {
@@ -416,6 +465,11 @@ export async function store(req: Request, res: Response) {
       personnelType,
       functionalAssignment,
       undergraduateDegree,
+      bachelorMajor,
+      bachelorMinor,
+      bachelor_degree: bachelorDegree,
+      bachelor_major: snakeCaseBachelorMajor,
+      bachelor_minor: snakeCaseBachelorMinor,
       postgraduateDegree,
       majorSpecialization,
       minorSpecialization,
@@ -430,6 +484,7 @@ export async function store(req: Request, res: Response) {
       serviceEffectiveDate,
       serviceRemarks,
       ancillaryRoles,
+      postgraduateDegrees,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -437,6 +492,9 @@ export async function store(req: Request, res: Response) {
     const normalizedEmployeeId = normalizeOptionalUpperText(employeeId);
     const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
+    const normalizedBachelorDegree = normalizeOptionalUpperText(undergraduateDegree ?? bachelorDegree);
+    const normalizedBachelorMajor = normalizeOptionalUpperText(bachelorMajor ?? snakeCaseBachelorMajor);
+    const normalizedBachelorMinor = normalizeOptionalUpperText(bachelorMinor ?? snakeCaseBachelorMinor);
     const isTemporary = isTemporaryAppointment(natureOfAppointment);
     const parsedAccessExpirationDate = isTemporary
       ? parseAccessExpirationDate(accessExpirationDate)
@@ -472,7 +530,18 @@ export async function store(req: Request, res: Response) {
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
+    if (normalizedBachelorDegree && !normalizedBachelorMajor) {
+      return res.status(422).json({
+        message: "Bachelor degree major or specialization is required",
+        errors: {
+          bachelorMajor: ["Enter the bachelor degree major or specialization."],
+        },
+      });
+    }
+
     const deptCodes = (Array.isArray(departments) ? departments.map(d => normalizeOptionalUpperText(d)).filter(Boolean) : []) as string[];
+    const normalizedPostgraduateDegrees = normalizePostgraduateDegrees(postgraduateDegrees);
+    const primaryPostgraduateDegree = normalizedPostgraduateDegrees[0] ?? null;
 
     const teacher = await prisma.$transaction(async (tx) => {
       const defaultPasswordHash = await bcrypt.hash(password || "DepEd2026!", 10);
@@ -547,10 +616,20 @@ export async function store(req: Request, res: Response) {
           birthdate: parseDateOnly(birthdate),
           personnelType: normalizeOptionalUpperText(personnelType),
           functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
-          undergraduateDegree: normalizeOptionalUpperText(undergraduateDegree),
-          postgraduateDegree: normalizeOptionalUpperText(postgraduateDegree),
-          majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
-          minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
+          undergraduateDegree: normalizedBachelorDegree,
+          bachelorMajor: normalizedBachelorMajor,
+          bachelorMinor: normalizedBachelorMinor,
+          postgraduateDegree: primaryPostgraduateDegree?.degree ?? normalizeOptionalUpperText(postgraduateDegree),
+          majorSpecialization: primaryPostgraduateDegree?.major ?? normalizeOptionalUpperText(majorSpecialization),
+          minorSpecialization: primaryPostgraduateDegree?.minor ?? normalizeOptionalUpperText(minorSpecialization),
+          postgraduateDegrees: normalizedPostgraduateDegrees.length > 0
+            ? {
+              create: normalizedPostgraduateDegrees.map((entry, sortOrder) => ({
+                ...entry,
+                sortOrder,
+              })),
+            }
+            : undefined,
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           serviceEffectiveDate: parseDateOnly(serviceEffectiveDate),
           serviceRemarks: serviceRemarks || null,
@@ -633,6 +712,11 @@ export async function update(req: Request, res: Response) {
       personnelType,
       functionalAssignment,
       undergraduateDegree,
+      bachelorMajor,
+      bachelorMinor,
+      bachelor_degree: bachelorDegree,
+      bachelor_major: snakeCaseBachelorMajor,
+      bachelor_minor: snakeCaseBachelorMinor,
       postgraduateDegree,
       majorSpecialization,
       minorSpecialization,
@@ -641,6 +725,7 @@ export async function update(req: Request, res: Response) {
       fundingSource,
       accessExpirationDate,
       ancillaryRoles,
+      postgraduateDegrees,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -653,6 +738,9 @@ export async function update(req: Request, res: Response) {
     const normalizedEmployeeId = normalizeOptionalUpperText(employeeId);
     const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
+    const normalizedBachelorDegree = normalizeOptionalUpperText(undergraduateDegree ?? bachelorDegree);
+    const normalizedBachelorMajor = normalizeOptionalUpperText(bachelorMajor ?? snakeCaseBachelorMajor);
+    const normalizedBachelorMinor = normalizeOptionalUpperText(bachelorMinor ?? snakeCaseBachelorMinor);
     const isTemporary = isTemporaryAppointment(natureOfAppointment);
     const parsedAccessExpirationDate = isTemporary
       ? parseAccessExpirationDate(accessExpirationDate)
@@ -688,7 +776,18 @@ export async function update(req: Request, res: Response) {
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
+    if (normalizedBachelorDegree && !normalizedBachelorMajor) {
+      return res.status(422).json({
+        message: "Bachelor degree major or specialization is required",
+        errors: {
+          bachelorMajor: ["Enter the bachelor degree major or specialization."],
+        },
+      });
+    }
+
     const deptCodes = (Array.isArray(departments) ? departments.map(d => normalizeOptionalUpperText(d)).filter(Boolean) : []) as string[];
+    const normalizedPostgraduateDegrees = normalizePostgraduateDegrees(postgraduateDegrees);
+    const primaryPostgraduateDegree = normalizedPostgraduateDegrees[0] ?? null;
 
     const updatedTeacher = await prisma.$transaction(async (tx) => {
       // 1. Update the User record if it exists (linked by employeeId)
@@ -735,10 +834,12 @@ export async function update(req: Request, res: Response) {
           birthdate: parseDateOnly(birthdate),
           personnelType: normalizeOptionalUpperText(personnelType),
           functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
-          undergraduateDegree: normalizeOptionalUpperText(undergraduateDegree),
-          postgraduateDegree: normalizeOptionalUpperText(postgraduateDegree),
-          majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
-          minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
+          undergraduateDegree: normalizedBachelorDegree,
+          bachelorMajor: normalizedBachelorMajor,
+          bachelorMinor: normalizedBachelorMinor,
+          postgraduateDegree: primaryPostgraduateDegree?.degree ?? normalizeOptionalUpperText(postgraduateDegree),
+          majorSpecialization: primaryPostgraduateDegree?.major ?? normalizeOptionalUpperText(majorSpecialization),
+          minorSpecialization: primaryPostgraduateDegree?.minor ?? normalizeOptionalUpperText(minorSpecialization),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           serviceEffectiveDate: parseDateOnly(serviceEffectiveDate),
           serviceRemarks: serviceRemarks || null,
@@ -746,6 +847,19 @@ export async function update(req: Request, res: Response) {
           ...(fundingSource ? { fundingSource } : {}),
         },
       });
+
+      if (postgraduateDegrees !== undefined) {
+        await tx.teacherPostgraduateDegree.deleteMany({ where: { teacherId: id } });
+        if (normalizedPostgraduateDegrees.length > 0) {
+          await tx.teacherPostgraduateDegree.createMany({
+            data: normalizedPostgraduateDegrees.map((entry, sortOrder) => ({
+              teacherId: id,
+              ...entry,
+              sortOrder,
+            })),
+          });
+        }
+      }
 
       if (ancillaryRoles !== undefined && req.schoolYearId) {
         await tx.teacherDesignation.upsert({
@@ -1533,5 +1647,43 @@ export async function togglePortalAccess(req: Request, res: Response) {
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: err.message });
+  }
+}
+
+export async function uploadPhoto(req: Request, res: Response) {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid teacher ID" });
+  if (!req.file) return res.status(400).json({ message: "Select a JPEG, PNG, or WEBP photo" });
+
+  try {
+    const existing = await prisma.teacher.findUnique({ where: { id }, select: { photoPath: true } });
+    if (!existing) return res.status(404).json({ message: "Teacher not found" });
+
+    const photoPath = `/uploads/${req.file.filename}`;
+    const teacher = await prisma.teacher.update({ where: { id }, data: { photoPath } });
+    await removeUploadedTeacherPhoto(existing.photoPath);
+    broadcastTeacherInvalidation({ schoolYearId: req.schoolYearId, teacherIds: [id] });
+    return res.json({ teacher, photoPath });
+  } catch (error: unknown) {
+    await removeUploadedTeacherPhoto(`/uploads/${req.file.filename}`);
+    const err = error as Error;
+    return res.status(500).json({ message: err.message });
+  }
+}
+
+export async function removePhoto(req: Request, res: Response) {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid teacher ID" });
+
+  try {
+    const existing = await prisma.teacher.findUnique({ where: { id }, select: { photoPath: true } });
+    if (!existing) return res.status(404).json({ message: "Teacher not found" });
+    const teacher = await prisma.teacher.update({ where: { id }, data: { photoPath: null } });
+    await removeUploadedTeacherPhoto(existing.photoPath);
+    broadcastTeacherInvalidation({ schoolYearId: req.schoolYearId, teacherIds: [id] });
+    return res.json({ teacher, photoPath: null });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return res.status(500).json({ message: err.message });
   }
 }

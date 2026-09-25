@@ -85,45 +85,63 @@ model CompanionIdentityLink {
 
 /// Faculty members who serve as section advisers; not login users
 model Teacher {
-  id                   Int                        @id @default(autoincrement())
-  employeeId           String?                    @unique(map: "uq_teachers_employee_id") @map("employee_id") @db.VarChar(7)
-  firstName            String                     @map("first_name")
-  lastName             String                     @map("last_name")
-  middleName           String?                    @map("middle_name")
+  id                   Int                         @id @default(autoincrement())
+  employeeId           String?                     @unique(map: "uq_teachers_employee_id") @map("employee_id") @db.VarChar(7)
+  firstName            String                      @map("first_name")
+  lastName             String                      @map("last_name")
+  middleName           String?                     @map("middle_name")
   suffix               String?
-  email                String?                    @unique(map: "uq_teachers_email") @map("email")
-  contactNumber        String?                    @map("contact_number")
+  email                String?                     @unique(map: "uq_teachers_email") @map("email")
+  contactNumber        String?                     @map("contact_number")
   specialization       String?
-  undergraduateDegree  String?                    @map("undergraduate_degree")
-  postgraduateDegree   String?                    @map("postgraduate_degree")
-  majorSpecialization  String?                    @map("major_specialization")
-  minorSpecialization  String?                    @map("minor_specialization")
-  indigenousCommunity  String?                    @map("indigenous_community")
-  natureOfAppointment  TeacherNatureOfAppointment @default(REGULAR_PERMANENT) @map("nature_of_appointment")
-  fundingSource        TeacherFundingSource       @default(NATIONAL) @map("funding_source")
-  isActive             Boolean                    @default(true) @map("is_active")
-  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
-  photoPath            String?                    @map("photo_path")
-  plantillaPosition    String?                    @map("plantilla_position")
+  undergraduateDegree  String?                     @map("undergraduate_degree")
+  bachelorMajor        String?                     @map("bachelor_major")
+  bachelorMinor        String?                     @map("bachelor_minor")
+  postgraduateDegree   String?                     @map("postgraduate_degree")
+  majorSpecialization  String?                     @map("major_specialization")
+  minorSpecialization  String?                     @map("minor_specialization")
+  indigenousCommunity  String?                     @map("indigenous_community")
+  natureOfAppointment  TeacherNatureOfAppointment  @default(REGULAR_PERMANENT) @map("nature_of_appointment")
+  fundingSource        TeacherFundingSource        @default(NATIONAL) @map("funding_source")
+  isActive             Boolean                     @default(true) @map("is_active")
+  createdAt            DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  photoPath            String?                     @map("photo_path")
+  plantillaPosition    String?                     @map("plantilla_position")
   designation          String?
   sex                  Sex
-  userId               Int?                       @unique(map: "uq_teachers_user_id") @map("user_id")
-  serviceStatus        String                     @default("ACTIVE") @map("service_status")
-  serviceEffectiveDate DateTime?                  @map("service_effective_date") @db.Date
-  serviceRemarks       String?                    @map("service_remarks")
-  birthdate            DateTime?                  @db.Date
-  personnelType        String?                    @map("personnel_type")
-  functionalAssignment String?                    @map("functional_assignment")
-  ancillaryRoles       String[]                   @default([]) @map("ancillary_roles")
+  userId               Int?                        @unique(map: "uq_teachers_user_id") @map("user_id")
+  serviceStatus        String                      @default("ACTIVE") @map("service_status")
+  serviceEffectiveDate DateTime?                   @map("service_effective_date") @db.Date
+  serviceRemarks       String?                     @map("service_remarks")
+  birthdate            DateTime?                   @db.Date
+  personnelType        String?                     @map("personnel_type")
+  functionalAssignment String?                     @map("functional_assignment")
+  ancillaryRoles       String[]                    @default([]) @map("ancillary_roles")
   advisoryHistory      SectionAdviser[]
   teacherDesignations  TeacherDesignation[]
+  postgraduateDegrees  TeacherPostgraduateDegree[]
   schedulePeriods      TeacherSchedulePeriod[]
-  departments          Department[]               @relation("DepartmentTeachers")
-  user                 User?                      @relation("UserTeacherProfile", fields: [userId], references: [id])
+  departments          Department[]                @relation("DepartmentTeachers")
+  user                 User?                       @relation("UserTeacherProfile", fields: [userId], references: [id])
   historicalAdvisories EnrollmentHistory[]
 
   @@map("teachers")
+}
+
+model TeacherPostgraduateDegree {
+  id        Int      @id @default(autoincrement())
+  teacherId Int      @map("teacher_id")
+  degree    String
+  major     String?
+  minor     String?
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, sortOrder], map: "idx_teacher_postgraduate_degrees_teacher_order")
+  @@map("teacher_postgraduate_degrees")
 }
 
 model TeacherSchedulePeriod {

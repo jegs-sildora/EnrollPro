@@ -185,7 +185,13 @@ export function buildOrderedTermContract(
 export function resolveActiveTermEntry(
   terms: IntegrationTermEntry[],
   now: Date = new Date(),
+  overrideActiveTerm?: string | null
 ): IntegrationTermEntry {
+  if (overrideActiveTerm) {
+    const matched = terms.find((t) => t.identity === overrideActiveTerm)
+    if (matched) return matched;
+  }
+
   const today = manilaDateOnly(now)
   const matches = terms.filter(
     (term) => today >= term.startDate && today <= term.endDate,

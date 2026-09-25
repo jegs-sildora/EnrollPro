@@ -155,10 +155,10 @@ export const seedDatabase = async () => {
   try {
     // 1. Create School Year
     const sy = await prisma.schoolYear.upsert({
-      where: { yearLabel: "2026-2027" },
+      where: { yearLabel: "2022-2023" },
       update: {},
       create: {
-        yearLabel: "2026-2027",
+        yearLabel: "2022-2023",
         status: SchoolYearStatus.ACTIVE,
         termFormat: TermFormat.QUARTERS,
       }

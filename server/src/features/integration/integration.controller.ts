@@ -195,7 +195,7 @@ export async function getActiveTerm(
   let activeTerm: IntegrationTermEntry
   try {
     const terms = buildOrderedTermContract(scope)
-    activeTerm = resolveActiveTermEntry(terms, getSystemDate(req))
+    activeTerm = resolveActiveTermEntry(terms, getSystemDate(req), scope.activeTerm)
   } catch (error: unknown) {
     if (error instanceof TermContractError) {
       sendIntegrationError(res, 409, error.code, error.message)

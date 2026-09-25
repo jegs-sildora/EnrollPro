@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import * as teachersCtrl from "./teachers.controller.js";
 import { validate } from "../../middleware/validate.js";
+import { secureUpload } from "../../lib/multer.js";
 import {
   teacherSchema,
   updateTeacherSchema,
@@ -33,6 +34,8 @@ router.put(
 router.get("/:id", teachersCtrl.show);
 router.post("/", validate(teacherSchema), teachersCtrl.store);
 router.patch("/:id", validate(updateTeacherSchema), teachersCtrl.update);
+router.post("/:id/photo", secureUpload.single("photo"), teachersCtrl.uploadPhoto);
+router.delete("/:id/photo", teachersCtrl.removePhoto);
 router.patch("/:id/portal-access", teachersCtrl.togglePortalAccess);
 router.post("/:id/reset-password", teachersCtrl.resetPassword);
 router.patch(

@@ -68,6 +68,12 @@ const teacherFundingSourceSchema = z.enum(TEACHER_FUNDING_SOURCE_VALUES);
 const teacherScheduleDaySchema = z.enum(TEACHER_SCHEDULE_DAY_VALUES);
 const teacherUndergraduateDegreeSchema = z.enum(TEACHER_UNDERGRADUATE_DEGREE_VALUES);
 const teacherPostgraduateDegreeSchema = z.enum(TEACHER_POSTGRADUATE_DEGREE_VALUES);
+
+const teacherPostgraduateStudySchema = z.object({
+  degree: teacherPostgraduateDegreeSchema,
+  major: optionalUpperText.optional(),
+  minor: optionalUpperText.optional(),
+});
 const teacherJhsSpecializationSchema = z.enum(TEACHER_JHS_SPECIALIZATION_VALUES);
 const teacherJhsMinorSpecializationSchema = z.enum(TEACHER_JHS_MINOR_SPECIALIZATION_VALUES);
 
@@ -180,6 +186,21 @@ export const teacherSchemaBase = z
         z.union([teacherDepartmentSchema, z.null()]),
       )
       .optional(),
+    bachelorMajor: optionalUpperText.optional(),
+    bachelorMinor: optionalUpperText.optional(),
+    bachelor_degree: z
+      .preprocess(
+        (value) => {
+          if (!value) return null;
+          if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
+          return value;
+        },
+        z.union([teacherUndergraduateDegreeSchema, z.null()]),
+      )
+      .optional(),
+    bachelor_major: optionalUpperText.optional(),
+    bachelor_minor: optionalUpperText.optional(),
+    postgraduateDegrees: z.array(teacherPostgraduateStudySchema).max(10).optional().default([]),
     departments: z.array(teacherDepartmentSchema).optional().default([]),
     plantillaPosition: optionalUpperText.optional(),
     ancillaryRoles: z

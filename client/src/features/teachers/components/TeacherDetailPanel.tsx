@@ -1,6 +1,6 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
-import { memo, useCallback, useState, useEffect, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { memo, useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import {
@@ -13,6 +13,10 @@ import {
   Venus,
   ShieldAlert,
   Key,
+  Camera,
+  Plus,
+  Trash2,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -60,8 +64,6 @@ import {
   DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
   TEACHER_UNDERGRADUATE_DEGREE_OPTIONS,
   TEACHER_POSTGRADUATE_DEGREE_OPTIONS,
-  TEACHER_JHS_SPECIALIZATION_OPTIONS,
-  TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS,
   IP_COMMUNITY_OPTIONS,
   IP_COMMUNITY_VALUES,
 } from "@enrollpro/shared";
@@ -119,9 +121,13 @@ const formSchema = z
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
     undergraduateDegree: z.string().optional().nullable(),
-    postgraduateDegree: z.string().optional().nullable(),
-    majorSpecialization: z.string().optional().nullable(),
-    minorSpecialization: z.string().optional().nullable(),
+    bachelorMajor: z.string().optional().nullable(),
+    bachelorMinor: z.string().optional().nullable(),
+    postgraduateDegrees: z.array(z.object({
+      degree: z.string(),
+      major: z.string().optional().nullable(),
+      minor: z.string().optional().nullable(),
+    })).min(1),
     indigenousCommunity: z.enum(IP_COMMUNITY_VALUES).optional().nullable().default("NOT APPLICABLE"),
     natureOfAppointment: z.enum([
       "REGULAR_PERMANENT",
@@ -196,8 +202,15 @@ const formSchema = z
       if (!data.undergraduateDegree || data.undergraduateDegree.trim().length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Enter the undergraduate degree.",
+          message: "Enter the bachelor degree.",
           path: ["undergraduateDegree"],
+        });
+      }
+      if (data.undergraduateDegree && (!data.bachelorMajor || data.bachelorMajor.trim().length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Enter the bachelor degree major or specialization.",
+          path: ["bachelorMajor"],
         });
       }
       if (!data.natureOfAppointment) {
@@ -269,6 +282,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
   const [isPortalActionSubmitting, setIsPortalActionSubmitting] = useState(false);
   const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const globalDefaultPassword = useSettingsStore((s) => s.globalDefaultPassword);
 
@@ -330,9 +347,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       functionalAssignment: "",
       specialization: "",
       undergraduateDegree: "",
-      postgraduateDegree: "",
-      majorSpecialization: "",
-      minorSpecialization: "",
+      bachelorMajor: "",
+      bachelorMinor: "",
+      postgraduateDegrees: [{ degree: "", major: "", minor: "" }],
       indigenousCommunity: "NOT APPLICABLE",
       natureOfAppointment: "REGULAR_PERMANENT",
       fundingSource: "NATIONAL",
@@ -346,6 +363,21 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       accessExpirationDate: null,
     },
   });
+
+  const { fields: postgraduateFields, append: appendPostgraduateDegree, remove: removePostgraduateDegree } = useFieldArray({
+    control,
+    name: "postgraduateDegrees",
+  });
+
+  useEffect(() => {
+    if (!selectedPhoto) {
+      setPhotoPreviewUrl(null);
+      return;
+    }
+    const previewUrl = URL.createObjectURL(selectedPhoto);
+    setPhotoPreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedPhoto]);
 
   const formRoles = watch("roles");
   const formPersonnelType = watch("personnelType");
@@ -393,9 +425,19 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
         undergraduateDegree: teacher.undergraduateDegree || "",
-        postgraduateDegree: teacher.postgraduateDegree || "",
-        majorSpecialization: teacher.majorSpecialization || "",
-        minorSpecialization: teacher.minorSpecialization || "",
+        bachelorMajor: teacher.bachelorMajor || "",
+        bachelorMinor: teacher.bachelorMinor || "",
+        postgraduateDegrees: teacher.postgraduateDegrees?.length
+          ? teacher.postgraduateDegrees.map((entry) => ({
+            degree: entry.degree,
+            major: entry.major || "",
+            minor: entry.minor || "",
+          }))
+          : [{
+            degree: teacher.postgraduateDegree || "",
+            major: teacher.majorSpecialization || "",
+            minor: teacher.minorSpecialization || "",
+          }],
         indigenousCommunity: (teacher.indigenousCommunity as unknown as FormValues['indigenousCommunity']) || "NOT APPLICABLE",
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
         fundingSource: teacher.fundingSource || "NATIONAL",
@@ -425,9 +467,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         functionalAssignment: "",
         specialization: "",
         undergraduateDegree: "",
-        postgraduateDegree: "",
-        majorSpecialization: "",
-        minorSpecialization: "",
+        bachelorMajor: "",
+        bachelorMinor: "",
+        postgraduateDegrees: [{ degree: "", major: "", minor: "" }],
         indigenousCommunity: "NOT APPLICABLE",
         natureOfAppointment: "REGULAR_PERMANENT",
         fundingSource: "NATIONAL",
@@ -441,6 +483,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         accessExpirationDate: null,
       });
     }
+    setSelectedPhoto(null);
+    setRemoveExistingPhoto(false);
   }, [teacher, reset, open]);
 
   const isAdding = !teacher || teacher.id === -1;
@@ -501,10 +545,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     confirmOrRun(closePanel);
   }, [closePanel, confirmOrRun, onOpenChange]);
 
+  const hasUnsavedChanges = isDirty || selectedPhoto !== null || removeExistingPhoto;
+
   useUnsavedChanges({
     id: "teacher-detail-panel",
     label: "Faculty/Staff profile",
-    isDirty: open && isDirty,
+    isDirty: open && hasUnsavedChanges,
     isSubmitting,
     onDiscard: discardProfileChanges,
   });
@@ -512,6 +558,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      const postgraduateDegrees = data.postgraduateDegrees
+        .filter((entry) => entry.degree.trim().length > 0)
+        .map((entry) => ({
+          degree: entry.degree,
+          major: entry.major?.trim() || null,
+          minor: entry.minor?.trim() || null,
+        }));
+      const primaryPostgraduateDegree = postgraduateDegrees[0];
       const profilePayload = {
         firstName: data.firstName.toUpperCase(),
         lastName: data.lastName.toUpperCase(),
@@ -526,9 +580,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
         undergraduateDegree: data.undergraduateDegree || "",
-        postgraduateDegree: data.postgraduateDegree || "",
-        majorSpecialization: data.majorSpecialization || "",
-        minorSpecialization: data.minorSpecialization || "",
+        bachelorMajor: data.bachelorMajor?.trim() || null,
+        bachelorMinor: data.bachelorMinor?.trim() || null,
+        postgraduateDegrees,
+        postgraduateDegree: primaryPostgraduateDegree?.degree || "",
+        majorSpecialization: primaryPostgraduateDegree?.major || "",
+        minorSpecialization: primaryPostgraduateDegree?.minor || "",
         indigenousCommunity: data.indigenousCommunity,
         natureOfAppointment: data.natureOfAppointment,
         fundingSource: data.fundingSource,
@@ -543,16 +600,20 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           : null,
       };
 
+      let savedTeacherId: number;
+
       if (isAdding) {
         const createPayload = {
           ...profilePayload,
           password: defaultPasswordInput || undefined,
           portalActive: data.portalActive !== undefined ? data.portalActive : true,
         };
-        await api.post<{ teacher: Teacher }>(`/teachers`, createPayload);
+        const response = await api.post<{ teacher: Teacher }>(`/teachers`, createPayload);
+        savedTeacherId = response.data.teacher.id;
         sileo.success({ title: "Faculty/Staff Record Created", description: "The faculty or staff record has been saved." });
       } else {
-        await api.patch(`/teachers/${teacher!.id}`, profilePayload);
+        savedTeacherId = teacher!.id;
+        await api.patch(`/teachers/${savedTeacherId}`, profilePayload);
 
         const originalPortalActive = teacher!.userAccount?.isActive ?? teacher!.isActive ?? true;
         if (data.portalActive !== undefined && data.portalActive !== originalPortalActive) {
@@ -566,7 +627,17 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         sileo.success({ title: "Profile Updated", description: "The faculty/staff profile has been saved." });
       }
 
+      if (selectedPhoto) {
+        const photoData = new FormData();
+        photoData.append("photo", selectedPhoto);
+        await api.post(`/teachers/${savedTeacherId}/photo`, photoData);
+      } else if (removeExistingPhoto && teacher?.photoPath) {
+        await api.delete(`/teachers/${savedTeacherId}/photo`);
+      }
+
       if (onSaveSuccess) onSaveSuccess();
+      setSelectedPhoto(null);
+      setRemoveExistingPhoto(false);
       reset(data);
       onOpenChange(false);
     } catch (err: unknown) {
@@ -630,13 +701,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         <DialogContent
           aria-describedby={undefined}
           onPointerDownOutside={(e) => {
-            if (isDirty) {
+            if (hasUnsavedChanges) {
               e.preventDefault();
               confirmOrRun(closePanel);
             }
           }}
           onEscapeKeyDown={(e) => {
-            if (isDirty) {
+            if (hasUnsavedChanges) {
               e.preventDefault();
               confirmOrRun(closePanel);
             }
@@ -881,10 +952,27 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Badge variant="outline" className="font-bold uppercase">School Form 7</Badge>
                         </div>
                         <div className="text-base leading-tight font-bold divide-y divide-border">
-                          <ViewRow label="Undergrad" value={teacher.undergraduateDegree} />
-                          <ViewRow label="Postgrad" value={teacher.postgraduateDegree} />
-                          <ViewRow label="Major" value={teacher.majorSpecialization} />
-                          <ViewRow label="Minor" value={teacher.minorSpecialization} />
+                          <ViewRow label="Bachelor Degree" value={teacher.undergraduateDegree} />
+                          <ViewRow label="Bachelor Major" value={teacher.bachelorMajor} />
+                          <ViewRow label="Bachelor Minor" value={teacher.bachelorMinor} />
+                          <ViewRow
+                            label="Postgrad"
+                            value={teacher.postgraduateDegrees?.length
+                              ? teacher.postgraduateDegrees.map((entry) => entry.degree).join(" / ")
+                              : teacher.postgraduateDegree}
+                          />
+                          <ViewRow
+                            label="Major"
+                            value={teacher.postgraduateDegrees?.length
+                              ? teacher.postgraduateDegrees.map((entry) => entry.major).filter(Boolean).join(" / ")
+                              : teacher.majorSpecialization}
+                          />
+                          <ViewRow
+                            label="Minor"
+                            value={teacher.postgraduateDegrees?.length
+                              ? teacher.postgraduateDegrees.map((entry) => entry.minor).filter(Boolean).join(" / ")
+                              : teacher.minorSpecialization}
+                          />
                         </div>
                       </div>
                     )}
@@ -997,7 +1085,73 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-[120px_minmax(0,1fr)] md:items-start">
+                          <div className="flex flex-col items-center space-y-2">
+                            <Label className="whitespace-nowrap text-base font-bold leading-tight text-foreground">
+                              Personnel Photo
+                            </Label>
+                            <div className="group relative h-[120px] w-[120px]">
+                              <UserPhoto
+                                photo={photoPreviewUrl ?? (removeExistingPhoto ? null : teacher?.photoPath)}
+                                containerClassName={cn(
+                                  "h-[120px] w-[120px] rounded-lg border-2 border-dashed transition-all duration-200",
+                                  photoPreviewUrl || (!removeExistingPhoto && teacher?.photoPath)
+                                    ? "border-primary/50 bg-background"
+                                    : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
+                                )}
+                                className="h-full w-full object-cover"
+                                fallbackIcon={
+                                  <div className="flex h-full w-full flex-col items-center justify-center text-foreground transition-colors group-hover:text-primary">
+                                    <Camera className="mb-1 h-8 w-8" />
+                                    <span className="text-center text-[0.625rem] font-bold uppercase leading-tight">
+                                      Upload<br />Photo
+                                    </span>
+                                  </div>
+                                }
+                              >
+                                {isEditing && (selectedPhoto || (!removeExistingPhoto && teacher?.photoPath)) && (
+                                  <button
+                                    type="button"
+                                    className="absolute right-1 top-1 z-20 rounded-full bg-primary p-1 text-destructive-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      setSelectedPhoto(null);
+                                      setRemoveExistingPhoto(true);
+                                    }}
+                                    aria-label="Remove personnel photo"
+                                  >
+                                    <X className="h-3 w-3" strokeWidth={3} />
+                                  </button>
+                                )}
+                              </UserPhoto>
+                              <input
+                                ref={photoInputRef}
+                                type="file"
+                                disabled={!isEditing}
+                                accept="image/jpeg,image/png,image/jpg"
+                                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                                title="Upload personnel photo"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0] ?? null;
+                                  event.target.value = "";
+                                  if (!file) return;
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    sileo.error({ title: "Photo Too Large", description: "The photo must be smaller than 5 MB." });
+                                    return;
+                                  }
+                                  if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+                                    sileo.error({ title: "Unsupported Photo", description: "Only JPG and PNG photos are accepted." });
+                                    return;
+                                  }
+                                  setSelectedPhoto(file);
+                                  setRemoveExistingPhoto(false);
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
                             <Controller
@@ -1079,6 +1233,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 </Select>
                               )}
                             />
+                          </div>
                           </div>
                         </div>
 
@@ -1295,83 +1450,155 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               </Badge>
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Undergraduate Degree <span className="text-destructive">*</span></Label>
-                                <Controller
-                                  name="undergraduateDegree"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <SearchableCombobox
-                                      items={TEACHER_UNDERGRADUATE_DEGREE_OPTIONS}
-                                      value={field.value || ""}
-                                      onChange={(value) => field.onChange(value)}
-                                      disabled={!isEditing}
-                                      placeholder="Select undergraduate degree"
-                                      searchPlaceholder="Search degrees..."
-                                      className={cn(
-                                        "w-full h-10 font-bold text-base leading-tight bg-background text-foreground border-border",
-                                        errors.undergraduateDegree && "border-destructive focus-visible:ring-destructive"
+                            <div className="space-y-4">
+                              <div className="mb-6 rounded-lg border border-border bg-muted/10 p-3">
+                                <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold uppercase text-foreground">Bachelor Degree <span className="text-destructive">*</span></Label>
+                                    <Controller
+                                      name="undergraduateDegree"
+                                      control={control}
+                                      render={({ field }) => (
+                                        <SearchableCombobox
+                                          items={TEACHER_UNDERGRADUATE_DEGREE_OPTIONS}
+                                          value={field.value || ""}
+                                          onChange={(value) => field.onChange(value)}
+                                          disabled={!isEditing}
+                                          placeholder="Select bachelor degree"
+                                          searchPlaceholder="Search degrees..."
+                                          className={cn(
+                                            "h-10 w-full bg-background text-base font-bold leading-tight text-foreground border-border",
+                                            errors.undergraduateDegree && "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                        />
                                       )}
                                     />
-                                  )}
-                                />
-                                <AnimatedError error={errors.undergraduateDegree?.message as string} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Postgraduate Degree</Label>
-                                <Controller
-                                  name="postgraduateDegree"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <SearchableCombobox
-                                      items={TEACHER_POSTGRADUATE_DEGREE_OPTIONS}
-                                      value={field.value || ""}
-                                      onChange={(value) => field.onChange(value)}
-                                      disabled={!isEditing}
-                                      placeholder="Select postgraduate degree"
-                                      searchPlaceholder="Search degrees..."
-                                      className="w-full h-10 font-bold text-base leading-tight bg-background text-foreground border-border"
+                                    <AnimatedError error={errors.undergraduateDegree?.message as string} />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization <span className="text-destructive">*</span></Label>
+                                    <Controller
+                                      name="bachelorMajor"
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Input
+                                          {...field}
+                                          value={field.value ?? ""}
+                                          disabled={!isEditing || !watch("undergraduateDegree")}
+                                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                          placeholder="E.G. MATHEMATICS"
+                                          className={cn(
+                                            "h-10 bg-background text-base font-bold uppercase",
+                                            errors.bachelorMajor && "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                        />
+                                      )}
                                     />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Major / Specialization</Label>
-                                <Controller
-                                  name="majorSpecialization"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <SearchableCombobox
-                                      items={TEACHER_JHS_SPECIALIZATION_OPTIONS}
-                                      value={field.value || ""}
-                                      onChange={(value) => field.onChange(value)}
-                                      disabled={!isEditing}
-                                      placeholder="Select major specialization"
-                                      searchPlaceholder="Search specializations..."
-                                      className="w-full h-10 font-bold text-base leading-tight bg-background text-foreground border-border"
+                                    <AnimatedError error={errors.bachelorMajor?.message as string} />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
+                                    <Controller
+                                      name="bachelorMinor"
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Input
+                                          {...field}
+                                          value={field.value ?? ""}
+                                          disabled={!isEditing || !watch("undergraduateDegree")}
+                                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                          placeholder="E.G. PHYSICAL EDUCATION"
+                                          className="h-10 bg-background text-base font-bold uppercase"
+                                        />
+                                      )}
                                     />
-                                  )}
-                                />
+                                  </div>
+                                </div>
                               </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Minor</Label>
-                                <Controller
-                                  name="minorSpecialization"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <SearchableCombobox
-                                      items={TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS}
-                                      value={field.value || ""}
-                                      onChange={(value) => field.onChange(value)}
-                                      disabled={!isEditing}
-                                      placeholder="Select minor specialization"
-                                      searchPlaceholder="Search specializations..."
-                                      className="w-full h-10 font-bold text-base leading-tight bg-background text-foreground border-border"
-                                    />
-                                  )}
-                                />
+                              <div className="space-y-3">
+                                {postgraduateFields.map((postgraduateField, index) => (
+                                  <div key={postgraduateField.id} className="rounded-lg border border-border bg-muted/10 p-3">
+                                    <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+                                      <div className="space-y-1.5">
+                                        <Label className="text-sm font-bold uppercase text-foreground">Postgraduate Degree</Label>
+                                        <Controller
+                                          name={`postgraduateDegrees.${index}.degree`}
+                                          control={control}
+                                          render={({ field }) => (
+                                            <SearchableCombobox
+                                              items={TEACHER_POSTGRADUATE_DEGREE_OPTIONS}
+                                              value={field.value}
+                                              onChange={field.onChange}
+                                              disabled={!isEditing}
+                                              placeholder="Select postgraduate degree"
+                                              searchPlaceholder="Search degrees..."
+                                              className="h-10 w-full bg-background text-base font-bold leading-tight text-foreground border-border"
+                                            />
+                                          )}
+                                        />
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization</Label>
+                                        <Controller
+                                          name={`postgraduateDegrees.${index}.major`}
+                                          control={control}
+                                          render={({ field }) => (
+                                            <Input
+                                              {...field}
+                                              value={field.value ?? ""}
+                                              disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
+                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                              placeholder="e.g. EDUCATIONAL MANAGEMENT"
+                                              className="h-10 bg-background text-base font-bold uppercase"
+                                            />
+                                          )}
+                                        />
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
+                                        <Controller
+                                          name={`postgraduateDegrees.${index}.minor`}
+                                          control={control}
+                                          render={({ field }) => (
+                                            <Input
+                                              {...field}
+                                              value={field.value ?? ""}
+                                              disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
+                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                              placeholder="e.g. CURRICULUM STUDIES"
+                                              className="h-10 bg-background text-base font-bold uppercase"
+                                            />
+                                          )}
+                                        />
+                                      </div>
+                                      {index > 0 && isEditing && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-10 w-10 text-destructive hover:text-destructive"
+                                          onClick={() => removePostgraduateDegree(index)}
+                                          aria-label={`Remove postgraduate degree ${index + 1}`}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {isEditing && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => appendPostgraduateDegree({ degree: "", major: "", minor: "" })}
+                                    className="gap-2"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                    Add Another Postgraduate Degree
+                                  </Button>
+                                )}
                               </div>
+                              <div className="grid gap-4 sm:grid-cols-2">
                               <div className="space-y-1.5">
                                 <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment <span className="text-destructive">*</span></Label>
                                 <Controller
@@ -1422,7 +1649,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 />
                                 <AnimatedError error={errors.fundingSource?.message as string} />
                               </div>
-
+                              </div>
                             </div>
 
                             <div className="space-y-1.5">
@@ -1543,7 +1770,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     )}
                                   >
                                     <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value ? "bg-emerald-500" : "bg-muted-foreground")} />
-                                    Allow Login (Active)
+                                    ENABLE LOGIN
                                   </button>
                                   <button
                                     type="button"
@@ -1557,7 +1784,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     )}
                                   >
                                     <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value === false ? "bg-amber-500" : "bg-muted-foreground")} />
-                                    Block Login (Disabled)
+                                    DISABLE LOGIN
                                   </button>
                                 </div>
                               )}
@@ -1659,9 +1886,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     type="submit"
                     className={cn(
                       "flex-1 font-bold uppercase transition-all duration-200",
-                      !isDirty ? "opacity-50 bg-gray-400 cursor-not-allowed text-primary-foreground hover:bg-gray-400" : ""
+                      !hasUnsavedChanges ? "opacity-50 bg-gray-400 cursor-not-allowed text-primary-foreground hover:bg-gray-400" : ""
                     )}
-                    disabled={!isDirty || isSubmitting}
+                    disabled={!hasUnsavedChanges || isSubmitting}
                   >
                     {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Add Personnel Record" : "Save Profile Changes")}
                   </Button>

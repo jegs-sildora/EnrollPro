@@ -96,6 +96,7 @@ import {
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
 import { AccessibilityMenu } from "@/shared/components/AccessibilityMenu";
+import { SystemDateTimeMenu } from "@/shared/components/SystemDateTimeMenu";
 import { useAccessibility } from "@/shared/hooks/useAccessibility";
 import { NoSchoolYearState } from "@/shared/components/NoSchoolYearState";
 import { HistoricalBanner } from "../components/HistoricalBanner";
@@ -661,10 +662,6 @@ function AppSidebar() {
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 9 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 10 COORDINATOR");
-  const isTeacher = useAuthStore(
-    (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
-  );
-  
   const isGradeCoordinator = ancillaryRoles.some(role => role.includes("COORDINATOR"));
   const [companionCatalog, setCompanionCatalog] = useState<
     CompanionSsoCatalogItem[]
@@ -1203,6 +1200,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
             <div className="hidden lg:flex items-center gap-1 border-x px-1.5 sm:px-3 h-8">
               <AccessibilityMenu />
+              <SystemDateTimeMenu />
             </div>
 
           </div>

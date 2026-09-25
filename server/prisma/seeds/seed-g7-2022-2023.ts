@@ -9,8 +9,8 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const TARGET_SY_LABEL = "2026-2027";
-const BASE_YEAR = 2026;
+const TARGET_SY_LABEL = "2022-2023";
+const BASE_YEAR = 2022;
 
 async function seedGrade7() {
   console.log(`🌱 Seeding Grade 7 learners for SY ${TARGET_SY_LABEL}...`);

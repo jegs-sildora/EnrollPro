@@ -107,7 +107,7 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
     try {
       const { buildOrderedTermContract, resolveActiveTermEntry } = await import("../services/term-contract.service.js");
       const terms = buildOrderedTermContract({
-        termFormat: year.termFormat as any,
+        termFormat: year.termFormat,
         term1Start: year.term1Start,
         term1End: year.term1End,
         term2Start: year.term2Start,
@@ -122,7 +122,12 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
         term4Label: year.term4Label,
       });
 
-      const activeTerm = resolveActiveTermEntry(terms, getSystemDate(req));
+      const isTimeMachineRequest = typeof req.headers["x-mock-date"] === "string";
+      const activeTerm = resolveActiveTermEntry(
+        terms,
+        getSystemDate(req),
+        isTimeMachineRequest ? null : year.activeTerm,
+      );
       res.json({ 
         activeTerm: activeTerm.identity, 
         activeTermLabel: activeTerm.displayLabel,
