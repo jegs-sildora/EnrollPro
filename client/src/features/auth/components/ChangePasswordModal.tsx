@@ -49,6 +49,12 @@ const createSchema = (requireCurrentPassword?: boolean) => z
     path: ["confirmPassword"],
   });
 
+interface ChangePasswordFormValues {
+  currentPassword?: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 
 // --- Shared Reusable Form Component ---
 
@@ -108,9 +114,8 @@ export function ChangePasswordForm({
   const [showCurrentPw, setShowCurrentPw] = useState(false);
 
   const schema = useMemo(() => createSchema(requireCurrentPassword), [requireCurrentPassword]);
-  type FormSchema = z.infer<typeof schema>;
 
-  const defaultValues = useMemo(() => ({
+  const defaultValues = useMemo<ChangePasswordFormValues>(() => ({
     ...(requireCurrentPassword ? { currentPassword: "" } : {}),
     newPassword: "",
     confirmPassword: "",
@@ -123,7 +128,7 @@ export function ChangePasswordForm({
     watch,
     reset,
     formState: { errors, isDirty },
-  } = useForm<FormSchema>({
+  } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
     defaultValues,
@@ -152,8 +157,8 @@ export function ChangePasswordForm({
     [newPasswordValue, confirmPasswordValue],
   );
 
-  const handleFormSubmit = async (data: FormSchema) => {
-    await onSubmit(data.newPassword, 'currentPassword' in data ? (data as any).currentPassword : undefined);
+  const handleFormSubmit = async (data: ChangePasswordFormValues) => {
+    await onSubmit(data.newPassword, data.currentPassword);
   };
 
   const handleDiscard = useCallback(() => reset(), [reset]);
@@ -353,6 +358,12 @@ export default function ChangePassword() {
 
   const user = auth.user;
   const hasSession = Boolean(auth.user);
+  const [isForcedPasswordChange] = useState(() =>
+    isExternalHandoff
+    || (isLearner
+      ? learnerAuth.requiresPasswordReset
+      : Boolean(staffAuth.user?.mustChangePassword)),
+  );
 
   useEffect(() => {
     if (isExternalHandoff && window.location.hash) {
@@ -377,10 +388,7 @@ export default function ChangePassword() {
     return <Navigate to="/learner/login" replace />;
   }
 
-  const isVoluntaryPersonnelChange = !isExternalHandoff && !isLearner && !(user as { mustChangePassword?: boolean }).mustChangePassword;
-  const isVoluntaryLearnerChange = isLearner && !learnerAuth.requiresPasswordReset;
-
-  const isVoluntaryChange = isVoluntaryPersonnelChange || isVoluntaryLearnerChange;
+  const isVoluntaryChange = !isForcedPasswordChange;
 
 
 
@@ -478,9 +486,7 @@ export default function ChangePassword() {
             : roles.includes("MRF")
               ? "/my-activity"
               : "/dashboard";
-        setTimeout(() => {
-          window.location.replace(finalHome);
-        }, 500);
+        navigate(finalHome, { replace: true });
       }
     } catch (err: unknown) {
       const axiosError = err as {
@@ -554,8 +560,8 @@ export default function ChangePassword() {
               loading={loading}
               error={error}
               setError={setError}
-              passwordLabel={isVoluntaryChange ? "New Password" : "Official Password"}
-              confirmLabel={isVoluntaryChange ? "Confirm New Password" : "Confirm Official Password"}
+              passwordLabel="New Password"
+              confirmLabel="Confirm New Password"
               submitLabel={isVoluntaryChange ? "Update Password" : "Activate Account & Enter System"}
               loadingLabel={isVoluntaryChange ? "Updating Password..." : "Updating Official Password..."}
               requireCurrentPassword={isVoluntaryChange}

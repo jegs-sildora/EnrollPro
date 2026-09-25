@@ -13,6 +13,7 @@ export function useDelayedLoading(isLoading: boolean, minimumLoadTimeMs = 400) {
   // concurrent rendering can cause long delays before the effect actually runs.
   const startTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  const activationFrameRef = useRef<number | null>(null);
   const prevIsLoading = useRef<boolean>(isLoading);
 
   useEffect(() => {
@@ -28,7 +29,10 @@ export function useDelayedLoading(isLoading: boolean, minimumLoadTimeMs = 400) {
     prevIsLoading.current = isLoading;
 
     if (isLoading) {
-      setIsShowingLoading(true);
+      activationFrameRef.current = window.requestAnimationFrame(() => {
+        setIsShowingLoading(true);
+        activationFrameRef.current = null;
+      });
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -36,7 +40,10 @@ export function useDelayedLoading(isLoading: boolean, minimumLoadTimeMs = 400) {
     } else {
       const elapsed = Date.now() - startTimeRef.current;
       if (elapsed >= minimumLoadTimeMs) {
-        setIsShowingLoading(false);
+        activationFrameRef.current = window.requestAnimationFrame(() => {
+          setIsShowingLoading(false);
+          activationFrameRef.current = null;
+        });
       } else {
         const remaining = minimumLoadTimeMs - elapsed;
         if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -47,11 +54,17 @@ export function useDelayedLoading(isLoading: boolean, minimumLoadTimeMs = 400) {
     }
 
     return () => {
+      if (activationFrameRef.current) {
+        window.cancelAnimationFrame(activationFrameRef.current);
+        activationFrameRef.current = null;
+      }
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
     };
   }, [isLoading, minimumLoadTimeMs]);
 
-  return isShowingLoading;
+  // A request can start between renders. Include the source state directly so
+  // consumers never render an empty result before this hook's effect runs.
+  return isLoading || isShowingLoading;
 }

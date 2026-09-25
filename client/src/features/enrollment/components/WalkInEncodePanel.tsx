@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
@@ -146,6 +146,15 @@ export function WalkInEncodePanel() {
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
   const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
   const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const coordinatorGradeOrder = useMemo(() => {
+    const coordinatorRole = ancillaryRoles.find((role) =>
+      /^GRADE (7|8|9|10) COORDINATOR$/.test(role),
+    );
+    const grade = coordinatorRole?.match(/^GRADE (7|8|9|10) COORDINATOR$/)?.[1];
+    return grade ? Number(grade) : null;
+  }, [ancillaryRoles]);
+  const isTransfereeOnlyCoordinator =
+    coordinatorGradeOrder !== null && coordinatorGradeOrder > 7;
   const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
     !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
@@ -199,7 +208,7 @@ export function WalkInEncodePanel() {
     resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
     mode: "onChange",
     defaultValues: {
-      learnerType: "NEW_ENROLLEE",
+      learnerType: isTransfereeOnlyCoordinator ? "TRANSFEREE" : "NEW_ENROLLEE",
       lrn: "",
       firstName: "",
       lastName: "",
@@ -246,6 +255,15 @@ export function WalkInEncodePanel() {
   const requiresBackSubjects =
     learnerType === "TRANSFEREE" &&
     sf9EligibilityStatus === "CONDITIONALLY_PROMOTED";
+
+  useEffect(() => {
+    if (isTransfereeOnlyCoordinator && learnerType !== "TRANSFEREE") {
+      form.setValue("learnerType", "TRANSFEREE", {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
+    }
+  }, [form, isTransfereeOnlyCoordinator, learnerType]);
 
   
   const sectionsQuery = useQuery({
@@ -491,8 +509,8 @@ export function WalkInEncodePanel() {
                       </span>
                     </div>
                     <div className="px-5 pt-5 pb-1">
-                      <div className="grid grid-cols-3 gap-4 font-bold">
-                        <button
+                      <div className={cn("grid gap-4 font-bold", isTransfereeOnlyCoordinator ? "grid-cols-1" : "grid-cols-3")}>
+                        {!isTransfereeOnlyCoordinator && <button
                           type="button"
                           onClick={() => {
                             form.setValue("learnerType", "NEW_ENROLLEE", { shouldDirty: true, shouldValidate: true });
@@ -506,7 +524,7 @@ export function WalkInEncodePanel() {
                           )}
                         >
                           New Entrant
-                        </button>
+                        </button>}
                         <button
                           type="button"
                           onClick={() => form.setValue("learnerType", "TRANSFEREE", { shouldDirty: true, shouldValidate: true })}
@@ -519,7 +537,7 @@ export function WalkInEncodePanel() {
                         >
                           Transferee
                         </button>
-                        <button
+                        {!isTransfereeOnlyCoordinator && <button
                           type="button"
                           onClick={() => {
                             form.setValue("learnerType", "RETURNING", { shouldDirty: true, shouldValidate: true });
@@ -533,7 +551,7 @@ export function WalkInEncodePanel() {
                           )}
                         >
                           Returnee
-                        </button>
+                        </button>}
                       </div>
                     </div>
                     <div className="px-5 pb-5 pt-4">
@@ -873,7 +891,7 @@ export function WalkInEncodePanel() {
                                     key={gl.id}
                                     type="button"
                                     onClick={() => {
-                                      if (isStrictClassAdviser) return;
+                                      if (assignedGradeLevelId) return;
                                       field.onChange(gl.id);
                                       replaceConditionalSubjects([{ subjectCode: "", grade: "" as unknown as number }]);
                                     }}
@@ -882,7 +900,7 @@ export function WalkInEncodePanel() {
                                       field.value === gl.id
                                         ? getGradeLevelBadgeStyles(gl.name) + " border-current"
                                         : "border-border hover:bg-muted/50 text-foreground",
-                                      isStrictClassAdviser && field.value !== gl.id && "opacity-50 cursor-not-allowed"
+                                      assignedGradeLevelId && field.value !== gl.id && "opacity-50 cursor-not-allowed"
                                     )}>
                                     {gl.name}
                                   </button>

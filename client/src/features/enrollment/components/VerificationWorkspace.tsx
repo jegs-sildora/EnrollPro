@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { 
-  FileText, CheckCircle2, XCircle, AlertCircle, Trash2, ShieldAlert,
-  Loader2, Phone, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, FileCheck, Eye
+import {
+  CheckCircle2, XCircle, AlertCircle, Trash2,
+  Loader2, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, Eye,
+  Maximize2, Minimize2
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -23,11 +24,9 @@ import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useAuthStore } from "@/store/auth.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn, getGradeLevelBadgeStyles, getGradeLevelButtonStyles, getGradeLevelSolidBgStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, getGradeLevelButtonStyles, formatGradeLevel, formatSectionProgramLabel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
-import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
-import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -108,6 +107,12 @@ interface ApiErrorResponse {
   message?: string;
 }
 
+type Sf9EligibilityStatus =
+  | "PROMOTED"
+  | "CONDITIONALLY_PROMOTED"
+  | "RETAINED"
+  | "";
+
 
 
 const SCP_LABELS: Record<string, string> = {
@@ -119,6 +124,14 @@ const SCP_LABELS: Record<string, string> = {
 
 interface ActiveAcademicProgramsResponse {
   programs: string[];
+}
+
+interface ActiveSchoolYearGradeLevelsResponse {
+  gradeLevels: Array<{
+    id: number;
+    name: string;
+    displayOrder?: number;
+  }>;
 }
 
 const getGradeTextColor = (gradeName: string) => {
@@ -155,6 +168,16 @@ function VerificationRow({ label, children, valueClassName }: { label: React.Rea
 export function VerificationWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const queryClient = useQueryClient();
+  const ancillaryRoles = useAuthStore((state) => state.user?.ancillaryRoles ?? []);
+  const coordinatorGradeOrder = useMemo(() => {
+    const coordinatorRole = ancillaryRoles.find((role) =>
+      /^GRADE (7|8|9|10) COORDINATOR$/.test(role),
+    );
+    const grade = coordinatorRole?.match(/^GRADE (7|8|9|10) COORDINATOR$/)?.[1];
+    return grade ? Number(grade) : null;
+  }, [ancillaryRoles]);
+  const isTransfereeOnlyCoordinator =
+    coordinatorGradeOrder !== null && coordinatorGradeOrder > 7;
 
   const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(35, {
     storageKey: "enrollment-verification-pane",
@@ -163,6 +186,7 @@ export function VerificationWorkspace() {
   const [processing, setProcessing] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [viewStudentId, setViewStudentId] = useState<number | null>(null);
+  const [expandedPane, setExpandedPane] = useState<"LEFT" | "RIGHT" | null>(null);
 
   const [sf9Verified, setSf9Verified] = useState(false);
   const [psaVerified, setPsaVerified] = useState(false);
@@ -170,7 +194,7 @@ export function VerificationWorkspace() {
   const [assignedSectionId, setAssignedSectionId] = useState<number | undefined>(undefined);
   const [confirmModalState, setConfirmModalState] = useState<"TEMPORARY" | "OFFICIAL" | null>(null);
 
-  const [sf9EligibilityStatus, setSf9EligibilityStatus] = useState<"PROMOTED" | "CONDITIONALLY_PROMOTED" | "RETAINED" | "">("PROMOTED");
+  const [sf9EligibilityStatus, setSf9EligibilityStatus] = useState<Sf9EligibilityStatus>("PROMOTED");
   const [conditionalSubjects, setConditionalSubjects] = useState<{subjectCode: string, grade: string}[]>([]);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -269,11 +293,15 @@ export function VerificationWorkspace() {
     activeFilter: activeSearchQuery,
   } = useDebouncedSearch();
 
-  const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
+  const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>(
+    isTransfereeOnlyCoordinator ? "TRANSFEREE" : "ALL",
+  );
   const [programFilter, setProgramFilter] = useState<string>("ALL");
   const [trackingNumberFilter, setTrackingNumberFilter] = useState("");
 
-  const [localIntakeCategoryFilter, setLocalIntakeCategoryFilter] = useState<string>("ALL");
+  const [localIntakeCategoryFilter, setLocalIntakeCategoryFilter] = useState<string>(
+    isTransfereeOnlyCoordinator ? "TRANSFEREE" : "ALL",
+  );
   const [localProgramFilter, setLocalProgramFilter] = useState<string>("ALL");
   const [localTrackingNumberFilter, setLocalTrackingNumberFilter] = useState("");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
@@ -288,18 +316,20 @@ export function VerificationWorkspace() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (intakeCategoryFilter !== "ALL") count++;
+    if (!isTransfereeOnlyCoordinator && intakeCategoryFilter !== "ALL") count++;
     if (programFilter !== "ALL") count++;
     if (trackingNumberFilter.trim() !== "") count++;
     return count;
-  }, [intakeCategoryFilter, programFilter, trackingNumberFilter]);
+  }, [intakeCategoryFilter, programFilter, trackingNumberFilter, isTransfereeOnlyCoordinator]);
   type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
   const activeTabRaw = useSettingsStore((s) => s.uiPreferences.verificationTab);
   const activeTab = (["PENDING", "READY", "INCOMPLETE", "CANCELLED"].includes(activeTabRaw) ? activeTabRaw : "PENDING") as VerificationTab;
-  const setActiveTab = (tab: VerificationTab) => useSettingsStore.getState().updateUiPreference("verificationTab", tab);
-  const ancillaryRoles = useAuthStore((s: any) => s.user?.ancillaryRoles ?? []);
-  
-  const { data: activeSchoolYear } = useQuery({
+  const setActiveTab = useCallback(
+    (tab: VerificationTab) =>
+      useSettingsStore.getState().updateUiPreference("verificationTab", tab),
+    [],
+  );
+  const { data: activeSchoolYear } = useQuery<ActiveSchoolYearGradeLevelsResponse>({
     queryKey: ["school-years", "active", "grade-levels"],
     queryFn: async () => {
       const res = await api.get("/school-years/grade-levels");
@@ -310,12 +340,15 @@ export function VerificationWorkspace() {
   
   const assignedGradeLevelId = useMemo(() => {
     if (!activeSchoolYear?.gradeLevels) return null;
-    if (ancillaryRoles.includes("GRADE 7 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 7")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 8 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 8")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 9 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 9")?.id ?? null;
-    if (ancillaryRoles.includes("GRADE 10 COORDINATOR")) return activeSchoolYear.gradeLevels.find((g: any) => g.name === "Grade 10")?.id ?? null;
+    if (coordinatorGradeOrder !== null) {
+      return activeSchoolYear.gradeLevels.find(
+        (gradeLevel) =>
+          gradeLevel.displayOrder === coordinatorGradeOrder
+          || gradeLevel.name === `Grade ${coordinatorGradeOrder}`,
+      )?.id ?? null;
+    }
     return null;
-  }, [ancillaryRoles, activeSchoolYear?.gradeLevels]);
+  }, [coordinatorGradeOrder, activeSchoolYear?.gradeLevels]);
 
   const {
     data: pendingVerifications = [],
@@ -371,6 +404,10 @@ export function VerificationWorkspace() {
   const filteredVerifications = useMemo(() => {
     let result = pendingVerifications;
 
+    if (isTransfereeOnlyCoordinator) {
+      result = result.filter((app) => app.learnerType === "TRANSFEREE");
+    }
+
     if (activeSearchQuery) {
       const q = activeSearchQuery.toLowerCase();
       result = result.filter(app => {
@@ -382,7 +419,7 @@ export function VerificationWorkspace() {
     }
 
     if (intakeCategoryFilter !== "ALL") {
-      result = result.filter((app) => app.applicantType === intakeCategoryFilter);
+      result = result.filter((app) => app.learnerType === intakeCategoryFilter);
     }
 
     if (programFilter !== "ALL") {
@@ -408,7 +445,7 @@ export function VerificationWorkspace() {
     }
 
     return result;
-  }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, activeTab]);
+  }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, activeTab, isTransfereeOnlyCoordinator, trackingNumberFilter]);
 
 
   const atlasSubjectsQuery = useQuery({
@@ -536,7 +573,7 @@ export function VerificationWorkspace() {
         setSelectedAppId(null);
       }
     }
-  }, [pendingVerifications, activeTab, isLoading, isPending]);
+  }, [pendingVerifications, activeTab, isLoading, isPending, setActiveTab]);
 
   const getApiErrorMessage = (error: unknown, fallback: string): string => {
     if (isAxiosError<ApiErrorResponse>(error)) {
@@ -730,15 +767,16 @@ export function VerificationWorkspace() {
                       isFilter
                       value={localIntakeCategoryFilter}
                       onValueChange={setLocalIntakeCategoryFilter}
+                      disabled={isTransfereeOnlyCoordinator}
                     >
                       <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
                         <SelectValue placeholder="All Enrollment Statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL" className="leading-tight font-bold">All Enrollment Statuses</SelectItem>
-                        <SelectItem value="NEW_ENROLLEE" className="leading-tight font-bold">New Entrants</SelectItem>
+                        {!isTransfereeOnlyCoordinator && <SelectItem value="ALL" className="leading-tight font-bold">All Enrollment Statuses</SelectItem>}
+                        {!isTransfereeOnlyCoordinator && <SelectItem value="NEW_ENROLLEE" className="leading-tight font-bold">New Entrants</SelectItem>}
                         <SelectItem value="TRANSFEREE" className="leading-tight font-bold">Transferees</SelectItem>
-                        <SelectItem value="BALIK_ARAL" className="leading-tight font-bold">Returnee (Balik-Aral)</SelectItem>
+                        {!isTransfereeOnlyCoordinator && <SelectItem value="RETURNING" className="leading-tight font-bold">Returnee (Balik-Aral)</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
@@ -779,10 +817,10 @@ export function VerificationWorkspace() {
                   <Button
                     variant="ghost"
                     onClick={() => {
-                      setLocalIntakeCategoryFilter("ALL");
+                      setLocalIntakeCategoryFilter(isTransfereeOnlyCoordinator ? "TRANSFEREE" : "ALL");
                       setLocalProgramFilter("ALL");
                       setLocalTrackingNumberFilter("");
-                      setIntakeCategoryFilter("ALL");
+                      setIntakeCategoryFilter(isTransfereeOnlyCoordinator ? "TRANSFEREE" : "ALL");
                       setProgramFilter("ALL");
                       setTrackingNumberFilter("");
                       setIsFilterPopoverOpen(false);
@@ -848,10 +886,59 @@ export function VerificationWorkspace() {
         <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-background relative overflow-hidden">
           {/* LEFT PANE */}
           <div 
-            className="flex flex-col border-r border-border min-h-0 bg-card text-card-foreground flex-shrink-0 transition-[width] duration-75 ease-linear w-full md:w-auto relative z-10"
-            style={isDesktopViewport ? { width: `${panelPercentage}vw`, minWidth: '350px', maxWidth: '800px' } : undefined}
+            className={cn(
+              "flex flex-col border-r border-border min-h-0 bg-card text-card-foreground flex-shrink-0 w-full md:w-auto",
+              "transition-[right,box-shadow] duration-300 ease-in-out",
+              isDesktopViewport && "absolute inset-y-0 left-0",
+              expandedPane === "LEFT" ? "z-[60] shadow-2xl" : "z-10",
+            )}
+            style={
+              isDesktopViewport
+                ? {
+                    right:
+                      expandedPane === "LEFT"
+                        ? "0"
+                        : `calc(100% - clamp(350px, ${panelPercentage}vw, 800px))`,
+                  }
+                : undefined
+            }
           >
-            <div className="border-b border-border bg-white shrink-0 flex flex-col w-full">
+            {isDesktopViewport && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={
+                        expandedPane === "LEFT"
+                          ? "Restore split pane"
+                          : "Expand learner list"
+                      }
+                      aria-pressed={expandedPane === "LEFT"}
+                      onClick={() =>
+                        setExpandedPane((current) =>
+                          current === "LEFT" ? null : "LEFT",
+                        )
+                      }
+                      className="absolute right-1 top-1 z-50 h-8 w-8 shrink-0 hover:bg-muted">
+                      {expandedPane === "LEFT" ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {expandedPane === "LEFT"
+                      ? "Restore split pane"
+                      : "Expand learner list"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <div className="relative border-b border-border bg-white shrink-0 flex flex-col w-full pr-10">
               {(() => {
                 const deficientCount = pendingVerifications.filter((app) => {
                   const hasMissingDocs = app.isMissingSf9 || !app.learner?.hasPsaBirthCertificate;
@@ -1024,17 +1111,78 @@ export function VerificationWorkspace() {
           {/* DRAG HANDLE */}
           <div
             onMouseDown={startResizingRight}
-            className="hidden md:flex w-[12px] -ml-[6px] -mr-[6px] cursor-col-resize z-50 hover:bg-primary/20 transition-all items-center justify-center group bg-transparent shrink-0"
+            className={cn(
+              "hidden md:flex absolute inset-y-0 w-[12px] -translate-x-1/2 cursor-col-resize z-50 hover:bg-primary/20 transition-opacity items-center justify-center group bg-transparent shrink-0",
+              expandedPane && "pointer-events-none opacity-0",
+            )}
+            style={
+              isDesktopViewport
+                ? {
+                    left: `clamp(350px, ${panelPercentage}vw, 800px)`,
+                  }
+                : undefined
+            }
           >
             <div className="h-12 w-1.5 rounded-full bg-border group-hover:bg-primary/60 transition-colors" />
           </div>
 
           {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground relative z-0">
+          <div
+            className={cn(
+              "flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground relative",
+              "transition-[left,box-shadow] duration-300 ease-in-out",
+              isDesktopViewport && "absolute inset-y-0 right-0",
+              expandedPane === "RIGHT" ? "z-[60] shadow-2xl" : "z-0",
+            )}
+            style={
+              isDesktopViewport
+                ? {
+                    left:
+                      expandedPane === "RIGHT"
+                        ? "0"
+                        : `clamp(350px, ${panelPercentage}vw, 800px)`,
+                  }
+                : undefined
+            }>
+            {isDesktopViewport && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={
+                        expandedPane === "RIGHT"
+                          ? "Restore split pane"
+                          : "Expand learner details"
+                      }
+                      aria-pressed={expandedPane === "RIGHT"}
+                      onClick={() =>
+                        setExpandedPane((current) =>
+                          current === "RIGHT" ? null : "RIGHT",
+                        )
+                      }
+                      className="absolute right-3 top-3 z-50 shrink-0 hover:bg-muted">
+                      {expandedPane === "RIGHT" ? (
+                        <Minimize2 className="h-5 w-5" />
+                      ) : (
+                        <Maximize2 className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    {expandedPane === "RIGHT"
+                      ? "Restore split pane"
+                      : "Expand learner details"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {selectedApp ? (
               <>
                 {/* STICKY HEADER */}
-                <div className="relative z-10 grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 border-b border-border bg-card px-6 py-4 shadow-sm md:px-12">
+                <div className="relative z-10 grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 border-b border-border bg-card px-6 py-4 pr-16 shadow-sm md:px-12 md:pr-20">
                   <div className="flex min-w-0 items-center gap-3">
                     <UserPhoto
                       photo={selectedApp.learner.studentPhoto}
@@ -1262,7 +1410,8 @@ export function VerificationWorkspace() {
                             <div className="w-full py-1 flex flex-col gap-4">
                               <Select 
                                 value={sf9EligibilityStatus} 
-                                onValueChange={(val: any) => {
+                                onValueChange={(value) => {
+                                  const val = value as Sf9EligibilityStatus;
                                   setSf9EligibilityStatus(val);
                                   if (val !== "CONDITIONALLY_PROMOTED") {
                                     setConditionalSubjects([]);
@@ -1369,7 +1518,7 @@ export function VerificationWorkspace() {
                                           <SelectValue placeholder="Search subject..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {availableSubjects.length > 0 ? availableSubjects.map((subject: any) => (
+                                          {availableSubjects.length > 0 ? availableSubjects.map((subject: AtlasSubjectOption) => (
                                             <SelectItem key={subject.code} value={subject.code} className="font-bold">
                                               {subject.name}
                                             </SelectItem>

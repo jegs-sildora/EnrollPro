@@ -15,7 +15,7 @@ const USERS_TO_SEED = [
     firstName: "Juan Miguel",
     lastName: "Santos",
     sex: Sex.MALE,
-    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
+    roles: [Role.TEACHER],
     ancillaryRoles: ["STE HEAD TEACHER", "GRADE 7 COORDINATOR"],
     departmentCode: "SCI" // SCIENCE
   },
@@ -24,7 +24,7 @@ const USERS_TO_SEED = [
     firstName: "Maria Angela",
     lastName: "Reyes",
     sex: Sex.FEMALE,
-    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
+    roles: [Role.TEACHER],
     ancillaryRoles: ["SPA HEAD TEACHER", "GRADE 8 COORDINATOR"],
     departmentCode: "MAPEH" // MAPEH
   },
@@ -33,7 +33,7 @@ const USERS_TO_SEED = [
     firstName: "Jose Gabriel",
     lastName: "Cruz",
     sex: Sex.MALE,
-    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
+    roles: [Role.TEACHER],
     ancillaryRoles: ["SPS HEAD TEACHER", "GRADE 9 COORDINATOR"],
     departmentCode: "MAPEH" // MAPEH
   },
@@ -42,7 +42,7 @@ const USERS_TO_SEED = [
     firstName: "Anna Patricia",
     lastName: "Garcia",
     sex: Sex.FEMALE,
-    roles: [Role.TEACHER, Role.GRADE_LEVEL_COORDINATOR],
+    roles: [Role.TEACHER],
     ancillaryRoles: ["GRADE 10 COORDINATOR"], // Personnel with grade 10 coordinator
     departmentCode: "GEN"
   }
@@ -101,7 +101,8 @@ export const seedUsers = async () => {
           departments: {
             connect: { id: dept.id }
           },
-          majorSpecialization: userData.departmentCode === 'SCI' ? 'SCIENCE' : (userData.departmentCode === 'MAPEH' ? 'MAPEH' : 'GENERAL')
+          majorSpecialization: userData.departmentCode === 'SCI' ? 'SCIENCE' : (userData.departmentCode === 'MAPEH' ? 'MAPEH' : 'GENERAL'),
+          ancillaryRoles: userData.ancillaryRoles
         },
         create: {
           employeeId: userData.employeeId,
@@ -121,7 +122,8 @@ export const seedUsers = async () => {
           minorSpecialization: "NONE",
           indigenousCommunity: "NOT_APPLICABLE",
           natureOfAppointment: "REGULAR_PERMANENT",
-          fundingSource: "NATIONAL"
+          fundingSource: "NATIONAL",
+          ancillaryRoles: userData.ancillaryRoles
         }
       });
 
@@ -157,3 +159,6 @@ export const seedUsers = async () => {
 };
 
 seedUsers().then(() => process.exit(0)).catch(() => process.exit(1));
+
+
+

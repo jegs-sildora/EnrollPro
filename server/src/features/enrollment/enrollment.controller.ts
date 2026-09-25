@@ -62,6 +62,7 @@ async function assertEnrollmentGradeScope(
   req: Request,
   schoolYearId: number,
   gradeLevelId: number,
+  learnerType?: string,
 ): Promise<void> {
   const roles = req.user?.roles ?? [];
   if (roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR")) return;
@@ -70,6 +71,18 @@ async function assertEnrollmentGradeScope(
   if (coordinatorGradeLevelId !== null) {
     if (coordinatorGradeLevelId !== gradeLevelId) {
       throw new AppError(403, "You can only manage learners in your assigned grade level.");
+    }
+    const coordinatorGradeOrder = getCoordinatorGradeOrder(req);
+    if (
+      coordinatorGradeOrder !== null
+      && coordinatorGradeOrder > 7
+      && learnerType !== undefined
+      && learnerType !== "TRANSFEREE"
+    ) {
+      throw new AppError(
+        403,
+        `Grade ${coordinatorGradeOrder} coordinators can only process transferee learners.`,
+      );
     }
     return;
   }
@@ -299,6 +312,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     req,
     application.schoolYearId,
     application.gradeLevelId,
+    application.learnerType,
   );
 
   const effectiveAssignedProgram = assignedProgram
@@ -438,6 +452,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
   }
 
   let finalGradeLevelId: number | undefined;
+  const coordinatorGradeOrder = getCoordinatorGradeOrder(req);
   const coordinatorGradeLevelId = await getCoordinatorGradeLevelId(req);
 
   if (coordinatorGradeLevelId !== null) {
@@ -466,7 +481,9 @@ export async function getPendingVerifications(req: Request, res: Response) {
         in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION", "WITHDRAWN", "OFFICIALLY_ENROLLED"],
       },
       learnerType: {
-        in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
+        in: coordinatorGradeOrder !== null && coordinatorGradeOrder > 7
+          ? ["TRANSFEREE"]
+          : ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
       },
       OR: [
         { applicantType: { in: ["REGULAR", "LATE_ENROLLEE"] } },
@@ -534,7 +551,12 @@ export async function flagDeficient(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+    application.learnerType,
+  );
 
   await prisma.enrollmentApplication.update({
     where: { id: applicationId },
@@ -588,7 +610,12 @@ export async function cancelApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+    application.learnerType,
+  );
 
   if (application.status !== "PENDING_VERIFICATION") {
     throw new AppError(
@@ -635,7 +662,12 @@ export async function restoreApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+    application.learnerType,
+  );
 
   if (application.status !== "WITHDRAWN") {
     throw new AppError(
@@ -739,7 +771,12 @@ export async function revertApplication(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+    application.learnerType,
+  );
 
   if (application.status !== "READY_FOR_SECTIONING" && application.status !== "OFFICIALLY_ENROLLED") {
     throw new AppError(
@@ -795,7 +832,7 @@ export async function directEncodeWalkIn(
 
     const schoolYearId = intakeContext.schoolYearId;
 
-    await assertEnrollmentGradeScope(req, schoolYearId, gradeLevelId);
+    await assertEnrollmentGradeScope(req, schoolYearId, gradeLevelId, learnerType);
     const applicantType = parseWalkInProgramType(assignedProgram);
     await assertEnrollmentProgramActive(applicantType);
     let backSubjectSelection: {
@@ -994,7 +1031,12 @@ export async function completeRequirements(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  await assertEnrollmentGradeScope(req, application.schoolYearId, application.gradeLevelId);
+  await assertEnrollmentGradeScope(
+    req,
+    application.schoolYearId,
+    application.gradeLevelId,
+    application.learnerType,
+  );
 
   if (
     application.status !== "READY_FOR_SECTIONING" &&

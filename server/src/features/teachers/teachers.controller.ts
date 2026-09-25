@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { SectionAdviserStatus, Role, Weekday } from "../../generated/prisma/index.js";
+import { SectionAdviserStatus, Role, Weekday, Prisma } from "../../generated/prisma/index.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 
 // Helper functions for data normalization
@@ -21,6 +21,17 @@ function normalizeOptionalUpperText(val: unknown): string | null {
   if (val === undefined || val === null || val === "" || val === "__NONE__")
     return null;
   return String(val).normalize("NFC").trim().toUpperCase();
+}
+
+function normalizeAncillaryRoleFilter(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value
+    .normalize("NFC")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+  return normalized && normalized !== "ALL" ? normalized : null;
 }
 
 function normalizeOptionalText(val: unknown): string | null {
@@ -208,7 +219,34 @@ export async function index(req: Request, res: Response) {
       ? parseInt(req.query.schoolYearId as string)
       : null;
 
+    const ancillaryRole = normalizeAncillaryRoleFilter(req.query.ancillary_role);
+
+    const whereClause: Prisma.TeacherWhereInput = {};
+    if (ancillaryRole) {
+      const roleConditions: Prisma.TeacherWhereInput[] = [
+        { ancillaryRoles: { has: ancillaryRole } },
+        {
+          teacherDesignations: {
+            some: {
+              ...(schoolYearId ? { schoolYearId } : {}),
+              ancillaryRoles: { has: ancillaryRole },
+            },
+          },
+        },
+      ];
+
+      if (ancillaryRole === "MRF COORDINATOR") {
+        roleConditions.push({ user: { is: { roles: { has: Role.MRF } } } });
+      }
+      if (ancillaryRole === "SCHOOL REGISTRAR") {
+        roleConditions.push({ user: { is: { roles: { has: Role.HEAD_REGISTRAR } } } });
+      }
+
+      whereClause.OR = roleConditions;
+    }
+
     const teachers = await prisma.teacher.findMany({
+      where: whereClause,
       include: {
         departments: true,
         user: {

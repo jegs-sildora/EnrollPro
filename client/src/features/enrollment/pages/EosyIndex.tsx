@@ -1967,7 +1967,7 @@ export default function EosyUpdating() {
                           striped={true}
                           columns={columns}
                           data={filteredRecords}
-                          loading={loadingRecords && isInitialLoad}
+                          loading={loadingRecords}
                           loadingBehavior="delayed"
                           containerHeight="100%"
                           bodyOverlay={(

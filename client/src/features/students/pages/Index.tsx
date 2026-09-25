@@ -465,8 +465,6 @@ export default function Students() {
     completionYearFilter,
   ]);
 
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
   const studentsQuery = useQuery({
     queryKey: queryKeys.studentsList(studentsQueryParams),
     queryFn: async () => {
@@ -487,12 +485,6 @@ export default function Students() {
   const students = studentsQuery.data?.students ?? [];
   const total = studentsQuery.data?.pagination.total ?? 0;
   const loading = studentsQuery.isPending || studentsQuery.isFetching;
-
-  useEffect(() => {
-    if (studentsQuery.data) {
-      setIsInitialLoad(false);
-    }
-  }, [studentsQuery.data]);
 
   const programOptionsQuery = useQuery({
     queryKey: queryKeys.activeAcademicPrograms,
@@ -1486,7 +1478,25 @@ export default function Students() {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="flex-1 flex flex-col overflow-hidden min-h-0">
             <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
-              {students.length === 0 ? (
+              {loading || isSearching ? (
+                <div className="space-y-3" role="status" aria-label="Loading learners">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="rounded-xl border bg-card p-3 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-2/3" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : students.length === 0 ? (
                 <div className="rounded-xl border p-6 text-center leading-tight font-bold">
                   No learners found for the selected filters.
                 </div>
@@ -1650,7 +1660,7 @@ export default function Students() {
               <DataTable<Student, unknown>
                 columns={columns}
                 data={students}
-                loading={loading && isInitialLoad}
+                loading={loading}
                 loadingBehavior="delayed"
                 forceEmptyState={isSearching}
                 virtualize={true}

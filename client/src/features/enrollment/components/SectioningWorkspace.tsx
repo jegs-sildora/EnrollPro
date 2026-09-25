@@ -18,6 +18,8 @@ import {
   Mars,
   Venus,
   SlidersHorizontal,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
@@ -600,6 +602,7 @@ export function SectioningWorkspace() {
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [isRightPaneFullscreen, setIsRightPaneFullscreen] = useState(false);
   const [draftPlacement, setDraftPlacement] = useState<DraftPlacement | null>(
     null,
   );
@@ -1413,7 +1416,7 @@ export function SectioningWorkspace() {
       {/* ── Workspace ── */}
       <PageTransition key={activeGradeLevelId} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
         <Card className="flex flex-col flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
-          <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+          <div className="relative flex flex-1 min-h-0 w-full overflow-hidden">
             {/* LEFT PANE: UNSECTIONED POOL */}
             <div
               className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground sm:flex-none transition-[width] duration-75 ease-linear"
@@ -1751,17 +1754,35 @@ export function SectioningWorkspace() {
             {/* DRAG HANDLE */}
             <div
               onMouseDown={startResizingRight}
-              className="relative w-[1px] cursor-col-resize z-50 hover:bg-primary/50 transition-colors hidden sm:flex flex-col justify-center group shrink-0 bg-border"
+              className={cn(
+                "relative w-[1px] cursor-col-resize z-50 hover:bg-primary/50 transition-opacity hidden sm:flex flex-col justify-center group shrink-0 bg-border",
+                isRightPaneFullscreen && "pointer-events-none opacity-0",
+              )}
             >
               <div className="absolute left-[-3px] right-[-3px] top-0 bottom-0 z-10" />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-primary/70 shadow-sm z-20" />
             </div>
 
             {/* RIGHT PANE: AVAILABLE SECTIONS */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground min-w-0">
+            <div
+              className={cn(
+                "@container/section-pane flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground min-w-0",
+                "transition-[left,box-shadow] duration-300 ease-in-out",
+                isDesktopViewport && "absolute inset-y-0 right-0",
+                isRightPaneFullscreen && "z-[60] shadow-2xl",
+              )}
+              style={
+                isDesktopViewport
+                  ? {
+                      left: isRightPaneFullscreen
+                        ? "0"
+                        : `calc(${panelPercentage}vw + 1px)`,
+                    }
+                  : undefined
+              }>
               <CardHeader className="border-b border-border bg-muted/20">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 space-y-1">
                     <CardTitle className="text-lg font-extrabold uppercase flex items-center gap-2 text-foreground">
                       <LayoutGrid className="h-5 w-5 text-primary" />
                       {draftPlacement
@@ -1774,6 +1795,39 @@ export function SectioningWorkspace() {
                         : `Select section to assign ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
                     </CardDescription>
                   </div>
+                  {isDesktopViewport && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              isRightPaneFullscreen
+                                ? "Restore split pane"
+                                : "Expand section list"
+                            }
+                            aria-pressed={isRightPaneFullscreen}
+                            onClick={() =>
+                              setIsRightPaneFullscreen((current) => !current)
+                            }
+                            className="shrink-0">
+                            {isRightPaneFullscreen ? (
+                              <Minimize2 className="h-5 w-5" />
+                            ) : (
+                              <Maximize2 className="h-5 w-5" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          {isRightPaneFullscreen
+                            ? "Restore split pane"
+                            : "Expand section list"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
 
                 {!draftPlacement && (
@@ -2103,14 +2157,7 @@ export function SectioningWorkspace() {
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
                     {draftPlacement ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Button
-                          variant="outline"
-                          onClick={discardDraft}
-                          disabled={commitProcessing}
-                          className="h-12 text-base font-bold uppercase">
-                          CANCEL TEMPORARY SECTIONS
-                        </Button>
+                      <div className="grid grid-cols-1 gap-3 @xl/section-pane:grid-cols-2">
                         <Button
                           onClick={() => setCommitDialogOpen(true)}
                           disabled={
@@ -2120,6 +2167,13 @@ export function SectioningWorkspace() {
                           }
                           className="h-12 text-base font-bold uppercase">
                           FINALIZE OFFICIAL SECTIONS
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={discardDraft}
+                          disabled={commitProcessing}
+                          className="h-12 text-base font-bold uppercase">
+                          CANCEL TEMPORARY SECTIONS
                         </Button>
                       </div>
                     ) : (

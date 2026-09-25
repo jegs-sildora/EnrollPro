@@ -4,7 +4,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState, TableMeta } from "@tanstack/react-table";
 import React, { useState, useRef, type ReactNode } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
@@ -35,7 +35,7 @@ interface DataTableColumnMeta {
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  meta?: any;
+  meta?: TableMeta<TData>;
   getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
   onRowClick?: (row: TData) => void;
   loading?: boolean;
@@ -279,8 +279,8 @@ export function DataTable<TData, TValue>({
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const delayedLoading = useDelayedLoading(loading, 400);
-  const showLoadingRows = delayedLoading;
-  const suppressEmptyDuringDelayedLoading = false;
+  const showLoadingRows = loadingBehavior === "immediate" ? loading : delayedLoading;
+  const suppressEmptyDuringDelayedLoading = loading && !showLoadingRows;
 
   return (
     <div

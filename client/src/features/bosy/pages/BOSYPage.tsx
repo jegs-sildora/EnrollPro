@@ -132,11 +132,19 @@ export default function BOSYPage() {
     enabled: isStrictClassAdviser && !!syId,
   });
 
-  const assignedTargetGradeOrder = isStrictClassAdviser && advisoryData?.section?.gradeLevel?.displayOrder
-    ? String(advisoryData.section.gradeLevel.displayOrder)
-    : null;
+  const coordinatorTargetGradeOrder = useMemo(() => {
+    const coordinatorRole = ancillaryRoles.find((role) =>
+      /^GRADE (7|8|9|10) COORDINATOR$/.test(role),
+    );
+    return coordinatorRole?.match(/^GRADE (7|8|9|10) COORDINATOR$/)?.[1] ?? null;
+  }, [ancillaryRoles]);
+  const assignedTargetGradeOrder = coordinatorTargetGradeOrder
+    ?? (isStrictClassAdviser && advisoryData?.section?.gradeLevel?.displayOrder
+      ? String(advisoryData.section.gradeLevel.displayOrder)
+      : null);
 
   const targetGrade = useSettingsStore((s) => s.uiPreferences.bosyGradeId);
+  const scopedTargetGrade = assignedTargetGradeOrder ?? targetGrade;
   const setTargetGrade = (grade: string) => useSettingsStore.getState().updateUiPreference("bosyGradeId", grade);
 
   useEffect(() => {
@@ -534,7 +542,7 @@ export default function BOSYPage() {
               />
             )}
             <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
-              {targetGrade !== "ALL" ? `Continuing Learners (Grade ${targetGrade})` : "Continuing Learners"}
+              {scopedTargetGrade !== "ALL" ? `Continuing Learners (Grade ${scopedTargetGrade})` : "Continuing Learners"}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -549,8 +557,8 @@ export default function BOSYPage() {
               />
             )}
             <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
-              {targetGrade !== "ALL" && targetGrade !== "7"
-                ? `Transferees (Grade ${targetGrade})`
+              {scopedTargetGrade !== "ALL"
+                ? `Incoming Grade ${scopedTargetGrade} and Transferees`
                 : "Incoming Grade 7 and Transferees"}
             </span>
           </TabsTrigger>
@@ -689,7 +697,7 @@ export default function BOSYPage() {
                                   isFilter
                                   value={localTargetGrade}
                                   onValueChange={setLocalTargetGrade}
-                                  disabled={isStrictClassAdviser}
+                                  disabled={Boolean(assignedTargetGradeOrder)}
                                 >
                                   <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
                                     <SelectValue placeholder="All Incoming Grades" />
@@ -751,10 +759,10 @@ export default function BOSYPage() {
                               <Button
                                 variant="ghost"
                                 onClick={() => {
-                                  setLocalTargetGrade("ALL");
+                                  setLocalTargetGrade(assignedTargetGradeOrder ?? "ALL");
                                   setLocalCurricularProgram("ALL");
                                   setLocalPreviousSectionName("ALL");
-                                  setTargetGrade("ALL");
+                                  setTargetGrade(assignedTargetGradeOrder ?? "ALL");
                                   setCurricularProgram("ALL");
                                   setPreviousSectionName("ALL");
                                   startTransition(() => setQueuePage(1));

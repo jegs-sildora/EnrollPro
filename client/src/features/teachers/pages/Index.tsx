@@ -66,6 +66,7 @@ import type {
 
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 import {
+  DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
   type Sf7ImportCommitResponse,
   type Sf7ImportPreviewResponse,
@@ -73,6 +74,40 @@ import {
 interface DesignationFilterOption {
   value: string;
   label: string;
+}
+
+const ANCILLARY_ROLE_FILTER_VALUES = [
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+  "STE HEAD TEACHER",
+  "SPA HEAD TEACHER",
+  "SPS HEAD TEACHER",
+  "SCHOOL REGISTRAR",
+] as const;
+
+const ANCILLARY_ROLE_FILTER_OPTIONS = [
+  ...DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS.filter((option) =>
+    ANCILLARY_ROLE_FILTER_VALUES.some((value) => value === option.value),
+  ).map(({ value, label }) => ({ value, label })),
+  { value: "MRF COORDINATOR", label: "MRF Coordinator" },
+] as const;
+
+function getPersonnelAncillaryRoles(teacher: Teacher): string[] {
+  const roles = new Set([
+    ...(teacher.designation?.ancillaryRoles ?? []),
+    ...(teacher.ancillaryRoles ?? []),
+  ]);
+
+  if (teacher.userAccount?.roles?.includes("MRF")) {
+    roles.add("MRF COORDINATOR");
+  }
+  if (teacher.userAccount?.roles?.includes("HEAD_REGISTRAR")) {
+    roles.add("SCHOOL REGISTRAR");
+  }
+
+  return Array.from(roles);
 }
 
 const SF7_TEMPLATE_FILENAME =
@@ -146,17 +181,16 @@ export default function Teachers() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
   const [activeFilter, setActiveFilter] = useState("");
   const [personnelTypeFilter, setPersonnelTypeFilter] = useState<"all" | "TEACHING" | "NON_TEACHING">("all");
-  const [designationFilter, setDesignationFilter] =
-    useState<TeacherDesignationFilter>("all");
+  const [designationFilter, setDesignationFilter] = useState<TeacherDesignationFilter>("all");
+  const [ancillaryRoleFilter, setAncillaryRoleFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [activeMetric, setActiveMetric] = useState<"total" | "active" | "inactive" | "advisers">("total");
 
   const [localPersonnelTypeFilter, setLocalPersonnelTypeFilter] = useState<"all" | "TEACHING" | "NON_TEACHING">("all");
   const [localDesignationFilter, setLocalDesignationFilter] = useState<TeacherDesignationFilter>("all");
+  const [localAncillaryRoleFilter, setLocalAncillaryRoleFilter] = useState<string>("all");
   const [localDepartmentFilter, setLocalDepartmentFilter] = useState<string>("all");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
@@ -164,17 +198,19 @@ export default function Teachers() {
     if (isFilterPopoverOpen) {
       setLocalPersonnelTypeFilter(personnelTypeFilter);
       setLocalDesignationFilter(designationFilter);
+      setLocalAncillaryRoleFilter(ancillaryRoleFilter);
       setLocalDepartmentFilter(departmentFilter);
     }
-  }, [isFilterPopoverOpen, personnelTypeFilter, designationFilter, departmentFilter]);
+  }, [isFilterPopoverOpen, personnelTypeFilter, designationFilter, ancillaryRoleFilter, departmentFilter]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (personnelTypeFilter !== "all") count++;
     if (designationFilter !== "all") count++;
+    if (ancillaryRoleFilter !== "all") count++;
     if (departmentFilter !== "all") count++;
     return count;
-  }, [personnelTypeFilter, designationFilter, departmentFilter]);
+  }, [personnelTypeFilter, designationFilter, ancillaryRoleFilter, departmentFilter]);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
@@ -194,10 +230,10 @@ export default function Teachers() {
   const [isSf7ExportLoading, setIsSf7ExportLoading] = useState(false);
 
   const teachersQuery = useQuery({
-    queryKey: queryKeys.teachersList(ayId),
+    queryKey: [...queryKeys.teachersList(ayId), { ancillaryRoleFilter }],
     queryFn: async () => {
       const res = await api.get("/teachers", {
-        params: ayId ? { schoolYearId: ayId } : undefined,
+        params: { ...(ayId ? { schoolYearId: ayId } : {}), ...(ancillaryRoleFilter !== "all" ? { ancillary_role: ancillaryRoleFilter } : {}) },
       });
 
       return {
@@ -381,26 +417,12 @@ export default function Teachers() {
     }
   }, [ayId]);
 
-  const onPersonnelTypeFilterChange = (value: "all" | "TEACHING" | "NON_TEACHING") => {
-    setPersonnelTypeFilter(value);
-  };
-
-  const onDesignationFilterChange = (value: TeacherDesignationFilter) => {
-    setDesignationFilter(value);
-  };
-
   // Reset page when filters or limit change
   useEffect(() => {
     setPage(1);
-  }, [activeFilter, personnelTypeFilter, designationFilter, departmentFilter, activeMetric, limit]);
+  }, [activeFilter, personnelTypeFilter, designationFilter, ancillaryRoleFilter, departmentFilter, activeMetric, limit]);
 
   // eSF7 profile panel handles individual field changes internally
-
-  useEffect(() => {
-    if (teachersQuery.data) {
-      setIsInitialLoad(false);
-    }
-  }, [teachersQuery.data]);
 
   useEffect(() => {
     if (teachersQuery.isError) {
@@ -483,6 +505,10 @@ export default function Teachers() {
           (d) => d.toUpperCase() === departmentFilter.toUpperCase()
         );
 
+      const matchesAncillaryRole =
+        ancillaryRoleFilter === "all" ||
+        getPersonnelAncillaryRoles(teacher).includes(ancillaryRoleFilter);
+
       const matchesActiveMetric =
         activeMetric === "total" ||
         (activeMetric === "active" && teacher.isActive) ||
@@ -493,6 +519,7 @@ export default function Teachers() {
         matchesSearch &&
         matchesPersonnelType &&
         matchesDesignation &&
+        matchesAncillaryRole &&
         matchesDepartment &&
         matchesActiveMetric
       );
@@ -502,6 +529,7 @@ export default function Teachers() {
     activeFilter,
     personnelTypeFilter,
     designationFilter,
+    ancillaryRoleFilter,
     departmentFilter,
     activeMetric,
   ]);
@@ -647,14 +675,29 @@ export default function Teachers() {
                     </div>
                   }
                 />
-                <div className="flex min-w-0 flex-col text-left">
-                  <span className="break-words text-base font-bold uppercase leading-tight">
-                    {formatTeacherName(row.original)}
-                  </span>
-                  <span className="text-foreground mt-1 uppercase">
-                    EMPLOYEE ID: {row.original.employeeId || "N/A"}
-                  </span>
-                </div>
+                  <div className="flex min-w-0 flex-col text-left">
+                    <span className="break-words text-base font-bold uppercase leading-tight">
+                      {formatTeacherName(row.original)}
+                    </span>
+                    <span className="text-foreground mt-1 uppercase text-sm">
+                      EMPLOYEE ID: {row.original.employeeId || "N/A"}
+                    </span>
+                    {ancillaryRoleFilter !== "all" && getPersonnelAncillaryRoles(row.original).includes(ancillaryRoleFilter) && (
+                      <div className="mt-1">
+                        <Badge 
+                          variant="secondary" 
+                          className={cn(
+                            "text-base py-0 shadow-sm border",
+                            ancillaryRoleFilter.includes("GRADE")
+                              ? getGradeLevelBadgeStyles(ancillaryRoleFilter)
+                              : "bg-primary/10 text-primary border-primary/20"
+                          )}
+                        >
+                          {ANCILLARY_ROLE_FILTER_OPTIONS.find((option) => option.value === ancillaryRoleFilter)?.label ?? ancillaryRoleFilter}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
               </div>
             );
           },
@@ -856,7 +899,7 @@ export default function Teachers() {
 
       return baseColumns;
     },
-    [personnelTypeFilter]
+    [personnelTypeFilter, ancillaryRoleFilter]
   );
 
   // eSF7 profile validation is managed internally by the child panel component
@@ -910,7 +953,7 @@ export default function Teachers() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground uppercase">Designation</Label>
+                  <Label className="text-sm text-muted-foreground uppercase">Plantilla Designation</Label>
                   <Select
                     isFilter
                     value={localDesignationFilter}
@@ -924,6 +967,27 @@ export default function Teachers() {
                       {availableDesignationFilters.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value} className="leading-tight font-bold">
                           {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground uppercase">Ancillary Roles</Label>
+                  <Select
+                    isFilter
+                    value={localAncillaryRoleFilter}
+                    onValueChange={setLocalAncillaryRoleFilter}
+                  >
+                    <SelectTrigger className="h-10 w-full leading-tight font-bold">
+                      <SelectValue placeholder="All Ancillary Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="leading-tight font-bold">All Ancillary Roles</SelectItem>
+                      {ANCILLARY_ROLE_FILTER_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="leading-tight font-bold">
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -958,9 +1022,11 @@ export default function Teachers() {
                   onClick={() => {
                     setLocalPersonnelTypeFilter("all");
                     setLocalDesignationFilter("all");
+                    setLocalAncillaryRoleFilter("all");
                     setLocalDepartmentFilter("all");
                     setPersonnelTypeFilter("all");
                     setDesignationFilter("all");
+                    setAncillaryRoleFilter("all");
                     setDepartmentFilter("all");
                     setPage(1);
                     setIsFilterPopoverOpen(false);
@@ -973,6 +1039,7 @@ export default function Teachers() {
                   onClick={() => {
                     setPersonnelTypeFilter(localPersonnelTypeFilter);
                     setDesignationFilter(localDesignationFilter);
+                    setAncillaryRoleFilter(localAncillaryRoleFilter);
                     setDepartmentFilter(localDepartmentFilter);
                     setPage(1);
                     setIsFilterPopoverOpen(false);
@@ -991,6 +1058,7 @@ export default function Teachers() {
       activeFilter,
       localPersonnelTypeFilter,
       localDesignationFilter,
+      localAncillaryRoleFilter,
       localDepartmentFilter,
       availableDesignationFilters,
       isFilterPopoverOpen,
@@ -1184,7 +1252,7 @@ export default function Teachers() {
           <DataTable
             columns={columns}
             data={paginatedTeachers}
-            loading={loading && isInitialLoad}
+            loading={loading}
             loadingBehavior="delayed"
             estimatedRowHeight={60}
             className="border-none rounded-md h-full"
@@ -1194,6 +1262,19 @@ export default function Teachers() {
             onSortingChange={onSortingChange}
             manualSorting={true}
             getRowClassName={() => "group"}
+            emptyStateContent={
+              ancillaryRoleFilter !== "all" && paginatedTeachers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                  <div className="rounded-full bg-muted p-4 mb-4">
+                    <FilterXIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-1">No Personnel Found</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    There are currently no active personnel assigned to the selected Ancillary Role.
+                  </p>
+                </div>
+              ) : undefined
+            }
           />
         </div>
 
