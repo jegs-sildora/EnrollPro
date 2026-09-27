@@ -1657,7 +1657,7 @@ export function WalkInEncodePanel() {
                   ) : (
                     isCompleteDocs ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <AlertCircle className="h-4 w-4 mr-2" />
                   )}
-                  {isCompleteDocs ? "Save & Officially Enroll" : "Save as Temporary"}
+                  {isCompleteDocs ? "Officially Enroll" : "Temporary Enroll"}
                 </Button>
               </div>
             </form>

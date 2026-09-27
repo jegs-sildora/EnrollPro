@@ -1043,6 +1043,21 @@ export default function Homerooms() {
     setIsFormSheetOpen(false);
   }, [sectionFormBaseline]);
 
+  const nameConflictError = useMemo(() => {
+    const trimmedName = sectionFormData.name.trim().toUpperCase();
+    if (!trimmedName) return null;
+
+    const glId = formSheetMode === "create" ? createGlId : groups.find(g => g.sections.some(s => s.id === editingSectionId))?.gradeLevelId;
+    const currentGradeGroup = groups.find((g) => g.gradeLevelId === glId);
+    if (!currentGradeGroup) return null;
+
+    const isConflict = currentGradeGroup.sections.some(
+      (s) => s.id !== editingSectionId && s.name.trim().toUpperCase() === trimmedName
+    );
+
+    return isConflict ? "This section name is already taken. Try another one." : null;
+  }, [sectionFormData.name, groups, formSheetMode, createGlId, editingSectionId]);
+
   const requestCloseSectionForm = useCallback(() => {
     confirmOrRun(() => setIsFormSheetOpen(false));
   }, [confirmOrRun]);
@@ -1303,7 +1318,8 @@ export default function Homerooms() {
         onSubmit={handleFormSubmit}
         onCancel={requestCloseSectionForm}
         submitting={submittingForm}
-        canSubmit={!!sectionFormData.name.trim()}
+        canSubmit={!!sectionFormData.name.trim() && !nameConflictError}
+        nameError={nameConflictError}
         programOptions={sectionFormProgramOptions}
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}

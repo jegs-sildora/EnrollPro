@@ -2117,18 +2117,18 @@ export default function EosyUpdating() {
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
             </div>
             <DialogTitle className="text-center text-2xl font-extrabold uppercase">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
-            <DialogDescription className="text-center pt-2 font-bold text-md">
+            <DialogDescription className="text-center pt-2 text-md">
               {activeGradeName.includes("10") ? (
                 `Are you sure you want to finalize ${descriptionTarget}? This will officially close the school year and generate their Junior High School completion records.`
               ) : (
                 <>
                   Are you sure you want to finalize {descriptionTarget}? This will officially close the school year and determine their promotion to{' '}
-                  <span className="font-bold">{getNextGradeName(activeGradeName)}</span>.
+                  <span className="">{getNextGradeName(activeGradeName)}</span>.
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
+          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground my-2 border border-[hsl(var(--primary)/0.2)]">
             <ul className="list-disc pl-5 space-y-2">
               <li>Finalized SMART grades and EOSY outcomes will be locked for this reporting period.</li>
               <li>The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</li>

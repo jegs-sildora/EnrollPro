@@ -38,6 +38,7 @@ interface SectionFormModalProps {
   teachers: TeacherOption[];
   loadingTeachers?: boolean;
   gradeLevelName?: string;
+  nameError?: string | null;
 }
 
 export const SectionFormModal = memo(function SectionFormModal({
@@ -55,6 +56,7 @@ export const SectionFormModal = memo(function SectionFormModal({
   teachers,
   loadingTeachers = false,
   gradeLevelName,
+  nameError,
 }: SectionFormModalProps) {
   const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(40, {
     centered: true,
@@ -179,8 +181,11 @@ export const SectionFormModal = memo(function SectionFormModal({
                           );
                           onFieldChange("name", titleCased);
                         }}
-                        className="font-bold text-base placeholder:text-foreground/30 uppercase"
+                        className={cn("font-bold text-base placeholder:text-foreground/30 uppercase", nameError && "border-destructive focus-visible:ring-destructive")}
                       />
+                      {nameError && (
+                        <p className="text-sm font-bold text-destructive">{nameError}</p>
+                      )}
                     </div>
                   </div>
                 </div>

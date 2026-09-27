@@ -23,12 +23,12 @@ export function SchoolYearTransitionLoader({ targetLabel }: SchoolYearTransition
   const dotVariants = {
     initial: { y: 0 },
     animate: {
-      y: motionPreferences.reduceMotion ? 0 : [0, -10, 0],
+      y: motionPreferences.reduceMotion ? 0 : [0, -12, 0],
     },
   };
 
   const dotTransition = {
-    duration: motionPreferences.durations.slow,
+    duration: 0.9,
     repeat: motionPreferences.reduceMotion ? 0 : Infinity,
     ease: "easeInOut",
   } as const;
@@ -87,14 +87,14 @@ export function SchoolYearTransitionLoader({ targetLabel }: SchoolYearTransition
             variants={dotVariants}
             initial="initial"
             animate="animate"
-            transition={{ ...dotTransition, delay: 0.12 }}
+            transition={{ ...dotTransition, delay: 0.15 }}
           />
           <motion.span
             className="w-3 h-3 rounded-full bg-primary"
             variants={dotVariants}
             initial="initial"
             animate="animate"
-            transition={{ ...dotTransition, delay: 0.24 }}
+            transition={{ ...dotTransition, delay: 0.3 }}
           />
         </div>
 
