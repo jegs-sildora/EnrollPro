@@ -193,7 +193,7 @@ export function TimeMachineWidget() {
               <HybridDatePicker
                 value={mockDate}
                 onChange={handleDateChange}
-                placeholder="YYYY-MM-DD"
+                placeholder="MM-DD-YYYY"
                 className="w-full border rounded-md"
               />
             </div>

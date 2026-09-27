@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
-import { CheckCircle2, Loader2, MoreHorizontal } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, MoreHorizontal } from "lucide-react";
 import type {
   ColumnDef,
   RowSelectionState,
@@ -37,6 +37,32 @@ import {
   useMotionPreferences,
 } from "@/shared/lib/motion";
 import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
+
+interface EosyTransitionListProps {
+  from: string;
+  to: string;
+}
+
+function EosyTransitionList({ from, to }: EosyTransitionListProps) {
+  return (
+    <ul className="mt-3 border-t border-current/15 pt-3">
+      <li className="flex items-center justify-center gap-2 text-center font-extrabold uppercase">
+        <span>{from}</span>
+        <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        <span>{to}</span>
+      </li>
+    </ul>
+  );
+}
+
+const getNextGradeName = (currentName: string) => {
+  const match = currentName.match(/\d+/);
+  if (match) {
+    const nextGrade = parseInt(match[0], 10) + 1;
+    return `Grade ${nextGrade}`;
+  }
+  return "the next grade level";
+};
 
 interface QueueTableProps {
   items: BOSYQueueItem[];
@@ -150,6 +176,40 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
   let titleColorClass: string;
   let hoverClass: string;
 
+  const currentGradeName = item.gradeLevelName;
+  const isGrade10 = currentGradeName.includes("10");
+  const currentGradeLabel = currentGradeName.toUpperCase();
+  const incomingGradeLabel = `INCOMING ${getNextGradeName(currentGradeName)}`.toUpperCase();
+  const currentProgramLabel = getProgramAbbreviation(item.applicantType);
+
+  const statusTransition: EosyTransitionListProps | null = (() => {
+    if (item.isScpDemoted && s === "PROMOTED" && !isGrade10) {
+      return { from: currentProgramLabel, to: "BEC" };
+    }
+
+    switch (s) {
+      case "PROMOTED":
+        return {
+          from: currentGradeLabel,
+          to: isGrade10 ? "JHS COMPLETER" : incomingGradeLabel,
+        };
+      case "PROMOTED_TO_BEC":
+        return { from: currentProgramLabel, to: "BEC" };
+      case "CONDITIONALLY_PROMOTED":
+        return { from: currentGradeLabel, to: incomingGradeLabel };
+      case "RETAINED":
+        return { from: currentGradeLabel, to: currentGradeLabel };
+      case "TRANSFERRED_OUT":
+        return { from: currentGradeLabel, to: "TRANSFERRED OUT" };
+      case "DROPPED_OUT":
+        return { from: currentGradeLabel, to: "DROPPED OUT" };
+      case "ACTION_REQUIRED":
+        return { from: currentGradeLabel, to: "PENDING DECISION" };
+      default:
+        return null;
+    }
+  })();
+
   if (item.isScpDemoted && s === "RETAINED") {
     title = "Retention & Lateral Transfer";
     const isFailingAve = item.priorYearGenAve !== null && Number(item.priorYearGenAve) < 75;
@@ -175,7 +235,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
     titleColorClass = "text-amber-800 border-b border-amber-200";
     hoverClass = "hover:bg-amber-100";
-  } else if (item.isScpDemoted && s === "PROMOTED") {
+  } else if (item.isScpDemoted && s === "PROMOTED" && !isGrade10) {
     title = "BEC Lateral Transfer";
     description = "Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to grade deficiency.";
     if (item.priorYearDeficiencyNote) {
@@ -255,9 +315,12 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
           <h4 className={cn("text-base font-extrabold uppercase tracking-wide pb-2 mb-2", titleColorClass)}>
             {title}
           </h4>
-          <p className="text-base leading-snug">
+          <div className="text-base leading-snug">
             {description}
-          </p>
+          </div>
+          {statusTransition ? (
+            <EosyTransitionList {...statusTransition} />
+          ) : null}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

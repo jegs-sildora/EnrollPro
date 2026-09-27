@@ -26,6 +26,7 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  fixedWeeks = true,
   captionLayout = "label",
   buttonVariant = "ghost",
   locale,
@@ -42,6 +43,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      fixedWeeks={fixedWeeks}
       className={cn(
         "group/calendar bg-background p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -208,7 +210,8 @@ function Calendar({
               onValueChange={(value) => handleChange(value)}>
               <SelectTrigger
                 className={cn(
-                  "h-8 py-1 px-3 font-bold border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1 w-full relative z-10 [&>*]:pointer-events-none cursor-pointer"
+                  "h-8 py-1 px-3 font-bold border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1 relative z-10 [&>*]:pointer-events-none cursor-pointer",
+                  isYear ? "w-[90px]" : "w-[130px]"
                 )}>
                 <SelectValue className="pointer-events-none">{selectedOption?.label}</SelectValue>
               </SelectTrigger>

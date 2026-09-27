@@ -42,15 +42,23 @@ async function main() {
   console.log(`✅ Default School Year created: ${sy.yearLabel}`);
 
   const defaultSettings = {
-    schoolName: "EnrollPro",
+    schoolName: "ENRIQUETA MONTILLA DE ESTEBAN MEMORIAL HIGH SCHOOL",
+    depedSchoolId: "302624",
+    region: "REGION VI - WESTERN VISAYAS",
+    division: "DIVISION OF NEGROS OCCIDENTAL",
+    schoolHeadName: "ELIZER B. PINEDA",
+    schoolHeadTitle: "PRINCIPAL III",
     depedEmail: "",
     facebookPageUrl: "",
     schoolWebsite: "",
     selectedAccentHsl: "221 83% 53%",
     activeSchoolYearId: sy.id,
     spaEnabled: true,
+    spaCapacity: 2,
     spsEnabled: true,
+    spsCapacity: 2,
     steEnabled: true,
+    steCapacity: 2,
   };
 
   const existingSettings = await prisma.schoolSetting.findFirst();

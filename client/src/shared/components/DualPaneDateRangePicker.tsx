@@ -165,6 +165,9 @@ export function DualPaneDateRangePicker({
               onMonthChange={setLeftMonth}
               selected={range}
               onSelect={setRange}
+              captionLayout="dropdown"
+              startMonth={new Date(1900, 0, 1)}
+              endMonth={new Date(2100, 11, 31)}
               classNames={{
                 range_start: "relative isolate z-0 bg-transparent after:absolute after:inset-y-0 after:right-0 after:w-1/2 after:bg-primary/10",
                 range_end: "relative isolate z-0 bg-transparent after:absolute after:inset-y-0 after:left-0 after:w-1/2 after:bg-primary/10",
@@ -177,6 +180,9 @@ export function DualPaneDateRangePicker({
               onMonthChange={setRightMonth}
               selected={range}
               onSelect={setRange}
+              captionLayout="dropdown"
+              startMonth={new Date(1900, 0, 1)}
+              endMonth={new Date(2100, 11, 31)}
               classNames={{
                 range_start: "relative isolate z-0 bg-transparent after:absolute after:inset-y-0 after:right-0 after:w-1/2 after:bg-primary/10",
                 range_end: "relative isolate z-0 bg-transparent after:absolute after:inset-y-0 after:left-0 after:w-1/2 after:bg-primary/10",
