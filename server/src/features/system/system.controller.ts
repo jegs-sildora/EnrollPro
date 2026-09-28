@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express"
 import { prisma } from "../../lib/prisma.js"
 import { AppError } from "../../lib/AppError.js"
+import { broadcastDomainInvalidation } from "../../lib/realtime-events.js"
 import { getSchoolYearRolloverReadiness } from "../school-year/services/school-year-rollover.service.js"
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js"
 import {
@@ -37,6 +38,7 @@ export async function updateSystemDateOverride(req: Request, res: Response): Pro
   }
 
   setSystemDateOverride(mockedDate, anchor)
+  broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
   res.json({ mockedDate: getSystemDateOverride()?.toISOString() ?? null })
 }
 
@@ -54,6 +56,7 @@ export async function toggleTimeMachineEnabled(req: Request, res: Response): Pro
     });
   }
   if (!enabled) clearSystemDateOverride();
+  broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
   res.json({ enabled });
 }
 
@@ -70,6 +73,7 @@ export async function resetSystemDateOverride(_req: Request, res: Response): Pro
   }
 
   clearSystemDateOverride()
+  broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
   res.status(204).send()
 }
 
