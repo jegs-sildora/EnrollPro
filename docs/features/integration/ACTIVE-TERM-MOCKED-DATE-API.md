@@ -64,6 +64,9 @@ X-Mock-Date: 2026-11-15T08:00:00.000Z
 If the `X-Mock-Date` header is absent, EnrollPro checks its own global `SchoolSetting.mockedSystemDate`. 
 If a System Administrator has enabled the Time Machine in the EnrollPro UI, the entire platform (including all incoming integration API requests) is transported to that mocked date. Time continues to tick naturally forward from the anchor point.
 
+> [!NOTE]
+> When the Time Machine is engaged or its date is modified, EnrollPro instantly broadcasts a `TERM_CHANGED` event over RabbitMQ to keep all integrated systems in sync. This applies even for backward transitions (e.g., rewinding from Term 3 back to Term 1).
+
 ### C. Real System Clock
 If no client header is provided and the global Time Machine is disabled, EnrollPro falls back to the real-world server clock (`new Date()`).
 

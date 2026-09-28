@@ -8,6 +8,7 @@ import {
 } from "@enrollpro/shared"
 
 import { Prisma } from "../../../generated/prisma/index.js"
+import { getSystemDateOverride } from "../../../lib/date-wrapper.js"
 import { prisma } from "../../../lib/prisma.js"
 import { resolveActiveSchoolYearState } from "./active-school-year.service.js"
 import {
@@ -54,7 +55,12 @@ export function planForwardTermTransitions(
     throw new Error("The active-term checkpoint is not part of the configured term calendar.")
   }
   if (currentIndex === storedIndex) return { state: "CURRENT" }
-  if (currentIndex < storedIndex) return { state: "BACKWARD" }
+  if (currentIndex < storedIndex) {
+    return {
+      state: "ADVANCE",
+      transitions: [{ from: terms[storedIndex]!, to: terms[currentIndex]! }],
+    }
+  }
 
   const transitions: PlannedTransition[] = []
   for (let index = storedIndex; index < currentIndex; index += 1) {
@@ -101,8 +107,9 @@ export async function reconcileTermTransitions(input: {
   now?: Date
   producedBy?: TermEventProducer
 }): Promise<ReconcileTermTransitionsResult> {
-  const now = input.now ?? new Date()
-  const producedBy = input.producedBy ?? "ep-scheduler"
+  const overrideDate = getSystemDateOverride()
+  const now = input.now ?? overrideDate ?? new Date()
+  const producedBy = input.producedBy ?? (overrideDate ? "ep-mock-clock" : "ep-scheduler")
 
   return prisma.$transaction(async (tx) => {
     await tx.$executeRawUnsafe(
@@ -158,7 +165,34 @@ export async function reconcileTermTransitions(input: {
         },
         select: { id: true },
       })
-      if (existing) continue
+      if (existing) {
+        if (producedBy === "ep-mock-clock") {
+          const eventId = randomUUID()
+          const payload = createPayload({
+            eventId,
+            schoolId: input.schoolId,
+            schoolYearId: schoolYear.id,
+            transition,
+            producedBy,
+            timestamp: now,
+          })
+          await tx.termChangedEventOutbox.update({
+            where: { id: existing.id },
+            data: {
+              eventId,
+              payload: payload as Prisma.InputJsonValue,
+              status: "PENDING",
+              nextAttemptAt: new Date(),
+              publishedAt: null,
+              leaseUntil: null,
+              attempts: 0,
+              lastError: null,
+            },
+          })
+          enqueued += 1
+        }
+        continue
+      }
 
       const eventId = randomUUID()
       const payload = createPayload({
@@ -179,7 +213,7 @@ export async function reconcileTermTransitions(input: {
           toTerm: transition.to.identity,
           effectiveDate: new Date(`${transition.to.startDate}T00:00:00.000Z`),
           payload: payload as Prisma.InputJsonValue,
-          nextAttemptAt: now,
+          nextAttemptAt: new Date(),
         },
       })
       enqueued += 1

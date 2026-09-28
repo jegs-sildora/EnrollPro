@@ -10,6 +10,21 @@ import {
   setSystemDateOverride,
 } from "../../lib/date-wrapper.js"
 
+async function forceInstantTermSync(): Promise<void> {
+  try {
+    const { getTermEventsCoordinatorConfig, getTermEventsConfig } = await import("../school-year/services/term-events.config.js")
+    const { reconcileTermTransitions } = await import("../school-year/services/term-transition-coordinator.service.js")
+    const { publishPendingTermEvents } = await import("../school-year/services/term-changed-publisher.service.js")
+    
+    const config = getTermEventsCoordinatorConfig()
+    await reconcileTermTransitions({ schoolId: config.schoolId })
+    await publishPendingTermEvents(getTermEventsConfig())
+  } catch (error) {
+    console.error("[System] Failed to force instant term sync:", error)
+  }
+}
+
+
 export async function updateSystemDateOverride(req: Request, res: Response): Promise<void> {
   const value = typeof req.body === "object" && req.body !== null
     ? (req.body as Record<string, unknown>).mockedDate
@@ -39,6 +54,7 @@ export async function updateSystemDateOverride(req: Request, res: Response): Pro
 
   setSystemDateOverride(mockedDate, anchor)
   broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
+  forceInstantTermSync().catch(() => {})
   res.json({ mockedDate: getSystemDateOverride()?.toISOString() ?? null })
 }
 
@@ -57,6 +73,7 @@ export async function toggleTimeMachineEnabled(req: Request, res: Response): Pro
   }
   if (!enabled) clearSystemDateOverride();
   broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
+  forceInstantTermSync().catch(() => {})
   res.json({ enabled });
 }
 
@@ -74,6 +91,7 @@ export async function resetSystemDateOverride(_req: Request, res: Response): Pro
 
   clearSystemDateOverride()
   broadcastDomainInvalidation({ topics: ["settings:public", "system:health"] })
+  forceInstantTermSync().catch(() => {})
   res.status(204).send()
 }
 

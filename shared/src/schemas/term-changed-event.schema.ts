@@ -22,11 +22,19 @@ export const termChangedEventV2Schema = z.object({
   from_term: z.string().trim().min(1),
   to_term: z.string().trim().min(1),
 }).superRefine((event, context) => {
-  if (event.from.termIndex >= event.to.termIndex) {
+  if (event.producedBy === "ep-scheduler" && event.from.termIndex >= event.to.termIndex) {
     context.addIssue({
       code: "custom",
       path: ["to", "termIndex"],
-      message: "A term change must advance to a later term.",
+      message: "A scheduled term change must advance to a later term.",
+    })
+  }
+
+  if (event.producedBy === "ep-mock-clock" && event.from.termIndex === event.to.termIndex) {
+    context.addIssue({
+      code: "custom",
+      path: ["to", "termIndex"],
+      message: "A mocked term change must transition to a different term.",
     })
   }
 
