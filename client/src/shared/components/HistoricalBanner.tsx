@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo } from "react";
 import { Archive, History, ShieldAlert, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -33,7 +33,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   const { user } = useAuthStore();
   const [timeLeft, setTimeLeft] = useState<string>("");
 
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 10000);

@@ -3,7 +3,7 @@ import axios from "axios";
 import type { IntegrationTermEntry } from "@enrollpro/shared";
 import type { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
-import { getSystemDate } from "../../lib/date-wrapper.js";
+import { getSystemDate, getSystemDateOverrideRaw } from "../../lib/date-wrapper.js";
 import {
   buildTeacherName,
   isUuidLike,
@@ -195,7 +195,12 @@ export async function getActiveTerm(
   let activeTerm: IntegrationTermEntry
   try {
     const terms = buildOrderedTermContract(scope)
-    activeTerm = resolveActiveTermEntry(terms, getSystemDate(req), scope.activeTerm)
+    const isTimeMachineRequest = typeof req.headers["x-mock-date"] === "string" || getSystemDateOverrideRaw() !== null;
+    activeTerm = resolveActiveTermEntry(
+      terms,
+      getSystemDate(req),
+      isTimeMachineRequest ? null : scope.activeTerm
+    )
   } catch (error: unknown) {
     if (error instanceof TermContractError) {
       sendIntegrationError(res, 409, error.code, error.message)

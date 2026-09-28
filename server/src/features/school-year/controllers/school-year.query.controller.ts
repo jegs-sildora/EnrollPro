@@ -122,7 +122,8 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
         term4Label: year.term4Label,
       });
 
-      const isTimeMachineRequest = typeof req.headers["x-mock-date"] === "string";
+      const { getSystemDate, getSystemDateOverrideRaw } = await import("../../../lib/date-wrapper.js");
+      const isTimeMachineRequest = typeof req.headers["x-mock-date"] === "string" || getSystemDateOverrideRaw() !== null;
       const activeTerm = resolveActiveTermEntry(
         terms,
         getSystemDate(req),

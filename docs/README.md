@@ -33,6 +33,7 @@ Last reviewed: 2026-09-23
 | --- | --- | --- |
 | [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
 | [Authoritative Term Integration](../ACTIVE-TERM-INTEGRATION.md) | Companion Teams | Ordered term identities, labels, dates, active-term resolution, and typed failures |
+| [Active Term Mocked Date API](features/integration/ACTIVE-TERM-MOCKED-DATE-API.md) | Companion Teams | Mocked system date resolution, API authentication, and Time Machine integration |
 | [TERM_CHANGED Event Contract](features/integration/TERM-CHANGED-EVENT-CONTRACT.md) | EnrollPro and Companion Teams | Authoritative RabbitMQ term transitions, outbox delivery, retries, and subscriber duties |
 | [School Year and Term API Changes](features/integration/ENROLLPRO-SCHOOL-YEAR-TERM-API-CHANGES-2026-09-11.md) | EnrollPro and Companion Teams | Consolidated school-year and term API, validation, persistence, rollover, compatibility, and verification changes |
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
