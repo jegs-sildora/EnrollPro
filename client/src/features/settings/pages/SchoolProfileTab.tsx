@@ -10,7 +10,9 @@ import {
   Check,
   Megaphone,
   BookOpen,
+  Info,
 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -339,6 +341,87 @@ export default function SchoolProfileTab() {
       if (key === "spsEnabled") form.setValue("spsCapacity", null, { shouldDirty: true, shouldValidate: true });
     }
   };
+
+  const renderScpBlock = (
+    programKey: "steEnabled" | "spaEnabled" | "spsEnabled",
+    capacityKey: "steCapacity" | "spaCapacity" | "spsCapacity",
+    title: string,
+    description: string
+  ) => {
+    const isEnabled = form.watch(programKey);
+    return (
+      <div className={`flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem] transition-colors ${!isEnabled ? "bg-slate-50" : ""}`}>
+        <div className="flex items-center justify-between">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <FormLabel className={`text-xl cursor-help font-extrabold transition-colors`}>{title}</FormLabel>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-sm font-bold">{description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={(checked) => handleToggleProgram(programKey, checked)}
+            disabled={isArchived || isSubmitting}
+          />
+        </div>
+        <div className="pt-2 relative min-h-[84px] flex flex-col justify-center">
+          <AnimatePresence mode="wait">
+            {isEnabled ? (
+              <motion.div
+                key="active"
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
+              >
+                <FormField
+                  control={form.control}
+                  name={capacityKey}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Learner Slots</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          className="font-bold"
+                          placeholder="e.g. 70"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                          disabled={isArchived || isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="inactive"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+                className="flex h-[84px] w-full flex-col items-center justify-center rounded-md border-2 border-dashed border-primary p-2 absolute inset-0 bg-slate-50"
+              >
+                <Info className="h-4 w-4mb-1" />
+                <p className="text-muted-foreground leading-tight mb-1">
+                  Program Inactive. Toggle on to configure learner slots and enable admission tracking.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Form {...form}>
@@ -461,145 +544,14 @@ export default function SchoolProfileTab() {
                   <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  <span className="break-words min-w-0">Active Special Curricular Programs (SCP)</span>
+                  <span className="break-words min-w-0">Special Curricular Program (SCP) Configuration</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
-                    <div className="flex items-center justify-between">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-extrabold">STE</FormLabel>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            <p className="text-sm font-bold">Science, Technology, and Engineering</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Switch
-                        checked={form.watch("steEnabled")}
-                        onCheckedChange={(checked) => handleToggleProgram("steEnabled", checked)}
-                        disabled={isArchived || isSubmitting}
-                      />
-                    </div>
-                    {form.watch("steEnabled") && (
-                      <div className="pt-2">
-                        <FormField
-                          control={form.control}
-                          name="steCapacity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Max Learner Slots</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  className="font-bold"
-                                  placeholder="e.g. 70"
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                  disabled={isArchived || isSubmitting}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
-                    <div className="flex items-center justify-between">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-extrabold">SPA</FormLabel>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            <p className="text-sm font-bold">Special Program in the Arts</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Switch
-                        checked={form.watch("spaEnabled")}
-                        onCheckedChange={(checked) => handleToggleProgram("spaEnabled", checked)}
-                        disabled={isArchived || isSubmitting}
-                      />
-                    </div>
-                    {form.watch("spaEnabled") && (
-                      <div className="pt-2">
-                        <FormField
-                          control={form.control}
-                          name="spaCapacity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Max Learner Slots</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  className="font-bold"
-                                  placeholder="e.g. 70"
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                  disabled={isArchived || isSubmitting}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
-                    <div className="flex items-center justify-between">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FormLabel className="text-xl cursor-help font-extrabold">SPS</FormLabel>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            <p className="text-sm font-bold">Special Program in Sports</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Switch
-                        checked={form.watch("spsEnabled")}
-                        onCheckedChange={(checked) => handleToggleProgram("spsEnabled", checked)}
-                        disabled={isArchived || isSubmitting}
-                      />
-                    </div>
-                    {form.watch("spsEnabled") && (
-                      <div className="pt-2">
-                        <FormField
-                          control={form.control}
-                          name="spsCapacity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Max Learner Slots</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  className="font-bold"
-                                  placeholder="e.g. 70"
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                  disabled={isArchived || isSubmitting}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  {renderScpBlock("steEnabled", "steCapacity", "STE", "Science, Technology, and Engineering")}
+                  {renderScpBlock("spaEnabled", "spaCapacity", "SPA", "Special Program in the Arts")}
+                  {renderScpBlock("spsEnabled", "spsCapacity", "SPS", "Special Program in Sports")}
                 </div>
               </CardContent>
             </Card>

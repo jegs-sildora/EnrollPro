@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { Clock } from "lucide-react";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useAuthStore } from "@/store/auth.slice";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
 
 export function TimeMachineWidget() {
   const { showTimeMachineWidget } = useSettingsStore();
+  const { user } = useAuthStore();
   const [initialMockDateTime] = useState(() => {
     const saved = localStorage.getItem(MOCKED_SYSTEM_DATE_KEY);
     const parts = saved ? getManilaDateTimeParts(saved) : null;
@@ -88,7 +90,7 @@ export function TimeMachineWidget() {
   );
   useEffect(() => {
     const mockedDate = getMockedSystemDate();
-    if (!mockedDate) return;
+    if (!mockedDate || !user) return;
 
     void api
       .put("/system/date-override", {
@@ -100,7 +102,7 @@ export function TimeMachineWidget() {
         // The request header continues to provide a scoped fallback if the
         // server is temporarily unavailable during local development.
       });
-  }, []);
+  }, [user, hasMockOverride]);
 
   const handleDateChange = (val: string) => {
     setMockDate(val);

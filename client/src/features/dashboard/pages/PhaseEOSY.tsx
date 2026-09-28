@@ -65,8 +65,8 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link to="/eosy?status=pending" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
-              <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+            <Link to="/eosy?status=pending" className="flex items-center gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
+              <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                 {readiness.pendingSections === 0 ? <Check className="size-4" strokeWidth={2} /> : <AlertTriangle className="size-4" strokeWidth={2} />}
               </div>
               <div>
@@ -86,8 +86,8 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
             </Link>
 
-            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
-              <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.incompleteLearnerOutcomes === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+            <Link to="/eosy" className="flex items-center gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer group">
+              <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.incompleteLearnerOutcomes === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                 {readiness.incompleteLearnerOutcomes === 0 ? <Check className="size-4" strokeWidth={2} /> : <AlertTriangle className="size-4" strokeWidth={2} />}
               </div>
               <div>

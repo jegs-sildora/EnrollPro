@@ -1,53 +1,36 @@
-# Prompt for UI/UX & React Implementation: Data-Bound Auto-Sectioning Visualizer
+# Prompt for UI/UX & Logic Implementation: SCP Configuration Empty States
 
 ## Role & Context
-Act as a React Frontend Developer. We are upgrading the `AutoAssignVisualizer` component inside the Temporary Sections modal.
+Act as a Frontend Developer / UX Engineer. We are refining the `System Configuration` module, specifically the Special Curricular Programs (SCP) setup card.
 
-Currently, the animation uses static, hardcoded nodes, and the Regular BEC sorting phase lacks containment UI. We need to bind this visualizer to the actual fetched data for the selected grade level using a "Representative Node" strategy coupled with dynamic, ticking number counters. Furthermore, we must introduce distinct dashed-outline `div` containers (drop-zones) for all phases—explicitly isolating SCP tracks (STE, SPA, SPS), the Top BEC (Star/Homogeneous) sections, and the Regular BEC (Heterogeneous) sections.
+Currently, when a program like SPA or SPS is toggled off, the card simply leaves an empty white void where the configuration inputs usually sit. This looks like a UI bug rather than a deliberate disabled state. We need to implement a proper "Inactive Empty State" that fills this void with helpful context, and visually mutes the card to indicate it is disabled.
 
-## Critical Technical Directive
-Do not render more than 40-50 visual nodes (circles) in the DOM simultaneously to prevent browser lag. Use React state to drive live numeric counters alongside the representative nodes. Rely strictly on our established React design system components (no raw utility classes in the markup). All drop-zones must use a consistent dashed border styling to indicate they are receiving containers.
+## Critical Directive
+Transform the inactive SCP cards from "blank spaces" into communicative empty states. Use background muting, smooth height transitions, and clear helper text to explain the system-wide consequences of disabling a program.
 
-## UI Component & Animation Logic Requirements
+## UI Component & Logic Requirements
 
-Please implement the following data integration and animation sequence:
+Please implement the following layout and state transitions:
 
-### 1. Data Hydration & Component Interface
-The visualizer component must accept a `poolStats` prop containing the exact fetched counts before the animation begins:
+### 1. Section Header Polish
+*   **Rename:** Change the section title from `Active Special Curricular Programs (SCP)` to `Special Curricular Program (SCP) Configuration`. Since this panel shows both active and inactive programs, the current title is slightly misleading.
 
-```javascript
-{
-  totalLearners: 450,
-  scp: { ste: 35, spa: 40, sps: 20 },
-  topBec: { count: 80, sections: 2 },
-  regularBec: { count: 275, sections: 6 }
-}
-```
+### 2. The Inactive Card State (Visual Muting)
+When a program's toggle is set to `FALSE` (Inactive):
+*   **Card Background:** Apply a subtle gray or muted background to the entire inner card (e.g., `bg-gray-50` or `bg-slate-50`).
+*   **Header Text:** Reduce the opacity of the program title (e.g., `SPA`) to `text-gray-400` to visually reinforce that it is turned off.
 
-### 2. The 4-Phase Animation Sequence
-Implement a seamless, timed transition through these four distinct phases, updating the explanatory text dynamically:
+### 3. The Placeholder Empty State (Filling the Void)
+Instead of leaving the space below the toggle blank, render an Empty State block:
+*   **Layout:** Center the content inside a dashed or subtly bordered container that matches the height of the active "Max Learner Slots" input field.
+*   **Icon:** Include a small, muted icon (e.g., an eye-slash, a locked folder, or a simple information `i`).
+*   **Helper Text:** Add a short explanatory string: *"Program Inactive. Toggle on to configure learner slots and enable admission tracking."*
+*   **System Impact Warning (Crucial):** Add a micro-text line below it: *"Note: Disabling this hides the program from the Admission and Sectioning modules."*
 
-*   **Phase 1: The Master Pool (Data Fetching)**
-    *   *Visuals:* Render a central cluster of ~30-40 representative nodes (mixed Blue/Pink for gender).
-    *   *Dynamic UI:* Above the cluster, render a large, prominent counter that rapidly ticks up from `0` to `poolStats.totalLearners`. 
-    *   *Text:* "Phase 1: Fetching verified enrollments and EOSY promotion data..."
+### 4. Smooth State Transitions
+*   **Interaction:** Do not instantly snap between the Active input fields and the Inactive placeholder text. Wrap the content area of the card in a layout transition (using Framer Motion, CSS transitions, or your UI library's equivalent).
+*   **Effect:** When toggled, the content should fade and crossfade smoothly, preventing jarring UI jumps. 
 
-*   **Phase 2: SCP Extraction (Strict Separation)**
-    *   *Visuals:* Three distinct dashed-outline drop-zones appear at the top: `STE Section`, `SPA Section`, and `SPS Section`. Representative nodes break away from the main cluster and fly into their respective zones.
-    *   *Dynamic UI:* Small counters appear under each drop-zone, ticking up to their exact fetched amounts. The main pool counter simultaneously subtracts these amounts.
-    *   *Text:* "Phase 2: Isolating qualified Special Curricular Program learners into specialized sections."
-
-*   **Phase 3: Top BEC Extraction (Star Sections)**
-    *   *Visuals:* The SCP containers fade out. A new large dashed-outline drop-zone appears labeled `Top BEC Sections (Homogeneous)`. The nodes with the highest internal averages detach from the pool, organize into a vertical line, and glide into this new container.
-    *   *Dynamic UI:* A counter inside the Top BEC container ticks up to `poolStats.topBec.count`, while the main pool counter continues to decrease.
-    *   *Text:* "Phase 3: Sorting and placing top-performing learners into Top BEC sections."
-
-*   **Phase 4: Regular BEC Snake Draft Distribution**
-    *   *Visuals:* The Top BEC container fades out. Multiple dashed-outline drop-zones appear (representing `poolStats.regularBec.sections`, e.g., Section A, Section B, Section C). The remaining nodes in the pool arrange vertically, then snake back and forth into these boxes (e.g., Section A -> B -> C -> C -> B -> A).
-    *   *Dynamic UI:* The central pool counter rapidly ticks down to `0`. The capacity counters inside the Regular BEC boxes tick up to their maximums, displaying a split Male/Female count to prove gender balancing.
-    *   *Text:* "Phase 4: Executing heterogeneous draft to balance academic performance and gender ratio."
-
-### 3. State Management & Playback
-*   Use a state machine or a step-based hook (e.g., `currentPhase: 1 | 2 | 3 | 4`) to manage the timeline.
-*   Ensure the animation resets cleanly if the user closes and reopens the modal. 
-*   If the user's browser triggers the `prefers-reduced-motion` media query, bypass the flying node animations and instantly render the final sorted layout with the correct fetched numbers inside the dashed containers.
+### 5. Backend Configuration Binding
+*   Ensure the state of these toggles is saved to a `school_settings` or `configurations` table in the database.
+*   The `SCP Admission` and `Section Assignment` frontend pages must strictly fetch these settings on mount and dynamically render their top-level tabs based *only* on programs marked as `TRUE` (Active) here.
