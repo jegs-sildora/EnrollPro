@@ -1998,7 +1998,7 @@ export function SectioningWorkspace() {
                     onClick={generateDraftPlacement}
                     className="w-full font-bold text-base uppercase tracking-normal gap-2 rounded-md">
                     {autoAssignPhase !== "idle" && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {autoAssignPhase !== "idle" ? "Running Sorting Algorithm..." : "AUTO ASSIGN SECTIONS"}
+                    {autoAssignPhase !== "idle" ? "Running Sectioning Algorithm..." : "AUTO ASSIGN SECTIONS"}
                   </Button>
                   <Button
                     type="button"
@@ -2530,15 +2530,16 @@ export function SectioningWorkspace() {
         title="AUTO ASSIGN TEMPORARY SECTIONS"
         align="center"
         variant="primary"
-        hideCancel={false}
+        hideCancel={currentGradePool.length === 0}
         showClose={true}
         confirmText="Got it"
         cancelText={isAnimationVisible ? "Hide Animation" : "View Animation"}
         onCancel={() => setIsAnimationVisible(!isAnimationVisible)}
         onConfirm={() => setAutoAssignConfirmOpen(false)}
         className="transition-all duration-300 !max-w-5xl"
+        confirmClassName={currentGradePool.length === 0 ? "w-full" : undefined}
         description={
-          <div className={cn("grid gap-6 mt-4", isAnimationVisible ? "grid-cols-2" : "grid-cols-1")}>
+          <div className={cn("grid gap-6 mt-4", isAnimationVisible && currentGradePool.length > 0 ? "grid-cols-2" : "grid-cols-1")}>
             {/* Left Column: Text instructions */}
             <div className="space-y-4 text-left">
               <p className="text-center font-bold text-base">
@@ -2594,7 +2595,7 @@ export function SectioningWorkspace() {
             </div>
 
             {/* Right Column: Animation container */}
-            {isAnimationVisible && !prefersReducedMotion && (
+            {isAnimationVisible && currentGradePool.length > 0 && !prefersReducedMotion && (
               <div className="h-[400px]">
                 {(() => {
                   const scp = { ste: 0, spa: 0, sps: 0 };
@@ -2635,7 +2636,7 @@ export function SectioningWorkspace() {
                 })()}
               </div>
             )}
-            {isAnimationVisible && prefersReducedMotion && (
+            {isAnimationVisible && currentGradePool.length > 0 && prefersReducedMotion && (
               <div className="h-[400px]">
                 <div className="bg-slate-50 border-b p-2 text-center text-xs text-slate-500 font-bold uppercase tracking-wider">
                   Reduced Motion Active — Final Distribution State

@@ -28,6 +28,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import {
   Dialog,
   DialogContent,
@@ -301,13 +302,27 @@ function SectionCard({
     });
   }, [teachers, allDraftTeacherIds, selectedAdviser]);
 
+  const comboboxItems = useMemo(() => {
+    const items = [{ value: "none", label: "UNASSIGNED" }];
+    if (section.advisingTeacher && !dropdownTeachers.some(t => t.id === section.advisingTeacher!.id)) {
+      items.push({
+        value: String(section.advisingTeacher.id),
+        label: section.advisingTeacher.name
+      });
+    }
+    dropdownTeachers.forEach(t => {
+      items.push({ value: String(t.id), label: t.name });
+    });
+    return items;
+  }, [dropdownTeachers, section.advisingTeacher]);
+
   const hasPendingAdviserChange = selectedAdviser !== initialAdviser;
 
   const toTitleCase = (str: string) => str.replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
   );
-  const isCardDisabled = hasAnyPendingChanges && !hasPendingAdviserChange;
+  const isCardDisabled = hasAnyPendingChanges;
 
   return (
     <div
@@ -429,26 +444,14 @@ function SectionCard({
               </span>
               {canMutate ? (
                 <div onClick={(e) => e.stopPropagation()} className="w-full -ml-2">
-                  <Select
+                  <SearchableCombobox
+                    items={comboboxItems}
                     value={selectedAdviser}
-                    onValueChange={(val) => onDraftAdviserChange?.(val, initialAdviser)}>
-                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-bold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
-                      <SelectValue placeholder="UNASSIGNED" />
-                    </SelectTrigger>
-                    <SelectContent className="font-bold uppercase max-h-[300px]">
-                      <SelectItem value="none" className="text-foreground">UNASSIGNED</SelectItem>
-                      {section.advisingTeacher && !dropdownTeachers.some(t => t.id === section.advisingTeacher!.id) && (
-                        <SelectItem value={String(section.advisingTeacher.id)}>
-                          {section.advisingTeacher.name}
-                        </SelectItem>
-                      )}
-                      {dropdownTeachers.map((t) => (
-                        <SelectItem key={t.id} value={String(t.id)}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(val) => onDraftAdviserChange?.(val, initialAdviser)}
+                    placeholder="UNASSIGNED"
+                    searchPlaceholder="Search adviser..."
+                    className={cn("!h-7 !min-h-0 !px-2 !py-5 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-bold uppercase truncate", !section.advisingTeacher && "text-foreground")}
+                  />
                 </div>
               ) : (
                 <span
@@ -685,6 +688,18 @@ export default function Homerooms() {
       return next;
     });
   }, []);
+
+  const handleDiscardInlineChanges = useCallback(() => {
+    setDraftAdvisers({});
+  }, []);
+
+  useUnsavedChanges({
+    id: "homerooms-inline-advisers",
+    label: "Inline Adviser Edits",
+    isDirty: Object.keys(draftAdvisers).length > 0,
+    onDiscard: handleDiscardInlineChanges,
+    showStickyBar: false,
+  });
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
