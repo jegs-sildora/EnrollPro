@@ -13,7 +13,7 @@ export function PageTransition({ children, ...props }: PageTransitionProps) {
   const variants = {
     initial: {
       opacity: 0,
-      y: motionPreferences.reduceMotion ? 0 : 12,
+      y: motionPreferences.reduceMotion ? 8 : 18,
     },
     animate: {
       opacity: 1,
@@ -21,7 +21,7 @@ export function PageTransition({ children, ...props }: PageTransitionProps) {
     },
     exit: {
       opacity: 0,
-      y: motionPreferences.reduceMotion ? 0 : -8,
+      y: motionPreferences.reduceMotion ? -4 : -10,
     },
   };
 
@@ -32,7 +32,7 @@ export function PageTransition({ children, ...props }: PageTransitionProps) {
       animate="animate"
       exit="exit"
       transition={{
-        duration: 0,
+        duration: motionPreferences.reduceMotion ? 0.1 : 0.2,
         ease: "easeInOut",
       }}
       {...props}

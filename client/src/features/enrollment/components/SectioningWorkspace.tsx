@@ -82,6 +82,7 @@ import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useAuthStore } from "@/store/auth.slice";
+import { AutoAssignVisualizer } from "./AutoAssignVisualizer";
 
 interface SectionSummary {
   id: number;
@@ -612,6 +613,8 @@ export function SectioningWorkspace() {
   const [moveDestinationSectionId, setMoveDestinationSectionId] = useState("");
   const [swapApplicationId, setSwapApplicationId] = useState("");
   const [autoAssignConfirmOpen, setAutoAssignConfirmOpen] = useState(false);
+  const [isAnimationVisible, setIsAnimationVisible] = useState(true);
+  const [animationScene, setAnimationScene] = useState(0);
   const [commitDialogOpen, setCommitDialogOpen] = useState(false);
   const [allowCapacityOverride, setAllowCapacityOverride] = useState(false);
   const [commitProcessing, setCommitProcessing] = useState(false);
@@ -624,6 +627,17 @@ export function SectioningWorkspace() {
   useEffect(() => () => {
     autoAssignTimers.current.forEach(clearTimeout);
   }, []);
+
+  useEffect(() => {
+    if (!isAnimationVisible || !autoAssignConfirmOpen) {
+      setAnimationScene(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setAnimationScene((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isAnimationVisible, autoAssignConfirmOpen]);
 
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
   const setActiveGradeLevelId = useCallback((id: string) => {
@@ -1654,9 +1668,9 @@ export function SectioningWorkspace() {
               </CardHeader>
               <div className="p-0 relative flex-1">
                 <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 bg-muted z-10 border-b border-border">
-                    <tr className="uppercase">
-                      <th className="p-4 w-10">
+                  <thead className="sticky top-0 bg-muted z-20 border-b border-border shadow-sm">
+                    <tr className="uppercase h-14">
+                      <th className="px-4 w-10">
                         <Checkbox
                           className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           checked={
@@ -1688,9 +1702,9 @@ export function SectioningWorkspace() {
                           }}
                         />
                       </th>
-                      <th className="p-4 font-bold">Learner Detail</th>
+                      <th className="px-4 font-bold">Learner Detail</th>
                       <th
-                        className="p-4 cursor-pointer  select-none font-bold"
+                        className="px-4 cursor-pointer select-none font-bold"
                         onClick={() => handleSort("genAve")}>
                         <div className="flex items-center gap-1 justify-center">
                           Final Gen Ave
@@ -1759,8 +1773,8 @@ export function SectioningWorkspace() {
 
                         return groups.flatMap((group) => {
                           const headerRow = (
-                            <tr key={`header-${group.title}`} className="bg-muted/50 border-y border-border">
-                              <td colSpan={3} className="py-2.5 px-4 text-center font-bold text-foreground uppercase tracking-wider">
+                            <tr key={`header-${group.title}`}>
+                              <td colSpan={3} className="sticky top-14 z-10 py-2.5 px-4 bg-muted/95 backdrop-blur-sm text-center font-bold text-foreground uppercase tracking-wider border-y shadow-sm">
                                 {group.title}
                               </td>
                             </tr>
@@ -2516,69 +2530,157 @@ export function SectioningWorkspace() {
         title="AUTO ASSIGN TEMPORARY SECTIONS"
         align="center"
         variant="primary"
-        hideCancel={true}
+        hideCancel={false}
+        showClose={true}
         confirmText="Got it"
-        confirmClassName="w-full"
+        cancelText={isAnimationVisible ? "Hide Animation" : "View Animation"}
+        onCancel={() => setIsAnimationVisible(!isAnimationVisible)}
         onConfirm={() => setAutoAssignConfirmOpen(false)}
+        className="transition-all duration-300 !max-w-5xl"
         description={
-          <div className="space-y-4 text-left">
-            <p className="text-center font-bold">
-              This will create temporary class lists for the selected grade
-              level.
-            </p>
-            <div className="space-y-3">
-              <p className="font-bold text-foreground text-sm">
-                How the system will place learners:
+          <div className={cn("grid gap-6 mt-4", isAnimationVisible ? "grid-cols-2" : "grid-cols-1")}>
+            {/* Left Column: Text instructions */}
+            <div className="space-y-4 text-left">
+              <p className="text-center font-bold text-base">
+                This will create temporary class lists for the selected grade level.
               </p>
-              <ul className="list-disc space-y-2 pl-5 leading-relaxed text-foreground text-sm">
-                {(() => {
-                  const availableScp = Array.from(
-                    new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))
-                  );
+              <div className="space-y-3">
+                <p className="font-bold text-foreground text-sm">
+                  How the system will place learners:
+                </p>
+                <ul className="list-disc space-y-2 pl-5 leading-relaxed text-foreground text-sm">
+                  <li 
+                    className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 0 ? "font-bold text-primary" : "")}
+                    onClick={() => { if (isAnimationVisible) setAnimationScene(0); }}
+                  >
+                    Phase 1: Fetching verified enrollments and EOSY promotion data.
+                  </li>
+                  {(() => {
+                    const availableScp = Array.from(
+                      new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))
+                    );
 
-                  return (
-                    <>
-                      {availableScp.length > 0 ? (
-                        <li>
-                          Special Curricular Program learners go first to matching SCP
-                          sections such as {availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}.
+                    return (
+                      <>
+                        <li 
+                          className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 1 ? "font-bold text-primary" : "")}
+                          onClick={() => { if (isAnimationVisible) setAnimationScene(1); }}
+                        >
+                          Phase 2: Isolating qualified Special Curricular Program learners into specialized sections{availableScp.length > 0 ? ` such as ${availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}` : " (none currently available)"}.
                         </li>
-                      ) : (
-                        <li>
-                          Special Curricular Program learners go first to matching SCP
-                          sections (none currently available).
+                        <li 
+                          className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 2 ? "font-bold text-primary" : "")}
+                          onClick={() => { if (isAnimationVisible) setAnimationScene(2); }}
+                        >
+                          Phase 3: Sorting and placing top-performing learners into Top BEC sections.
                         </li>
-                      )}
-                      <li>
-                        BEC Top learners are placed in BEC Top {homogeneousSectionCount} sections when
-                        those sections are available.
-                      </li>
-                    </>
-                  );
-                })()}
-                <li>
-                  Regular BEC learners are placed in regular Basic Education
-                  Curriculum sections.
-                </li>
-                <li>
-                  The system balances male and female, uses the learner&apos;s
-                  final general average, and checks available section capacity.
-                </li>
-                <li>
-                  After this, you can still review, move, or swap learners
-                  before clicking Finalize Official Sections.
-                </li>
-              </ul>
+                      </>
+                    );
+                  })()}
+                  <li 
+                    className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 3 ? "font-bold text-primary" : "")}
+                    onClick={() => { if (isAnimationVisible) setAnimationScene(3); }}
+                  >
+                    Phase 4: Executing heterogeneous draft to balance academic performance and gender ratio.
+                  </li>
+                  <li className="text-foreground">
+                    After this, you can still review, move, or swap learners before clicking Finalize Official Sections.
+                  </li>
+                </ul>
+              </div>
+              <div className="font-bold text-primary mt-4 p-3 bg-primary/5 rounded-md border-2 border-primary text-sm text-center">
+                Please review the temporary class lists carefully before finalizing because finalization creates the official section records.
+              </div>
             </div>
 
+            {/* Right Column: Animation container */}
+            {isAnimationVisible && !prefersReducedMotion && (
+              <div className="h-[400px]">
+                {(() => {
+                  const scp = { ste: 0, spa: 0, sps: 0 };
+                  let becTotal = 0;
+                  
+                  filteredAndSortedPool.forEach(l => {
+                    if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
+                    else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
+                    else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
+                    else if (l.programType === "REGULAR") becTotal++;
+                  });
+                  
+                  const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
+                  const topSectionCount = Math.min(allRegular.length, homogeneousSectionCount);
+                  const topSections = allRegular.filter(s => s.isHomogeneous).slice(0, topSectionCount);
+                  const topSectionIds = new Set(topSections.map(s => s.id));
+                  const regularSections = allRegular.filter(s => !topSectionIds.has(s.id));
+                  
+                  const totalSections = topSections.length + regularSections.length;
+                  const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
+                  const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+                  const balancedTopCapacity = targetPerSection * topSections.length;
+                  
+                  const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
+                  
+                  // Additionally, academic status filter applies in actual algorithm, but we'll approximate:
+                  const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
+                  const topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
 
+                  const stats = {
+                    totalLearners: filteredAndSortedPool.length,
+                    scp,
+                    topBec: { count: topBecCount, sections: topSections.length, sectionNames: topSections.map(s => s.name) },
+                    regularBec: { count: becTotal - topBecCount, sections: regularSections.length, sectionNames: regularSections.map(s => s.name) }
+                  };
+                  
+                  return <AutoAssignVisualizer scene={animationScene} poolStats={stats} />;
+                })()}
+              </div>
+            )}
+            {isAnimationVisible && prefersReducedMotion && (
+              <div className="h-[400px]">
+                <div className="bg-slate-50 border-b p-2 text-center text-xs text-slate-500 font-bold uppercase tracking-wider">
+                  Reduced Motion Active — Final Distribution State
+                </div>
+                {(() => {
+                  const scp = { ste: 0, spa: 0, sps: 0 };
+                  let becTotal = 0;
+                  
+                  filteredAndSortedPool.forEach(l => {
+                    if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
+                    else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
+                    else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
+                    else if (l.programType === "REGULAR") becTotal++;
+                  });
+                  
+                  const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
+                  const topSectionCount = Math.min(allRegular.length, homogeneousSectionCount);
+                  const topSections = allRegular.filter(s => s.isHomogeneous).slice(0, topSectionCount);
+                  const topSectionIds = new Set(topSections.map(s => s.id));
+                  const regularSections = allRegular.filter(s => !topSectionIds.has(s.id));
+                  
+                  const totalSections = topSections.length + regularSections.length;
+                  const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
+                  const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+                  const balancedTopCapacity = targetPerSection * topSections.length;
+                  
+                  const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
+                  
+                  // Additionally, academic status filter applies in actual algorithm, but we'll approximate:
+                  const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
+                  const topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
 
-
-
+                  const stats = {
+                    totalLearners: filteredAndSortedPool.length,
+                    scp,
+                    topBec: { count: topBecCount, sections: topSections.length, sectionNames: topSections.map(s => s.name) },
+                    regularBec: { count: becTotal - topBecCount, sections: regularSections.length, sectionNames: regularSections.map(s => s.name) }
+                  };
+                  
+                  return <AutoAssignVisualizer scene={3} poolStats={stats} />;
+                })()}
+              </div>
+            )}
           </div>
-
         }
-        footerWarning="Please review the temporary class lists carefully before finalizing because finalization creates the official section records."
       />
 
       <ConfirmationModal
@@ -2599,7 +2701,7 @@ export function SectioningWorkspace() {
                 </div>
                 <div className="max-h-[320px] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50 backdrop-blur-sm z-10 border-b shadow-sm">
+                    <thead className="sticky top-0 bg-gray-50 backdrop-blur-sm z-20 border-b shadow-sm">
                       <tr>
                         <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
                         <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
@@ -2607,39 +2709,97 @@ export function SectioningWorkspace() {
                       </tr>
                     </thead>
                     <tbody>
-                      {draftPlacement?.rosters.flatMap((roster) =>
-                        roster.learners.map((learner, index) => (
-                          <tr key={learner.applicationId} className={cn("border-b last:border-0 hover:bg-muted/60 transition-colors", index % 2 === 0 ? "bg-background" : "bg-muted/50")}>
-                            <td className="p-3 px-4">
-                              <p className="font-extrabold uppercase text-foreground">
-                                {learner.lastName}, {learner.firstName}
-                                {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
-                              </p>
-                              <p className="text-sm text-foreground">
-                                LRN: {learner.lrn || "No LRN"}
-                              </p>
-                            </td>
-                            <td className="p-3 px-4 text-center">
-                              <Badge variant="secondary" className="font-bold uppercase">
-                                {SCP_SHORT_LABELS[learner.programType] ?? learner.programType}
-                              </Badge>
-                            </td>
-                            <td className="p-3 px-4 text-center">
-                              <div className="flex flex-col items-center justify-center gap-1">
-                                <Badge
-                                  variant="outline"
-                                  className={cn("font-bold uppercase", getGradeLevelBadgeStyles(roster.section.gradeLevel))}
-                                >
-                                  {formatGradeLevel(roster.section.gradeLevel)}
-                                </Badge>
-                                <div className="font-bold uppercase">
-                                  {roster.section.name}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                      {(() => {
+                        if (!draftPlacement?.rosters) return null;
+
+                        const groups = new Map<string, typeof draftPlacement.rosters>();
+
+                        draftPlacement.rosters.forEach(roster => {
+                          let groupKey: string = roster.section.programType;
+                          if (groupKey === "REGULAR") {
+                            groupKey = roster.section.isHomogeneous ? "TOP_BEC" : "BEC";
+                          }
+                          if (!groups.has(groupKey)) {
+                            groups.set(groupKey, []);
+                          }
+                          groups.get(groupKey)!.push(roster);
+                        });
+
+                        const order = [
+                          "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+                          "SPECIAL_PROGRAM_IN_SPORTS",
+                          "SPECIAL_PROGRAM_IN_THE_ARTS",
+                          "SPECIAL_PROGRAM_IN_JOURNALISM",
+                          "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+                          "LATE_ENROLLEE",
+                          "TOP_BEC",
+                          "BEC"
+                        ];
+
+                        const getGroupLabel = (key: string) => {
+                          if (key === "TOP_BEC") return "Top Basic Education Curriculum";
+                          if (key === "BEC") return "Basic Education Curriculum";
+                          return SCP_LABELS[key] || key;
+                        };
+
+                        return order.flatMap((key) => {
+                          const rostersInGroup = groups.get(key);
+                          if (!rostersInGroup || rostersInGroup.length === 0) return [];
+
+                          const totalLearners = rostersInGroup.reduce((sum, roster) => sum + roster.learners.length, 0);
+                          if (totalLearners === 0) return [];
+
+                          const rows: any[] = [];
+
+                          rows.push(
+                            <tr key={`group-${key}`}>
+                              <td colSpan={3} className="sticky top-[41px] z-10 bg-muted px-4 py-2 text-center font-bold text-foreground uppercase border-b shadow-sm">
+                                {getGroupLabel(key)}
+                              </td>
+                            </tr>
+                          );
+
+                          let learnerIndex = 0;
+                          rostersInGroup.forEach((roster) => {
+                            roster.learners.forEach((learner) => {
+                              rows.push(
+                                <tr key={learner.applicationId} className={cn("border-b last:border-0 hover:bg-muted/60 transition-colors", learnerIndex % 2 === 0 ? "bg-background" : "bg-muted/50")}>
+                                  <td className="p-3 px-4">
+                                    <p className="font-extrabold uppercase text-foreground">
+                                      {learner.lastName}, {learner.firstName}
+                                      {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
+                                    </p>
+                                    <p className="text-sm text-foreground">
+                                      LRN: {learner.lrn || "No LRN"}
+                                    </p>
+                                  </td>
+                                  <td className="p-3 px-4 text-center">
+                                    <Badge variant="secondary" className="font-bold uppercase">
+                                      {SCP_SHORT_LABELS[learner.programType] ?? learner.programType}
+                                    </Badge>
+                                  </td>
+                                  <td className="p-3 px-4 text-center">
+                                    <div className="flex flex-col items-center justify-center gap-1">
+                                      <Badge
+                                        variant="outline"
+                                        className={cn("font-bold uppercase", getGradeLevelBadgeStyles(roster.section.gradeLevel))}
+                                      >
+                                        {formatGradeLevel(roster.section.gradeLevel)}
+                                      </Badge>
+                                      <div className="font-bold uppercase">
+                                        {roster.section.name}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                              learnerIndex++;
+                            });
+                          });
+
+                          return rows;
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

@@ -48,6 +48,8 @@ interface ConfirmationModalProps {
   hideCancel?: boolean;
   showClose?: boolean;
   align?: "left" | "center";
+  className?: string;
+  onCancel?: () => void;
 }
 
 const variantStyles: Record<
@@ -111,6 +113,8 @@ export function ConfirmationModal({
   hideCancel = false,
   showClose = false,
   align = "center",
+  className,
+  onCancel,
 }: ConfirmationModalProps) {
   const { colorScheme, selectedAccentHsl } = useSettingsStore();
 
@@ -145,6 +149,7 @@ export function ConfirmationModal({
           className={cn(
             "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-sidebar p-8 shadow-2xl",
             motionClassNames.dialogContent,
+            className
           )}
           style={
             applyOverride
@@ -210,7 +215,7 @@ export function ConfirmationModal({
             {!hideCancel && (
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => onCancel ? onCancel() : onOpenChange(false)}
                 disabled={loading}
                 className={cn(
                   "h-12 rounded-lg font-bold uppercase",

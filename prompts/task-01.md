@@ -1,35 +1,53 @@
-# Prompt for UI/UX & Logic Refactor: 1-Click Auto-Sectioning & Visual Feedback
+# Prompt for UI/UX & React Implementation: Data-Bound Auto-Sectioning Visualizer
 
 ## Role & Context
-Act as a Frontend Developer / UX Engineer. We are eliminating "modal fatigue" in the `Section Assignment` workspace. 
+Act as a React Frontend Developer. We are upgrading the `AutoAssignVisualizer` component inside the Temporary Sections modal.
 
-Currently, clicking the primary `AUTO ASSIGN SECTIONS` button forces the user to read an instructional modal before they can actually execute the algorithm. We are decoupling this. The primary button must instantly execute the algorithm, while the instructions will be moved to a secondary, optional help trigger. Because the action is now instant, we must introduce fluid, repetitive visual animations to show the user that the system is actively processing and sorting hundreds of learners.
+Currently, the animation uses static, hardcoded nodes, and the Regular BEC sorting phase lacks containment UI. We need to bind this visualizer to the actual fetched data for the selected grade level using a "Representative Node" strategy coupled with dynamic, ticking number counters. Furthermore, we must introduce distinct dashed-outline `div` containers (drop-zones) for all phases—explicitly isolating SCP tracks (STE, SPA, SPS), the Top BEC (Star/Homogeneous) sections, and the Regular BEC (Heterogeneous) sections.
 
-## Critical Directive
-Remove the modal trigger from the primary `AUTO ASSIGN SECTIONS` button. Bind the main button directly to the sorting API. Implement a satisfying, animated state transition that visually communicates the "draining" of the unassigned pool and the "filling" of the section capacities.
+## Critical Technical Directive
+Do not render more than 40-50 visual nodes (circles) in the DOM simultaneously to prevent browser lag. Use React state to drive live numeric counters alongside the representative nodes. Rely strictly on our established React design system components (no raw utility classes in the markup). All drop-zones must use a consistent dashed border styling to indicate they are receiving containers.
 
-## UI Component & Animation Requirements
+## UI Component & Animation Logic Requirements
 
-Please implement the following layout changes and animation sequences:
+Please implement the following data integration and animation sequence:
 
-### 1. Button Reorganization (The Trigger Area)
-Update the top-right header area of the Available Sections pane:
-*   **Primary Action:** Keep `AUTO ASSIGN SECTIONS` as the solid primary button. It now directly fires the API request.
-*   **Secondary Action:** Inject a small, subtle text link or ghost button directly below it: `ⓘ How does the system place learners?`
-*   **Modal Routing:** Bind the existing `AUTO ASSIGN TEMPORARY SECTIONS` instructional modal exclusively to this new secondary link. Remove the "Generate" button from inside the modal, leaving only a "Close" or "Got it" button.
+### 1. Data Hydration & Component Interface
+The visualizer component must accept a `poolStats` prop containing the exact fetched counts before the animation begins:
 
-### 2. The Execution State (Loading Phase)
-When `AUTO ASSIGN SECTIONS` is clicked, immediately lock the workspace to prevent race conditions:
-*   **Button State:** Transform the button to disabled, change the text to `Running Sorting Algorithm...`, and render a spinning loader.
-*   **Left Pane (The Pool):** Apply a disabled overlay or reduce the opacity of the `LEARNERS READY FOR SECTIONING` list. 
-*   **Right Pane (The Targets):** Apply a continuous CSS "shimmer" or pulse effect to the empty Section Cards to indicate they are awaiting data.
+```javascript
+{
+  totalLearners: 450,
+  scp: { ste: 35, spa: 40, sps: 20 },
+  topBec: { count: 80, sections: 2 },
+  regularBec: { count: 275, sections: 6 }
+}
+```
 
-### 3. The Resolution Animation (The "Sorting" Experience)
-When the backend returns the successfully sorted draft arrays, do not just instantly snap the UI to the new state. Orchestrate a ~600ms staggered animation sequence (using CSS transitions, Framer Motion, or your UI library's equivalent):
-*   **The Drain:** Animate the successfully sectioned learners in the left pane by fading them out and sliding them slightly to the right, simulating them leaving the pool.
-*   **The Fill (Ticker Animation):** On the Section Cards, animate the `CAPACITY FILL` counters. Instead of jumping from `0` to `40`, use a fast number ticker effect that counts up (`0, 12, 28, 40`) over 400ms. Do the same for the `M: 0` and `F: 0` gender badges.
-*   **The Badge Reveal:** Pop in the yellow `DRAFT` status badges on the section cards with a slight `scale-up` or `spring` bounce effect to draw the user's eye to the new state.
+### 2. The 4-Phase Animation Sequence
+Implement a seamless, timed transition through these four distinct phases, updating the explanatory text dynamically:
 
-### 4. Post-Animation Cleanup
-*   Once the animations complete, restore the primary button to its default state (but perhaps change the label to `RE-RUN ALGORITHM` or `CLEAR DRAFT` depending on your reset logic).
-*   Trigger a success Toast/Snackbar: *"Draft sections generated successfully. Please review the temporary rosters."*
+*   **Phase 1: The Master Pool (Data Fetching)**
+    *   *Visuals:* Render a central cluster of ~30-40 representative nodes (mixed Blue/Pink for gender).
+    *   *Dynamic UI:* Above the cluster, render a large, prominent counter that rapidly ticks up from `0` to `poolStats.totalLearners`. 
+    *   *Text:* "Phase 1: Fetching verified enrollments and EOSY promotion data..."
+
+*   **Phase 2: SCP Extraction (Strict Separation)**
+    *   *Visuals:* Three distinct dashed-outline drop-zones appear at the top: `STE Section`, `SPA Section`, and `SPS Section`. Representative nodes break away from the main cluster and fly into their respective zones.
+    *   *Dynamic UI:* Small counters appear under each drop-zone, ticking up to their exact fetched amounts. The main pool counter simultaneously subtracts these amounts.
+    *   *Text:* "Phase 2: Isolating qualified Special Curricular Program learners into specialized sections."
+
+*   **Phase 3: Top BEC Extraction (Star Sections)**
+    *   *Visuals:* The SCP containers fade out. A new large dashed-outline drop-zone appears labeled `Top BEC Sections (Homogeneous)`. The nodes with the highest internal averages detach from the pool, organize into a vertical line, and glide into this new container.
+    *   *Dynamic UI:* A counter inside the Top BEC container ticks up to `poolStats.topBec.count`, while the main pool counter continues to decrease.
+    *   *Text:* "Phase 3: Sorting and placing top-performing learners into Top BEC sections."
+
+*   **Phase 4: Regular BEC Snake Draft Distribution**
+    *   *Visuals:* The Top BEC container fades out. Multiple dashed-outline drop-zones appear (representing `poolStats.regularBec.sections`, e.g., Section A, Section B, Section C). The remaining nodes in the pool arrange vertically, then snake back and forth into these boxes (e.g., Section A -> B -> C -> C -> B -> A).
+    *   *Dynamic UI:* The central pool counter rapidly ticks down to `0`. The capacity counters inside the Regular BEC boxes tick up to their maximums, displaying a split Male/Female count to prove gender balancing.
+    *   *Text:* "Phase 4: Executing heterogeneous draft to balance academic performance and gender ratio."
+
+### 3. State Management & Playback
+*   Use a state machine or a step-based hook (e.g., `currentPhase: 1 | 2 | 3 | 4`) to manage the timeline.
+*   Ensure the animation resets cleanly if the user closes and reopens the modal. 
+*   If the user's browser triggers the `prefers-reduced-motion` media query, bypass the flying node animations and instantly render the final sorted layout with the correct fetched numbers inside the dashed containers.
