@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
@@ -560,6 +560,26 @@ const createDraftPlacement = (
     unplacedLearners,
   };
 };
+function AnimatedCount({ from, to, animate }: { from: number; to: number; animate: boolean }) {
+  const [value, setValue] = useState(animate ? from : to);
+
+  useEffect(() => {
+    if (!animate) return;
+
+    const startedAt = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min((now - startedAt) / 400, 1);
+      setValue(Math.round(from + (to - from) * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [animate, from, to]);
+
+  return <>{animate ? value : to}</>;
+}
+
 export function SectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const { panelPercentage, isDesktopViewport, startResizingRight } = useResizablePanel(45, {
@@ -569,6 +589,9 @@ export function SectioningWorkspace() {
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [autoAssignPhase, setAutoAssignPhase] = useState<"idle" | "loading" | "resolving">("idle");
+  const autoAssignTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const prefersReducedMotion = useReducedMotion();
   const [isRightPaneFullscreen, setIsRightPaneFullscreen] = useState(false);
   const [draftPlacement, setDraftPlacement] = useState<DraftPlacement | null>(
     null,
@@ -597,6 +620,10 @@ export function SectioningWorkspace() {
   >(null);
 
   const queryClient = useQueryClient();
+
+  useEffect(() => () => {
+    autoAssignTimers.current.forEach(clearTimeout);
+  }, []);
 
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
   const setActiveGradeLevelId = useCallback((id: string) => {
@@ -813,7 +840,12 @@ export function SectioningWorkspace() {
   }, [currentGradePool, activeSearchQuery, filterProgram]);
 
   const filteredAndSortedPool = useMemo(() => {
-    const result = [...filteredPool];
+    const visiblePool = draftPlacement && autoAssignPhase === "idle"
+      ? filteredPool.filter((learner) =>
+          draftPlacement.unplacedLearners.some((unplaced) => unplaced.applicationId === learner.applicationId)
+        )
+      : filteredPool;
+    const result = [...visiblePool];
     if (sortConfig !== null) {
       result.sort((a, b) => {
         if (sortConfig.key === "genAve") {
@@ -827,7 +859,7 @@ export function SectioningWorkspace() {
       });
     }
     return result;
-  }, [filteredPool, sortConfig]);
+  }, [filteredPool, sortConfig, draftPlacement, autoAssignPhase]);
 
   const assignLearners = async () => {
     if (!targetSectionId || selectedAppIds.length === 0) return;
@@ -875,30 +907,46 @@ export function SectioningWorkspace() {
   };
 
   const generateDraftPlacement = () => {
-    if (!activeGradeLevelId) return;
+    if (!activeGradeLevelId || autoAssignPhase !== "idle" || draftPlacement || processing) return;
 
-    const parsedGradeLevelId = Number(activeGradeLevelId);
-    const draft = createDraftPlacement(
-      parsedGradeLevelId,
-      currentGradePool,
-      currentGradeSections,
-      enableHomogeneousSections,
-      homogeneousSectionCount,
-    );
-    const populatedSectionIds = draft.rosters
-      .filter((roster) => roster.learners.length > 0)
-      .map((roster) => roster.section.id);
+    setAutoAssignPhase("loading");
+    const loadingTimer = setTimeout(() => {
+      try {
+        const draft = createDraftPlacement(
+          Number(activeGradeLevelId),
+          currentGradePool,
+          currentGradeSections,
+          enableHomogeneousSections,
+          homogeneousSectionCount,
+        );
+        const populatedSectionIds = draft.rosters
+          .filter((roster) => roster.learners.length > 0)
+          .map((roster) => roster.section.id);
 
-    setDraftPlacement(draft);
-    setExpandedSectionIds(new Set(populatedSectionIds));
-    setSelectedAppIds([]);
-    setTargetSectionId(null);
-    setAllowCapacityOverride(false);
+        setDraftPlacement(draft);
+        setExpandedSectionIds(new Set(populatedSectionIds));
+        setSelectedAppIds([]);
+        setTargetSectionId(null);
+        setAllowCapacityOverride(false);
+        setAutoAssignPhase("resolving");
 
-    sileo.success({
-      title: "Draft Placement Generated",
-      description: `${draft.rosters.reduce((total, roster) => total + roster.learners.length, 0)} learner(s) are ready for review.`,
-    });
+        const resolutionTimer = setTimeout(() => {
+          setAutoAssignPhase("idle");
+          sileo.success({
+            title: "Draft sections generated successfully.",
+            description: "Please review the temporary rosters.",
+          });
+        }, prefersReducedMotion ? 0 : 600);
+        autoAssignTimers.current.push(resolutionTimer);
+      } catch {
+        setAutoAssignPhase("idle");
+        sileo.error({
+          title: "Auto assignment failed",
+          description: "Could not generate temporary sections. Please try again.",
+        });
+      }
+    }, prefersReducedMotion ? 0 : 300);
+    autoAssignTimers.current.push(loadingTimer);
   };
 
   const discardDraft = useCallback(() => {
@@ -1414,6 +1462,7 @@ export function SectioningWorkspace() {
       <Tabs
         value={activeGradeLevelId}
         onValueChange={(val) => {
+          if (autoAssignPhase !== "idle") return;
           if (isDraftActive) {
             guardedSetActiveGradeLevelId(val);
             return;
@@ -1502,7 +1551,11 @@ export function SectioningWorkspace() {
           <div className="relative flex flex-1 min-h-0 w-full overflow-hidden">
             {/* LEFT PANE: UNSECTIONED POOL */}
             <div
-              className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground sm:flex-none transition-[width] duration-75 ease-linear"
+              className={cn(
+                "flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground sm:flex-none transition-[width,opacity] duration-300 ease-linear",
+                autoAssignPhase !== "idle" && "pointer-events-none opacity-55",
+              )}
+              aria-busy={autoAssignPhase !== "idle"}
               style={
                 isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
               }
@@ -1611,7 +1664,7 @@ export function SectioningWorkspace() {
                             filteredPool.length > 0
                           }
                           disabled={
-                            isDraftActive ||
+                            isDraftActive || autoAssignPhase !== "idle" ||
                             (selectedProgramTypes.size === 0 &&
                               new Set(filteredPool.map((l) => l.programType)).size > 1)
                           }
@@ -1718,7 +1771,7 @@ export function SectioningWorkspace() {
                               l.applicationId,
                             );
                             const isDisabled =
-                              isDraftActive ||
+                              isDraftActive || autoAssignPhase !== "idle" ||
                               (selectedProgramTypes.size > 0 &&
                                 !selectedProgramTypes.has(l.programType));
 
@@ -1734,7 +1787,10 @@ export function SectioningWorkspace() {
                                   );
                                 }}
                                 className={cn(
-                                  "group transition-colors",
+                                  "group transition-[opacity,transform,background-color] duration-500",
+                                  autoAssignPhase === "resolving" &&
+                                    draftSectionByApplicationId.has(l.applicationId) &&
+                                    "translate-x-8 opacity-0",
                                   isDisabled
                                     ? "cursor-not-allowed"
                                     : "cursor-pointer",
@@ -1913,7 +1969,8 @@ export function SectioningWorkspace() {
                   )}
                 </div>
 
-                {!draftPlacement && (
+                {(!draftPlacement || autoAssignPhase !== "idle") && (
+                  <div className="flex flex-col items-center gap-1">
                   <Button
                     size="sm"
                     variant="default"
@@ -1921,12 +1978,25 @@ export function SectioningWorkspace() {
                       currentGradePool.length === 0 ||
                       processing ||
                       isDraftActive ||
+                      autoAssignPhase !== "idle" ||
                       isHistoricalReadOnly
                     }
-                    onClick={() => setAutoAssignConfirmOpen(true)}
-                    className="font-bold text-base uppercase tracking-normal gap-1 rounded-md">
-                    AUTO ASSIGN SECTIONS
+                    onClick={generateDraftPlacement}
+                    className="w-full font-bold text-base uppercase tracking-normal gap-2 rounded-md">
+                    {autoAssignPhase !== "idle" && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {autoAssignPhase !== "idle" ? "Running Sorting Algorithm..." : "AUTO ASSIGN SECTIONS"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={autoAssignPhase !== "idle"}
+                    onClick={() => setAutoAssignConfirmOpen(true)}
+                    className="h-auto px-2 text-sm font-bold text-primary hover:text-primary">
+                    <Info className="h-3.5 w-3.5" />
+                    How does the system place learners?
+                  </Button>
+                  </div>
                 )}
               </CardHeader>
               <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
@@ -2017,6 +2087,7 @@ export function SectioningWorkspace() {
                             <div
                               key={s.id}
                               onClick={() => {
+                                if (autoAssignPhase !== "idle") return;
                                 if (draftPlacement) {
                                   toggleExpandedSection(s.id);
                                   return;
@@ -2036,6 +2107,8 @@ export function SectioningWorkspace() {
                               }}
                               className={cn(
                                 "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
+                                autoAssignPhase === "loading" && roster.learners.length === 0 && "animate-pulse bg-muted/50",
+                                autoAssignPhase !== "idle" && "pointer-events-none",
                                 !isProgramCompatible && "cursor-not-allowed opacity-45",
                                 isSelected
                                   ? "bg-primary/5 border-primary shadow-sm"
@@ -2086,20 +2159,25 @@ export function SectioningWorkspace() {
                                         ? "text-destructive font-bold"
                                         : "text-foreground",
                                     )}>
-                                    {roster.totalCount} / {s.maxCapacity}{" "}
+                                    <AnimatedCount from={s.currentCount} to={roster.totalCount} animate={autoAssignPhase === "resolving" && !prefersReducedMotion} /> / {s.maxCapacity}{" "}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-foreground">
                                   <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 px-2 gap-1 flex items-center">
-                                    M: {roster.genderCounts.boys}
+                                    M: <AnimatedCount from={s.boys} to={roster.genderCounts.boys} animate={autoAssignPhase === "resolving" && !prefersReducedMotion} />
                                   </Badge>
                                   <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 px-2 gap-1 flex items-center">
-                                    F: {roster.genderCounts.girls}
+                                    F: <AnimatedCount from={s.girls} to={roster.genderCounts.girls} animate={autoAssignPhase === "resolving" && !prefersReducedMotion} />
                                   </Badge>
                                   {draftPlacement && (
-                                    <Badge variant="secondary">
-                                      Draft: {roster.learners.length}
-                                    </Badge>
+                                    <motion.span
+                                      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.6 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ type: "spring", stiffness: 380, damping: 18, delay: 0.15 }}>
+                                      <Badge className="border border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-100">
+                                        DRAFT: {roster.learners.length}
+                                      </Badge>
+                                    </motion.span>
                                   )}
                                 </div>
                                 <div className="h-2 rounded-full bg-card overflow-hidden">
@@ -2245,6 +2323,7 @@ export function SectioningWorkspace() {
                           onClick={() => setCommitDialogOpen(true)}
                           disabled={
                             commitProcessing ||
+                            autoAssignPhase !== "idle" ||
                             draftLearnerCount === 0 ||
                             isHistoricalReadOnly
                           }
@@ -2254,7 +2333,7 @@ export function SectioningWorkspace() {
                         <Button
                           variant="outline"
                           onClick={discardDraft}
-                          disabled={commitProcessing}
+                          disabled={commitProcessing || autoAssignPhase !== "idle"}
                           className="h-12 text-base font-bold uppercase">
                           CANCEL TEMPORARY SECTIONS
                         </Button>
@@ -2435,13 +2514,19 @@ export function SectioningWorkspace() {
         open={autoAssignConfirmOpen}
         onOpenChange={setAutoAssignConfirmOpen}
         title="AUTO ASSIGN TEMPORARY SECTIONS"
+        align="center"
+        variant="primary"
+        hideCancel={true}
+        confirmText="Got it"
+        confirmClassName="w-full"
+        onConfirm={() => setAutoAssignConfirmOpen(false)}
         description={
           <div className="space-y-4 text-left">
-            <p className="text-center">
+            <p className="text-center font-bold">
               This will create temporary class lists for the selected grade
               level.
             </p>
-            <div className="space-y-3 rounded-md border bg-muted p-4">
+            <div className="space-y-3">
               <p className="font-bold text-foreground text-sm">
                 How the system will place learners:
               </p>
@@ -2485,20 +2570,15 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary">
-              Please review the temporary class lists carefully before
-              finalizing because finalization creates the official section
-              records.
-            </p>
+
+
+
+
+
           </div>
+
         }
-        onConfirm={() => {
-          setAutoAssignConfirmOpen(false);
-          generateDraftPlacement();
-        }}
-        confirmText="Generate Temporary Sections"
-        cancelText="Cancel"
-        variant="primary"
+        footerWarning="Please review the temporary class lists carefully before finalizing because finalization creates the official section records."
       />
 
       <ConfirmationModal

@@ -17,6 +17,7 @@ import {
   AlertCircle,
   HelpCircle,
   LoaderCircle,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +44,10 @@ interface ConfirmationModalProps {
   icon?: LucideIcon;
   loadingOnly?: boolean;
   loadingText?: string;
+  hideIcon?: boolean;
+  hideCancel?: boolean;
+  showClose?: boolean;
+  align?: "left" | "center";
 }
 
 const variantStyles: Record<
@@ -102,6 +107,10 @@ export function ConfirmationModal({
   icon: CustomIcon,
   loadingOnly = false,
   loadingText = "Processing...",
+  hideIcon = false,
+  hideCancel = false,
+  showClose = false,
+  align = "center",
 }: ConfirmationModalProps) {
   const { colorScheme, selectedAccentHsl } = useSettingsStore();
 
@@ -119,6 +128,11 @@ export function ConfirmationModal({
 
   const style = variantStyles[variant];
   const Icon = CustomIcon || style.icon;
+
+  const headerAlignClass = align === "left" ? "text-left items-start" : "text-center items-center";
+  const titleAlignClass = align === "left" ? "text-left" : "text-center";
+  const descAlignClass = align === "left" ? "text-left" : "text-center";
+  const footerAlignClass = align === "left" ? "sm:justify-end" : "sm:justify-center";
 
   return (
     <Dialog
@@ -140,8 +154,15 @@ export function ConfirmationModal({
               } as React.CSSProperties)
               : {}
           }>
+        {showClose && (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full bg-[hsl(var(--primary))] p-1.5 text-[hsl(var(--primary-foreground))] shadow-sm transition-opacity hover:opacity-90 disabled:pointer-events-none data-[state=open]:bg-secondary">
+            <X className="h-4 w-4" strokeWidth={3} />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
         {/* ── Icon badge ─────────────────────────────────────────────── */}
-        <div className="flex justify-center mb-5">
+        {!hideIcon && (
+          <div className="flex justify-center mb-5">
           <span
             className={cn(
               "flex items-center justify-center",
@@ -150,19 +171,20 @@ export function ConfirmationModal({
               style.iconRing,
               style.iconText,
             )}>
-            <Icon
-              className="w-6 h-6"
-              strokeWidth={2.5}
-            />
-          </span>
-        </div>
+              <Icon
+                className="w-6 h-6"
+                strokeWidth={2.5}
+              />
+            </span>
+          </div>
+        )}
 
-        {/* ── Header — centred ───────────────────────────────────────── */}
-        <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-2xl font-extrabold uppercase">{title}</DialogTitle>
+        {/* ── Header ───────────────────────────────────────── */}
+        <DialogHeader className={cn("space-y-2", headerAlignClass)}>
+          <DialogTitle className={cn("text-2xl font-extrabold uppercase", titleAlignClass)}>{title}</DialogTitle>
           <div className="space-y-4 w-full">
             <DialogDescription asChild>
-              <div className="leading-relaxed text-foreground text-center w-full">
+              <div className={cn("leading-relaxed text-foreground w-full", descAlignClass)}>
                 {description}
               </div>
             </DialogDescription>
@@ -182,21 +204,24 @@ export function ConfirmationModal({
             </div>
           </div>
         ) : (
-          /* ── Footer — side-by-side, confirm on the left ─────────────── */
-          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
+          /* ── Footer ─────────────────────────────────────────────── */
+          <DialogFooter className={cn("flex flex-row gap-3 mt-7", footerAlignClass)}>
             {/* Cancel */}
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-              className={cn(
-                "flex-1 h-12 rounded-lg font-bold uppercase",
-                "border border-gray-200 bg-muted text-gray-700",
-                "hover:bg-gray-50 active:bg-gray-100",
-                "transition-all duration-150 active:scale-[0.97]",
-              )}>
-              {cancelText}
-            </Button>
+            {!hideCancel && (
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+                className={cn(
+                  "h-12 rounded-lg font-bold uppercase",
+                  !hideCancel ? "flex-1" : "",
+                  "border border-gray-200 bg-muted text-gray-700",
+                  "hover:bg-gray-50 active:bg-gray-100",
+                  "transition-all duration-150 active:scale-[0.97]",
+                )}>
+                {cancelText}
+              </Button>
+            )}
 
             {/* Confirm / primary action */}
             <Button
@@ -207,7 +232,8 @@ export function ConfirmationModal({
               }}
               disabled={loading || confirmDisabled}
               className={cn(
-                "flex-1 h-12 rounded-lg font-bold uppercase",
+                "h-12 rounded-lg font-bold uppercase",
+                !hideCancel ? "flex-1" : "px-10",
                 "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
                 "hover:bg-[hsl(var(--primary)/0.9)]",
                 "shadow-md",
