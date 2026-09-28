@@ -7,10 +7,26 @@ interface SystemDateOverride {
 
 let systemDateOverride: SystemDateOverride | null = null
 
-export function setSystemDateOverride(mockedDate: Date): void {
+export function setSystemDateOverride(mockedDate: Date, anchor?: number): void {
   systemDateOverride = {
     mockedTimestamp: mockedDate.getTime(),
-    anchoredAt: Date.now(),
+    anchoredAt: anchor ?? Date.now(),
+  }
+}
+
+export async function initializeSystemDateOverride(): Promise<void> {
+  const { prisma } = await import("./prisma.js")
+  const setting = await prisma.schoolSetting.findFirst({
+    select: { mockedSystemDate: true, mockedSystemDateAnchor: true },
+  })
+
+  if (setting?.mockedSystemDate && setting.mockedSystemDateAnchor) {
+    systemDateOverride = {
+      mockedTimestamp: setting.mockedSystemDate.getTime(),
+      anchoredAt: Number(setting.mockedSystemDateAnchor),
+    }
+  } else {
+    systemDateOverride = null
   }
 }
 

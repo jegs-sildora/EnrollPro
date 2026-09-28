@@ -9,7 +9,7 @@ import {
   setSystemDateOverride,
 } from "../../lib/date-wrapper.js"
 
-export function updateSystemDateOverride(req: Request, res: Response): void {
+export async function updateSystemDateOverride(req: Request, res: Response): Promise<void> {
   const value = typeof req.body === "object" && req.body !== null
     ? (req.body as Record<string, unknown>).mockedDate
     : null
@@ -23,11 +23,35 @@ export function updateSystemDateOverride(req: Request, res: Response): void {
     throw new AppError(400, "mockedDate must be a valid ISO date-time string.")
   }
 
-  setSystemDateOverride(mockedDate)
+  const anchor = Date.now()
+
+  const setting = await prisma.schoolSetting.findFirst()
+  if (setting) {
+    await prisma.schoolSetting.update({
+      where: { id: setting.id },
+      data: {
+        mockedSystemDate: mockedDate,
+        mockedSystemDateAnchor: BigInt(anchor),
+      },
+    })
+  }
+
+  setSystemDateOverride(mockedDate, anchor)
   res.json({ mockedDate: getSystemDateOverride()?.toISOString() ?? null })
 }
 
-export function resetSystemDateOverride(_req: Request, res: Response): void {
+export async function resetSystemDateOverride(_req: Request, res: Response): Promise<void> {
+  const setting = await prisma.schoolSetting.findFirst()
+  if (setting) {
+    await prisma.schoolSetting.update({
+      where: { id: setting.id },
+      data: {
+        mockedSystemDate: null,
+        mockedSystemDateAnchor: null,
+      },
+    })
+  }
+
   clearSystemDateOverride()
   res.status(204).send()
 }

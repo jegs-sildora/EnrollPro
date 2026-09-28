@@ -192,6 +192,8 @@ model SchoolSetting {
   heterogeneousRoundRobin   Boolean                  @default(true) @map("heterogeneous_round_robin")
   systemPhase               SystemAcademicPhase      @default(OFFICIAL_ENROLLMENT) @map("system_phase")
   globalDefaultPassword     String                   @default("DepEd2026!") @map("global_default_password")
+  mockedSystemDate          DateTime?                @map("mocked_system_date")
+  mockedSystemDateAnchor    BigInt?                  @map("mocked_system_date_anchor")
   activeSchoolYear          SchoolYear?              @relation(fields: [activeSchoolYearId], references: [id])
   termChangedEventOutbox    TermChangedEventOutbox[]
 

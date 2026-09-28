@@ -33,10 +33,13 @@ app.all("/api/", (req, res) => {
 });
 // -----------------------------------------------
 
+import { initializeSystemDateOverride } from "./lib/date-wrapper.js";
+
 const PORT = process.env.PORT || 5002;
 
 const server = app.listen(PORT as number, "0.0.0.0", () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
+  initializeSystemDateOverride().catch(console.error);
   startSmartSseBridge();
   startTermChangedPublisher();
 });
