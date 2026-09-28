@@ -63,6 +63,16 @@ function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
 
 export function TimeMachineWidget() {
   const { showTimeMachineWidget } = useSettingsStore();
+
+  if (!showTimeMachineWidget) {
+    return null;
+  }
+
+  return <TimeMachineWidgetCore />;
+}
+
+function TimeMachineWidgetCore() {
+  const { showTimeMachineWidget } = useSettingsStore();
   const { user } = useAuthStore();
   const [initialMockDateTime] = useState(() => {
     const saved = localStorage.getItem(MOCKED_SYSTEM_DATE_KEY);
@@ -116,11 +126,21 @@ export function TimeMachineWidget() {
       mockPeriod === "AM"
         ? hour12 % 12
         : (hour12 % 12) + 12;
-    const mockedTimestamp = `${mockDate}T${String(hour24).padStart(2, "0")}:${mockMinute}:${mockSecond}+08:00`;
+        
+    let isoDate = mockDate;
+    if (mockDate.includes("/")) {
+      const parts = mockDate.split("/");
+      if (parts.length === 3) {
+        isoDate = `${parts[2]}-${parts[0]}-${parts[1]}`;
+      }
+    }
+    
+    const mockedTimestamp = `${isoDate}T${String(hour24).padStart(2, "0")}:${mockMinute}:${mockSecond}+08:00`;
 
     localStorage.setItem(MOCKED_SYSTEM_DATE_KEY, mockedTimestamp);
     localStorage.setItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY, String(Date.now()));
     setHasMockOverride(true);
+    
     try {
       await api.put(
         "/system/date-override",
@@ -129,16 +149,15 @@ export function TimeMachineWidget() {
         },
         { timeout: SYSTEM_DATE_SYNC_TIMEOUT_MS },
       );
+      window.location.reload();
     } catch (error: unknown) {
       sileo.warning({
         title: "Mock Time Applied Locally",
         description:
           error instanceof Error
-            ? `Server synchronization will retry after reload: ${error.message}`
-            : "Server synchronization will retry after reload.",
+            ? `Server synchronization failed: ${error.message}`
+            : "Server synchronization failed.",
       });
-    } finally {
-      window.location.reload();
     }
   };
 
@@ -283,3 +302,5 @@ export function TimeMachineWidget() {
     </div>
   );
 }
+
+

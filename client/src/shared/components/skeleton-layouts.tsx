@@ -1,5 +1,3 @@
-import React, { useState, useEffect } from "react";
-
 export type SkeletonPageVariant =
   | "dashboard"
   | "registry"
@@ -22,11 +20,11 @@ interface PageLoadingSkeletonProps extends SkeletonLayoutProps {
   variant?: SkeletonPageVariant;
 }
 
-export function PageLoadingSkeleton({ className, withDelay = true }: PageLoadingSkeletonProps) {
+export function PageLoadingSkeleton({ className: _c, withDelay: _w = true }: PageLoadingSkeletonProps) {
   return null;
 }
 
-export function SkeletonPageHeader({ className }: SkeletonLayoutProps) {
+export function SkeletonPageHeader({ className: _c }: SkeletonLayoutProps) {
   return null;
 }
 
@@ -34,15 +32,15 @@ export function MetricCardSkeleton() {
   return null;
 }
 
-export function ToolbarSkeleton({ controls = 3 }: { controls?: number }) {
+export function ToolbarSkeleton({ controls: _ctrls = 3 }: { controls?: number }) {
   return null;
 }
 
 export function DataTableSkeleton({
-  rows = 50,
-  columns = 5,
-  dense = false,
-  className,
+  rows: _r = 50,
+  columns: _c = 5,
+  dense: _d = false,
+  className: _cls,
 }: {
   rows?: number;
   columns?: number;
@@ -52,27 +50,27 @@ export function DataTableSkeleton({
   return null;
 }
 
-export function CardGridSkeleton({ count = 6, className }: { count?: number; className?: string }) {
+export function CardGridSkeleton({ count: _c = 6, className: _cls }: { count?: number; className?: string }) {
   return null;
 }
 
-export function FormSkeleton({ sections = 3, className }: { sections?: number; className?: string }) {
+export function FormSkeleton({ sections: _s = 3, className: _cls }: { sections?: number; className?: string }) {
   return null;
 }
 
-export function TwoPanelSkeleton({ className }: SkeletonLayoutProps) {
+export function TwoPanelSkeleton({ className: _c }: SkeletonLayoutProps) {
   return null;
 }
 
-export function DetailPanelSkeleton({ className }: SkeletonLayoutProps) {
+export function DetailPanelSkeleton({ className: _c }: SkeletonLayoutProps) {
   return null;
 }
 
-export function ModalBodySkeleton({ className }: SkeletonLayoutProps) {
+export function ModalBodySkeleton({ className: _c }: SkeletonLayoutProps) {
   return null;
 }
 
-export function LearnerProfileSkeleton({ className }: SkeletonLayoutProps) {
+export function LearnerProfileSkeleton({ className: _c }: SkeletonLayoutProps) {
   return null;
 }
 

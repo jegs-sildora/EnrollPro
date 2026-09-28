@@ -24,11 +24,8 @@ export const HistoricalBanner = memo(function HistoricalBanner({
 
   const {
     viewingSchoolYearLabel,
-    viewingSchoolYearId,
     activeSchoolYearLabel,
     triggerSchoolYearSwitch,
-    setViewingSY,
-    setHistoricalCorrectionToken,
     historicalCorrectionExpiresAt,
     activeCorrection,
   } = useSettingsStore();
@@ -36,9 +33,16 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   const { user } = useAuthStore();
   const [timeLeft, setTimeLeft] = useState<string>("");
 
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   const isLockedByOther =
     activeCorrection &&
-    activeCorrection.expiresAt > Date.now() &&
+    activeCorrection.expiresAt > now &&
     activeCorrection.userId !== user?.id;
 
   // Countdown timer effect

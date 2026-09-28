@@ -30,16 +30,15 @@ export function useManilaNow(intervalMs = 1000): Date {
     return getManilaNow();
   }, [currentSystemDate, currentSystemDateReceivedAt]);
 
-  const [now, setNow] = useState(resolveCurrentDate);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    setNow(resolveCurrentDate());
     const timer = setInterval(() => {
-      setNow(resolveCurrentDate());
+      setTick((t) => t + 1);
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [intervalMs, resolveCurrentDate]);
+  }, [intervalMs]);
 
-  return now;
+  return resolveCurrentDate();
 }

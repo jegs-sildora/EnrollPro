@@ -41,6 +41,10 @@ export function getSystemDateOverride(): Date | null {
   return new Date(systemDateOverride.mockedTimestamp + elapsedMilliseconds)
 }
 
+export function getSystemDateOverrideRaw(): SystemDateOverride | null {
+  return systemDateOverride
+}
+
 /**
  * ONLY use this wrapper for lifecycle and configured-period evaluation.
  * Do NOT use it for database created_at timestamps, JWT expiration checks, or audit logs, to preserve system integrity.

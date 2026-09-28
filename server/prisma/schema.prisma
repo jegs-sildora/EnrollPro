@@ -194,6 +194,7 @@ model SchoolSetting {
   globalDefaultPassword     String                   @default("DepEd2026!") @map("global_default_password")
   mockedSystemDate          DateTime?                @map("mocked_system_date")
   mockedSystemDateAnchor    BigInt?                  @map("mocked_system_date_anchor")
+  isTimeMachineEnabled      Boolean                  @default(false) @map("is_time_machine_enabled")
   activeSchoolYear          SchoolYear?              @relation(fields: [activeSchoolYearId], references: [id])
   termChangedEventOutbox    TermChangedEventOutbox[]
 

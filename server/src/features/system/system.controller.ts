@@ -40,6 +40,23 @@ export async function updateSystemDateOverride(req: Request, res: Response): Pro
   res.json({ mockedDate: getSystemDateOverride()?.toISOString() ?? null })
 }
 
+export async function toggleTimeMachineEnabled(req: Request, res: Response): Promise<void> {
+  const enabled = typeof req.body === 'object' && req.body !== null ? Boolean((req.body as Record<string, unknown>).enabled) : false;
+
+  const setting = await prisma.schoolSetting.findFirst();
+  if (setting) {
+    await prisma.schoolSetting.update({
+      where: { id: setting.id },
+      data: {
+        isTimeMachineEnabled: enabled,
+        ...(enabled ? {} : { mockedSystemDate: null, mockedSystemDateAnchor: null }),
+      },
+    });
+  }
+  if (!enabled) clearSystemDateOverride();
+  res.json({ enabled });
+}
+
 export async function resetSystemDateOverride(_req: Request, res: Response): Promise<void> {
   const setting = await prisma.schoolSetting.findFirst()
   if (setting) {
@@ -131,3 +148,4 @@ export async function getRolloverReadiness(
     next(error)
   }
 }
+

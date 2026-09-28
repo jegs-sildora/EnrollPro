@@ -26,7 +26,7 @@ export function HybridDatePicker({
   hideCalendarIcon,
 }: HybridDatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [inputText, setInputText] = useState("");
+  const [typedText, setTypedText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
   const getNumericFormat = (val: string) => {
@@ -54,26 +54,17 @@ export function HybridDatePicker({
     return "";
   };
 
-  useEffect(() => {
-    if (!isFocused) {
-      setInputText(value ? formatDisplayDate(value) : "");
-    }
-  }, [value, isFocused]);
+  const inputText = isFocused ? typedText : (value ? formatDisplayDate(value) : "");
 
   const handleFocus = () => {
     setIsFocused(true);
     if (value) {
-      setInputText(getNumericFormat(value));
+      setTypedText(getNumericFormat(value));
     }
   };
 
   const handleBlur = () => {
     setIsFocused(false);
-    if (value) {
-      setInputText(formatDisplayDate(value));
-    } else {
-      setInputText("");
-    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +99,7 @@ export function HybridDatePicker({
     }
 
     const formatted = parts.join("/");
-    setInputText(formatted);
+    setTypedText(formatted);
 
     let newCursor = selectionStart;
     if (!isDeleting) {
@@ -155,12 +146,12 @@ export function HybridDatePicker({
 
   const [month, setMonth] = useState<Date | undefined>(undefined);
 
-  // Sync calendar month with selected date when opening
-  useEffect(() => {
-    if (open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (newOpen) {
       setMonth(selectedDate);
     }
-  }, [open, selectedDate]);
+  };
 
   return (
     <div className="relative w-full flex items-center">
@@ -176,7 +167,7 @@ export function HybridDatePicker({
         className={cn("font-extrabold text-base pr-10 disabled:opacity-100 disabled:!text-foreground uppercase", className)}
       />
       {!hideCalendarIcon && (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
             <Button
               type="button"

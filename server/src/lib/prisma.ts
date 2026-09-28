@@ -25,12 +25,16 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
     ? (value as Record<string, unknown>)
     : null;
 
+const stringifySafe = (val: unknown): string => {
+  return JSON.stringify(val, (_, v) => typeof v === "bigint" ? v.toString() : v);
+};
+
 const toJsonValue = (value: unknown): Prisma.InputJsonValue => {
   if (value === undefined) {
     return JSON.parse("null") as Prisma.InputJsonValue;
   }
 
-  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+  return JSON.parse(stringifySafe(value)) as Prisma.InputJsonValue;
 };
 
 export const prisma = basePrisma.$extends({
@@ -59,8 +63,8 @@ export const prisma = basePrisma.$extends({
               const oldVal = oldRecObj[key];
               const newVal = newRecObj[key];
               
-              const oldStr = oldVal instanceof Date ? oldVal.toISOString() : JSON.stringify(oldVal);
-              const newStr = newVal instanceof Date ? newVal.toISOString() : JSON.stringify(newVal);
+              const oldStr = oldVal instanceof Date ? oldVal.toISOString() : stringifySafe(oldVal);
+              const newStr = newVal instanceof Date ? newVal.toISOString() : stringifySafe(newVal);
 
               if (oldStr !== newStr) {
                  const humanKey = formatAuditField(key);

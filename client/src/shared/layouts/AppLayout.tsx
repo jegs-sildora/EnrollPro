@@ -205,8 +205,10 @@ function UserNav() {
               if (!nextState) {
                 localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
                 localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
-                window.location.reload();
               }
+              api.patch("/system/time-machine", { enabled: nextState }).finally(() => {
+                if (!nextState) window.location.reload();
+              });
             }}
           >
             <div className="flex items-center">
@@ -220,8 +222,10 @@ function UserNav() {
                 if (!checked) {
                   localStorage.removeItem(MOCKED_SYSTEM_DATE_KEY);
                   localStorage.removeItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY);
-                  window.location.reload();
                 }
+                api.patch("/system/time-machine", { enabled: checked }).finally(() => {
+                  if (!checked) window.location.reload();
+                });
               }}
               className="ml-4"
             />
@@ -1253,3 +1257,4 @@ function ActiveTermBadge() {
     </Badge>
   );
 }
+

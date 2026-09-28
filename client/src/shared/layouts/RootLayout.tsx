@@ -88,6 +88,19 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
     const data = publicSettingsQuery.data;
 
     if (data) {
+      if (data.isTimeMachineEnabled) {
+        if (data.systemDateOverride) {
+          const dateStr = new Date(data.systemDateOverride.mockedTimestamp).toISOString();
+          localStorage.setItem('mocked_system_date', dateStr);
+          localStorage.setItem('mocked_system_date_anchor', String(data.systemDateOverride.anchoredAt));
+        }
+        setSettings({ showTimeMachineWidget: true });
+      } else {
+        localStorage.removeItem('mocked_system_date');
+        localStorage.removeItem('mocked_system_date_anchor');
+        setSettings({ showTimeMachineWidget: false });
+      }
+
       setSettings({
         schoolName: data.schoolName,
         logoUrl: data.logoUrl,
@@ -227,3 +240,5 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
     </UnsavedChangesProvider>
   );
 }
+
+

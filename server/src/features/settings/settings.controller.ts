@@ -18,7 +18,7 @@ import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 import { AppError } from "../../lib/AppError.js";
-import { getSystemDate } from "../../lib/date-wrapper.js";
+import { getSystemDate, getSystemDateOverrideRaw } from "../../lib/date-wrapper.js";
 
 function broadcastSettingsInvalidation(): void {
   broadcastRealtimeInvalidation({
@@ -188,6 +188,8 @@ export async function getPublicSettings(
       systemPhase: effectiveSystemStatus === "ARCHIVED" ? "EOSY_CLOSING" : settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
       activeCorrection,
+      systemDateOverride: getSystemDateOverrideRaw(),
+      isTimeMachineEnabled: settings.isTimeMachineEnabled,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);
@@ -579,3 +581,5 @@ export async function updateAlgorithm(req: Request, res: Response): Promise<void
 
   res.json(updated);
 }
+
+

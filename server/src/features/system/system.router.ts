@@ -6,6 +6,7 @@ import {
   getPublicConfig,
   resetSystemDateOverride,
   updateSystemDateOverride,
+  toggleTimeMachineEnabled,
 } from "./system.controller.js";
 
 const systemRoutes: ExpressRouter = Router();
@@ -18,6 +19,13 @@ systemRoutes.put(
   authenticate,
   authorize("SYSTEM_ADMIN"),
   updateSystemDateOverride,
+);
+
+systemRoutes.patch(
+  "/time-machine",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  toggleTimeMachineEnabled,
 );
 
 systemRoutes.delete(
@@ -36,3 +44,4 @@ systemRoutes.get(
 );
 
 export default systemRoutes;
+
