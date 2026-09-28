@@ -257,8 +257,13 @@ export async function index(req: Request, res: Response) {
       : null;
 
     const ancillaryRole = normalizeAncillaryRoleFilter(req.query.ancillary_role);
+    const personnelType = req.query.personnelType ? normalizeOptionalUpperText(req.query.personnelType) : null;
 
     const whereClause: Prisma.TeacherWhereInput = {};
+    if (personnelType) {
+      whereClause.personnelType = personnelType;
+    }
+
     if (ancillaryRole) {
       const roleConditions: Prisma.TeacherWhereInput[] = [
         { ancillaryRoles: { has: ancillaryRole } },
