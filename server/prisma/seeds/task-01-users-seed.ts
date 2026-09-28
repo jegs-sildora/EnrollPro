@@ -3,7 +3,7 @@ import { PrismaClient, Role, Sex } from "../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
-import { mergeRequiredSchedulerRoles } from "../../src/features/auth/application-role.service.js";
+
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -22,7 +22,7 @@ const USERS_TO_SEED = [
   {
     employeeId: "1234507",
     firstName: "Maria Angela",
-    lastName: "Reyes",
+    lastName: "Delos Reyes",
     sex: Sex.FEMALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["SPA HEAD TEACHER", "GRADE 8 COORDINATOR"],
@@ -31,7 +31,7 @@ const USERS_TO_SEED = [
   {
     employeeId: "1234508",
     firstName: "Jose Gabriel",
-    lastName: "Cruz",
+    lastName: "Dela Cruz",
     sex: Sex.MALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["SPS HEAD TEACHER", "GRADE 9 COORDINATOR"],
@@ -40,7 +40,7 @@ const USERS_TO_SEED = [
   {
     employeeId: "1234509",
     firstName: "Anna Patricia",
-    lastName: "Garcia",
+    lastName: "Gomez",
     sex: Sex.FEMALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["GRADE 10 COORDINATOR"], // Personnel with grade 10 coordinator
@@ -75,10 +75,7 @@ export const seedUsers = async () => {
         where: { employeeId: userData.employeeId },
         select: { roles: true },
       });
-      const roles = mergeRequiredSchedulerRoles(
-        userData.employeeId,
-        existingUser?.roles ?? userData.roles,
-      );
+      const roles = [...new Set(existingUser?.roles ?? userData.roles)];
 
       const user = await prisma.user.upsert({
         where: { employeeId: userData.employeeId },
