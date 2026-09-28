@@ -276,8 +276,17 @@ export async function listDefaultFaculty(
 
   const { scope } = scopeResult;
 
+  const personnelType = req.query.personnelType
+    ? String(req.query.personnelType).trim().toUpperCase()
+    : null;
+
+  const where: import("../../generated/prisma/index.js").Prisma.TeacherWhereInput = { isActive: true };
+  if (personnelType) {
+    where.personnelType = personnelType;
+  }
+
   const teachers = await prisma.teacher.findMany({
-    where: { isActive: true },
+    where,
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
       _count: { select: { advisoryHistory: true } },

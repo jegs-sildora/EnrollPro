@@ -576,7 +576,14 @@ export async function listIntegrationFaculty(
   );
   const skip = (page - 1) * limit;
 
-  const where = includeInactive ? {} : { isActive: true };
+  const personnelType = req.query.personnelType
+    ? String(req.query.personnelType).trim().toUpperCase()
+    : null;
+
+  const where: Prisma.TeacherWhereInput = includeInactive ? {} : { isActive: true };
+  if (personnelType) {
+    where.personnelType = personnelType;
+  }
 
   const [total, teachers] = await Promise.all([
     prisma.teacher.count({ where }),

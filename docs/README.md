@@ -44,6 +44,7 @@ Last reviewed: 2026-09-23
 | [ATLAS Faculty Ancillary Roles API](features/integration/ATLAS-FACULTY-ANCILLARY-ROLES-API.md) | ATLAS and EnrollPro Teams | Protected faculty feed, ancillary-role scope, payload, and reconciliation rules |
 | [ATLAS Authoritative Term Contract Handoff](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-HANDOFF-2026-09-11.md) | ATLAS and EnrollPro Teams | Implemented ordered-term API changes, migration requirement, errors, and acceptance checks |
 | [ATLAS Authoritative Term Contract Correction Report](features/integration/ATLAS-AUTHORITATIVE-TERM-CONTRACT-CORRECTION-REPORT-2026-09-11.md) | ATLAS and EnrollPro Teams | Strict year-ID parsing, pre-write term validation, regression matrix, and delivery status |
+| [ATLAS Teaching Personnel Separation API](features/integration/ATLAS-TEACHING-PERSONNEL-API.md) | ATLAS and EnrollPro Teams | Personnel Type query filtering, separation of teaching and non-teaching staff |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
 | [SMART School Year Rollover](features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md) | SMART and EnrollPro Teams | EOSY publication, grade history, new-year gradebooks, and roster reconciliation |
 | [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |
