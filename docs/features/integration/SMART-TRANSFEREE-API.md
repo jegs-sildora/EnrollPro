@@ -1,6 +1,9 @@
 # SMART Transferee Enrollment Handoff
 
-Last code verification: 2026-09-11
+Last code verification: 2026-09-29
+
+The additive v1.1 transferee-detail fields are specified in
+[`SMART-TRANSFEREE-DETAILS-CONTRACT.md`](../../../SMART-TRANSFEREE-DETAILS-CONTRACT.md).
 
 ## Purpose
 
@@ -73,6 +76,7 @@ The registrar records:
 | `gradeLevelId` | Required EnrollPro incoming Grade 7-10 identifier |
 | `assignedProgram` | `REGULAR`, `SCIENCE_TECHNOLOGY_AND_ENGINEERING`, `SPECIAL_PROGRAM_IN_THE_ARTS`, or `SPECIAL_PROGRAM_IN_SPORTS` |
 | `previousSchoolName` | Required |
+| `lastGradeCompleted` | Optional staff-entered value; never derived from the incoming grade |
 | `originatingSchoolId` | Required |
 | `transferCertificateNo` | Optional |
 | `previousGenAve` | Optional; when supplied, from `75` through `99.99`, with at most two decimal places |
@@ -167,7 +171,7 @@ EnrollPro stores the intake across these records:
 | --- | --- |
 | `learners` / `Learner` | LRN, official name, birthdate, sex, and PSA presence |
 | `enrollment_applications` / `EnrollmentApplication` | Active year, incoming grade, learner type, curriculum, `READY_FOR_SECTIONING`, SF9 eligibility, document flags, guardian summary, and encoder |
-| `enrollment_previous_schools` / `EnrollmentPreviousSchool` | Originating school, school ID, previous average, and transfer certificate number |
+| `application_previous_schools` / `EnrollmentPreviousSchool` | Originating school, school ID, previous average, optional last completed grade, and transfer certificate number |
 | `application_family_members` / `ApplicationFamilyMember` | Guardian identity, relationship, and contact |
 | `enrollment_back_subjects` / `EnrollmentBackSubject` | Previous-grade ATLAS subject code and exact subject name for conditional promotion |
 
@@ -211,7 +215,7 @@ Authorization: Bearer <SMART_INTEGRATION_API_KEY>
 
 The key belongs only on the SMART backend. It must not be sent to browser JavaScript, placed in a URL, persisted in SMART learner records, or logged.
 
-The current route uses EnrollPro's shared companion-key middleware and technically accepts any configured ATLAS, SMART, AIMS, or MRF integration key. SMART must still use `SMART_INTEGRATION_API_KEY`; system-specific enforcement is a future hardening item and must not be treated as permission to reuse another subsystem's secret.
+The expanded transferee-detail route accepts only `SMART_INTEGRATION_API_KEY`. Other companion integration keys are rejected with `401 INVALID_INTEGRATION_KEY`.
 
 ### Query parameters
 
@@ -264,6 +268,16 @@ A row is returned only when all of the following are true:
       "dropOutDate": null,
       "dropOutReason": null,
       "transferOutDate": null,
+      "previousSchoolName": "RIZAL NATIONAL HIGH SCHOOL",
+      "originatingSchoolId": "123456",
+      "transferCertificateNo": "TC-2030-001",
+      "previousGenAve": 84.5,
+      "lastGradeCompleted": "Grade 7",
+      "sf9EligibilityStatus": "CONDITIONALLY_PROMOTED",
+      "conditionalSubjectCodes": ["MATH"],
+      "hasSf9": true,
+      "hasPsa": true,
+      "isTemporarilyEnrolled": false,
       "schoolYear": {
         "id": 12,
         "yearLabel": "2030-2031"
@@ -272,6 +286,7 @@ A row is returned only when all of the following are true:
   ],
   "meta": {
     "sourceSystem": "SMART",
+    "contractVersion": "1.1",
     "generatedAt": "2030-06-03T01:31:00.000Z",
     "scopeSchoolYearId": 12,
     "scopeSchoolYearLabel": "2030-2031",
@@ -295,6 +310,7 @@ The dedicated transferee feed does not currently reconstruct archived transferee
 {
   "meta": {
     "sourceSystem": "SMART",
+    "contractVersion": "1.1",
     "source": "ENROLLMENT_HISTORY",
     "scopeSchoolYearId": 11,
     "scopeSchoolYearLabel": "2029-2030",
@@ -315,14 +331,10 @@ The dedicated SMART transferee response is a minimized roster projection. It doe
 
 - birthdate or sex;
 - guardian or contact information;
-- previous school, originating school ID, transfer certificate, or previous general average;
-- SF9 and PSA document flags;
-- `academicStatus` or the registrar-selected SF9 eligibility status;
-- `isTemporarilyEnrolled` or `isRemedialRequired`;
-- conditional-promotion back subjects;
+- `isRemedialRequired` and back-subject grades or ATLAS identifiers (only subject codes are included);
 - portal account identifiers, credentials, passwords, or EnrollPro user IDs.
 
-Most of these fields are intentionally private and are not required to create a SMART gradebook roster. Back subjects and SF9 eligibility may be legitimate future academic inputs, but they are not part of the currently implemented response. SMART must not infer, fabricate, or scrape them from another endpoint. A separate versioned contract and explicit data-minimization review are required before EnrollPro exposes them.
+The dedicated route now includes the ten v1.1 detail fields in [the SMART transferee details contract](../../../SMART-TRANSFEREE-DETAILS-CONTRACT.md). The DPA review, null semantics, and legacy-data caveats are documented there. All other exclusions remain in force. SMART must not infer, fabricate, or scrape omitted fields from a staff endpoint.
 
 ## SMART Synchronization Rules
 
@@ -411,7 +423,7 @@ Authentication failures use `INVALID_INTEGRATION_KEY` instead of `VALIDATION_ERR
 - [ ] Starts the gradebook without copied grades or attendance.
 - [ ] Retains the last successful roster during EnrollPro outages or validation errors.
 - [ ] Does not delete history when the dedicated archived feed returns an empty response.
-- [ ] Does not infer back subjects, SF9 eligibility, or document status from omitted fields.
+- [ ] Reads the v1.1 detail fields from this feed without inferring omitted fields or treating legacy default booleans as verified documents.
 - [ ] Supports scheduled or manual refresh because sectioning does not currently trigger the external SMART webhook.
 - [ ] Shows the EnrollPro school-year label, last successful sync, stale/error state, and retry action.
 

@@ -106,6 +106,7 @@ interface LearnerLookupResponse {
   previousSchool?: {
     schoolName?: string | null;
     schoolId?: string | null;
+    lastGradeCompleted?: string | null;
     generalAverage?: number | null;
   } | null;
   familyMembers?: Array<{
@@ -274,6 +275,7 @@ export function WalkInEncodePanel() {
       gradeLevelId: 0,
       assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
       previousSchoolName: "",
+      lastGradeCompleted: "",
       previousGenAve: undefined,
       guardianFirstName: "",
       guardianMiddleName: "",
@@ -420,6 +422,7 @@ export function WalkInEncodePanel() {
       form.setValue("assignedProgram", lookupProgram, updateOptions);
 
       form.setValue("previousSchoolName", data.previousSchool?.schoolName?.trim() ?? "", updateOptions);
+      form.setValue("lastGradeCompleted", data.previousSchool?.lastGradeCompleted?.trim() ?? "", updateOptions);
       form.setValue("originatingSchoolId", data.previousSchool?.schoolId?.trim() ?? "", updateOptions);
       form.setValue(
         "previousGenAve",
@@ -466,6 +469,7 @@ export function WalkInEncodePanel() {
           gradeLevelId: 0,
           assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
           previousSchoolName: "",
+          lastGradeCompleted: "",
           previousGenAve: undefined,
           guardianFirstName: "",
           guardianMiddleName: "",
@@ -1144,6 +1148,21 @@ export function WalkInEncodePanel() {
                           )}
                         />
                       </div>
+                      {form.watch("learnerType") === "TRANSFEREE" && (
+                        <FormField
+                          control={form.control}
+                          name="lastGradeCompleted"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-bold">Last Grade Completed</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. Grade 7" className="font-bold" {...field} value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                       <div className={form.watch('learnerType') === "TRANSFEREE" ? "grid grid-cols-3 gap-4" : "flex gap-4"}>
                         <div className={form.watch('learnerType') === "TRANSFEREE" ? "" : "flex-1"}>
                           <FormField

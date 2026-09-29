@@ -611,8 +611,19 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         if (latestAppWithData) {
           if (!addresses.length) addresses = latestAppWithData.addresses as AddressLike[];
           if (!familyMembers.length) familyMembers = latestAppWithData.familyMembers as FamilyMemberLike[];
-          if (!previousSchool) previousSchool = latestAppWithData.previousSchool;
         }
+      }
+      if (!previousSchool) {
+        const priorApplication = await prisma.enrollmentApplication.findFirst({
+          where: {
+            learnerId: actualLearnerId,
+            schoolYearId: { lte: applicant.schoolYearId },
+            previousSchool: { isNot: null },
+          },
+          orderBy: { schoolYearId: "desc" },
+          select: { previousSchool: true },
+        });
+        previousSchool = priorApplication?.previousSchool ?? null;
       }
       const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
       const permanentAddr = addresses.find(
@@ -639,6 +650,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         motherName: mother || null,
         fatherName: father || null,
         guardianInfo: guardian || null,
+        previousSchool,
         parentGuardianName: parentOrGuardian.name,
         parentGuardianContact: parentOrGuardian.contact,
         emailAddress: null,

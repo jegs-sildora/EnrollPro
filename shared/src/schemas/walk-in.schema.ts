@@ -19,6 +19,7 @@ export const directEncodeWalkInSchema = z.object({
     "SPECIAL_PROGRAM_IN_SPORTS",
   ]),
   previousSchoolName: z.string().min(1, "School Name is required"),
+  lastGradeCompleted: z.string().trim().max(40).optional(),
   previousGenAve: z.preprocess(
     (value) => {
       if (value == null || value === "") return undefined;

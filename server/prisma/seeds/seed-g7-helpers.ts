@@ -74,3 +74,20 @@ export function createLRNGenerator(year: number) {
     return (lrnCounter++).toString();
   };
 }
+
+const PREVIOUS_SCHOOLS = [
+  { schoolName: "Apolinario Mabini Elementary School", schoolId: "117463", schoolAddress: "Bacolod City, Negros Occidental" },
+  { schoolName: "Silay South Elementary School", schoolId: "117804", schoolAddress: "Silay City, Negros Occidental" },
+  { schoolName: "Bago City Elementary School", schoolId: "117504", schoolAddress: "Bago City, Negros Occidental" },
+  { schoolName: "Talisay Hope GK Sibol Elementary School", schoolId: "112331", schoolAddress: "Talisay City, Negros Occidental" },
+] as const;
+
+export function getGrade7PreviousSchool(baseYear: number, learnerIndex: number) {
+  const school = PREVIOUS_SCHOOLS[(learnerIndex + baseYear) % PREVIOUS_SCHOOLS.length];
+  return {
+    ...school,
+    schoolType: "PUBLIC",
+    lastGradeCompleted: "Grade 6",
+    schoolYearLastAttended: `${baseYear - 1}-${baseYear}`,
+  };
+}

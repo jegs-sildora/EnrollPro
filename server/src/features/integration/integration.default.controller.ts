@@ -10,6 +10,7 @@ import {
   readSnapshotString,
   resolveSchoolYearScope,
 } from "./integration.shared.js";
+import { smartTransfereeDetails } from "./smart-transferee-details.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -168,6 +169,66 @@ async function fetchSmartLearnerRows(
             select: { id: true, name: true, programType: true },
           },
         },
+      },
+    },
+    orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
+    skip,
+    take,
+  });
+}
+
+async function fetchSmartTransfereeRows(
+  schoolYearId: number,
+  skip: number,
+  take: number,
+) {
+  return prisma.enrollmentApplication.findMany({
+    where: {
+      schoolYearId,
+      status: { in: OFFICIAL_ENROLLMENT_STATUSES },
+      enrollmentRecord: { isNot: null },
+      learnerType: "TRANSFEREE",
+    },
+    select: {
+      id: true,
+      status: true,
+      academicStatus: true,
+      isMissingSf9: true,
+      isTemporarilyEnrolled: true,
+      learner: {
+        select: {
+          lrn: true,
+          isPendingLrnCreation: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          extensionName: true,
+          hasPsaBirthCertificate: true,
+        },
+      },
+      gradeLevel: { select: { id: true, name: true, displayOrder: true } },
+      enrollmentRecord: {
+        select: {
+          enrolledAt: true,
+          eosyStatus: true,
+          dropOutDate: true,
+          dropOutReason: true,
+          transferOutDate: true,
+          section: { select: { id: true, name: true, programType: true } },
+        },
+      },
+      previousSchool: {
+        select: {
+          schoolName: true,
+          schoolId: true,
+          transferCertificateNo: true,
+          generalAverage: true,
+          lastGradeCompleted: true,
+        },
+      },
+      backSubjects: {
+        select: { subjectCode: true },
+        orderBy: { id: "asc" },
       },
     },
     orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
@@ -534,6 +595,7 @@ export async function listDefaultSmartTransferees(
       data: [],
       meta: {
         sourceSystem: "SMART",
+        contractVersion: "1.1",
         source: "ENROLLMENT_HISTORY",
         generatedAt: new Date().toISOString(),
         scopeSchoolYearId: scope.schoolYearId,
@@ -557,7 +619,7 @@ export async function listDefaultSmartTransferees(
         learnerType: "TRANSFEREE",
       },
     }),
-    fetchSmartLearnerRows(scope.schoolYearId, skip, limit, "TRANSFEREE"),
+    fetchSmartTransfereeRows(scope.schoolYearId, skip, limit),
   ]);
 
   res.json({
@@ -578,6 +640,7 @@ export async function listDefaultSmartTransferees(
       dropOutDate: application.enrollmentRecord?.dropOutDate ?? null,
       dropOutReason: application.enrollmentRecord?.dropOutReason ?? null,
       transferOutDate: application.enrollmentRecord?.transferOutDate ?? null,
+      ...smartTransfereeDetails(application),
       schoolYear: {
         id: scope.schoolYearId,
         yearLabel: scope.schoolYearLabel,
@@ -585,6 +648,7 @@ export async function listDefaultSmartTransferees(
     })),
     meta: {
       sourceSystem: "SMART",
+      contractVersion: "1.1",
       generatedAt: new Date().toISOString(),
       scopeSchoolYearId: scope.schoolYearId,
       scopeSchoolYearLabel: scope.schoolYearLabel,

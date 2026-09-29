@@ -499,6 +499,8 @@ model EnrollmentPreviousSchool {
   schoolId              String?                @map("school_id")
   schoolAddress         String?                @map("school_address")
   schoolType            String?                @map("school_type")
+  lastGradeCompleted    String?                @map("last_grade_completed")
+  schoolYearLastAttended String?                @map("school_year_last_attended")
   generalAverage        Float?                 @map("general_average")
   transferCertificateNo String?                @map("transfer_certificate_no")
   enrollment            EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)

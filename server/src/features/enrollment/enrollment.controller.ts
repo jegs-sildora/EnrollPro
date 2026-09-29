@@ -821,7 +821,7 @@ export async function directEncodeWalkIn(
       learnerType,
       lrn, firstName, lastName, middleName, birthdate, sex,
       gradeLevelId, assignedProgram,
-      previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo,
+      previousSchoolName, previousGenAve, originatingSchoolId, transferCertificateNo, lastGradeCompleted,
       guardianFirstName, guardianMiddleName, guardianLastName, guardianRelationship, guardianContact,
       hasSf9, hasPsa, sf9EligibilityStatus, conditionalSubjects,
       motherTongue, 
@@ -936,6 +936,7 @@ export async function directEncodeWalkIn(
             create: {
               schoolName: previousSchoolName,
               schoolId: originatingSchoolId || null,
+              lastGradeCompleted: lastGradeCompleted || null,
               generalAverage: previousGenAve ?? null,
               transferCertificateNo: transferCertificateNo || null,
             }

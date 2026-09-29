@@ -3,7 +3,7 @@ import { PrismaClient, Sex, AddressType, FamilyRelationship } from "../../src/ge
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
-import { getFilipinoName, getFilipinoParentName, createLRNGenerator, FilipinoName } from "./seed-g7-helpers.js";
+import { getFilipinoName, getFilipinoParentName, createLRNGenerator, getGrade7PreviousSchool, FilipinoName } from "./seed-g7-helpers.js";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -169,6 +169,12 @@ async function seedGrade7() {
           guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
+          previousSchool: {
+            create: {
+              ...getGrade7PreviousSchool(BASE_YEAR, learnerNameIndex),
+              generalAverage: learner.previousGenAve,
+            },
+          },
           addresses: {
             createMany: {
               data: [

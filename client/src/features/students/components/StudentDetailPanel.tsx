@@ -60,6 +60,7 @@ import {
   PersonalInfo,
   AddressInfo,
   GuardianContact,
+  PreviousSchool,
   Classifications,
 } from "@/features/enrollment/components/BeefSections";
 import { sileo } from "sileo";
@@ -133,6 +134,15 @@ export interface StudentDetail {
   motherName: FamilyMember | null;
   fatherName: FamilyMember | null;
   guardianInfo: FamilyMember | null;
+  previousSchool?: {
+    schoolName: string | null;
+    schoolId: string | null;
+    schoolAddress: string | null;
+    schoolType: string | null;
+    lastGradeCompleted: string | null;
+    schoolYearLastAttended: string | null;
+    generalAverage: number | null;
+  } | null;
   parentGuardianName: string;
   parentGuardianContact: string;
   emailAddress: string;
@@ -991,13 +1001,13 @@ export function StudentDetailPanel({
         fullName: `${student.guardianInfo.lastName}, ${student.guardianInfo.firstName}`,
       },
     ].filter(Boolean),
-    previousSchool: {
-      ...student,
-      generalAverage:
-        student.enrollment?.eosyStatus === null && student.enrollment // Use enrollment average if available or fallback
-          ? student.generalAverage
-          : student.generalAverage,
-    },
+    lastSchoolName: student.previousSchool?.schoolName ?? null,
+    lastSchoolId: student.previousSchool?.schoolId ?? null,
+    lastGradeCompleted: student.previousSchool?.lastGradeCompleted ?? null,
+    schoolYearLastAttended: student.previousSchool?.schoolYearLastAttended ?? null,
+    lastSchoolAddress: student.previousSchool?.schoolAddress ?? null,
+    lastSchoolType: student.previousSchool?.schoolType ?? null,
+    generalAverage: student.previousSchool?.generalAverage ?? null,
   };
 
   const typedStudentShim = studentShim as unknown as ApplicantDetail;
@@ -2181,6 +2191,7 @@ export function StudentDetailPanel({
               <PersonalInfo applicant={typedStudentShim} />
               <AddressInfo applicant={typedStudentShim} />
               <GuardianContact applicant={typedStudentShim} />
+              <PreviousSchool applicant={typedStudentShim} />
             </div>
             <Classifications applicant={typedStudentShim} />
             {!isJhsCompleter && student.status !== "PENDING_VERIFICATION" && student.status !== "FOR_REVISION" && (

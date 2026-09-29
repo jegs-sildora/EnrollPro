@@ -41,7 +41,11 @@ router.get("/sections", requireAnyKey, listIntegrationSections);
 router.get("/sections/:sectionId/learners", requireAnyKey, listSectionLearners);
 router.get("/default/faculty", requireAnyKey, listDefaultFaculty);
 router.get("/default/smart/students", requireAnyKey, listDefaultSmartStudents);
-router.get("/default/smart/transferees", requireAnyKey, listDefaultSmartTransferees);
+router.get(
+  "/default/smart/transferees",
+  requireIntegrationApiKey("SMART_INTEGRATION_API_KEY"),
+  listDefaultSmartTransferees,
+);
 router.get("/default/aims/context", requireAnyKey, listDefaultAimsContext);
 router.get(
   "/default/mrf/identities",
