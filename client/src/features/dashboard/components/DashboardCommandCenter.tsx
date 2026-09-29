@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, Link } from "react-router"
 import {
   AlertTriangle,
   ArrowRight,
@@ -185,8 +185,7 @@ export function DashboardActionToolbar({
 
       <div
         className={cn(
-          "mt-4 grid w-full shrink-0 gap-2 lg:mt-0",
-          isEosy ? "grid-cols-1 lg:w-auto" : "grid-cols-2 lg:w-[450px]"
+          "mt-4 flex w-full shrink-0 gap-2 lg:mt-0 lg:w-auto flex-col sm:flex-row flex-wrap justify-end",
         )}
       >
         {!isEosy && (
@@ -194,9 +193,23 @@ export function DashboardActionToolbar({
             variant="outline"
             disabled={intakeLocked || !canManageEnrollment}
             onClick={() =>
+              navigate("/learner-admission?action=walk-in-scp")
+            }
+            className="w-full sm:w-auto justify-center hover:bg-primary hover:text-primary-foreground"
+          >
+            <UserPlus className="mr-2 size-4" />
+            Walk-In SCP Admission
+          </Button>
+        )}
+
+        {!isEosy && (
+          <Button
+            variant="outline"
+            disabled={intakeLocked || !canManageEnrollment}
+            onClick={() =>
               navigate("/learner-enrollment?tab=incoming&action=walk-in")
             }
-            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
+            className="w-full sm:w-auto justify-center hover:bg-primary hover:text-primary-foreground"
           >
             <UserPlus className="mr-2 size-4" />
             {phase === "CLASSES_ONGOING"
@@ -210,7 +223,7 @@ export function DashboardActionToolbar({
             variant="outline"
             disabled={intakeLocked || !canManageSectioning}
             onClick={() => navigate("/section-assignment")}
-            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
+            className="w-full sm:w-auto justify-center hover:bg-primary hover:text-primary-foreground"
           >
             <Users className="mr-2 size-4" />
             Auto Assign Sections
@@ -221,7 +234,7 @@ export function DashboardActionToolbar({
           <Button
             variant="outline"
             onClick={() => navigate("/eosy")}
-            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
+            className="w-full sm:w-auto justify-center hover:bg-primary hover:text-primary-foreground"
           >
             <ClipboardCheck className="mr-2 size-4" />
             Monitor Final Grades
@@ -317,6 +330,7 @@ export function CurriculumDistributionPanel({
   total: number
 }) {
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore()
+  const navigate = useNavigate()
 
   const ALL_PROGRAMS = [
     { programType: "REGULAR", acronym: "BEC", label: "Basic Education Curriculum", isSpecialProgram: false },
@@ -327,13 +341,18 @@ export function CurriculumDistributionPanel({
   const visibleItems = [
     ...ALL_PROGRAMS.map(prog => {
       const found = items.find(i => i.programType === prog.programType)
-      return found || { ...prog, count: 0 }
+      return found ? { ...prog, count: found.count } : { ...prog, count: 0 }
     }),
-    ...items.filter(i => !ALL_PROGRAMS.some(prog => prog.programType === i.programType))
+    ...items
+      .filter(i => !ALL_PROGRAMS.some(prog => prog.programType === i.programType))
+      .map(i => ({ ...i, acronym: i.programType }))
   ]
 
+  // User requested to always use the full card UI (with View Roster button)
+  // and make it horizontally scrollable if there are more than 2 items.
+
   return (
-    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
+    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm p-2">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-xl font-extrabold">
           Learners by Curricular Program
@@ -341,7 +360,7 @@ export function CurriculumDistributionPanel({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center transition-opacity duration-200">
                 <HelpCircle className="size-4" />
                 <span className="sr-only">Help</span>
               </button>
@@ -352,24 +371,51 @@ export function CurriculumDistributionPanel({
           </Tooltip>
         </TooltipProvider>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-center space-y-6">
-        {visibleItems.map((item) => {
-          const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0
-          return (
-            <div key={item.programType} className="space-y-1.5">
-              <div className="flex items-center justify-between gap-3 text-base">
-                <span className="min-w-0 truncate font-bold">
-                  {item.label}
-                </span>
-                <span className="shrink-0">
-                  <span className="font-bold text-primary">{item.count} Learners</span>
-                  {item.count > 0 && <span className="text-foreground ml-1 font-bold">({percentage}%)</span>}
-                </span>
-              </div>
-              <Progress value={percentage} className="h-2" />
-            </div>
-          )
-        })}
+      
+      <CardContent className="flex flex-1 flex-col justify-center pt-2">
+        <div className={cn("gap-4", visibleItems.length > 2 ? "flex overflow-x-auto pb-4 snap-x hide-scrollbar" : "grid grid-cols-1 md:grid-cols-2")}>
+          {visibleItems.map((item) => {
+            return (
+              <Card 
+                key={item.programType} 
+                className={cn(
+                  "flex h-full flex-col transition-colors group/card rounded-lg border bg-card p-5 space-y-4 shadow-sm hover:border-primary/40 cursor-default",
+                  visibleItems.length > 2 ? "min-w-[280px] shrink-0 snap-start" : ""
+                )}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <div className="min-w-0">
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="font-extrabold text-foreground uppercase cursor-help text-2xl">{item.acronym}</p>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                          <p className="font-bold text-sm">{item.label}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+
+                <div className="mt-auto space-y-4">
+                  <div className="flex items-center border-t border-border/50 pt-4">
+                    <div className="flex flex-col gap-2 w-full">
+                      <span className="font-bold uppercase text-foreground mb-0.5 text-center">TOTAL ENROLLEES</span>
+                      <span className="text-4xl font-black text-primary tabular-nums text-center">{item.count}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Button variant="default" className="w-full font-bold group-hover/card:bg-primary group-hover/card:text-primary-foreground transition-colors" asChild>
+                      <Link to={`/dashboard/program-roster/${item.programType.toLowerCase()}`}>View Roster →</Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )
@@ -384,7 +430,7 @@ export function IntakePipelinePanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-xl font-extrabold">
-          Enrollment Records by Grade
+          Enrollment Records by Grade Level
         </CardTitle>
         <TooltipProvider>
           <Tooltip>
@@ -401,8 +447,8 @@ export function IntakePipelinePanel({
         </TooltipProvider>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center p-6 pt-0 overflow-hidden">
-        <div className="w-full">
-          <table className="w-full min-w-0 ">
+        <div className="w-full h-full flex">
+          <table className="w-full min-w-0 h-full">
             <thead>
               <tr className="border-b border-slate-200 text-center uppercase text-foreground">
                 <th className="py-2 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">Grade</th>
@@ -419,23 +465,23 @@ export function IntakePipelinePanel({
                 return (
                   <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                     <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">
-                      <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
+                      <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                         {formatGradeLevel(row.gradeLevelName)}
                       </span>
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center ", row.continuingLearners > 0 ? "font-black text-foreground" : "text-muted-foreground")}>
                       {row.continuingLearners}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-black text-foreground" : "text-muted-foreground")}>
                       {row.newEntrants}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-black text-foreground" : "text-muted-foreground")}>
                       {row.transferee}
                     </td>
-                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-black text-foreground" : "text-muted-foreground")}>
                       {row.returningLearners}
                     </td>
-                    <td className={cn("px-1 py-3 text-center font-bold bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground")}>
+                    <td className={cn("px-1 py-3 text-center font-black bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground")}>
                       {total}
                     </td>
                   </tr>

@@ -1,34 +1,41 @@
-# Prompt for UI/UX & React Implementation: Dynamic Grade-Level Color Theming
+# Prompt for UI/UX & React Implementation: Dedicated Program Roster Page
 
 ## Role & Context
-Act as a React Frontend Developer. We are upgrading the `CLASS ADVISERSHIP & SECTION MANAGEMENT` workspace to implement dynamic grade-level color coding.
+Act as a React Frontend Developer. We are implementing the routing and UI for the "View Roster" button found on the Dashboard's `Learners by Curricular Program` cards.
 
-Currently, the active tabs and primary buttons use a static brand color. To reduce cognitive load and prevent data entry errors, the UI must dynamically re-theme itself based on the currently selected Grade Level tab, utilizing the system's predefined grade-level color palette. 
+Instead of overloading the existing section masterlist component, create a brand new, dedicated page component named `ViewProgramRoster.tsx`. This page will display a comprehensive list of all enrolled learners for a specific curriculum (e.g., all BEC learners or all STE learners), while mirroring the familiar split-table aesthetics of the section masterlist.
 
 ## Critical Technical Directive
-**You must reuse existing design system components.** Do not generate custom UI styling code, raw CSS classes, or hardcoded hex values in the component markup. You must leverage our established Theme Provider, CSS variables, or design system color props to pass the dynamic color states to the existing `<Tabs>`, `<Button>`, and `<Card>` components.
+Create a standalone `ViewProgramRoster.tsx` page. The UI must adapt the visual language of the section masterlist (split Male/Female tables) but remove section-specific constraints (like class capacities, advisers, and SF1 forms). Since this is an aggregated view across multiple grade levels, the data tables must clearly indicate which grade and section each learner currently belongs to.
 
-## UI Component & Theme Logic Requirements
+## UI Component & Logic Requirements
 
-Please implement the following state-driven theme updates:
+Please implement the following architecture and UI layout:
 
-### 1. Theme Configuration Mapping
-Ensure the active grade state is mapped to the existing system color variables. For example:
-*   `Grade 7` -> Maps to `theme.colors.grade7`
-*   `Grade 8` -> Maps to `theme.colors.grade8`
-*   `Grade 9` -> Maps to `theme.colors.grade9`
-*   `Grade 10` -> Maps to `theme.colors.grade10` 
+### 1. File Creation & Routing
+*   **New Component:** Create `src/pages/ViewProgramRoster.tsx` (or your equivalent path).
+*   **Routing:** Bind the "View Roster" button on the Dashboard cards to redirect to this new page, passing the program identifier in the URL (e.g., `/dashboard/program-roster/bec` or `/dashboard/program-roster/ste`).
 
-### 2. Dynamic Component Styling
-When a Grade tab is clicked, the active color must propagate to the following UI elements on the page:
-*   **The Active Tab:** The background color of the active tab (e.g., `GRADE 7`) must use the specific grade color, while inactive tabs remain neutral/gray.
-*   **Primary Action Buttons:** All primary solid buttons within the active view (e.g., `Open SF1 Masterlist`) must adopt the grade color as their background color.
-*   **Accents & Typography:** Update subtle UI accents, such as the small colored dot indicator next to `SPECIAL CURRICULAR PROGRAMS (SCP)` and `BASIC EDUCATION CURRICULUM (BEC)`, to match the active grade color.
-*   **Interactive States (Hover/Focus):** Ensure the `hover` states for icon buttons (like the Edit/Pencil and Delete/Trash icons on the section cards) utilize a tinted or localized version of the active grade color instead of a generic hover gray.
+### 2. Page Header & Metadata
+At the top of the page, render a header block containing:
+*   **Breadcrumb:** `< Back to Dashboard` (positioned at the top left).
+*   **Page Title:** `PROGRAM ROSTER — [FULL CURRICULUM NAME]` (e.g., `PROGRAM ROSTER — BASIC EDUCATION CURRICULUM`).
+*   **Metric Badges:** Align to the right side of the header:
+    *   `Total Enrolled: [X]`
+    *   `M: [X]` (Male count badge)
+    *   `F: [X]` (Female count badge)
+*   **Action Button:** Place an `Export Roster (CSV/PDF)` button near the metrics. Do *not* label this as "SF1", as School Form 1 is strictly for class sections, not entire curricular programs.
 
-### 3. State Management
-*   The thematic color state must be tightly coupled to the active tab state (`activeTab` or `selectedGrade`).
-*   When the user switches tabs, the transition of the primary UI elements to the new color must be immediate and seamless, requiring no page reloads.
+### 3. The Split Data Tables
+Below the header, render the signature split-table layout:
+*   **Left Pane:** `MALE LEARNERS`
+*   **Right Pane:** `FEMALE LEARNERS`
+*   **Columns Required:** 
+    *   `#` (Row index)
+    *   `LEARNER` (Name and LRN)
+    *   `GRADE & SECTION` (Crucial: Display their current placement, e.g., "Grade 7 - Rizal" or "Unassigned")
+    *   `ACTION` (A button/icon to view the full Learner Profile)
 
-### 4. Empty State / Add Section Container
-*   The dashed `ADD SECTION` placeholder card should subtly reflect the active theme. Update its hover border color (and the `+` icon color on hover) to use the active grade's color variable, encouraging interaction while keeping the resting state clean and muted.
+### 4. Data Fetching
+*   **Query Logic:** The component must fetch learners where `enrollment_status = 'OFFICIAL'` and `curricular_program = [URL Parameter]`.
+*   **Empty State:** If a program has no enrolled learners yet, render a standard empty state illustration inside the table area stating *"No enrolled learners found for this curricular program."*

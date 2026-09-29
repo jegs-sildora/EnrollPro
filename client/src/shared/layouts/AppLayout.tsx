@@ -1043,7 +1043,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   const { width } = useWindowSize();
   const accentHsl = selectedAccentHsl;
   const location = useLocation();
-  const routeTransitionKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
+  const routeTransitionKey = location.pathname;
   const defaultTitle = resolvePageTitle(location.pathname, location.search);
   const title = storeTitle || defaultTitle;
   const navigate = useNavigate();

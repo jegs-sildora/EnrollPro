@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/shared/lib/queryKeys"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -238,6 +239,8 @@ export default function LearnerAdmissionIndex() {
     return () => setTitle(null)
   }, [setTitle])
 
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const { data: applicants = [], isLoading: isFetching } = useQuery<Application[]>({
     queryKey: ["scp-applicants", activeTab],
     queryFn: async () => {
@@ -246,6 +249,15 @@ export default function LearnerAdmissionIndex() {
     },
     enabled: activeTab !== "",
   })
+
+  useEffect(() => {
+    if (searchParams.get("action") === "walk-in-scp" && !isFetching) {
+      setIsWalkInOpen(true)
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.delete("action")
+      setSearchParams(nextParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams, isFetching])
 
   const lockMutation = useMutation({
     mutationFn: async () => {
@@ -1016,25 +1028,22 @@ export default function LearnerAdmissionIndex() {
           className="flex h-[90vh] w-[95vw] max-w-6xl flex-col overflow-hidden p-0"
         >
           <DialogHeader className="shrink-0 border-b bg-muted/30 px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <DialogTitle className="flex items-center gap-2 text-xl font-bold uppercase tracking-tight">
-                <Plus className="h-6 w-6 text-primary" />
-                Walk-in SCP Admission
-              </DialogTitle>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Close walk-in admission"
-                onClick={() => {
-                  setWalkInSuccess(null)
-                  setIsWalkInOpen(false)
-                }}
-              >
-                <X className="h-5 w-5 rounded-full" />
-              </Button>
-            </div>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold uppercase tracking-tight">
+              <Plus className="h-6 w-6 text-primary" />
+              Walk-in SCP Admission
+            </DialogTitle>
           </DialogHeader>
+          <button
+            type="button"
+            aria-label="Close walk-in admission"
+            className="absolute right-4 top-3 rounded-full p-2 text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] active:scale-95"
+            onClick={() => {
+              setWalkInSuccess(null)
+              setIsWalkInOpen(false)
+            }}
+          >
+            <X strokeWidth={3} className="h-5 w-5" />
+          </button>
           <div className="min-h-0 flex-1 overflow-y-auto bg-background">
             <div className="relative min-h-full px-6 py-6">
               <div className="pointer-events-none absolute inset-0" aria-hidden="true">

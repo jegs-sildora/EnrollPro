@@ -15,6 +15,7 @@ import NotFound from "@/shared/components/NotFound";
 
 const Login = lazy(() => import("@/features/auth/pages/Login"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Index"));
+const ViewProgramRoster = lazy(() => import("@/features/dashboard/pages/ViewProgramRoster"));
 import LearnerLogin from "@/features/learner/pages/Login";
 import LearnerDashboard from "@/features/learner/pages/Dashboard";
 const Enrollment = lazy(() => import("@/features/enrollment/pages/Index"));
@@ -168,6 +169,10 @@ export const router = createBrowserRouter([
               {
                 path: "/dashboard",
                 element: renderLazyPage(Dashboard),
+              },
+              {
+                path: "/dashboard/program-roster/:programType",
+                element: renderLazyPage(ViewProgramRoster),
               },
               {
                 path: "/section-assignment",
