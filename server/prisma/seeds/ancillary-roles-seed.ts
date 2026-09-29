@@ -73,133 +73,133 @@ async function main() {
 
   const dummyTeachers = [
     { 
-      employeeId: "2000061", deptCode: "ENG", firstName: "Jose Gabriel", middleName: "Mercado", lastName: "Santos", sex: Sex.MALE,
+      employeeId: "2000061", deptCode: "ENG", firstName: "JOSE GABRIEL", middleName: "MERCADO", lastName: "SANTOS", sex: Sex.MALE,
       email: "josegabriel.santos@deped.gov.ph", contactNumber: "09171234561", specialization: "ENGLISH", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "ENGLISH", 
       minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1990-05-15"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000062", deptCode: "MATH", firstName: "Maria Angela", middleName: "Villanueva", lastName: "Reyes", sex: Sex.FEMALE,
+      employeeId: "2000062", deptCode: "MATH", firstName: "MARIA ANGELA", middleName: "VILLANUEVA", lastName: "REYES", sex: Sex.FEMALE,
       email: "mariaangela.reyes@deped.gov.ph", contactNumber: "09181234562", specialization: "MATHEMATICS", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MATHEMATICS", 
       minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1992-08-22"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000063", deptCode: "ESP", firstName: "Juan Miguel", middleName: "Bautista", lastName: "Cruz", sex: Sex.MALE,
+      employeeId: "2000063", deptCode: "ESP", firstName: "JUAN MIGUEL", middleName: "BAUTISTA", lastName: "CRUZ", sex: Sex.MALE,
       email: "juanmiguel.cruz@deped.gov.ph", contactNumber: "09191234563", specialization: "EDUKASYON SA PAGPAPAKATAO", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "EDUKASYON SA PAGPAPAKATAO", 
       minorSpecialization: "", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1985-11-30"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000064", deptCode: "MAPEH", firstName: "Anna Patricia", middleName: "Ramos", lastName: "Garcia", sex: Sex.FEMALE,
+      employeeId: "2000064", deptCode: "MAPEH", firstName: "ANNA PATRICIA", middleName: "RAMOS", lastName: "GARCIA", sex: Sex.FEMALE,
       email: "annapatricia.garcia@deped.gov.ph", contactNumber: "09201234564", specialization: "MAPEH", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MAPEH", 
       minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1995-02-14"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000065", deptCode: "SCI", firstName: "Ricardo", middleName: "Torres", lastName: "Santos", sex: Sex.MALE,
+      employeeId: "2000065", deptCode: "SCI", firstName: "RICARDO", middleName: "TORRES", lastName: "SANTOS", sex: Sex.MALE,
       email: "ricardo.santos@deped.gov.ph", contactNumber: "09172000065", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
       minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1988-03-12"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000066", deptCode: "SCI", firstName: "Marites", middleName: "Laxamana", lastName: "Del Rosario", sex: Sex.FEMALE,
+      employeeId: "2000066", deptCode: "SCI", firstName: "MARITES", middleName: "LAXAMANA", lastName: "DEL ROSARIO", sex: Sex.FEMALE,
       email: "marites.delrosario@deped.gov.ph", contactNumber: "09182000066", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
       minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1991-06-25"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000067", deptCode: "SCI", firstName: "Jonathan", middleName: "Cruz", lastName: "Villanueva", sex: Sex.MALE,
+      employeeId: "2000067", deptCode: "SCI", firstName: "JONATHAN", middleName: "CRUZ", lastName: "VILLANUEVA", sex: Sex.MALE,
       email: "jonathan.villanueva@deped.gov.ph", contactNumber: "09192000067", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
       minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1994-09-08"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000068", deptCode: "SCI", firstName: "Karen", middleName: "Gomez", lastName: "Tolentino", sex: Sex.FEMALE,
+      employeeId: "2000068", deptCode: "SCI", firstName: "KAREN", middleName: "GOMEZ", lastName: "TOLENTINO", sex: Sex.FEMALE,
       email: "karen.tolentino@deped.gov.ph", contactNumber: "09202000068", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
       minorSpecialization: "", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1983-12-19"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000069", deptCode: "SCI", firstName: "Dennis", middleName: "Aquino", lastName: "Bautista", sex: Sex.MALE,
+      employeeId: "2000069", deptCode: "SCI", firstName: "DENNIS", middleName: "AQUINO", lastName: "BAUTISTA", sex: Sex.MALE,
       email: "dennis.bautista@deped.gov.ph", contactNumber: "09212000069", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
       minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1990-04-05"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000070", deptCode: "MAPEH", firstName: "Rowena", middleName: "Lim", lastName: "Marcelo", sex: Sex.FEMALE,
+      employeeId: "2000070", deptCode: "MAPEH", firstName: "ROWENA", middleName: "LIM", lastName: "MARCELO", sex: Sex.FEMALE,
       email: "rowena.marcelo@deped.gov.ph", contactNumber: "09222000070", specialization: "MAPEH", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "MAPEH", 
       minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1987-07-16"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000071", deptCode: "MAPEH", firstName: "Frederick", middleName: "Reyes", lastName: "Ocampo", sex: Sex.MALE,
+      employeeId: "2000071", deptCode: "MAPEH", firstName: "FREDERICK", middleName: "REYES", lastName: "OCAMPO", sex: Sex.MALE,
       email: "frederick.ocampo@deped.gov.ph", contactNumber: "09232000071", specialization: "MAPEH", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MAPEH", 
       minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1996-10-27"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000072", deptCode: "FIL", firstName: "Divina", middleName: "Mendoza", lastName: "Escarez", sex: Sex.FEMALE,
+      employeeId: "2000072", deptCode: "FIL", firstName: "DIVINA", middleName: "MENDOZA", lastName: "ESCAREZ", sex: Sex.FEMALE,
       email: "divina.escarez@deped.gov.ph", contactNumber: "09242000072", specialization: "FILIPINO", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "FILIPINO", 
       minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1989-01-03"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000073", deptCode: "ENG", firstName: "Corazon", middleName: "Garcia", lastName: "Ramirez", sex: Sex.FEMALE,
+      employeeId: "2000073", deptCode: "ENG", firstName: "CORAZON", middleName: "GARCIA", lastName: "RAMIREZ", sex: Sex.FEMALE,
       email: "corazon.ramirez@deped.gov.ph", contactNumber: "09252000073", specialization: "ENGLISH", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "ENGLISH", 
       minorSpecialization: "DEVELOPMENTAL READING", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1986-04-12"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000074", deptCode: "FIL", firstName: "Alfredo", middleName: "Santos", lastName: "Marquez", sex: Sex.MALE,
+      employeeId: "2000074", deptCode: "FIL", firstName: "ALFREDO", middleName: "SANTOS", lastName: "MARQUEZ", sex: Sex.MALE,
       email: "alfredo.marquez@deped.gov.ph", contactNumber: "09262000074", specialization: "FILIPINO", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "FILIPINO", 
       minorSpecialization: "DEVELOPMENTAL READING", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1994-09-21"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000075", deptCode: "ESP", firstName: "Teresita", middleName: "Reyes", lastName: "Domingo", sex: Sex.FEMALE,
+      employeeId: "2000075", deptCode: "ESP", firstName: "TERESITA", middleName: "REYES", lastName: "DOMINGO", sex: Sex.FEMALE,
       email: "teresita.domingo@deped.gov.ph", contactNumber: "09272000075", specialization: "EDUKASYON SA PAGPAPAKATAO", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "EDUKASYON SA PAGPAPAKATAO", 
       minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1991-11-05"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000076", deptCode: "SCI", firstName: "Roberto", middleName: "Cruz", lastName: "Alcantara", sex: Sex.MALE,
+      employeeId: "2000076", deptCode: "SCI", firstName: "ROBERTO", middleName: "CRUZ", lastName: "ALCANTARA", sex: Sex.MALE,
       email: "roberto.alcantara@deped.gov.ph", contactNumber: "09282000076", specialization: "SCIENCE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
       minorSpecialization: "BIOLOGY", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1982-02-18"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000077", deptCode: "TLE", firstName: "Gregorio", middleName: "Santos", lastName: "Panganiban", sex: Sex.MALE,
+      employeeId: "2000077", deptCode: "TLE", firstName: "GREGORIO", middleName: "SANTOS", lastName: "PANGANIBAN", sex: Sex.MALE,
       email: "gregorio.panganiban@deped.gov.ph", contactNumber: "09292000077", specialization: "TLE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "TLE", 
       minorSpecialization: "ICT", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1995-05-10"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000078", deptCode: "TLE", firstName: "Lourdes", middleName: "Garcia", lastName: "Reyes", sex: Sex.FEMALE,
+      employeeId: "2000078", deptCode: "TLE", firstName: "LOURDES", middleName: "GARCIA", lastName: "REYES", sex: Sex.FEMALE,
       email: "lourdes.reyes@deped.gov.ph", contactNumber: "09302000078", specialization: "TLE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "TLE", 
       minorSpecialization: "AFA", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1988-11-22"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
     { 
-      employeeId: "2000079", deptCode: "TLE", firstName: "Eduardo", middleName: "Mendoza", lastName: "Villareal", sex: Sex.MALE,
+      employeeId: "2000079", deptCode: "TLE", firstName: "EDUARDO", middleName: "MENDOZA", lastName: "VILLAREAL", sex: Sex.MALE,
       email: "eduardo.villareal@deped.gov.ph", contactNumber: "09312000079", specialization: "TLE", 
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "TLE", 
       minorSpecialization: "FCS", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 

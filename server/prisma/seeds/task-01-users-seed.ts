@@ -12,8 +12,8 @@ const prisma = new PrismaClient({ adapter });
 const USERS_TO_SEED = [
   {
     employeeId: "1234506",
-    firstName: "Juan Miguel",
-    lastName: "Santos",
+    firstName: "JUAN MIGUEL",
+    lastName: "SANTOS",
     sex: Sex.MALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["STE HEAD TEACHER", "GRADE 7 COORDINATOR"],
@@ -21,8 +21,8 @@ const USERS_TO_SEED = [
   },
   {
     employeeId: "1234507",
-    firstName: "Maria Angela",
-    lastName: "Delos Reyes",
+    firstName: "MARIA ANGELA",
+    lastName: "DELOS REYES",
     sex: Sex.FEMALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["SPA HEAD TEACHER", "GRADE 8 COORDINATOR"],
@@ -30,8 +30,8 @@ const USERS_TO_SEED = [
   },
   {
     employeeId: "1234508",
-    firstName: "Jose Gabriel",
-    lastName: "Dela Cruz",
+    firstName: "JOSE GABRIEL",
+    lastName: "DELA CRUZ",
     sex: Sex.MALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["SPS HEAD TEACHER", "GRADE 9 COORDINATOR"],
@@ -39,8 +39,8 @@ const USERS_TO_SEED = [
   },
   {
     employeeId: "1234509",
-    firstName: "Anna Patricia",
-    lastName: "Gomez",
+    firstName: "ANNA PATRICIA",
+    lastName: "GOMEZ",
     sex: Sex.FEMALE,
     roles: [Role.TEACHER],
     ancillaryRoles: ["GRADE 10 COORDINATOR"], // Personnel with grade 10 coordinator
