@@ -7,6 +7,7 @@ import api from "@/shared/api/axiosInstance";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { UnsavedChangesProvider } from "@/shared/hooks/useUnsavedChanges";
 import { useActiveTheme } from "@/store/theme.slice";
+import { TimeMachineWidget } from "@/shared/components/TimeMachineWidget";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -237,6 +238,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   return (
     <UnsavedChangesProvider>
       {children ? <>{children}</> : <Outlet />}
+      <TimeMachineWidget />
     </UnsavedChangesProvider>
   );
 }

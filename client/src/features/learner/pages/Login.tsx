@@ -507,7 +507,7 @@ export default function LearnerLogin() {
                 </Button>
               </form>
 
-              <p className="text-center text-foreground mt-6 leading-relaxed">
+              <p className="text-center text-muted-foreground mt-6 leading-relaxed">
                 Forgot password? Contact your class adviser for a reset.
               </p>
             </CardContent>

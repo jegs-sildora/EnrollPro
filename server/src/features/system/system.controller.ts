@@ -123,8 +123,7 @@ export async function getPublicConfig(
       .split(/\s+/)
       .filter(Boolean)
       .map((word) => word[0]?.toUpperCase() ?? "")
-      .join("")
-      .slice(0, 4) || "EP"
+      .join("") || "EP"
 
   res.json({
     schoolName,

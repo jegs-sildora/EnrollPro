@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Button } from "@/shared/ui/button";
 import { Clock } from "lucide-react";
@@ -56,8 +57,9 @@ function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
 
 export function TimeMachineWidget() {
   const { showTimeMachineWidget } = useSettingsStore();
+  const location = useLocation();
 
-  if (!showTimeMachineWidget) {
+  if (!showTimeMachineWidget || location.pathname.startsWith("/learner")) {
     return null;
   }
 
