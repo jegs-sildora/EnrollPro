@@ -106,13 +106,13 @@ const SECTION_CATEGORY_CONFIG: Record<
     title: "Basic Education Curriculum (BEC) — Top 5",
     curriculumProgram: "REGULAR_HOMO",
     isHomogeneous: true,
-    addDescription: "Add a ranked Top 5 BEC section.",
+    addDescription: "Add a ranked BEC section.",
   },
   BEC_HETEROGENEOUS: {
     title: "Basic Education Curriculum (BEC)",
     curriculumProgram: "REGULAR_HETERO",
     isHomogeneous: false,
-    addDescription: "Add a heterogeneous BEC section.",
+    addDescription: "Add a BEC section.",
   },
 };
 

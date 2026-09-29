@@ -45,28 +45,60 @@ const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
 
+/**
+ * Defers animation start until after the browser has completed one full
+ * paint cycle. This prevents the Framer Motion JS animation loop from
+ * competing with React's mount/hydration and Radix's focus-trap setup,
+ * which is the root cause of entry-only frame drops.
+ */
+function useDeferredMount() {
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    // Double rAF: first rAF schedules after the current paint,
+    // second rAF fires after the browser has actually painted.
+    let inner: number;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        setReady(true);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, []);
+
+  return ready;
+}
+
 const DialogOverlay = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    asChild
-    forceMount
-    ref={ref}
-    {...props}
-  >
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(
-        "fixed inset-0 z-50 bg-black/72 backdrop-blur-[1px]",
-        className,
-      )}
-    />
-  </DialogPrimitive.Overlay>
-));
+>(({ className, ...props }, ref) => {
+  const ready = useDeferredMount();
+
+  return (
+    <DialogPrimitive.Overlay
+      asChild
+      forceMount
+      ref={ref}
+      {...props}
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={ready ? { opacity: 1 } : { opacity: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+        style={{ willChange: "opacity" }}
+        className={cn(
+          "fixed inset-0 z-50 bg-black/80",
+          className,
+        )}
+      />
+    </DialogPrimitive.Overlay>
+  );
+});
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -91,16 +123,7 @@ const DialogContent = React.forwardRef<
             aria-describedby={props["aria-describedby"] ?? undefined}
             {...props}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: "-48%", x: "-50%" }}
-              animate={{ opacity: 1, scale: 1, y: "-50%", x: "-50%" }}
-              exit={{ opacity: 0, scale: 0.9, y: "-48%", x: "-50%" }}
-              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              className={cn(
-                "fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
-                className,
-              )}
-            >
+            <DeferredDialogPanel className={className}>
               <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
               {children}
               {showClose ? (
@@ -112,7 +135,7 @@ const DialogContent = React.forwardRef<
                   <span className="sr-only">Close</span>
                 </DialogPrimitive.Close>
               ) : null}
-            </motion.div>
+            </DeferredDialogPanel>
           </DialogPrimitive.Content>
         </DialogPortal>
       )}
@@ -120,6 +143,36 @@ const DialogContent = React.forwardRef<
   );
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+/**
+ * Inner panel that defers the scale+fade animation start by one paint
+ * cycle so the browser has finished layout before the first frame.
+ */
+const DeferredDialogPanel = React.forwardRef<
+  HTMLDivElement,
+  React.PropsWithChildren<{ className?: string }>
+>(({ className, children, ...props }, ref) => {
+  const ready = useDeferredMount();
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={ready ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+      style={{ willChange: "transform, opacity" }}
+      className={cn(
+        "fixed inset-0 m-auto z-50 grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+});
+DeferredDialogPanel.displayName = "DeferredDialogPanel";
 
 const DialogHeader = ({
   className,

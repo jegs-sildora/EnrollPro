@@ -676,7 +676,7 @@ export default function Teachers() {
                   }
                 />
                   <div className="flex min-w-0 flex-col text-left">
-                    <span className="break-words text-base font-bold uppercase leading-tight">
+                    <span className="break-words text-base font-extrabold uppercase leading-tight">
                       {formatTeacherName(row.original)}
                     </span>
                     <span className="text-foreground mt-1 uppercase text-sm">

@@ -1028,7 +1028,7 @@ export default function Students() {
                   }
                 />
                 <div className="flex min-w-0 flex-col text-left">
-                  <span className="break-words font-bold uppercase leading-tight">
+                  <span className="break-words font-extrabold uppercase leading-tight">
                     {row.original.fullName}
                   </span>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
