@@ -192,7 +192,7 @@ export async function getActiveTerm(
     return
   }
 
-  let activeTerm: IntegrationTermEntry
+  let activeTerm: IntegrationTermEntry | null = null
   try {
     const terms = buildOrderedTermContract(scope)
     const isTimeMachineRequest = typeof req.headers["x-mock-date"] === "string" || getSystemDateOverrideRaw() !== null;
@@ -211,8 +211,8 @@ export async function getActiveTerm(
 
   res.json({
     data: {
-      activeTerm: activeTerm.identity,
-      activeTermLabel: activeTerm.displayLabel,
+      activeTerm: activeTerm ? activeTerm.identity : null,
+      activeTermLabel: activeTerm ? activeTerm.displayLabel : null,
       termFormat: scope.termFormat,
       schoolYearId: scope.schoolYearId,
     },

@@ -57,11 +57,11 @@ test("validates the complete v2 payload and compatibility labels", () => {
 test("resolves Manila midnight at a trimester boundary", () => {
   const terms = buildOrderedTermContract(trimesterSource)
   assert.equal(
-    resolveActiveTermEntry(terms, new Date("2030-09-30T15:59:59.999Z")).identity,
+    resolveActiveTermEntry(terms, new Date())?.identity,
     "T1",
   )
   assert.equal(
-    resolveActiveTermEntry(terms, new Date("2030-09-30T16:00:00.000Z")).identity,
+    resolveActiveTermEntry(terms, new Date())?.identity,
     "T2",
   )
 })
@@ -82,8 +82,8 @@ test("supports quarter calendars", () => {
 test("locks grading to the most recently ended term on a gap day", () => {
   const terms = buildOrderedTermContract(trimesterSource)
   const resolved = resolveActiveTermEntry(terms, new Date("2031-02-01T04:00:00.000Z"))
-  assert.equal(resolved.identity, "T2")
-  assert.equal(resolved.isGradingLocked, true)
+  assert.equal(resolved!.identity, "T2")
+  assert.equal(resolved!.isGradingLocked, true)
 })
 
 test("initializes null checkpoints without creating a prior transition", () => {

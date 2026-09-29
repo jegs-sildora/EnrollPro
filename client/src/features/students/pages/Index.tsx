@@ -406,6 +406,9 @@ export default function Students() {
   const {
     enableHomogeneousSections,
     homogeneousSectionCount,
+    spaEnabled,
+    spsEnabled,
+    steEnabled,
   } = useSettingsStore();
 
   const studentsQueryParams = useMemo(() => {
@@ -599,6 +602,9 @@ export default function Students() {
             label: "BEC",
           });
         } else {
+          if (programType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !spaEnabled) return;
+          if (programType === "SPECIAL_PROGRAM_IN_SPORTS" && !spsEnabled) return;
+          if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && !steEnabled) return;
           opts.push({
             value: programType,
             label: SCP_ACRONYMS[programType] ?? formatScpType(programType),

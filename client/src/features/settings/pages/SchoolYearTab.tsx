@@ -298,6 +298,7 @@ export default function SchoolYearTab() {
     systemPhase,
     enableHomogeneousSections,
     homogeneousSectionCount,
+    heterogeneousRoundRobin,
     viewingSchoolYearStatus,
     systemStatus,
     viewingSchoolYearId,
@@ -470,21 +471,24 @@ export default function SchoolYearTab() {
   const [localAlgorithmState, setLocalAlgorithmState] = useState({
     enableHomogeneousSections: enableHomogeneousSections ?? false,
     homogeneousSectionCount: homogeneousSectionCount ?? 5,
+    heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
   });
 
   useEffect(() => {
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
       homogeneousSectionCount: homogeneousSectionCount ?? 5,
+    heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
     });
-  }, [enableHomogeneousSections, homogeneousSectionCount]);
+  }, [enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
 
   const isAlgorithmChanged = useMemo(() => {
     return (
       localAlgorithmState.enableHomogeneousSections !== (enableHomogeneousSections ?? false) ||
-      localAlgorithmState.homogeneousSectionCount !== (homogeneousSectionCount ?? 5)
+      localAlgorithmState.homogeneousSectionCount !== (homogeneousSectionCount ?? 5) ||
+      localAlgorithmState.heterogeneousRoundRobin !== (heterogeneousRoundRobin ?? true)
     );
-  }, [localAlgorithmState, enableHomogeneousSections, homogeneousSectionCount]);
+  }, [localAlgorithmState, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
 
   useEffect(() => {
     setSelectedPhase(systemPhase);
@@ -525,10 +529,11 @@ export default function SchoolYearTab() {
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
       homogeneousSectionCount: homogeneousSectionCount ?? 5,
+    heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
     });
 
     setSelectedPhase(systemPhase);
-  }, [activeYear, enableHomogeneousSections, homogeneousSectionCount, systemPhase]);
+  }, [activeYear, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin, systemPhase]);
 
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
 

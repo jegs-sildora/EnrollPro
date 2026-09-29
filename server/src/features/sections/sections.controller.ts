@@ -134,6 +134,12 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   const sy = await prisma.schoolYear.findUnique({ where: { id: ayId } });
   const isArchived = sy?.status === "ARCHIVED";
 
+  const setting = await prisma.schoolSetting.findFirst();
+  const disabledPrograms: ApplicantType[] = [];
+  if (!setting?.steEnabled) disabledPrograms.push("SCIENCE_TECHNOLOGY_AND_ENGINEERING");
+  if (!setting?.spaEnabled) disabledPrograms.push("SPECIAL_PROGRAM_IN_THE_ARTS");
+  if (!setting?.spsEnabled) disabledPrograms.push("SPECIAL_PROGRAM_IN_SPORTS");
+
   if (gradeLevelId) {
     const parsedGradeLevelId = parseInt(String(gradeLevelId));
     if (
@@ -144,15 +150,15 @@ export async function listSections(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const where: {
-      gradeLevelId: number;
-      schoolYearId: number;
-      programType?: ApplicantType;
-    } = {
+    const where: any = {
       gradeLevelId: parsedGradeLevelId,
       schoolYearId: ayId,
     };
-    if (programType) where.programType = programType as ApplicantType;
+    if (programType) {
+      where.programType = programType as ApplicantType;
+    } else if (disabledPrograms.length > 0) {
+      where.programType = { notIn: disabledPrograms };
+    }
 
     const sections = await prisma.section.findMany({
       where,
@@ -219,11 +225,10 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
-        where: ayId
-          ? {
-              schoolYearId: ayId,
-            }
-          : undefined,
+        where: {
+          schoolYearId: ayId || undefined,
+          ...(disabledPrograms.length > 0 ? { programType: { notIn: disabledPrograms } } : {})
+        },
         include: {
           advisers: {
             where: isArchived ? undefined : { status: SectionAdviserStatus.ACTIVE },

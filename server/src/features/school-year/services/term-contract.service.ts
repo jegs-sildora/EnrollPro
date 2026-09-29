@@ -186,7 +186,7 @@ export function resolveActiveTermEntry(
   terms: IntegrationTermEntry[],
   now: Date = new Date(),
   overrideActiveTerm?: string | null
-): IntegrationTermEntry {
+): IntegrationTermEntry | null {
   if (overrideActiveTerm) {
     const matched = terms.find((t) => t.identity === overrideActiveTerm)
     if (matched) return matched;
@@ -210,12 +210,9 @@ export function resolveActiveTermEntry(
     }
   }
 
-  // Fallback to Term 1 if today is before the entire school year starts
+  // Fallback to null if today is before the entire school year starts
   if (terms.length > 0 && today < terms[0]!.startDate) {
-    return {
-      ...terms[0]!,
-      isGradingLocked: true,
-    }
+    return null;
   }
 
   throw new TermContractError(

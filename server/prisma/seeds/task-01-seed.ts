@@ -286,54 +286,79 @@ export const seedDatabase = async () => {
       for (const prog of PROGRAMS) {
         const sectionName = names[progIdx];
         
-        const section = await prisma.section.upsert({
-          where: {
-            uq_sections_name_grade_sy: {
-              name: sectionName,
-              gradeLevelId: grade.id,
-              schoolYearId: sy.id,
-            }
-          },
-          update: {},
-          create: {
-            name: sectionName,
-            maxCapacity: 40,
-            gradeLevelId: grade.id,
-            schoolYearId: sy.id,
-            programType: prog.type,
-            isHomogeneous: prog.homo,
-          }
-        });
-        
-        progIdx++;
+        let isActive = true;
+        if (prog.type === ApplicantType.SPECIAL_PROGRAM_IN_THE_ARTS && !setting.spaEnabled) isActive = false;
+        if (prog.type === ApplicantType.SPECIAL_PROGRAM_IN_SPORTS && !setting.spsEnabled) isActive = false;
+        if (prog.type === ApplicantType.SCIENCE_TECHNOLOGY_AND_ENGINEERING && !setting.steEnabled) isActive = false;
+        if (prog.homo && !setting.enableHomogeneousSections) isActive = false;
 
         const teacher = teachers[teacherIdx++];
-        await prisma.sectionAdviser.create({
-          data: {
-            sectionId: section.id,
-            teacherId: teacher.id,
-            schoolYearId: sy.id,
-            effectiveFrom: new Date(),
-          }
-        });
-
         const roleCount = (teacherIdx % 3) + 1;
         const generatedRoles = [];
         for (let r = 0; r < roleCount; r++) {
           generatedRoles.push(ANCILLARY_ROLES_POOL[(teacherIdx * 5 + r) % ANCILLARY_ROLES_POOL.length]);
         }
 
-        await prisma.teacherDesignation.create({
-          data: {
-            teacherId: teacher.id,
-            schoolYearId: sy.id,
-            isClassAdviser: true,
-            advisorySectionId: section.id,
-            ancillaryRoles: generatedRoles
-          }
-        });
+        if (isActive) {
+          const section = await prisma.section.upsert({
+            where: {
+              uq_sections_name_grade_sy: {
+                name: sectionName,
+                gradeLevelId: grade.id,
+                schoolYearId: sy.id,
+              }
+            },
+            update: {},
+            create: {
+              name: sectionName,
+              maxCapacity: 40,
+              gradeLevelId: grade.id,
+              schoolYearId: sy.id,
+              programType: prog.type,
+              isHomogeneous: prog.homo,
+            }
+          });
+          
+          await prisma.sectionAdviser.create({
+            data: {
+              sectionId: section.id,
+              teacherId: teacher.id,
+              schoolYearId: sy.id,
+              effectiveFrom: new Date(),
+            }
+          });
 
-        // Learners are no longer seeded here. See year-specific grade 7 seeds.
+          await prisma.teacherDesignation.create({
+            data: {
+              teacherId: teacher.id,
+              schoolYearId: sy.id,
+              isClassAdviser: true,
+              advisorySectionId: section.id,
+              ancillaryRoles: generatedRoles
+            }
+          });
+        } else {
+          // Program inactive: skip section, demote teacher role, create non-adviser designation
+          if (teacher.userId) {
+            await prisma.user.update({
+              where: { id: teacher.userId },
+              data: {
+                roles: ["TEACHER"] // Removes CLASS_ADVISER
+              }
+            });
+          }
+
+          await prisma.teacherDesignation.create({
+            data: {
+              teacherId: teacher.id,
+              schoolYearId: sy.id,
+              isClassAdviser: false,
+              ancillaryRoles: generatedRoles
+            }
+          });
+        }
+        
+        progIdx++;
       }
     }
 
@@ -356,7 +381,8 @@ export const seedDatabase = async () => {
       teacherIdx++;
     }
 
-    console.log("✅ Base Seeding complete: 20 Teachers, 16 Sections.");
+    const createdSectionCount = await prisma.section.count({ where: { schoolYearId: sy.id } });
+    console.log(`✅ Base Seeding complete: 20 Teachers, ${createdSectionCount} Sections.`);
   } catch (error) {
     console.error("❌ Error during seeding:", error);
     throw error;

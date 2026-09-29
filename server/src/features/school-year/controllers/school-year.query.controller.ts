@@ -130,13 +130,13 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
         isTimeMachineRequest ? null : year.activeTerm,
       );
       res.json({ 
-        activeTerm: activeTerm.identity, 
-        activeTermLabel: activeTerm.displayLabel,
-        isGradingLocked: activeTerm.isGradingLocked,
+        activeTerm: activeTerm ? activeTerm.identity : null, 
+        activeTermLabel: activeTerm ? activeTerm.displayLabel : null,
+        isGradingLocked: activeTerm ? activeTerm.isGradingLocked : false,
       });
     } catch (error) {
       // If terms are not fully configured yet, we can safely return null or default to T1
-      res.json({ activeTerm: "T1", activeTermLabel: "Term 1", isGradingLocked: false });
+      res.json({ activeTerm: null, activeTermLabel: null, isGradingLocked: false });
     }
   }
 

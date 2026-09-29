@@ -1275,9 +1275,9 @@ export default function Homerooms() {
                     forceMount
                     className="mt-0 focus-visible:outline-none ring-0">
                     <Card className="border-border shadow-sm">
-                      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
+                      <CardHeader className="flex flex-col items-center justify-between pb-6 gap-4">
                         <div>
-                          <CardTitle className="text-xl font-bold uppercase">
+                          <CardTitle className="text-2xl font-extrabold uppercase">
                             {g.gradeLevelName}
                           </CardTitle>
                         </div>
@@ -1286,7 +1286,13 @@ export default function Homerooms() {
                         <div className="space-y-8 pb-4">
                           {renderSectionGroup(
                             "SCP",
-                            g.sections.filter((s) => s.programType !== "REGULAR"),
+                            g.sections.filter((s) => {
+                              if (s.programType === "REGULAR" || s.programType === "REGULAR_HOMO" || s.programType === "REGULAR_HETERO") return false;
+                              if (s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !spaEnabled) return false;
+                              if (s.programType === "SPECIAL_PROGRAM_IN_SPORTS" && !spsEnabled) return false;
+                              if (s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && !steEnabled) return false;
+                              return true;
+                            }),
                             g.gradeLevelName,
                             g.gradeLevelId,
                             g.displayOrder,

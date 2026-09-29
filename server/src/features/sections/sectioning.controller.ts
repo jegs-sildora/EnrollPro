@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
-import { EosyStatus, Prisma, SectioningMethod } from "../../generated/prisma/index.js";
+import { ApplicantType, EosyStatus, Prisma, SectioningMethod } from "../../generated/prisma/index.js";
 import { getAllowedSectionProgramsForPlacement } from "@enrollpro/shared";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 import {
@@ -73,6 +73,12 @@ export async function getSectionsSummary(req: Request, res: Response) {
     }
 
     const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
+    const setting = await prisma.schoolSetting.findFirst();
+    const disabledPrograms: ApplicantType[] = [];
+    if (!setting?.steEnabled) disabledPrograms.push("SCIENCE_TECHNOLOGY_AND_ENGINEERING");
+    if (!setting?.spaEnabled) disabledPrograms.push("SPECIAL_PROGRAM_IN_THE_ARTS");
+    if (!setting?.spsEnabled) disabledPrograms.push("SPECIAL_PROGRAM_IN_SPORTS");
+
     if (scopedGradeLevelIds?.length === 0) {
       return res.status(403).json({ message: "You are not authorized to manage Section Assignment." });
     }
@@ -88,6 +94,9 @@ export async function getSectionsSummary(req: Request, res: Response) {
       where.gradeLevelId = requestedGradeLevelId;
     } else if (scopedGradeLevelIds !== null) {
       where.gradeLevelId = { in: scopedGradeLevelIds };
+    }
+    if (disabledPrograms.length > 0) {
+      where.programType = { notIn: disabledPrograms };
     }
 
     const sections = await prisma.section.findMany({

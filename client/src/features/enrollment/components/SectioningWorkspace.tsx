@@ -623,6 +623,7 @@ export function SectioningWorkspace() {
   >(null);
 
   const queryClient = useQueryClient();
+  const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
 
   useEffect(() => () => {
     autoAssignTimers.current.forEach(clearTimeout);
@@ -634,17 +635,23 @@ export function SectioningWorkspace() {
       return;
     }
     const timer = setInterval(() => {
-      setAnimationScene((prev) => (prev + 1) % 4);
+      setAnimationScene((prev) => {
+        let next = (prev + 1) % 4;
+        if (!enableHomogeneousSections && next === 2) {
+          next = 3;
+        }
+        return next;
+      });
     }, 4000);
     return () => clearInterval(timer);
-  }, [isAnimationVisible, autoAssignConfirmOpen]);
+  }, [isAnimationVisible, autoAssignConfirmOpen, enableHomogeneousSections]);
 
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
   const setActiveGradeLevelId = useCallback((id: string) => {
     useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   }, []);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
-  const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
+    const { spaEnabled, spsEnabled, steEnabled } = useSettingsStore();
   const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
   
   const { data: activeSchoolYear } = useQuery({
@@ -807,10 +814,14 @@ export function SectioningWorkspace() {
 
   const currentGradeSections = useMemo(() => {
     if (!activeGradeLevelId) return [];
-    return sections.filter(
-      (s) => String(s.gradeLevelId) === activeGradeLevelId,
-    );
-  }, [sections, activeGradeLevelId]);
+    return sections.filter((s) => {
+      if (String(s.gradeLevelId) !== activeGradeLevelId) return false;
+      if (s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !spaEnabled) return false;
+      if (s.programType === "SPECIAL_PROGRAM_IN_SPORTS" && !spsEnabled) return false;
+      if (s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && !steEnabled) return false;
+      return true;
+    });
+  }, [sections, activeGradeLevelId, spaEnabled, spsEnabled, steEnabled]);
 
   const currentGradePool = useMemo(() => {
     if (!activeGradeLevelId) return [];
@@ -2530,7 +2541,6 @@ export function SectioningWorkspace() {
         title="AUTO ASSIGN TEMPORARY SECTIONS"
         align="center"
         variant="primary"
-        hideCancel={currentGradePool.length === 0}
         showClose={true}
         confirmText="Got it"
         cancelText={isAnimationVisible ? "Hide Animation" : "View Animation"}
@@ -2539,7 +2549,7 @@ export function SectioningWorkspace() {
         className="transition-all duration-300 !max-w-5xl"
         confirmClassName={currentGradePool.length === 0 ? "w-full" : undefined}
         description={
-          <div className={cn("grid gap-6 mt-4", isAnimationVisible && currentGradePool.length > 0 ? "grid-cols-2" : "grid-cols-1")}>
+          <div className={cn("grid gap-6 mt-4", isAnimationVisible ? "grid-cols-2" : "grid-cols-1")}>
             {/* Left Column: Text instructions */}
             <div className="space-y-4 text-left">
               <p className="text-center font-bold text-base">
@@ -2569,12 +2579,14 @@ export function SectioningWorkspace() {
                         >
                           Phase 2: Isolating qualified Special Curricular Program learners into specialized sections{availableScp.length > 0 ? ` such as ${availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}` : " (none currently available)"}.
                         </li>
-                        <li 
-                          className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 2 ? "font-bold text-primary" : "")}
-                          onClick={() => { if (isAnimationVisible) setAnimationScene(2); }}
-                        >
-                          Phase 3: Sorting and placing top-performing learners into Top BEC sections.
-                        </li>
+                        {enableHomogeneousSections && (
+                          <li 
+                            className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 2 ? "font-bold text-primary" : "")}
+                            onClick={() => { if (isAnimationVisible) setAnimationScene(2); }}
+                          >
+                            Phase 3: Sorting and placing top-performing learners into Top BEC sections.
+                          </li>
+                        )}
                       </>
                     );
                   })()}
@@ -2582,7 +2594,7 @@ export function SectioningWorkspace() {
                     className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 3 ? "font-bold text-primary" : "")}
                     onClick={() => { if (isAnimationVisible) setAnimationScene(3); }}
                   >
-                    Phase 4: Executing heterogeneous draft to balance academic performance and gender ratio.
+                    Phase {enableHomogeneousSections ? 4 : 3}: Executing heterogeneous draft to balance academic performance and gender ratio.
                   </li>
                   <li className="text-foreground">
                     After this, you can still review, move, or swap learners before clicking Finalize Official Sections.
@@ -2595,38 +2607,57 @@ export function SectioningWorkspace() {
             </div>
 
             {/* Right Column: Animation container */}
-            {isAnimationVisible && currentGradePool.length > 0 && !prefersReducedMotion && (
+            {isAnimationVisible && !prefersReducedMotion && (
               <div className="h-[400px]">
                 {(() => {
-                  const scp = { ste: 0, spa: 0, sps: 0 };
-                  let becTotal = 0;
-                  
-                  filteredAndSortedPool.forEach(l => {
-                    if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
-                    else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
-                    else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
-                    else if (l.programType === "REGULAR") becTotal++;
-                  });
+                  const isMock = currentGradePool.length === 0;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
-                  const topSectionCount = Math.min(allRegular.length, homogeneousSectionCount);
+                  const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;
                   const topSections = allRegular.filter(s => s.isHomogeneous).slice(0, topSectionCount);
                   const topSectionIds = new Set(topSections.map(s => s.id));
                   const regularSections = allRegular.filter(s => !topSectionIds.has(s.id));
-                  
-                  const totalSections = topSections.length + regularSections.length;
-                  const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
-                  const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
-                  const balancedTopCapacity = targetPerSection * topSections.length;
-                  
-                  const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
-                  
-                  // Additionally, academic status filter applies in actual algorithm, but we'll approximate:
-                  const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
-                  const topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
+
+                  const scp = { ste: 0, spa: 0, sps: 0 };
+                  let becTotal = 0;
+                  let topBecCount = 0;
+
+                  if (isMock) {
+                    let remaining = 30;
+                    const hasSte = currentGradeSections.some(s => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING");
+                    const hasSpa = currentGradeSections.some(s => s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS");
+                    const hasSps = currentGradeSections.some(s => s.programType === "SPECIAL_PROGRAM_IN_SPORTS");
+                    
+                    if (hasSte && remaining > 0) { scp.ste = Math.min(5, remaining); remaining -= scp.ste; }
+                    if (hasSpa && remaining > 0) { scp.spa = Math.min(5, remaining); remaining -= scp.spa; }
+                    if (hasSps && remaining > 0) { scp.sps = Math.min(5, remaining); remaining -= scp.sps; }
+                    
+                    becTotal = remaining;
+                    
+                    if (topSections.length > 0) {
+                      topBecCount = Math.min(Math.ceil(becTotal / 3), becTotal);
+                    }
+                  } else {
+                    filteredAndSortedPool.forEach(l => {
+                      if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
+                      else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
+                      else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
+                      else if (l.programType === "REGULAR") becTotal++;
+                    });
+                    
+                    const totalSections = topSections.length + regularSections.length;
+                    const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
+                    const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+                    const balancedTopCapacity = targetPerSection * topSections.length;
+                    
+                    const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
+                    
+                    const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
+                    topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
+                  }
 
                   const stats = {
-                    totalLearners: filteredAndSortedPool.length,
+                    totalLearners: isMock ? 30 : filteredAndSortedPool.length,
                     scp,
                     topBec: { count: topBecCount, sections: topSections.length, sectionNames: topSections.map(s => s.name) },
                     regularBec: { count: becTotal - topBecCount, sections: regularSections.length, sectionNames: regularSections.map(s => s.name) }
@@ -2636,41 +2667,60 @@ export function SectioningWorkspace() {
                 })()}
               </div>
             )}
-            {isAnimationVisible && currentGradePool.length > 0 && prefersReducedMotion && (
+            {isAnimationVisible && prefersReducedMotion && (
               <div className="h-[400px]">
                 <div className="bg-slate-50 border-b p-2 text-center text-xs text-slate-500 font-bold uppercase tracking-wider">
                   Reduced Motion Active — Final Distribution State
                 </div>
                 {(() => {
-                  const scp = { ste: 0, spa: 0, sps: 0 };
-                  let becTotal = 0;
-                  
-                  filteredAndSortedPool.forEach(l => {
-                    if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
-                    else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
-                    else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
-                    else if (l.programType === "REGULAR") becTotal++;
-                  });
+                  const isMock = currentGradePool.length === 0;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
-                  const topSectionCount = Math.min(allRegular.length, homogeneousSectionCount);
+                  const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;
                   const topSections = allRegular.filter(s => s.isHomogeneous).slice(0, topSectionCount);
                   const topSectionIds = new Set(topSections.map(s => s.id));
                   const regularSections = allRegular.filter(s => !topSectionIds.has(s.id));
-                  
-                  const totalSections = topSections.length + regularSections.length;
-                  const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
-                  const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
-                  const balancedTopCapacity = targetPerSection * topSections.length;
-                  
-                  const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
-                  
-                  // Additionally, academic status filter applies in actual algorithm, but we'll approximate:
-                  const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
-                  const topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
+
+                  const scp = { ste: 0, spa: 0, sps: 0 };
+                  let becTotal = 0;
+                  let topBecCount = 0;
+
+                  if (isMock) {
+                    let remaining = 30;
+                    const hasSte = currentGradeSections.some(s => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING");
+                    const hasSpa = currentGradeSections.some(s => s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS");
+                    const hasSps = currentGradeSections.some(s => s.programType === "SPECIAL_PROGRAM_IN_SPORTS");
+                    
+                    if (hasSte && remaining > 0) { scp.ste = Math.min(5, remaining); remaining -= scp.ste; }
+                    if (hasSpa && remaining > 0) { scp.spa = Math.min(5, remaining); remaining -= scp.spa; }
+                    if (hasSps && remaining > 0) { scp.sps = Math.min(5, remaining); remaining -= scp.sps; }
+                    
+                    becTotal = remaining;
+                    
+                    if (topSections.length > 0) {
+                      topBecCount = Math.min(Math.ceil(becTotal / 3), becTotal);
+                    }
+                  } else {
+                    filteredAndSortedPool.forEach(l => {
+                      if (l.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") scp.ste++;
+                      else if (l.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") scp.spa++;
+                      else if (l.programType === "SPECIAL_PROGRAM_IN_SPORTS") scp.sps++;
+                      else if (l.programType === "REGULAR") becTotal++;
+                    });
+                    
+                    const totalSections = topSections.length + regularSections.length;
+                    const targetPerSection = totalSections > 0 ? Math.ceil(becTotal / totalSections) : 0;
+                    const maxAvailableTopCapacity = topSections.reduce((acc, sec) => acc + Math.max(0, sec.maxCapacity - sec.currentCount), 0);
+                    const balancedTopCapacity = targetPerSection * topSections.length;
+                    
+                    const totalTopCapacity = Math.min(balancedTopCapacity, maxAvailableTopCapacity);
+                    
+                    const eligibleForTop = filteredAndSortedPool.filter(l => l.programType === "REGULAR" && l.academicStatus !== "CONDITIONALLY_PROMOTED");
+                    topBecCount = Math.min(eligibleForTop.length, totalTopCapacity);
+                  }
 
                   const stats = {
-                    totalLearners: filteredAndSortedPool.length,
+                    totalLearners: isMock ? 30 : filteredAndSortedPool.length,
                     scp,
                     topBec: { count: topBecCount, sections: topSections.length, sectionNames: topSections.map(s => s.name) },
                     regularBec: { count: becTotal - topBecCount, sections: regularSections.length, sectionNames: regularSections.map(s => s.name) }

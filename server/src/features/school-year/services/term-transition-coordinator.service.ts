@@ -133,6 +133,9 @@ export async function reconcileTermTransitions(input: {
 
     const terms = buildOrderedTermContract(schoolYear)
     const current = resolveActiveTermEntry(terms, now)
+    if (!current) {
+      return { state: "UNINITIALIZED", enqueued: 0 }
+    }
     const plan = planForwardTermTransitions(terms, schoolYear.activeTerm, current.identity)
 
     if (plan.state === "INITIALIZE") {

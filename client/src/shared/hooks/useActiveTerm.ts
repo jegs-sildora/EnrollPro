@@ -30,8 +30,8 @@ export function useActiveTerm() {
   });
 
   return {
-    activeTerm: data?.activeTerm || (activeSchoolYearId ? "T1" : null),
-    activeTermLabel: data?.activeTermLabel || (activeSchoolYearId ? "Term 1" : null),
+    activeTerm: data !== undefined ? data.activeTerm : (activeSchoolYearId ? "T1" : null),
+    activeTermLabel: data !== undefined ? data.activeTermLabel : (activeSchoolYearId ? "Term 1" : null),
     isGradingLocked: data?.isGradingLocked ?? false,
     isLoading: isLoading && !!activeSchoolYearId,
   };

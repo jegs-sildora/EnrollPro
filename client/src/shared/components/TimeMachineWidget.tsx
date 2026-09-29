@@ -28,10 +28,7 @@ const SYSTEM_DATE_SYNC_TIMEOUT_MS = 3_000;
 
 interface MockDateTimeParts {
   date: string;
-  hour: string;
-  minute: string;
-  second: string;
-  period: "AM" | "PM";
+  time: string;
 }
 
 function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
@@ -50,14 +47,10 @@ function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
   }).formatToParts(parsed);
   const getPart = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((part) => part.type === type)?.value ?? "";
-  const hour24 = Number(getPart("hour"));
 
   return {
     date: `${getPart("year")}-${getPart("month")}-${getPart("day")}`,
-    hour: String(hour24 % 12 || 12),
-    minute: getPart("minute"),
-    second: getPart("second"),
-    period: hour24 >= 12 ? "PM" : "AM",
+    time: `${getPart("hour").padStart(2, "0")}:${getPart("minute").padStart(2, "0")}:${getPart("second").padStart(2, "0")}`,
   };
 }
 
@@ -80,21 +73,13 @@ function TimeMachineWidgetCore() {
     return {
       parts: parts ?? {
         date: "",
-        hour: "12",
-        minute: "00",
-        second: "00",
-        period: "AM" as const,
+        time: "12:00:00",
       },
       hasOverride: Boolean(parts),
     };
   });
   const [mockDate, setMockDate] = useState(initialMockDateTime.parts.date);
-  const [mockHour, setMockHour] = useState(initialMockDateTime.parts.hour);
-  const [mockMinute, setMockMinute] = useState(initialMockDateTime.parts.minute);
-  const [mockSecond, setMockSecond] = useState(initialMockDateTime.parts.second);
-  const [mockPeriod, setMockPeriod] = useState<"AM" | "PM">(
-    initialMockDateTime.parts.period,
-  );
+  const [mockTime, setMockTime] = useState(initialMockDateTime.parts.time);
   const [hasMockOverride, setHasMockOverride] = useState(
     initialMockDateTime.hasOverride,
   );
@@ -121,12 +106,6 @@ function TimeMachineWidgetCore() {
   const applyMockedDateTime = async () => {
     if (!mockDate) return;
 
-    const hour12 = Number(mockHour);
-    const hour24 =
-      mockPeriod === "AM"
-        ? hour12 % 12
-        : (hour12 % 12) + 12;
-        
     let isoDate = mockDate;
     if (mockDate.includes("/")) {
       const parts = mockDate.split("/");
@@ -135,7 +114,11 @@ function TimeMachineWidgetCore() {
       }
     }
     
-    const mockedTimestamp = `${isoDate}T${String(hour24).padStart(2, "0")}:${mockMinute}:${mockSecond}+08:00`;
+    // Ensure time has seconds
+    const timeParts = mockTime.split(":");
+    const finalTime = timeParts.length === 2 ? `${mockTime}:00` : mockTime;
+    
+    const mockedTimestamp = `${isoDate}T${finalTime}+08:00`;
 
     localStorage.setItem(MOCKED_SYSTEM_DATE_KEY, mockedTimestamp);
     localStorage.setItem(MOCKED_SYSTEM_DATE_ANCHOR_KEY, String(Date.now()));
@@ -221,63 +204,13 @@ function TimeMachineWidgetCore() {
 
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase text-foreground">Mocked Time</label>
-              <div className="grid grid-cols-[1fr_1fr_1fr_1.15fr] gap-2">
-                <Select value={mockHour} onValueChange={setMockHour}>
-                  <SelectTrigger aria-label="Mocked hour" className="w-full">
-                    <SelectValue placeholder="Hour" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {HOUR_OPTIONS.map((hour) => (
-                      <SelectItem key={hour} value={hour}>
-                        {hour}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={mockMinute} onValueChange={setMockMinute}>
-                  <SelectTrigger aria-label="Mocked minute" className="w-full">
-                    <SelectValue placeholder="Minute" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MINUTE_OPTIONS.map((minute) => (
-                      <SelectItem key={minute} value={minute}>
-                        {minute}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={mockSecond} onValueChange={setMockSecond}>
-                  <SelectTrigger aria-label="Mocked second" className="w-full">
-                    <SelectValue placeholder="Second" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SECOND_OPTIONS.map((second) => (
-                      <SelectItem key={second} value={second}>
-                        {second}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={mockPeriod}
-                  onValueChange={(value) => {
-                    if (value === "AM" || value === "PM") {
-                      setMockPeriod(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger aria-label="Mocked period" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AM">AM</SelectItem>
-                    <SelectItem value="PM">PM</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <p className="text-[11px] font-medium text-muted-foreground">
-                12-hour format (hour : minute : second : AM/PM)
-              </p>
+              <input
+                type="time"
+                step="1"
+                value={mockTime}
+                onChange={(e) => setMockTime(e.target.value)}
+                className="w-full flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
             </div>
 
             <Button

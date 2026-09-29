@@ -80,14 +80,14 @@ test("resolves the active identity and its matching configured label", () => {
     buildOrderedTermContract(trimesterSource()),
     date("2030-10-15"),
   )
-  assert.equal(active.identity, "T2")
-  assert.equal(active.displayLabel, "SECOND TERM")
+  assert.equal(active!.identity, "T2")
+  assert.equal(active!.displayLabel, "SECOND TERM")
 })
 
 test("fallback applies when no term contains the current date", () => {
   const active = resolveActiveTermEntry(buildOrderedTermContract(trimesterSource()), date("2032-01-01"))
-  assert.equal(active.identity, "T3")
-  assert.equal(active.isGradingLocked, true)
+  assert.equal(active!.identity, "T3")
+  assert.equal(active!.isGradingLocked, true)
 })
 
 test("shared contract rejects duplicate or out-of-order identities", () => {
@@ -179,7 +179,7 @@ test("resolves exactly the current term before midnight rollover in Asia/Manila 
   // September 15, 2026, 23:59:59 PHT -> 15:59:59 UTC
   test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T15:59:59.000Z") }) 
   const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
-  assert.equal(active.identity, "T1")
+  assert.equal(active!.identity, "T1")
   test.mock.timers.reset()
 })
 
@@ -196,7 +196,7 @@ test("resolves the next term at exactly midnight rollover in Asia/Manila (Midnig
   // September 16, 2026, 00:00:01 PHT -> 16:00:01 UTC on Sept 15
   test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T16:00:01.000Z") }) 
   const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
-  assert.equal(active.identity, "T2")
+  assert.equal(active!.identity, "T2")
   test.mock.timers.reset()
 })
 
@@ -213,8 +213,8 @@ test("gap day fallback resolves to the most recently completed term with isGradi
   // December 25, 2026, 12:00:00 PHT -> 04:00:00 UTC
   test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-12-25T04:00:00.000Z") }) 
   const active = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
-  assert.equal(active.identity, "T2")
-  assert.equal(active.isGradingLocked, true)
+  assert.equal(active!.identity, "T2")
+  assert.equal(active!.isGradingLocked, true)
   test.mock.timers.reset()
 })
 
@@ -235,13 +235,13 @@ test("resolves perfectly aligned with midnight in Asia/Manila even if server tim
     // September 15, 2026, 23:59:59 PHT
     test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T15:59:59.000Z") }) 
     const active1 = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
-    assert.equal(active1.identity, "T1")
+    assert.equal(active1!.identity, "T1")
     test.mock.timers.reset()
 
     // September 16, 2026, 00:00:01 PHT
     test.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-15T16:00:01.000Z") }) 
     const active2 = resolveActiveTermEntry(buildOrderedTermContract(source), new Date())
-    assert.equal(active2.identity, "T2")
+    assert.equal(active2!.identity, "T2")
   } finally {
     process.env.TZ = originalTz;
     test.mock.timers.reset()

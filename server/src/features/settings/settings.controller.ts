@@ -553,7 +553,10 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
 
   broadcastSettingsInvalidation();
 
-  res.json(updated);
+  res.json({
+    ...updated,
+    mockedSystemDateAnchor: updated.mockedSystemDateAnchor?.toString(),
+  });
 }
 
 export async function updateAlgorithm(req: Request, res: Response): Promise<void> {
@@ -579,7 +582,10 @@ export async function updateAlgorithm(req: Request, res: Response): Promise<void
 
   broadcastSettingsInvalidation();
 
-  res.json(updated);
+  res.json({
+    ...updated,
+    mockedSystemDateAnchor: updated.mockedSystemDateAnchor?.toString(),
+  });
 }
 
 
