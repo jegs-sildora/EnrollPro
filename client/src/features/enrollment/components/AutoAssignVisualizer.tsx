@@ -41,14 +41,20 @@ function Ticker({ value, duration = 0.8, className }: { value: number, duration?
 
 export function AutoAssignVisualizer({ scene, poolStats }: Props) {
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
-  // 2-second delay before dots fly in each phase
   const [animationReady, setAnimationReady] = useState(false);
+  const [prevScene, setPrevScene] = useState(scene);
+
+  if (scene !== prevScene) {
+    setPrevScene(scene);
+    setAnimationReady(false);
+  }
 
   useEffect(() => {
-    setAnimationReady(false);
-    const timer = setTimeout(() => setAnimationReady(true), 2000);
-    return () => clearTimeout(timer);
-  }, [scene]);
+    if (!animationReady) {
+      const timer = setTimeout(() => setAnimationReady(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [animationReady]);
 
   const getStatusText = () => {
     switch (scene) {
@@ -194,19 +200,19 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
                     {steEnabled && (
                       <div className="flex-1 min-w-[100px] max-w-[140px] bg-background border-2 border-dashed border-primary/40 rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm overflow-hidden">
                         <span className="font-bold uppercase truncate w-full text-center text-foreground">STE Section</span>
-                        <span className="font-extrabold text-primary mt-1"><Ticker value={poolStats.scp.ste} /> / {poolStats.scp.ste}</span>
+                        <span className="font-extrabold text-primary mt-1"><Ticker value={animationReady ? poolStats.scp.ste : 0} /> / {poolStats.scp.ste}</span>
                       </div>
                     )}
                     {spaEnabled && (
                       <div className="flex-1 min-w-[100px] max-w-[140px] bg-background border-2 border-dashed border-primary/40 rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm overflow-hidden">
                         <span className="font-bold uppercase truncate w-full text-center text-foreground">SPA Section</span>
-                        <span className="font-extrabold text-primary mt-1"><Ticker value={poolStats.scp.spa} /> / {poolStats.scp.spa}</span>
+                        <span className="font-extrabold text-primary mt-1"><Ticker value={animationReady ? poolStats.scp.spa : 0} /> / {poolStats.scp.spa}</span>
                       </div>
                     )}
                     {spsEnabled && (
                       <div className="flex-1 min-w-[100px] max-w-[140px] bg-background border-2 border-dashed border-primary/40 rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm overflow-hidden">
                         <span className="font-bold uppercase truncate w-full text-center text-foreground">SPS Section</span>
-                        <span className="font-extrabold text-primary mt-1"><Ticker value={poolStats.scp.sps} /> / {poolStats.scp.sps}</span>
+                        <span className="font-extrabold text-primary mt-1"><Ticker value={animationReady ? poolStats.scp.sps : 0} /> / {poolStats.scp.sps}</span>
                       </div>
                     )}
                   </div>
@@ -250,8 +256,8 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
                           <div key={name} className="flex-1 min-w-[100px] max-w-[140px] bg-background border-2 border-dashed border-primary/40 rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm overflow-hidden">
                             <span className="font-bold uppercase truncate w-full text-center text-foreground" title={name}>{name}</span>
                             <div className="flex gap-2 mt-1 ">
-                              <span className="text-blue-600 font-bold">M: <Ticker value={m} /></span>
-                              <span className="text-pink-600 font-bold">F: <Ticker value={f} /></span>
+                              <span className="text-blue-600 font-bold">M: <Ticker value={animationReady ? m : 0} /></span>
+                              <span className="text-pink-600 font-bold">F: <Ticker value={animationReady ? f : 0} /></span>
                             </div>
                           </div>
                         );
@@ -304,8 +310,8 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
                         <div key={name} className="flex-1 min-w-[100px] max-w-[140px] bg-background border-2 border-dashed border-primary/40 rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm overflow-hidden">
                           <span className="font-bold uppercase truncate w-full text-center text-foreground" title={name}>{name}</span>
                           <div className="flex gap-2 mt-1 ">
-                            <span className="text-blue-600 font-bold">M: <Ticker value={m} /></span>
-                            <span className="text-pink-600 font-bold">F: <Ticker value={f} /></span>
+                            <span className="text-blue-600 font-bold">M: <Ticker value={animationReady ? m : 0} /></span>
+                            <span className="text-pink-600 font-bold">F: <Ticker value={animationReady ? f : 0} /></span>
                           </div>
                         </div>
                       );
@@ -402,7 +408,18 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
               } else if (scene >= 1) {
                 // Post-animation: active dots fly to their sections
                 if (node.track === "STE" || node.track === "SPA" || node.track === "SPS") {
-                  x = node.track === "STE" ? -148 : node.track === "SPA" ? 0 : 148;
+                  const activeScp = [];
+                  if (steEnabled) activeScp.push("STE");
+                  if (spaEnabled) activeScp.push("SPA");
+                  if (spsEnabled) activeScp.push("SPS");
+                  
+                  const idx = activeScp.indexOf(node.track);
+                  if (idx !== -1) {
+                    const numSections = activeScp.length;
+                    x = (idx - (numSections - 1) / 2) * 148;
+                  } else {
+                    x = 0;
+                  }
                   y = 156;
                   opacity = 0;
                 } else if (node.track === "TOP_BEC" && scene === 2) {
@@ -433,7 +450,7 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
               return (
                 <motion.div
                   key={node.id}
-                  initial={{ x: scatter.x, y: scatter.y, opacity: 1 }}
+                  initial={{ x: 0, y: 50, opacity: 0 }}
                   animate={{
                     x,
                     y,
