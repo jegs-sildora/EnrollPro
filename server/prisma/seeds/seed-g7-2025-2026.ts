@@ -3,7 +3,7 @@ import { PrismaClient, Sex, AddressType, FamilyRelationship } from "../../src/ge
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
-import { getFilipinoName, getFilipinoParentName, createLRNGenerator, getGrade7PreviousSchool, FilipinoName } from "./seed-g7-helpers.js";
+import { getFilipinoName, getFilipinoParentName, createLRNGenerator, getGrade7PreviousSchool, getGrade7TransferCertificateNo, FilipinoName } from "./seed-g7-helpers.js";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -167,8 +167,7 @@ async function seedGrade7() {
       const permanentCity = cities[(learnerNameIndex + 1) % cities.length];
       const permanentZip = zips[(learnerNameIndex + 1) % zips.length];
 
-      const g7Types = ["NEW_ENROLLEE", "TRANSFEREE"] as const;
-      const randomLearnerType = g7Types[learnerNameIndex % g7Types.length];
+      const learnerType = totalSeeded < 2 ? "TRANSFEREE" : "NEW_ENROLLEE";
         
       const channels = ["ONLINE", "F2F"] as const;
       const randomChannel = channels[learnerNameIndex % channels.length];
@@ -180,7 +179,7 @@ async function seedGrade7() {
           gradeLevelId: grade7.id,
           applicantType: section.programType,
           status: "OFFICIALLY_ENROLLED",
-          learnerType: randomLearnerType,
+          learnerType,
           admissionChannel: randomChannel,
           contactNumber: primaryContact.contactNumber,
           guardianFirstName: primaryContact.name.firstName,
@@ -191,6 +190,9 @@ async function seedGrade7() {
           previousSchool: {
             create: {
               ...getGrade7PreviousSchool(BASE_YEAR, learnerNameIndex),
+              transferCertificateNo: learnerType === "TRANSFEREE"
+                ? getGrade7TransferCertificateNo(BASE_YEAR, lrn)
+                : null,
               generalAverage: learner.previousGenAve,
             },
           },

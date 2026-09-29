@@ -319,11 +319,9 @@ export async function updateSystemPhase(req: Request, res: Response): Promise<vo
     });
   });
 
-  const updated = await prisma.schoolSetting.findFirst();
-
   broadcastSettingsInvalidation();
 
-  res.json({ message: "System phase updated", updated });
+  res.json({ message: "System phase updated", updated: { systemPhase: phase } });
 }
 
 export async function uploadLogo(req: Request, res: Response): Promise<void> {

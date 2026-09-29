@@ -91,3 +91,7 @@ export function getGrade7PreviousSchool(baseYear: number, learnerIndex: number) 
     schoolYearLastAttended: `${baseYear - 1}-${baseYear}`,
   };
 }
+
+export function getGrade7TransferCertificateNo(baseYear: number, lrn: string): string {
+  return `TC-${baseYear}-${lrn.slice(4)}`;
+}
