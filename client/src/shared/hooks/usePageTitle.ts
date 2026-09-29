@@ -39,6 +39,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/smart": "SMART",
     "/section-assignment/requirements": "Documentary Requirements",
     "/teacher/advisory": "My Advisory Class",
+    "/learner-admission": "SCP  Admission",
   };
 
   if (exact[pathname]) return exact[pathname];

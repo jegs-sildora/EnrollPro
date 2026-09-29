@@ -8,6 +8,8 @@ import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState, Table
 import React, { useState, useRef, type ReactNode } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
+import { Loader2 } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -339,51 +341,17 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           {showLoadingRows ? (
             <TableBody className="relative">
-              {Array.from({ length: skeletonRowCount }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`} className="bg-background">
-                  {table.getAllLeafColumns().map((column, index) => {
-                    const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
-                    const isPinned = column.getIsPinned();
-                    const isLeftPinned = isPinned === "left";
-                    const isRightPinned = isPinned === "right";
-                    const skeletonShapeClassName =
-                      meta?.skeletonShape === "circle"
-                        ? "h-8 w-8 rounded-full"
-                        : meta?.skeletonShape === "pill"
-                          ? "h-7 w-24 rounded-full"
-                          : meta?.skeletonShape === "button"
-                            ? "h-10 w-24 rounded-lg"
-                            : "h-5 w-3/4 max-w-[250px]";
-                    return (
-                      <TableCell
-                        key={index}
-                        className={cn(
-                          dense ? "py-1.5 px-2" : "p-4",
-                          "first:pl-6 last:pr-6",
-                          isPinned ? "sticky bg-inherit z-10" : "",
-                          isLeftPinned ? "shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
-                          isRightPinned ? "shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
-                        )}
-                        style={{
-                          left: isLeftPinned ? `${column.getStart('left')}px` : undefined,
-                          right: isRightPinned ? `${column.getAfter('right')}px` : undefined,
-                        }}>
-                        {meta?.customSkeleton ? (
-                          meta.customSkeleton
-                        ) : (
-                          <Skeleton
-                            className={cn(
-                              skeletonShapeClassName,
-                              meta?.skeletonClassName,
-                            )}
-                            style={meta?.skeletonWidth ? { width: meta.skeletonWidth } : undefined}
-                          />
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+              <TableRow key="loading">
+                <TableCell colSpan={columns.length} className="p-0">
+                  <div className="min-h-[420px] flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    <div className="flex flex-col items-center space-y-1">
+                      <p className="text-2xl font-extrabold">Loading...</p>
+                      <p className="text-base">Fetching records...</p>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
             </TableBody>
           ) : !forceEmptyState && !suppressEmptyDuringDelayedLoading && rows.length > 0 ? (
             <TableBody className="relative">

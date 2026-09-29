@@ -842,14 +842,14 @@ export function QueueTable({
           </AnimatePresence>
         ) : (
           <div className="rounded-2xl border border-border bg-background">
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
+            <div className="flex min-h-[400px] flex-col items-center justify-center gap-1.5 text-foreground">
               <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
                 <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               </div>
-              <p className="text-base font-bold text-foreground">
+              <p className="text-2xl font-extrabold text-primary">
                 No continuing learners match this enrollment status.
               </p>
-              <p className="px-4 text-center text-sm">
+              <p className="text-base text-muted-foreground">
                 Select another target grade or check the learner name or LRN.
               </p>
             </div>
@@ -864,14 +864,14 @@ export function QueueTable({
           tableClassName="w-full table-fixed"
           loading={loading}
           emptyStateContent={
-            <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
+            <div className="flex flex-col items-center justify-center min-h-[320px] max-h-[300px] gap-1.5 text-foreground">
               <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
                 <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               </div>
-              <p className="text-base font-bold text-foreground">
+              <p className="text-2xl font-extrabold text-primary">
                 No continuing learners match this enrollment status.
               </p>
-              <p className="text-sm">
+              <p className="text-base text-muted-foreground">
                 Select another target grade or check the learner name or LRN.
               </p>
             </div>

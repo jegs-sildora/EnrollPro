@@ -283,7 +283,7 @@ export default function EnrollmentForm({
     defaultValues: initialDraft || {
       ...DEFAULT_VALUES,
     },
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
   });
 

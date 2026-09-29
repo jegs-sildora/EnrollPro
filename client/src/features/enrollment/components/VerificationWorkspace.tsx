@@ -1744,10 +1744,10 @@ export function VerificationWorkspace() {
               </>
             ) : (
               <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">
-                <div className="w-20 h-20 bg/50 rounded-full flex items-center justify-center mb-2">
-                  <Search className="h-10 w-10 text-foreground/40" />
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                  <Search className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="font-bold text-xl text-foreground">No Learner Selected</h3>
+                <div className="font-extrabold text-2xl text-primary">No Learner Selected</div>
                 <p className="font-bold text-base leading-tight max-w-[300px]">Select a learner from the left pane to begin verification.</p>
               </div>
             )}

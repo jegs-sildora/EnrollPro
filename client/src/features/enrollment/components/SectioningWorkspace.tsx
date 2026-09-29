@@ -1737,12 +1737,12 @@ export function SectioningWorkspace() {
                             {activeSearchQuery || filterProgram !== "all" ? (
                               <>
                                 <Search className="h-8 w-8" />
-                                <p className="text-foreground font-bold">No unsectioned learners match this search</p>
+                                <p className="text-foreground font-extrabold">No unsectioned learners match this search</p>
                               </>
                             ) : (
                               <>
                                 <CheckCircle2 className="h-8 w-8 text-primary" />
-                                <p className="text-foreground font-bold">All enrolled learners are sectioned</p>
+                                <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
                               </>
                             )}
                           </div>

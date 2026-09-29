@@ -205,7 +205,7 @@ export default function ScpAdmissionForm({
 
   const form = useForm<ScpFormData>({
     resolver: zodResolver(scpAdmissionSubmitSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: parsedSavedState ?? getEmptyValues(intakeChoice, initialProgram),
   });

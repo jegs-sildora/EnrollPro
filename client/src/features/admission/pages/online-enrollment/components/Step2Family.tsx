@@ -132,14 +132,14 @@ export default function Step2Family() {
       <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
         <div
           className={cn(
-            "space-y-6 rounded-2xl border-2 p-6 transition-all",
+            "space-y-6 rounded-2xl border p-6 transition-all",
             hasNoMother
               ? "border-border bg-muted shadow-sm"
-              : "border-primary bg-primary/5 shadow-md",
+              : "border-primary/20 bg-primary/5 shadow-md",
           )}>
           <div className="flex items-center justify-between">
             <h3 className="text-base leading-tight font-bold uppercase  text-primary">
-              Mother&apos;s Details
+              Mother&apos;s Maiden Name
             </h3>
             <div className="flex items-center gap-2">
               <Checkbox
@@ -195,7 +195,7 @@ export default function Step2Family() {
               <Label
                 htmlFor="mother.lastName"
                 className="text-base font-bold uppercase">
-                Last Name{" "}
+                Maiden Last Name{" "}
                 {!hasNoMother && <span className="text-destructive">*</span>}
               </Label>
               <Input
@@ -259,7 +259,7 @@ export default function Step2Family() {
               <Label
                 htmlFor="mother.middleName"
                 className="text-base font-bold uppercase">
-                Middle Name
+                Maiden Middle Name
               </Label>
               <Input
                 autoComplete="off"
@@ -280,14 +280,14 @@ export default function Step2Family() {
 
         <div
           className={cn(
-            "space-y-6 rounded-2xl border-2 p-6 transition-all",
+            "space-y-6 rounded-2xl border p-6 transition-all",
             hasNoFather
               ? "border-border bg-muted shadow-sm"
-              : "border-primary bg-primary/5 shadow-md",
+              : "border-primary/20 bg-primary/5 shadow-md",
           )}>
           <div className="flex items-center justify-between">
             <h3 className="text-base leading-tight font-bold uppercase  text-primary">
-              Father&apos;s Details
+              Father&apos;s Name
             </h3>
             <div className="flex items-center gap-2">
               <Checkbox

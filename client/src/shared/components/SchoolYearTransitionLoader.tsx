@@ -99,7 +99,7 @@ export function SchoolYearTransitionLoader({ targetLabel }: SchoolYearTransition
         </div>
 
         {/* Text Details */}
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground mb-2">
           Switching School Year
         </h1>
 
