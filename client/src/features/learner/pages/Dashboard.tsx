@@ -334,12 +334,12 @@ export default function LearnerDashboard() {
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-base font-bold text-primary-foreground">
-                  {data?.schoolAcronym?.slice(0, 2) || "HN"}
+                  {data?.schoolAcronym?.slice(0, 2) || ""}
                 </span>
               </div>
             )}
             <span className="font-bold text-xl text-foreground tracking-tight">
-              {data?.schoolAcronym || "HNHS"} Learner Information System
+              {data?.schoolAcronym || ""} Learner Information System
             </span>
           </div>
           <div className="flex items-center gap-1">

@@ -24,8 +24,7 @@ function computeSchoolAcronym(schoolName: string): string {
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("")
-    .slice(0, 4) || "EP";
+    .join("") || "EP";
 }
 
 async function getLearnerEnrollmentData(learnerId: number) {

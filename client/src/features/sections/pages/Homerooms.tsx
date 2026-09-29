@@ -551,7 +551,7 @@ export default function Homerooms() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
-          <h3 className="text-lg font-bold uppercase text-foreground tracking-tight flex items-center gap-2">
+          <h3 className="text-lg font-extrabold uppercase text-foreground tracking-tight flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
             {categoryConfig.title}
           </h3>

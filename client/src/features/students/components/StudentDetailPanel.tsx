@@ -522,10 +522,18 @@ export function StudentDetailPanel({
   }, [id, fetchStudent]);
 
   const globalDefaultPassword = useSettingsStore((s) => s.globalDefaultPassword);
+  const activeSchoolYearLabel = useSettingsStore((s) => s.activeSchoolYearLabel);
 
   useEffect(() => {
-    setDefaultPasswordInput(globalDefaultPassword || "");
-  }, [globalDefaultPassword]);
+    let pwd = globalDefaultPassword || "DepEd2026!";
+    if (activeSchoolYearLabel) {
+      const year = activeSchoolYearLabel.split("-")[0];
+      if (year) {
+        pwd = `DepEd${year}!`;
+      }
+    }
+    setDefaultPasswordInput(pwd);
+  }, [globalDefaultPassword, activeSchoolYearLabel]);
 
   // Derived check for form dirty state
   const isProfileFormDirty = useMemo(() => {

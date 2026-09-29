@@ -1,36 +1,34 @@
-# Prompt for UI/UX & Logic Implementation: SCP Configuration Empty States
+# Prompt for UI/UX & React Implementation: Dynamic Grade-Level Color Theming
 
 ## Role & Context
-Act as a Frontend Developer / UX Engineer. We are refining the `System Configuration` module, specifically the Special Curricular Programs (SCP) setup card.
+Act as a React Frontend Developer. We are upgrading the `CLASS ADVISERSHIP & SECTION MANAGEMENT` workspace to implement dynamic grade-level color coding.
 
-Currently, when a program like SPA or SPS is toggled off, the card simply leaves an empty white void where the configuration inputs usually sit. This looks like a UI bug rather than a deliberate disabled state. We need to implement a proper "Inactive Empty State" that fills this void with helpful context, and visually mutes the card to indicate it is disabled.
+Currently, the active tabs and primary buttons use a static brand color. To reduce cognitive load and prevent data entry errors, the UI must dynamically re-theme itself based on the currently selected Grade Level tab, utilizing the system's predefined grade-level color palette. 
 
-## Critical Directive
-Transform the inactive SCP cards from "blank spaces" into communicative empty states. Use background muting, smooth height transitions, and clear helper text to explain the system-wide consequences of disabling a program.
+## Critical Technical Directive
+**You must reuse existing design system components.** Do not generate custom UI styling code, raw CSS classes, or hardcoded hex values in the component markup. You must leverage our established Theme Provider, CSS variables, or design system color props to pass the dynamic color states to the existing `<Tabs>`, `<Button>`, and `<Card>` components.
 
-## UI Component & Logic Requirements
+## UI Component & Theme Logic Requirements
 
-Please implement the following layout and state transitions:
+Please implement the following state-driven theme updates:
 
-### 1. Section Header Polish
-*   **Rename:** Change the section title from `Active Special Curricular Programs (SCP)` to `Special Curricular Program (SCP) Configuration`. Since this panel shows both active and inactive programs, the current title is slightly misleading.
+### 1. Theme Configuration Mapping
+Ensure the active grade state is mapped to the existing system color variables. For example:
+*   `Grade 7` -> Maps to `theme.colors.grade7`
+*   `Grade 8` -> Maps to `theme.colors.grade8`
+*   `Grade 9` -> Maps to `theme.colors.grade9`
+*   `Grade 10` -> Maps to `theme.colors.grade10` 
 
-### 2. The Inactive Card State (Visual Muting)
-When a program's toggle is set to `FALSE` (Inactive):
-*   **Card Background:** Apply a subtle gray or muted background to the entire inner card (e.g., `bg-gray-50` or `bg-slate-50`).
-*   **Header Text:** Reduce the opacity of the program title (e.g., `SPA`) to `text-gray-400` to visually reinforce that it is turned off.
+### 2. Dynamic Component Styling
+When a Grade tab is clicked, the active color must propagate to the following UI elements on the page:
+*   **The Active Tab:** The background color of the active tab (e.g., `GRADE 7`) must use the specific grade color, while inactive tabs remain neutral/gray.
+*   **Primary Action Buttons:** All primary solid buttons within the active view (e.g., `Open SF1 Masterlist`) must adopt the grade color as their background color.
+*   **Accents & Typography:** Update subtle UI accents, such as the small colored dot indicator next to `SPECIAL CURRICULAR PROGRAMS (SCP)` and `BASIC EDUCATION CURRICULUM (BEC)`, to match the active grade color.
+*   **Interactive States (Hover/Focus):** Ensure the `hover` states for icon buttons (like the Edit/Pencil and Delete/Trash icons on the section cards) utilize a tinted or localized version of the active grade color instead of a generic hover gray.
 
-### 3. The Placeholder Empty State (Filling the Void)
-Instead of leaving the space below the toggle blank, render an Empty State block:
-*   **Layout:** Center the content inside a dashed or subtly bordered container that matches the height of the active "Max Learner Slots" input field.
-*   **Icon:** Include a small, muted icon (e.g., an eye-slash, a locked folder, or a simple information `i`).
-*   **Helper Text:** Add a short explanatory string: *"Program Inactive. Toggle on to configure learner slots and enable admission tracking."*
-*   **System Impact Warning (Crucial):** Add a micro-text line below it: *"Note: Disabling this hides the program from the Admission and Sectioning modules."*
+### 3. State Management
+*   The thematic color state must be tightly coupled to the active tab state (`activeTab` or `selectedGrade`).
+*   When the user switches tabs, the transition of the primary UI elements to the new color must be immediate and seamless, requiring no page reloads.
 
-### 4. Smooth State Transitions
-*   **Interaction:** Do not instantly snap between the Active input fields and the Inactive placeholder text. Wrap the content area of the card in a layout transition (using Framer Motion, CSS transitions, or your UI library's equivalent).
-*   **Effect:** When toggled, the content should fade and crossfade smoothly, preventing jarring UI jumps. 
-
-### 5. Backend Configuration Binding
-*   Ensure the state of these toggles is saved to a `school_settings` or `configurations` table in the database.
-*   The `SCP Admission` and `Section Assignment` frontend pages must strictly fetch these settings on mount and dynamically render their top-level tabs based *only* on programs marked as `TRUE` (Active) here.
+### 4. Empty State / Add Section Container
+*   The dashed `ADD SECTION` placeholder card should subtly reflect the active theme. Update its hover border color (and the `+` icon color on hover) to use the active grade's color variable, encouraging interaction while keeping the resting state clean and muted.

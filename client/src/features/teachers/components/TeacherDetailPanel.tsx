@@ -288,10 +288,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const globalDefaultPassword = useSettingsStore((s) => s.globalDefaultPassword);
+  const activeSchoolYearLabel = useSettingsStore((s) => s.activeSchoolYearLabel);
 
   useEffect(() => {
-    setDefaultPasswordInput(globalDefaultPassword || "");
-  }, [globalDefaultPassword]);
+    let pwd = globalDefaultPassword || "DepEd2026!";
+    if (activeSchoolYearLabel) {
+      const year = activeSchoolYearLabel.split("-")[0];
+      if (year) {
+        pwd = `DepEd${year}!`;
+      }
+    }
+    setDefaultPasswordInput(pwd);
+  }, [globalDefaultPassword, activeSchoolYearLabel]);
 
   const handleResetPassword = () => {
     setShowResetPasswordConfirm(true);
