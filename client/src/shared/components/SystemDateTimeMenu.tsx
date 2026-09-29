@@ -3,12 +3,14 @@ import { useManilaNow } from "@/shared/hooks/useManilaNow";
 import { MOCKED_SYSTEM_DATE_KEY } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Switch } from "@/shared/ui/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
+import { useSettingsStore } from "@/store/settings.slice";
 
 const systemDateFormatter = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
@@ -31,6 +33,7 @@ export function SystemDateTimeMenu() {
   const isMocked = localStorage.getItem(MOCKED_SYSTEM_DATE_KEY) !== null;
   const formattedDate = systemDateFormatter.format(now);
   const formattedTime = systemTimeFormatter.format(now);
+  const { showTimeMachineWidget, hideTimeMachineFloatingIcon, setHideTimeMachineFloatingIcon } = useSettingsStore();
 
   return (
     <Popover>
@@ -82,6 +85,16 @@ export function SystemDateTimeMenu() {
           <p className="text-center text-xs font-medium text-muted-foreground">
             Philippine Standard Time (Asia/Manila)
           </p>
+
+          {showTimeMachineWidget && (
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-sm font-bold text-foreground">Show Floating Widget</span>
+              <Switch
+                checked={!hideTimeMachineFloatingIcon}
+                onCheckedChange={(checked) => setHideTimeMachineFloatingIcon(!checked)}
+              />
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

@@ -59,13 +59,13 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
   const getStatusText = () => {
     switch (scene) {
       case 0:
-        return "Phase 1: Fetching verified enrollments and EOSY promotion data...";
+        return "Phase 1: Gathering all enrolled learners and their previous End-of-School Year (EOSY) grades...";
       case 1:
-        return "Phase 2: Isolating qualified Special Curricular Program learners into specialized sections.";
+        return "Phase 2: Assigning qualified learners to Special Curricular Programs (SCP) like Science, Technology, and Engineering (STE).";
       case 2:
-        return "Phase 3: Sorting and placing top-performing learners into Top BEC sections.";
+        return "Phase 3: Grouping top-performing learners homogeneously into Pilot/Top sections based on their grades.";
       case 3:
-        return "Phase 4: Executing heterogeneous draft to balance academic performance and gender ratio.";
+        return "Phase 4: Distributing the remaining learners heterogeneously across regular sections to balance gender and academic averages.";
       default:
         return "";
     }

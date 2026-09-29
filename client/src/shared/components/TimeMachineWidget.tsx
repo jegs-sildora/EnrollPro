@@ -56,10 +56,10 @@ function getManilaDateTimeParts(value: string): MockDateTimeParts | null {
 }
 
 export function TimeMachineWidget() {
-  const { showTimeMachineWidget } = useSettingsStore();
+  const { showTimeMachineWidget, hideTimeMachineFloatingIcon } = useSettingsStore();
   const location = useLocation();
 
-  if (!showTimeMachineWidget || location.pathname.startsWith("/learner")) {
+  if (!showTimeMachineWidget || hideTimeMachineFloatingIcon || location.pathname.startsWith("/learner")) {
     return null;
   }
 
@@ -237,5 +237,3 @@ function TimeMachineWidgetCore() {
     </div>
   );
 }
-
-

@@ -2564,7 +2564,7 @@ export function SectioningWorkspace() {
                     className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 0 ? "font-bold text-primary" : "")}
                     onClick={() => { if (isAnimationVisible) setAnimationScene(0); }}
                   >
-                    Phase 1: Fetching verified enrollments and EOSY promotion data.
+                    Phase 1: Gathering all enrolled learners and their previous End-of-School Year (EOSY) grades.
                   </li>
                   {(() => {
                     const availableScp = Array.from(
@@ -2577,14 +2577,14 @@ export function SectioningWorkspace() {
                           className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 1 ? "font-bold text-primary" : "")}
                           onClick={() => { if (isAnimationVisible) setAnimationScene(1); }}
                         >
-                          Phase 2: Isolating qualified Special Curricular Program learners into specialized sections{availableScp.length > 0 ? ` such as ${availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}` : " (none currently available)"}.
+                          Phase 2: Assigning qualified learners to Special Curricular Programs (SCP){availableScp.length > 0 ? ` like ${availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}` : " (none currently available)"}.
                         </li>
                         {enableHomogeneousSections && (
                           <li 
                             className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 2 ? "font-bold text-primary" : "")}
                             onClick={() => { if (isAnimationVisible) setAnimationScene(2); }}
                           >
-                            Phase 3: Sorting and placing top-performing learners into Top BEC sections.
+                            Phase 3: Grouping top-performing learners homogeneously into Pilot/Top sections based on their grades.
                           </li>
                         )}
                       </>
@@ -2594,7 +2594,7 @@ export function SectioningWorkspace() {
                     className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 3 ? "font-bold text-primary" : "")}
                     onClick={() => { if (isAnimationVisible) setAnimationScene(3); }}
                   >
-                    Phase {enableHomogeneousSections ? 4 : 3}: Executing heterogeneous draft to balance academic performance and gender ratio.
+                    Phase {enableHomogeneousSections ? 4 : 3}: Distributing the remaining learners heterogeneously across regular sections to balance gender and academic averages.
                   </li>
                   <li className="text-foreground">
                     After this, you can still review, move, or swap learners before clicking Finalize Official Sections.

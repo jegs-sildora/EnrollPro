@@ -110,6 +110,8 @@ export interface SettingsState {
   ) => void;
   showTimeMachineWidget: boolean;
   setShowTimeMachineWidget: (show: boolean) => void;
+  hideTimeMachineFloatingIcon: boolean;
+  setHideTimeMachineFloatingIcon: (hide: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -181,6 +183,7 @@ export const useSettingsStore = create<SettingsState>()(
         studentProfileTab: "record",
       },
       showTimeMachineWidget: false,
+      hideTimeMachineFloatingIcon: false,
       updateUiPreference: (key, value) => 
         set((state) => ({
           uiPreferences: {
@@ -242,6 +245,7 @@ export const useSettingsStore = create<SettingsState>()(
         }, 2000);
       },
       setShowTimeMachineWidget: (show) => set({ showTimeMachineWidget: show }),
+      setHideTimeMachineFloatingIcon: (hide) => set({ hideTimeMachineFloatingIcon: hide }),
     }),
     {
       name: "enrollpro-settings",
