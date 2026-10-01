@@ -23,7 +23,8 @@ Use this order:
 - Preserve feature boundaries and shared contracts.
 - Validate backend inputs with shared Zod schemas where practical.
 - Keep EnrollPro and SMART ownership boundaries aligned with `ARCHITECTURE_MICROSERVICES.md`.
-- Do not add Early Registration, reading assessment, enrollment listing, hardware, or Internet of Things workflows to EnrollPro.
+- Never use ScratchPad or Browser use.
+- Run `pnpm --filter client build` and `pnpm --filter server build`
 
 ## Commands
 

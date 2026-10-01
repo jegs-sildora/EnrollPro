@@ -15,7 +15,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 
 interface PrivacyNoticeProps {
   onAccept: () => void;
-  formType?: "enrollment" | "admission";
+  formType?: "enrollment" | "admission" | "early-registration";
 }
 
 export default function PrivacyNotice({
@@ -32,7 +32,8 @@ export default function PrivacyNotice({
 
   const { schoolName } = useSettingsStore();
   const isAdmission = formType === "admission";
-  const processName = isAdmission ? "admission" : "enrollment";
+  const isEarlyRegistration = formType === "early-registration";
+  const processName = isEarlyRegistration ? "early registration" : isAdmission ? "admission" : "enrollment";
 
   const handleNoticeScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -196,7 +197,7 @@ export default function PrivacyNotice({
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               <span className="capitalize">{schoolName?.toLowerCase()}</span> and DepEd for the purpose of{" "}
-              Official {isAdmission ? "Admission" : "Enrollment"}.
+              Official {isEarlyRegistration ? "Early Registration" : isAdmission ? "Admission" : "Enrollment"}.
               <span className="text-destructive ml-1">*</span>
             </Label>
           </div>
@@ -204,7 +205,7 @@ export default function PrivacyNotice({
             onClick={onAccept}
             disabled={!agreed}
             className="w-full h-12 text-base font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
-            Continue to {isAdmission ? "Admission" : "Enrollment"} Form
+            Continue to {isEarlyRegistration ? "Early Registration" : isAdmission ? "Admission" : "Enrollment"} Form
           </Button>
         </CardFooter>
       </Card>

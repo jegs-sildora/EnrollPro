@@ -44,6 +44,8 @@ const LearnerAdmissionIndex = lazy(() => import("@/features/admission/pages/lear
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
 const TrackApplicationPage = lazy(() => import("@/features/admission/pages/scp-admission/Track"));
+const EarlyRegistration = lazy(() => import("@/features/admission/pages/early-registration/Index"));
+const EarlyRegistrationMasterlist = lazy(() => import("@/features/admission/pages/early-registration-masterlist/EarlyRegistrationMasterlist"));
 
 function getFallbackVariant(pathname: string): SkeletonPageVariant {
   if (pathname === "/dashboard") return "dashboard";
@@ -140,6 +142,10 @@ export const router = createBrowserRouter([
             path: "/track-application",
             element: renderLazyPage(TrackApplicationPage),
           },
+          {
+            path: "/early-registration",
+            element: renderLazyPage(EarlyRegistration),
+          },
         ],
       },
 
@@ -189,6 +195,10 @@ export const router = createBrowserRouter([
               {
                 path: "/learner-admission",
                 element: renderLazyPage(LearnerAdmissionIndex),
+              },
+              {
+                path: "/early-registration-masterlist",
+                element: renderLazyPage(EarlyRegistrationMasterlist),
               },
               {
                 path: "/learners",

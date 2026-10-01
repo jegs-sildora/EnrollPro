@@ -1,41 +1,37 @@
-# Prompt for UI/UX & React Implementation: Dedicated Program Roster Page
+# Prompt for UI/UX & React Implementation: Early Registration Masterlist
 
 ## Role & Context
-Act as a React Frontend Developer. We are implementing the routing and UI for the "View Roster" button found on the Dashboard's `Learners by Curricular Program` cards.
+Act as a React Frontend Developer. We are introducing a new administrative module to track students who have completed the `/early-registration` form. 
 
-Instead of overloading the existing section masterlist component, create a brand new, dedicated page component named `ViewProgramRoster.tsx`. This page will display a comprehensive list of all enrolled learners for a specific curriculum (e.g., all BEC learners or all STE learners), while mirroring the familiar split-table aesthetics of the section masterlist.
+This page serves as a holding area for early registrants before they are officially converted into enrollees during the official enrollment period. Because some of our beneficiary schools use Homogeneous Sectioning (strict academic ranking), the UI must heavily feature and sort by the learner's Final General Average.
 
 ## Critical Technical Directive
-Create a standalone `ViewProgramRoster.tsx` page. The UI must adapt the visual language of the section masterlist (split Male/Female tables) but remove section-specific constraints (like class capacities, advisers, and SF1 forms). Since this is an aggregated view across multiple grade levels, the data tables must clearly indicate which grade and section each learner currently belongs to.
+Do not design a new table component from scratch. You must completely reuse the existing `<DataTable>` layout, pagination, and search bar anatomy currently implemented in the `Learner Directory` page. Maintain the standard white card background, gray borders, and red primary accents.
 
-## UI Component & Logic Requirements
+## UI Component & Layout Requirements
 
 Please implement the following architecture and UI layout:
 
-### 1. File Creation & Routing
-*   **New Component:** Create `src/pages/ViewProgramRoster.tsx` (or your equivalent path).
-*   **Routing:** Bind the "View Roster" button on the Dashboard cards to redirect to this new page, passing the program identifier in the URL (e.g., `/dashboard/program-roster/bec` or `/dashboard/program-roster/ste`).
+### 1. Sidebar Navigation Integration
+*   **Group:** Locate the `ENROLLMENT AND SECTIONING` group in the left sidebar.
+*   **New Item:** Inject a new menu item labeled `Early Registration`. Place it immediately below `SCP Admission` and above `Learner Enrollment`. 
+*   **Icon:** Use a calendar-check or clipboard-list icon to represent early sign-ups.
 
-### 2. Page Header & Metadata
-At the top of the page, render a header block containing:
-*   **Breadcrumb:** `< Back to Dashboard` (positioned at the top left).
-*   **Page Title:** `PROGRAM ROSTER — [FULL CURRICULUM NAME]` (e.g., `PROGRAM ROSTER — BASIC EDUCATION CURRICULUM`).
-*   **Metric Badges:** Align to the right side of the header:
-    *   `Total Enrolled: [X]`
-    *   `M: [X]` (Male count badge)
-    *   `F: [X]` (Female count badge)
-*   **Action Button:** Place an `Export Roster (CSV/PDF)` button near the metrics. Do *not* label this as "SF1", as School Form 1 is strictly for class sections, not entire curricular programs.
+### 2. Page Header & Toolbar
+*   **Page Title:** `EARLY REGISTRATION MASTERLIST`
+*   **Tabs (Optional but recommended):** Create two pill-shaped tabs at the top: `Incoming Grade 7` (Active by default) and `Grades 8-10 (Transferees)`. Note: Continuing students are automatically pre-registered, so this list focuses heavily on new entrants.
+*   **Search Bar:** Reuse the full-width search bar: `Q SEARCH LRN, FIRST NAME, LAST NAME...`.
 
-### 3. The Split Data Tables
-Below the header, render the signature split-table layout:
-*   **Left Pane:** `MALE LEARNERS`
-*   **Right Pane:** `FEMALE LEARNERS`
-*   **Columns Required:** 
-    *   `#` (Row index)
-    *   `LEARNER` (Name and LRN)
-    *   `GRADE & SECTION` (Crucial: Display their current placement, e.g., "Grade 7 - Rizal" or "Unassigned")
-    *   `ACTION` (A button/icon to view the full Learner Profile)
+### 3. The Data Table (Homogeneous Optimization)
+Render a data table with the following specific headers to support academic ranking:
 
-### 4. Data Fetching
-*   **Query Logic:** The component must fetch learners where `enrollment_status = 'OFFICIAL'` and `curricular_program = [URL Parameter]`.
-*   **Empty State:** If a program has no enrolled learners yet, render a standard empty state illustration inside the table area stating *"No enrolled learners found for this curricular program."*
+*   **`LEARNER NAME & LRN`**: Render the avatar, bold name, and LRN just like the Learner Directory.
+*   **`TARGET GRADE`**: (e.g., "Grade 7").
+*   **`PREVIOUS SCHOOL`**: (e.g., "Hinigaran Elementary School"). This is critical for validating Grade 7 entrants.
+*   **`FINAL GEN AVE ↓` (Sortable - Crucial):** Display the student's Final General Average from their previous school year (e.g., `92.50`). This column header MUST be sortable. Default the table to sort by this column in *descending* order so the highest-ranking students naturally float to the top for the Pilot/Star section coordinators.
+*   **`REGISTRATION DATE`**: (e.g., "Jan 25, 2026").
+*   **`STATUS`**: A status pill. Default to a yellow/orange `PENDING VERIFICATION` badge.
+*   **`ACTION`**: A ghost button labeled `Review Form` or `Verify` that will eventually open a modal to check their submitted early registration data.
+
+### 4. Empty State
+If no early registrants exist for the selected tab, reuse the existing empty state component (the green checkmark or gray folder icon) with the text: *"No early registration records found for this category."*

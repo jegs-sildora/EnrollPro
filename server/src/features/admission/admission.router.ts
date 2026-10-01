@@ -7,6 +7,8 @@ import {
   updateExistingApplication,
   validateLrn,
   getLearnerProfile,
+  submitEarlyRegistration,
+  getEarlyRegistrations,
 } from "./admission.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -37,6 +39,8 @@ walkInRouter.post(
   submitWalkInAdmission,
 );
 router.post("/enrollments", submitEnrollment);
+router.post("/early-registration-masterlist", submitEarlyRegistration);
+router.get("/early-registration-masterlist", authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"), getEarlyRegistrations);
 router.put("/update-existing", updateExistingApplication);
 router.get("/track/:trackingNumber", trackApplication);
 router.get("/validate-lrn/:lrn", validateLrn);

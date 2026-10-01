@@ -167,8 +167,8 @@ export default function Step2Family() {
                     });
                     clearErrors(["mother.lastName", "mother.firstName"]);
                   } else {
-                    setValue("mother.lastName", "", { shouldValidate: true });
-                    setValue("mother.firstName", "", { shouldValidate: true });
+                    setValue("mother.lastName", "", { shouldValidate: false });
+                    setValue("mother.firstName", "", { shouldValidate: false });
                     setValue("mother.middleName", "", {
                       shouldValidate: false,
                     });
@@ -180,7 +180,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoMother"
-                className="text-base font-bold uppercase text-foreground cursor-pointer">
+                className="text-sm font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -312,8 +312,8 @@ export default function Step2Family() {
                     });
                     clearErrors(["father.lastName", "father.firstName"]);
                   } else {
-                    setValue("father.lastName", "", { shouldValidate: true });
-                    setValue("father.firstName", "", { shouldValidate: true });
+                    setValue("father.lastName", "", { shouldValidate: false });
+                    setValue("father.firstName", "", { shouldValidate: false });
                     setValue("father.middleName", "", {
                       shouldValidate: false,
                     });
@@ -322,7 +322,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoFather"
-                className="text-base font-bold uppercase text-foreground cursor-pointer">
+                className="text-sm font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>

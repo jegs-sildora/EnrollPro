@@ -150,9 +150,9 @@ function TableRowComponentInner<TData>(
       }}
       className={cn(
         "text-center text-sm transition-colors",
-        striped ? ((dataIndex ?? row.index) % 2 === 0 ? "bg-background" : "bg-muted/50") : "bg-background",
-        isClickable ? "hover:bg-muted/60 cursor-pointer" : "",
-        row.getIsSelected() ? "bg-muted/80 hover:bg-muted/80" : "",
+        striped ? ((dataIndex ?? row.index) % 2 === 0 ? "bg-background" : "bg-muted") : "bg-background",
+        isClickable ? "hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" : "",
+        row.getIsSelected() ? "bg-muted hover:bg-slate-100 dark:hover:bg-slate-800" : "",
         customClassName,
         className,
       )}>
@@ -466,21 +466,36 @@ export function DataTable<TData, TValue>({
             </TableBody>
           ) : (
             <TableBody className="relative">
-              <TableRow key="no-results">
+              <TableRow key="no-results" className="hover:bg-transparent border-none">
                 <TableCell
                   colSpan={columns.length}
-                  className="p-0">
-                  {emptyStateContent ?? (
-                    <div className="min-h-120 flex items-center justify-center text-center font-bold">
-                      {noResultsMessage}
-                    </div>
-                  )}
+                  className="p-0 border-none">
+                  {/* Invisible spacer to maintain table structure and minimum height if needed */}
+                  <div className="min-h-[400px] w-full" aria-hidden="true" />
                 </TableCell>
               </TableRow>
             </TableBody>
           )}
         </Table>
       </div>
+
+      {!showLoadingRows && !forceEmptyState && !suppressEmptyDuringDelayedLoading && rows.length === 0 && (
+        <div
+          className={cn(
+            "absolute inset-x-0 bottom-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-[2px]",
+            dense ? "top-8" : "top-11"
+          )}
+        >
+          <div className="pointer-events-auto h-full flex flex-col items-center justify-center w-full">
+            {emptyStateContent ?? (
+              <div className="flex flex-col items-center justify-center text-center font-bold">
+                {noResultsMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {bodyOverlay && (
         <div
           className={cn(

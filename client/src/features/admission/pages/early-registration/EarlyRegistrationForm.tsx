@@ -1,0 +1,915 @@
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@/shared/lib/zodResolver";
+import { EnrollmentFormSchema, type EnrollmentFormData } from "../online-enrollment/types";
+
+import Step1Personal from "../online-enrollment/components/Step1Personal";
+import Step2Family from "../online-enrollment/components/Step2Family";
+import Step4PreviousSchool from "../online-enrollment/components/Step4PreviousSchool";
+// removed unused imports
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Label } from "@/shared/ui/label";
+import { Checkbox } from "@/shared/ui/checkbox";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+
+import { Input } from "@/shared/ui/input";
+import { ArrowLeft, AlertCircle, ShieldCheck, Info, Trash2 } from "lucide-react";
+import api from "@/shared/api/axiosInstance";
+import { toUpperCaseRecursive } from "@/shared/lib/utils";
+import { sileo } from "sileo";
+import type { ApplicationSubmitResponse } from "@enrollpro/shared";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+
+interface AddressPayload {
+  houseNo?: string;
+  street?: string;
+  barangay?: string;
+  cityMunicipality?: string;
+  province?: string;
+  region?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+const DRAFT_KEY = "enrollpro_early_reg_draft";
+
+const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
+  isPrivacyConsentGiven: true,
+  schoolYear: "2026-2027",
+  lrn: "",
+  hasNoLrn: false,
+  scpProgram: null,
+  scpAdmissionStatus: null,
+  psaBirthCertNumber: "",
+  gradeLevel: "7",
+  isScpApplication: false,
+  scpType: undefined,
+  studentPhoto: "",
+  lastName: "",
+  firstName: "",
+  middleName: "",
+  extensionName: "",
+  birthdate: undefined,
+  age: undefined,
+  sex: undefined,
+  placeOfBirth: "",
+  motherTongue: "",
+  religion: "",
+  intakeHeightCm: undefined,
+  intakeWeightKg: undefined,
+  isIpCommunity: undefined,
+  ipGroupName: "",
+  is4PsBeneficiary: undefined,
+  householdId4Ps: "",
+  isBalikAral: undefined,
+  lastYearEnrolled: "",
+  lastGradeLevel: "",
+  isLearnerWithDisability: undefined,
+  specialNeedsCategory: undefined,
+  disabilityTypes: [],
+  hasPwdId: undefined,
+  snedPlacement: undefined,
+  currentAddress: { houseNo: "", street: "", region: "", province: "", cityMunicipality: "", barangay: "", country: "Philippines", zipCode: "" },
+  isPermanentSameAsCurrent: true,
+  permanentAddress: { houseNo: "", street: "", region: "", province: "", cityMunicipality: "", barangay: "", country: "Philippines", zipCode: "" },
+  hasNoMother: false,
+  hasNoFather: false,
+  mother: { lastName: "", firstName: "", middleName: "", contactNumber: "", maidenName: "" },
+  father: { lastName: "", firstName: "", middleName: "", contactNumber: "" },
+  guardian: { lastName: "", firstName: "", middleName: "", contactNumber: "", relationship: "" },
+  guardianRelationship: "",
+  primaryContact: undefined, // Enforces explicit selection
+  contactNumber: "",
+  lastSchoolName: "",
+  lastSchoolId: "",
+  lastGradeCompleted: "Grade 6",
+  schoolYearLastAttended: "",
+  lastSchoolAddress: "",
+  lastSchoolType: "Public",
+  generalAverage: undefined,
+  hasSf9Deficiency: false,
+
+  artField: "",
+  sportsList: [],
+  foreignLanguage: "",
+  hasScpFallbackConsent: false,
+
+  learnerType: "NEW_ENROLLEE",
+  learningModalities: [],
+  bypassDuplicate: false,
+
+  isCertifiedTrue: false,
+};
+
+type ValidationIssue = {
+  fieldPath: string;
+  fieldLabel: string;
+  message: string;
+};
+
+const extractFirstValidationError = (
+  value: unknown,
+): { path: string; message: string } | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const errorNode = value as Record<string, unknown>;
+  const rootErrors = errorNode._errors;
+  if (
+    Array.isArray(rootErrors) &&
+    rootErrors.length > 0 &&
+    typeof rootErrors[0] === "string"
+  ) {
+    return { path: "_root", message: rootErrors[0] };
+  }
+
+  for (const [key, nestedValue] of Object.entries(errorNode)) {
+    if (key === "_errors") {
+      continue;
+    }
+
+    const nestedError = extractFirstValidationError(nestedValue);
+    if (nestedError) {
+      return {
+        path:
+          nestedError.path === "_root"
+            ? key
+            : `${key}.${nestedError.path}`,
+        message: nestedError.message,
+      };
+    }
+  }
+
+  return null;
+};
+
+const FIELD_LABEL_OVERRIDES: Record<string, string> = {
+  lrn: "Learner Reference Number (LRN)",
+  hasNoLrn: "No LRN Declaration",
+  psaBirthCertNumber: "PSA Birth Certificate Number",
+  ipGroupName: "IP Group Name",
+  householdId4Ps: "4Ps Household ID",
+  primaryContact: "Primary Contact",
+  contactNumber: "Contact Number",
+  guardianRelationship: "Guardian Relationship",
+  lastSchoolName: "Name of Last School Attended",
+  lastSchoolId: "DepEd School ID",
+  lastGradeCompleted: "Last Grade Level Completed",
+  schoolYearLastAttended: "School Year Last Attended",
+  lastSchoolType: "Type of Last School",
+  lastSchoolAddress: "School Address / Division",
+  generalAverage: "Final General Average (SF9)",
+  scpType: "SCP Track",
+  sportsList: "Preferred Sports",
+  artField: "Art Field",
+  isCertifiedTrue: "Certification",
+  intakeHeightCm: "Height (in cm)",
+  intakeWeightKg: "Weight (in kg)",
+};
+
+function getFieldLabel(fieldPath: string): string {
+  const override = FIELD_LABEL_OVERRIDES[fieldPath];
+  if (override) {
+    return override;
+  }
+
+  return fieldPath
+    .split(".")
+    .filter(Boolean)
+    .map((segment) =>
+      segment
+        .replace(/([A-Z])/g, " $1")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
+    )
+    .join(" - ");
+}
+
+function extractErrorMessages(
+  errorValue: unknown,
+  currentPath = "",
+): Array<{ fieldPath: string; message: string }> {
+  if (!errorValue || typeof errorValue !== "object") {
+    return [];
+  }
+
+  const errorObject = errorValue as Record<string, unknown>;
+  const maybeMessage = errorObject.message;
+  const messages: Array<{ fieldPath: string; message: string }> = [];
+
+  if (typeof maybeMessage === "string" && maybeMessage.trim()) {
+    messages.push({
+      fieldPath: currentPath,
+      message: maybeMessage.trim(),
+    });
+  }
+
+  for (const [key, value] of Object.entries(errorObject)) {
+    if (
+      key === "message" ||
+      key === "type" ||
+      key === "ref" ||
+      key === "types"
+    ) {
+      continue;
+    }
+
+    const nestedPath = currentPath ? `${currentPath}.${key}` : key;
+    messages.push(...extractErrorMessages(value, nestedPath));
+  }
+
+  return messages;
+}
+
+type EnrollmentSubmitSuccessPayload = Pick<
+  ApplicationSubmitResponse,
+  | "trackingNumber"
+  | "applicantType"
+  | "programType"
+  | "status"
+  | "currentStep"
+> & { learnerName?: string };
+
+export default function EarlyRegistrationForm({
+  onSuccess,
+  onBack,
+}: {
+  onSuccess?: (data: EnrollmentSubmitSuccessPayload) => void;
+  onBack?: () => void;
+}) {
+  const [initialDraft] = useState(() => {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.birthdate) parsed.birthdate = new Date(parsed.birthdate);
+
+        return {
+          ...DEFAULT_VALUES,
+          ...parsed,
+        };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasDraft, setHasDraft] = useState(initialDraft !== null);
+  const [submitError, setSubmitError] = useState("");
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const hasSubmittedRef = useRef(false);
+  const { confirmOrRun } = useUnsavedChangesPrompt();
+
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [duplicateAction, setDuplicateAction] = useState<"new" | "update" | null>(null);
+  const [trackingNumberInput, setTrackingNumberInput] = useState("");
+  
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+
+  const methods = useForm<EnrollmentFormData, unknown, EnrollmentFormData>({
+    resolver: zodResolver(
+      EnrollmentFormSchema,
+    ) as import("react-hook-form").Resolver<EnrollmentFormData>,
+    defaultValues: initialDraft || {
+      ...DEFAULT_VALUES,
+    },
+  });
+
+  const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty, dirtyFields } } = methods;
+
+  const handleStartOver = () => {
+    reset({ ...DEFAULT_VALUES });
+    localStorage.removeItem(DRAFT_KEY);
+    setIsClearModalOpen(false);
+  };
+
+  const validationIssues: ValidationIssue[] = Array.from(
+    new Map(
+      Object.entries(errors)
+        .flatMap(([fieldPath, errorValue]) =>
+          extractErrorMessages(errorValue, fieldPath),
+        )
+        .map((issue) => [`${issue.fieldPath}|${issue.message}`, issue]),
+    ).values(),
+  ).map((issue) => {
+    return {
+      fieldPath: issue.fieldPath,
+      fieldLabel: getFieldLabel(issue.fieldPath),
+      message: issue.message,
+    };
+  });
+
+  const scrollToTopInstant = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  };
+
+  useEffect(() => {
+    scrollToTopInstant();
+  }, []);
+
+  // Auto-save draft on every change
+  useEffect(() => {
+    const subscription = watch((value: any, { name, type }: any) => {
+      // Only save if a specific field was changed by the user
+      // Prevent saving if the form has already been successfully submitted
+      if (name && !hasSubmittedRef.current) {
+        console.log("Draft triggered by field:", name, "with type:", type);
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  const discardEnrollmentDraft = useCallback(() => {
+    hasSubmittedRef.current = true; // Prevent watch from repopulating draft
+    reset({
+      ...DEFAULT_VALUES,
+    });
+    localStorage.removeItem(DRAFT_KEY);
+    sessionStorage.removeItem("enrollpro_early_reg_consent");
+    setSubmitError("");
+    setHasDraft(false);
+  }, [reset]);
+
+  useUnsavedChanges({
+    id: "public-early-registration",
+    label: "Early registration form",
+    isDirty: Object.keys(dirtyFields).length > 0 || hasDraft,
+    isSubmitting,
+    onDiscard: discardEnrollmentDraft,
+  });
+
+  const goToValidationIssue = (issue: ValidationIssue) => {
+    if (!issue.fieldPath) {
+      scrollToTopInstant();
+      return;
+    }
+
+    let target = document.getElementsByName(issue.fieldPath).item(0);
+
+    if (!target) {
+      target = document.getElementById(issue.fieldPath) as HTMLElement;
+    }
+
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+    } else {
+      scrollToTopInstant();
+    }
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(
+        '[aria-invalid="true"], .border-destructive, .animated-error'
+      ) as HTMLElement;
+
+      if (errorElement) {
+        if (
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA" ||
+          errorElement.tagName === "BUTTON"
+        ) {
+          errorElement.focus({ preventScroll: true });
+        }
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        scrollToTopInstant();
+      }
+    }, 100);
+  };
+
+  const handleAttemptSubmit = () => {
+    handleSubmit(
+      () => {
+        setIsConfirmDialogOpen(true);
+      },
+      () => {
+        scrollToFirstError();
+      }
+    )();
+  };
+
+  const onSubmit = async (data: EnrollmentFormData) => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const uppercaseData = toUpperCaseRecursive(data);
+
+      const {
+        contactNumber,
+        primaryContact,
+        guardianRelationship,
+        hasExecutedAffidavit: _hasExecutedAffidavit,
+        isScpApplication: _isScpApplication,
+        ...payloadBase
+      } = uppercaseData as EnrollmentFormData & {
+        contactNumber: string;
+        primaryContact: "MOTHER" | "FATHER" | "GUARDIAN";
+        hasExecutedAffidavit?: boolean;
+        guardianRelationship?: string;
+      };
+
+      void _isScpApplication;
+
+      const mother = { ...payloadBase.mother };
+      const father = { ...payloadBase.father };
+      const guardian = payloadBase.guardian
+        ? { ...payloadBase.guardian }
+        : null;
+
+      if (primaryContact === "MOTHER") {
+        mother.contactNumber = contactNumber;
+      }
+
+      if (primaryContact === "FATHER") {
+        father.contactNumber = contactNumber;
+      }
+
+      if (primaryContact === "GUARDIAN" && guardian) {
+        guardian.contactNumber = contactNumber;
+      }
+
+      if (guardian && guardianRelationship?.trim()) {
+        guardian.relationship = guardianRelationship;
+      }
+
+      const hasGuardianData =
+        guardian !== null &&
+        [
+          guardian.firstName,
+          guardian.lastName,
+          guardian.middleName,
+          guardian.contactNumber,
+          guardian.relationship,
+        ].some((value) => String(value ?? "").trim().length > 0);
+
+      const normalizedLrn = data.hasNoLrn
+        ? null
+        : String(data.lrn ?? "").trim() || null;
+
+
+      interface AddressPayload {
+        houseNo?: string;
+        street?: string;
+        barangay?: string;
+        cityMunicipality?: string;
+        province?: string;
+        region?: string;
+      }
+
+      const mapAddress = (addr: AddressPayload | null | undefined) => {
+        if (!addr) return null;
+        return {
+          houseNoStreet: addr.houseNo || undefined,
+          sitio: addr.street || undefined,
+          barangay: addr.barangay,
+          cityMunicipality: addr.cityMunicipality,
+          province: addr.province,
+          region: addr.region,
+        };
+      };
+
+      const payload = {
+        ...payloadBase,
+        lrn: normalizedLrn,
+
+        mother,
+        father,
+        guardian: hasGuardianData ? guardian : null,
+        birthdate:
+          data.birthdate instanceof Date
+            ? data.birthdate.toISOString()
+            : data.birthdate,
+        currentAddress: mapAddress(uppercaseData.currentAddress),
+        permanentAddress: uppercaseData.isPermanentSameAsCurrent
+          ? mapAddress(uppercaseData.currentAddress)
+          : mapAddress(uppercaseData.permanentAddress),
+      };
+
+      const response = await api.post<ApplicationSubmitResponse>(
+        "/applications/early-registration-masterlist",
+        payload,
+      );
+
+      sileo.success({
+        title: "Enrollment Form Submitted!",
+        description: `Your tracking number is ${response.data.trackingNumber}.`,
+      });
+
+      if (onSuccess) {
+        const responseData = response.data;
+
+        onSuccess({
+          trackingNumber: responseData.trackingNumber,
+          applicantType: responseData.applicantType,
+          programType: responseData.programType,
+          status: responseData.status,
+          currentStep: responseData.currentStep,
+          learnerName: `${data.firstName} ${data.lastName}`,
+        });
+      }
+
+      hasSubmittedRef.current = true;
+
+      // Reset form
+      reset({
+        ...DEFAULT_VALUES,
+      });
+
+      // Clear session storage
+      localStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem("enrollpro_early_reg_consent");
+      setHasDraft(false);
+    } catch (error: unknown) {
+      const responseData = (
+        error as {
+          response?: {
+            status?: number;
+            data?: {
+              message?: string;
+              errors?: unknown;
+              duplicate_detected?: boolean;
+            };
+          };
+        }
+      )?.response?.data;
+
+      const responseStatus = (
+        error as { response?: { status?: number } }
+      ).response?.status;
+
+      let message =
+        responseData?.message ||
+        "Failed to submit application. Please try again.";
+
+      if (responseStatus === 409 && responseData?.duplicate_detected) {
+        setDuplicateModalOpen(true);
+        setIsSubmitting(false);
+        setIsConfirmDialogOpen(false);
+        return;
+      }
+
+      if (
+        responseData?.message === "Validation failed" &&
+        responseData.errors
+      ) {
+        const firstError = extractFirstValidationError(responseData.errors);
+        if (firstError) {
+          const readableField =
+            firstError.path === "_root" || firstError.path.endsWith("._root") ? "Request" : getFieldLabel(firstError.path.split('.')[0]);
+          message = `${readableField}: ${firstError.message}`;
+        }
+      }
+
+      setSubmitError(message);
+      scrollToTopInstant();
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmDialogOpen(false);
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 md:p-0">
+      {onBack && (
+        <Button
+          onClick={() => {
+            confirmOrRun(() => {
+              discardEnrollmentDraft();
+              onBack();
+            });
+          }}
+          className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
+          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Privacy Card
+        </Button>
+      )}
+
+      <ConfirmationModal
+        open={duplicateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDuplicateModalOpen(false);
+            setDuplicateAction(null);
+            setTrackingNumberInput("");
+          }
+        }}
+        variant="danger"
+        title="Duplicate Enrollment Detected"
+        description={
+          <>
+            An enrollment application already exists for this learner. To prevent duplicate records in the system, you cannot submit a new application. Do you want to overwrite the existing pending record with the new information you just entered?
+          </>
+        }
+        confirmText="Overwrite Existing Record"
+        cancelText="Cancel Submission"
+        loading={isSubmitting}
+        onConfirm={async () => {
+          setDuplicateModalOpen(false);
+          setIsSubmitting(true);
+          setSubmitError("");
+          try {
+            const data = methods.getValues();
+            const uppercaseData = toUpperCaseRecursive(data);
+
+            const {
+              contactNumber,
+              primaryContact,
+              guardianRelationship,
+              hasExecutedAffidavit: _hasExecutedAffidavit,
+              isScpApplication: _isScpApplication,
+              ...payloadBase
+            } = uppercaseData as EnrollmentFormData & {
+              contactNumber: string;
+              primaryContact: "MOTHER" | "FATHER" | "GUARDIAN";
+              hasExecutedAffidavit?: boolean;
+              guardianRelationship?: string;
+            };
+
+            void _isScpApplication;
+
+            const mother = { ...payloadBase.mother };
+            const father = { ...payloadBase.father };
+            const guardian = payloadBase.guardian ? { ...payloadBase.guardian } : null;
+
+            if (primaryContact === "MOTHER") mother.contactNumber = contactNumber;
+            if (primaryContact === "FATHER") father.contactNumber = contactNumber;
+            if (primaryContact === "GUARDIAN" && guardian) guardian.contactNumber = contactNumber;
+            if (guardian && guardianRelationship?.trim()) guardian.relationship = guardianRelationship;
+
+            const hasGuardianData = guardian !== null && [guardian.firstName, guardian.lastName, guardian.middleName, guardian.contactNumber, guardian.relationship].some((value) => String(value ?? "").trim().length > 0);
+
+            interface AddressPayload {
+              houseNo?: string;
+              street?: string;
+              barangay?: string;
+              cityMunicipality?: string;
+              province?: string;
+              region?: string;
+            }
+      
+            const mapAddress = (addr: AddressPayload | null | undefined) => {
+              if (!addr) return null;
+              return {
+                houseNoStreet: addr.houseNo || undefined,
+                sitio: addr.street || undefined,
+                barangay: addr.barangay,
+                cityMunicipality: addr.cityMunicipality,
+                province: addr.province,
+                region: addr.region,
+              };
+            };
+
+            const payload = {
+              ...payloadBase,
+              lrn: data.hasNoLrn ? null : String(data.lrn ?? "").trim() || null,
+              mother,
+              father,
+              guardian: hasGuardianData ? guardian : null,
+              birthdate: data.birthdate instanceof Date ? data.birthdate.toISOString() : data.birthdate,
+              currentAddress: mapAddress(uppercaseData.currentAddress),
+              permanentAddress: uppercaseData.isPermanentSameAsCurrent ? mapAddress(uppercaseData.currentAddress) : mapAddress(uppercaseData.permanentAddress),
+            };
+
+            const response = await api.put<ApplicationSubmitResponse>("/applications/update-existing", payload);
+            sileo.success({
+              title: "Application Updated!",
+              description: `Your tracking number remains ${response.data.trackingNumber}.`,
+            });
+            if (onSuccess) {
+              onSuccess({
+                trackingNumber: response.data.trackingNumber,
+                applicantType: response.data.applicantType,
+                programType: response.data.programType,
+                status: response.data.status,
+                currentStep: response.data.currentStep,
+                learnerName: `${data.firstName} ${data.lastName}`,
+              });
+            }
+            reset({ ...DEFAULT_VALUES });
+            localStorage.removeItem(DRAFT_KEY);
+            sessionStorage.removeItem("enrollpro_early_reg_consent");
+            setHasDraft(false);
+          } catch (error: unknown) {
+            const responseMessage =
+              typeof error === "object" &&
+                error !== null &&
+                "response" in error
+                ? (
+                  error as {
+                    response?: { data?: { message?: string } };
+                  }
+                ).response?.data?.message
+                : undefined;
+            setSubmitError(
+              responseMessage || "Failed to update application.",
+            );
+            scrollToTopInstant();
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+      />
+
+      <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
+        <CardContent className="p-6 md:p-10">
+          <div className="mb-8 pb-6 border-b border-border/50 flex flex-row justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold  text-foreground leading-tight">
+                BASIC EDUCATION EARLY REGISTRATION FORM
+              </h2>
+              <p className="text-base leading-tight text-foreground mt-0.5">
+                Please complete all required fields below.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {isDirty && (
+                <div className="text-sm  text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Draft Auto Saved
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:text-destructive transition-colors px-2"
+                onClick={() => setIsClearModalOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Clear Form
+              </Button>
+            </div>
+          </div>
+
+          <ConfirmationModal
+            open={isClearModalOpen}
+            onOpenChange={setIsClearModalOpen}
+            title="Clear Entire Form?"
+            description="Are you sure you want to start over? This will permanently delete all the information you have entered so far."
+            variant="danger"
+            confirmText="Yes, Clear Form"
+            cancelText="Cancel"
+            onConfirm={handleStartOver}
+          />
+
+          {submitError && (
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-bold">
+              {submitError}
+            </div>
+          )}
+
+          <FormProvider {...methods}>
+            <form onSubmit={(e) => { e.preventDefault(); handleAttemptSubmit(); }} className="space-y-16">
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <h3 className="text-lg font-bold uppercase text-primary">I. Personal Information</h3>
+                </div>
+                <Step1Personal />
+              </div>
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <h3 className="text-lg font-bold uppercase text-primary">II. Family Information</h3>
+                </div>
+                <Step2Family />
+              </div>
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <h3 className="text-lg font-bold uppercase text-primary">III. Previous School Details</h3>
+                </div>
+                <Step4PreviousSchool />
+              </div>
+
+
+              {validationIssues.length > 0 && (
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
+                  <div className="flex items-center gap-2 text-destructive font-bold text-base leading-tight">
+                    <AlertCircle className="w-4 h-4" />
+                    Please review and complete the following fields to proceed:
+                  </div>
+                  <ul className="list-disc pl-6 text-base font-bold text-destructive space-y-1">
+                    {validationIssues.map((issue, index) => (
+                      <li key={`${issue.fieldPath}-${index}`}>
+                        <a
+                          href={`#${issue.fieldPath}`}
+                          data-unsaved-guard-ignore="true"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            goToValidationIssue(issue);
+                          }}
+                          className="underline underline-offset-2 text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm"
+                          aria-label={`Fix field ${issue.fieldLabel}`}>
+                          {issue.fieldPath === "studentPhoto" ? issue.message : `${issue.fieldLabel}: ${issue.message}`}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="pt-8 border-t border-border/60 space-y-6">
+                <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg leading-tight font-extrabold uppercase text-primary">
+                      Accuracy Certification
+                    </h3>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Controller
+                      control={control}
+                      name="isCertifiedTrue"
+                      render={({ field }) => (
+                        <div className="flex flex-col gap-2 w-full">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              id="certify-check"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              className="mt-1"
+                            />
+                            <Label
+                              htmlFor="certify-check"
+                              className="text-base font-semibold leading-relaxed cursor-pointer select-none space-y-3 block">
+                              <p>
+                                I certify that all information in this enrollment form
+                                is true, correct, and complete to the best of my
+                                knowledge. I understand that false information may
+                                affect the learner&apos;s enrollment processing.
+                              </p>
+                            </Label>
+                          </div>
+                          {errors.isCertifiedTrue?.message && (
+                            <p className="text-sm text-destructive font-bold pl-14">
+                              {errors.isCertifiedTrue.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-4">
+                  <Button
+                    type="button"
+                    className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    disabled={isSubmitting}
+                    onClick={async () => {
+                      const isValid = await trigger();
+                      if (isValid) {
+                        setIsConfirmDialogOpen(true);
+                      }
+                    }}>
+                    Submit Early Registration
+                  </Button>
+                  <p className="text-base text-foreground flex items-center gap-1.5 italic">
+                    <Info className="w-3.5 h-3.5" />
+                    Privacy consent was recorded before this submission.
+                  </p>
+                </div>
+              </div>
+            </form>
+          </FormProvider>
+        </CardContent>
+      </Card>
+
+      <ConfirmationModal
+        open={isConfirmDialogOpen}
+        onOpenChange={(open) => {
+          if (!isSubmitting) {
+            setIsConfirmDialogOpen(open);
+          }
+        }}
+        title="Confirm Early Registration"
+        description="You are about to submit this early registration form. Please confirm all details are complete and accurate."
+        onConfirm={() => {
+          setIsConfirmDialogOpen(false);
+          void handleSubmit(onSubmit)();
+        }}
+        confirmText="Yes, Submit Application"
+        loading={isSubmitting}
+        variant="primary"
+      />
+    </div>
+  );
+}

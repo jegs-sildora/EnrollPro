@@ -415,19 +415,23 @@ export default function EosyUpdating() {
 
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
   const [localSectionFilter, setLocalSectionFilter] = useState<string>("ALL");
+  const [eosyStatusFilter, setEosyStatusFilter] = useState<string>("ALL");
+  const [localEosyStatusFilter, setLocalEosyStatusFilter] = useState<string>("ALL");
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
   useEffect(() => {
     if (isFilterPopoverOpen) {
       setLocalSectionFilter(sectionFilter);
+      setLocalEosyStatusFilter(eosyStatusFilter);
     }
-  }, [isFilterPopoverOpen, sectionFilter]);
+  }, [isFilterPopoverOpen, sectionFilter, eosyStatusFilter]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (sectionFilter !== "ALL") count++;
+    if (eosyStatusFilter !== "ALL") count++;
     return count;
-  }, [sectionFilter]);
+  }, [sectionFilter, eosyStatusFilter]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
@@ -1011,6 +1015,13 @@ export default function EosyUpdating() {
       list = list.filter(r => r.section?.name === sectionFilter);
     }
 
+    if (eosyStatusFilter !== "ALL") {
+      list = list.filter(r => {
+        const normalized = r.eosyStatus ?? "ACTION_REQUIRED";
+        return normalized === eosyStatusFilter;
+      });
+    }
+
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase().replace(/,/g, '').trim();
       list = list.filter(r => {
@@ -1062,7 +1073,7 @@ export default function EosyUpdating() {
     });
 
     return sortedList;
-  }, [records, sectionFilter, searchQuery]);
+  }, [records, sectionFilter, eosyStatusFilter, searchQuery]);
 
   const suppressEmptyState = loadingRecords && !showSkeleton && filteredRecords.length === 0;
 
@@ -1815,6 +1826,28 @@ export default function EosyUpdating() {
                                       </SelectContent>
                                     </Select>
                                   </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm text-muted-foreground uppercase">EOSY Status</Label>
+                                    <Select
+                                      isFilter
+                                      value={localEosyStatusFilter}
+                                      onValueChange={setLocalEosyStatusFilter}
+                                    >
+                                      <SelectTrigger className="h-10 w-full leading-tight font-bold transition-colors">
+                                        <SelectValue placeholder="All Statuses" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="ALL" className="font-bold cursor-pointer">All Statuses</SelectItem>
+                                        <SelectItem value="ACTION_REQUIRED" className="font-bold cursor-pointer">ACTION REQUIRED</SelectItem>
+                                        <SelectItem value="PROMOTED" className="font-bold cursor-pointer">PROMOTED</SelectItem>
+                                        <SelectItem value="PROMOTED_TO_BEC" className="font-bold cursor-pointer">PROMOTED (TO BEC)</SelectItem>
+                                        <SelectItem value="CONDITIONALLY_PROMOTED" className="font-bold cursor-pointer">CONDITIONALLY PROMOTED</SelectItem>
+                                        <SelectItem value="RETAINED" className="font-bold cursor-pointer">RETAINED</SelectItem>
+                                        <SelectItem value="DROPPED_OUT" className="font-bold cursor-pointer">DROPPED OUT</SelectItem>
+                                        <SelectItem value="TRANSFERRED_OUT" className="font-bold cursor-pointer">TRANSFERRED OUT</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
 
                                 <div className="p-3 border-t bg-gray-50 flex items-center justify-end gap-2 rounded-b-md">
@@ -1823,6 +1856,8 @@ export default function EosyUpdating() {
                                     onClick={() => {
                                       setLocalSectionFilter("ALL");
                                       setSectionFilter("ALL");
+                                      setLocalEosyStatusFilter("ALL");
+                                      setEosyStatusFilter("ALL");
                                       setIsFilterPopoverOpen(false);
                                     }}
                                     className="font-bold text-gray-600 hover:text-gray-900"
@@ -1832,6 +1867,7 @@ export default function EosyUpdating() {
                                   <Button
                                     onClick={() => {
                                       setSectionFilter(localSectionFilter);
+                                      setEosyStatusFilter(localEosyStatusFilter);
                                       setIsFilterPopoverOpen(false);
                                     }}
                                     className="font-bold bg-primary hover:bg-primary/90 text-white"

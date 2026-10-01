@@ -27,6 +27,7 @@ import {
   UserRound,
   LoaderCircle,
   Clock,
+  FolderOpen,
 } from "lucide-react";
 import type {
   CompanionSsoCatalogItem,
@@ -825,6 +826,12 @@ function AppSidebar() {
                         to="/learner-admission"
                         icon={CheckCircle2}
                         label="SCP Admission"
+                        pathname={pathname}
+                      />
+                      <NavItem
+                        to="/early-registration-masterlist"
+                        icon={FolderOpen}
+                        label="Early Registration"
                         pathname={pathname}
                       />
                       <NavItem

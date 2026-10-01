@@ -1017,3 +1017,228 @@ export async function updateExistingApplication(req: Request, res: Response) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+export async function submitEarlyRegistration(req: Request, res: Response) {
+  try {
+    const parsed = applicationSubmitSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Validation failed", errors: parsed.error.format() });
+      return;
+    }
+    const data = parsed.data;
+
+    const schoolSetting = await getActiveEnrollmentSetting(res);
+    if (!schoolSetting) return;
+    const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+
+    let learner;
+    const lrn = data.hasNoLrn ? null : data.lrn;
+    if (lrn) {
+      learner = await prisma.learner.findUnique({ where: { lrn } });
+    }
+
+    const birthdateDate = normalizeDateToUtcNoon(data.birthdate instanceof Date ? data.birthdate : new Date(data.birthdate));
+
+    const learnerData = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      middleName: data.middleName || null,
+      extensionName: data.extensionName || null,
+      birthdate: birthdateDate,
+      sex: data.sex,
+      placeOfBirth: data.placeOfBirth,
+      motherTongue: data.motherTongue,
+      religion: data.religion || null,
+      isIpCommunity: data.isIpCommunity,
+      ipGroupName: data.ipGroupName || null,
+      is4PsBeneficiary: data.is4PsBeneficiary,
+      householdId4Ps: data.householdId4Ps || null,
+      isBalikAral: data.isBalikAral,
+      lastYearEnrolled: data.lastYearEnrolled || null,
+      isLearnerWithDisability: data.isLearnerWithDisability,
+      specialNeedsCategory: data.specialNeedsCategory || null,
+      hasPwdId: data.hasPwdId,
+      disabilityTypes: data.disabilityTypes,
+      lrn: lrn || null,
+      studentPhoto: data.studentPhoto || null,
+      psaBirthCertNumber: data.psaBirthCertNumber || null,
+    };
+
+    if (learner) {
+      learner = await prisma.learner.update({ where: { id: learner.id }, data: learnerData });
+    } else {
+      learner = await prisma.learner.create({ data: learnerData });
+    }
+
+    const existingEnrollment = await prisma.enrollmentApplication.findFirst({
+      where: { learnerId: learner.id, schoolYearId: activeSchoolYearId },
+    });
+
+    if (existingEnrollment) {
+      res.status(400).json({ message: "Learner already has an application for this school year." });
+      return;
+    }
+
+    const gradeLevelRecord = await prisma.gradeLevel.findFirst({
+      where: { name: `Grade ${data.gradeLevel}` },
+    });
+    if (!gradeLevelRecord) {
+      res.status(400).json({ message: "Invalid grade level." });
+      return;
+    }
+
+    const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split("-")[0] || new Date().getFullYear().toString();
+    const application = await prisma.$transaction(async (tx) => {
+      const trackingNumber = await reserveTrackingNumber(tx, {
+        source: "ENROLLMENT",
+        prefix: "ENR",
+        programAcronym: "BEC",
+        schoolYearStart: yearPrefix,
+        learnerId: learner.id,
+      });
+
+      return tx.enrollmentApplication.create({
+        data: {
+        learnerId: learner.id,
+        schoolYearId: activeSchoolYearId,
+        gradeLevelId: gradeLevelRecord.id,
+        applicantType: "REGULAR",
+        learnerType: data.learnerType,
+        admissionChannel: "ONLINE",
+        trackingNumber,
+        learningModalities: data.learningModalities,
+        isPrivacyConsentGiven: data.isPrivacyConsentGiven,
+        status: "EARLY_REGISTRATION",
+        duplicateFlag: false,
+        hasNoMother: !data.mother?.firstName,
+        hasNoFather: !data.father?.firstName,
+        isLateEnrollee: false,
+        
+        addresses: {
+          create: [
+            {
+              addressType: "CURRENT",
+              houseNoStreet: data.currentAddress.houseNoStreet || null,
+              sitio: data.currentAddress.sitio || null,
+              barangay: data.currentAddress.barangay,
+              cityMunicipality: data.currentAddress.cityMunicipality,
+              province: data.currentAddress.province,
+              region: data.currentAddress.region,
+            },
+            ...(data.permanentAddress && data.permanentAddress.barangay
+              ? [{
+                  addressType: "PERMANENT" as const,
+                  houseNoStreet: data.permanentAddress.houseNoStreet || null,
+                  sitio: data.permanentAddress.sitio || null,
+                  barangay: data.permanentAddress.barangay,
+                  cityMunicipality: data.permanentAddress.cityMunicipality,
+                  province: data.permanentAddress.province,
+                  region: data.permanentAddress.region,
+                }]
+              : []),
+          ],
+        },
+        familyMembers: {
+          create: [
+            ...(data.mother.firstName && data.mother.lastName
+              ? [{
+                  relationship: "MOTHER" as const,
+                  firstName: data.mother.firstName,
+                  lastName: data.mother.lastName,
+                  middleName: data.mother.middleName || null,
+                  contactNumber: data.mother.contactNumber || null,
+                  email: data.mother.email || null,
+                }]
+              : []),
+            ...(data.father.firstName && data.father.lastName
+              ? [{
+                  relationship: "FATHER" as const,
+                  firstName: data.father.firstName,
+                  lastName: data.father.lastName,
+                  middleName: data.father.middleName || null,
+                  contactNumber: data.father.contactNumber || null,
+                  email: data.father.email || null,
+                }]
+              : []),
+            ...(data.guardian?.firstName
+              ? [{
+                  relationship: "GUARDIAN" as const,
+                  firstName: data.guardian.firstName,
+                  lastName: data.guardian.lastName || "",
+                  middleName: data.guardian.middleName || null,
+                  contactNumber: data.guardian.contactNumber || null,
+                  email: data.guardian.email || null,
+                }]
+              : []),
+          ],
+        },
+        previousSchool: {
+          create: {
+            schoolName: data.lastSchoolName,
+            schoolId: data.lastSchoolId || null,
+            schoolAddress: data.lastSchoolAddress || null,
+            schoolType: data.lastSchoolType,
+            lastGradeCompleted: data.lastGradeCompleted,
+            schoolYearLastAttended: data.schoolYearLastAttended,
+            generalAverage: data.generalAverage || null,
+            transferCertificateNo: data.transferCertificateNo || null,
+          },
+        }
+        }
+      });
+    });
+
+    res.status(201).json({
+      message: "Early registration submitted successfully",
+      trackingNumber: application.trackingNumber,
+      id: application.id,
+      ...buildTrackingState("EARLY_REGISTRATION", "REGULAR"),
+    });
+  } catch (error) {
+    console.error("Failed to submit early registration:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+export async function getEarlyRegistrations(req: Request, res: Response) {
+  try {
+    const schoolSetting = await prisma.schoolSetting.findFirst({
+      where: { activeSchoolYearId: { not: null } }
+    });
+
+    if (!schoolSetting || !schoolSetting.activeSchoolYearId) {
+      res.status(400).json({ message: "No active school year." });
+      return;
+    }
+
+    const { gradeLevel } = req.query;
+
+    const whereClause: any = {
+      status: "EARLY_REGISTRATION",
+      schoolYearId: schoolSetting.activeSchoolYearId,
+    };
+
+    if (gradeLevel === "7") {
+      whereClause.gradeLevel = { name: "Grade 7" };
+    } else if (gradeLevel === "8-10") {
+      whereClause.gradeLevel = { name: { in: ["Grade 8", "Grade 9", "Grade 10"] } };
+    }
+
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: whereClause,
+      include: {
+        learner: true,
+        gradeLevel: true,
+        previousSchool: true,
+      },
+      orderBy: {
+        previousSchool: {
+          generalAverage: "desc"
+        }
+      }
+    });
+
+    res.json(applications);
+  } catch (error) {
+    console.error("Error fetching early registrations:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
