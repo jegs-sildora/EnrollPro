@@ -12,6 +12,8 @@ import {
   Archive,
   HelpCircle,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Circle } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
   useSettingsStore,
@@ -470,15 +472,15 @@ export default function SchoolYearTab() {
 
   const [localAlgorithmState, setLocalAlgorithmState] = useState({
     enableHomogeneousSections: enableHomogeneousSections ?? false,
-    homogeneousSectionCount: homogeneousSectionCount ?? 5,
+    homogeneousSectionCount: homogeneousSectionCount ?? 1,
     heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
   });
 
   useEffect(() => {
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
-      homogeneousSectionCount: homogeneousSectionCount ?? 5,
-    heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
+      homogeneousSectionCount: homogeneousSectionCount ?? 1,
+      heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
     });
   }, [enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
 
@@ -528,7 +530,7 @@ export default function SchoolYearTab() {
 
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
-      homogeneousSectionCount: homogeneousSectionCount ?? 5,
+      homogeneousSectionCount: homogeneousSectionCount ?? 1,
     heterogeneousRoundRobin: heterogeneousRoundRobin ?? true,
     });
 
@@ -577,8 +579,21 @@ export default function SchoolYearTab() {
 
       // 2. Save Algorithm Settings
       if (isAlgorithmChanged) {
-        await api.patch("/settings/algorithm", localAlgorithmState);
-        setSettings(localAlgorithmState);
+        const isHeterogeneous = localAlgorithmState.heterogeneousRoundRobin;
+        const enableTopBec = isHeterogeneous ? localAlgorithmState.enableHomogeneousSections : false;
+
+        await api.patch("/settings/algorithm", { 
+          sectioning_rules: { 
+            enable_top_bec: enableTopBec, 
+            top_bec_section_count: enableTopBec ? (localAlgorithmState.homogeneousSectionCount || 1) : 0, 
+            regular_bec_mode: isHeterogeneous ? "HETEROGENEOUS" : "HOMOGENEOUS" 
+          } 
+        });
+        setSettings({
+          enableHomogeneousSections: enableTopBec,
+          homogeneousSectionCount: enableTopBec ? (localAlgorithmState.homogeneousSectionCount || 1) : 0,
+          heterogeneousRoundRobin: isHeterogeneous,
+        });
       }
 
       // 3. Save Phase Settings
@@ -1322,60 +1337,141 @@ export default function SchoolYearTab() {
                 Automated Sectioning Rules
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-lg font-extrabold">Enable Top BEC Sections</Label>
-                      <p className="text-sm text-foreground">Group top-performing learners into dedicated sections based on their previous general average.</p>
-                    </div>
-                    <Switch
-                      checked={localAlgorithmState.enableHomogeneousSections}
-                      onCheckedChange={(checked) => {
-                        setLocalAlgorithmState(prev => ({ 
-                          ...prev, 
-                          enableHomogeneousSections: checked,
-                          homogeneousSectionCount: checked ? prev.homogeneousSectionCount : 0
-                        }));
-                      }}
-                      disabled={isArchived}
-                    />
-                  </div>
-                  {localAlgorithmState.enableHomogeneousSections && (
-                    <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
-                      <div className="max-w-xs space-y-2 font-bold">
-                        <Label>Number of Top BEC Sections</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          placeholder="5"
-                          className="h-10 py-2 px-3 font-bold"
-                          value={localAlgorithmState.homogeneousSectionCount || ""}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val)) {
-                              setLocalAlgorithmState(prev => ({ ...prev, homogeneousSectionCount: val }));
-                            }
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-xl font-extrabold uppercase tracking-wide break-words">Regular BEC Distribution Method</Label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { 
+                      value: true, 
+                      title: "Heterogeneous / Even Distribution",
+                      desc: "Evenly distribute learners across all available sections to balance academic performance and male-to-female ratio." 
+                    },
+                    { 
+                      value: false, 
+                      title: "Homogeneous / Strict Academic Ranking",
+                      desc: "Strictly rank and fill sections sequentially from highest to lowest final general average." 
+                    }
+                  ].map(opt => {
+                    const isChecked = localAlgorithmState.heterogeneousRoundRobin === opt.value;
+                    return (
+                      <button
+                        type="button"
+                        key={opt.title}
+                        onClick={() => {
+                          if (!isArchived) setLocalAlgorithmState(prev => ({ ...prev, heterogeneousRoundRobin: opt.value }));
+                        }}
+                        aria-pressed={isChecked}
+                        className={cn(
+                          "relative flex h-full flex-col items-center justify-center rounded-md border bg-card px-4 py-5 text-center shadow-sm transition-colors text-foreground",
+                          isChecked
+                            ? "border-primary ring-1 ring-primary text-primary"
+                            : "border-border hover:border-primary",
+                          isArchived && "opacity-60 cursor-not-allowed pointer-events-none"
+                        )}
+                      >
+                        <div className="flex h-full flex-col justify-start text-left">
+                          <div>
+                            <span className="block text-lg font-extrabold uppercase break-words">
+                              {opt.title}
+                            </span>
+                          </div>
+                          <div className={cn(
+                            "text-sm whitespace-normal",
+                            isChecked ? "text-primary/90" : "text-foreground"
+                          )}>
+                            {opt.desc}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <AnimatePresence>
+                  {!localAlgorithmState.heterogeneousRoundRobin && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-4 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400"
+                    >
+                      <AlertTriangle className="h-5 w-5 shrink-0" strokeWidth={3} />
+                      <p className="font-bold">
+                        <strong>Note:</strong> Strict homogeneous sectioning may result in unbalanced gender ratios in certain sections.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AnimatePresence initial={false}>
+                {localAlgorithmState.heterogeneousRoundRobin && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                    animate={{ height: "auto", opacity: 1, marginTop: 32 }}
+                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-col gap-4 rounded-xl border p-5 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label className="text-lg font-extrabold">Enable Top BEC Sections</Label>
+                          <p className="text-sm text-foreground">Group top-performing learners into dedicated sections based on their previous general average.</p>
+                        </div>
+                        <Switch
+                          checked={localAlgorithmState.enableHomogeneousSections}
+                          onCheckedChange={(checked) => {
+                            setLocalAlgorithmState(prev => ({ 
+                              ...prev, 
+                              enableHomogeneousSections: checked,
+                              homogeneousSectionCount: checked ? (prev.homogeneousSectionCount || 1) : 0
+                            }));
                           }}
                           disabled={isArchived}
                         />
                       </div>
+                      <AnimatePresence>
+                        {localAlgorithmState.enableHomogeneousSections && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-4 ml-8 pl-6 border-l-2 border-primary/20">
+                              <div className="space-y-2 font-bold">
+                                <Label>Number of Top BEC Sections (per grade level)</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="5"
+                                  className="h-10 py-2 px-3 font-bold max-w-[120px]"
+                                  value={localAlgorithmState.homogeneousSectionCount || ""}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    if (!isNaN(val)) {
+                                      setLocalAlgorithmState(prev => ({ ...prev, homogeneousSectionCount: val }));
+                                    }
+                                  }}
+                                  disabled={isArchived}
+                                />
+                                <p className="text-sm text-foreground">
+                                  The algorithm will isolate the highest-ranking learners to fill these specific sections first.
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm md:col-span-2">
-                  <div className="flex items-start gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-lg font-extrabold">Regular BEC Sections</Label>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        All remaining learners will be evenly distributed across regular BEC sections to balance overall academic performance.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
 

@@ -558,16 +558,22 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
 }
 
 export async function updateAlgorithm(req: Request, res: Response): Promise<void> {
-  const { enableHomogeneousSections, homogeneousSectionCount } = req.body;
+  const { sectioning_rules } = req.body;
+  if (!sectioning_rules) {
+    res.status(400).json({ message: "sectioning_rules is required" });
+    return;
+  }
+
+  const { enable_top_bec, top_bec_section_count, regular_bec_mode } = sectioning_rules;
 
   const settings = await getOrCreateSettings();
 
   const updated = await prisma.schoolSetting.update({
     where: { id: settings.id },
     data: {
-      enableHomogeneousSections,
-      homogeneousSectionCount,
-      heterogeneousRoundRobin: true,
+      enableHomogeneousSections: enable_top_bec,
+      homogeneousSectionCount: top_bec_section_count,
+      heterogeneousRoundRobin: regular_bec_mode === "HETEROGENEOUS",
     },
   });
 

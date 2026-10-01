@@ -65,7 +65,9 @@ export const updateProgramsSchema = z.object({
 });
 
 export const updateAlgorithmSchema = z.object({
-  enableHomogeneousSections: z.boolean(),
-  homogeneousSectionCount: z.number().int().min(0),
-  heterogeneousRoundRobin: z.boolean(),
+  sectioning_rules: z.object({
+    enable_top_bec: z.boolean(),
+    top_bec_section_count: z.number().int().min(0),
+    regular_bec_mode: z.enum(["HETEROGENEOUS", "HOMOGENEOUS"]),
+  })
 });

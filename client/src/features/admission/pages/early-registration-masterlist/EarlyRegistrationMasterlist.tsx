@@ -181,12 +181,12 @@ export default function EarlyRegistrationMasterlist() {
   ];
 
   const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center p-12 text-center h-full border-none">
-      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+    <div className="flex flex-col items-center justify-center p-12 text-center h-full border-none w-full">
+      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
         <FolderOpen className="h-8 w-8 text-primary" />
       </div>
-      <h3 className="text-xl font-extrabold text-foreground mb-2">No Records Found</h3>
-      <p className="text-foreground/70 max-w-sm mx-auto font-medium">
+      <h3 className="text-2xl font-extrabold text-foreground">No Records Found</h3>
+      <p className="text-muted-foreground mx-auto">
         No early registration records found for this category.
       </p>
     </div>

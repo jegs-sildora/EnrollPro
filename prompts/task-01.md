@@ -1,37 +1,46 @@
-# Prompt for UI/UX & React Implementation: Early Registration Masterlist
+# Prompt for UI/UX & React Implementation: Dynamic Auto-Sectioning Rules
 
 ## Role & Context
-Act as a React Frontend Developer. We are introducing a new administrative module to track students who have completed the `/early-registration` form. 
+Act as a React Frontend Developer. We are upgrading the `Automated Sectioning Rules` card inside the `System Configuration` module.
 
-This page serves as a holding area for early registrants before they are officially converted into enrollees during the official enrollment period. Because some of our beneficiary schools use Homogeneous Sectioning (strict academic ranking), the UI must heavily feature and sort by the learner's Final General Average.
+Currently, the UI hardcodes the assumption that Regular BEC sections use a heterogeneous (even distribution) sorting method. However, our system must support different DepEd school policies:
+- **School A:** Isolates the top students into Top BEC sections (Homogeneous), then snake-drafts the rest (Heterogeneous).
+- **School B:** Does not utilize Top BEC sections, but strictly ranks *all* students from highest to lowest grades across all sections (100% Homogeneous).
 
-## Critical Technical Directive
-Do not design a new table component from scratch. You must completely reuse the existing `<DataTable>` layout, pagination, and search bar anatomy currently implemented in the `Learner Directory` page. Maintain the standard white card background, gray borders, and red primary accents.
+We need to transform this card into a dynamic configuration panel that dictates the exact logic branch the backend sorting algorithm will execute.
 
-## UI Component & Layout Requirements
+## UI Component & Logic Requirements
 
-Please implement the following architecture and UI layout:
+Please refactor the `Automated Sectioning Rules` card to include the following dynamic controls:
 
-### 1. Sidebar Navigation Integration
-*   **Group:** Locate the `ENROLLMENT AND SECTIONING` group in the left sidebar.
-*   **New Item:** Inject a new menu item labeled `Early Registration`. Place it immediately below `SCP Admission` and above `Learner Enrollment`. 
-*   **Icon:** Use a calendar-check or clipboard-list icon to represent early sign-ups.
+### 1. The Top BEC Sections Configuration
+*   **The Toggle:** Retain the `Enable Top BEC Sections` toggle switch.
+*   **Conditional Input (New):** If the toggle is set to `TRUE`, dynamically reveal a number input directly below it labeled: `Number of Top BEC Sections (per grade level)`.
+    *   *Attributes:* `type="number"`, `min="1"`, `max="5"`, `defaultValue="1"`.
+    *   *Helper Text:* "The algorithm will isolate the highest-ranking learners to fill these specific sections first."
 
-### 2. Page Header & Toolbar
-*   **Page Title:** `EARLY REGISTRATION MASTERLIST`
-*   **Tabs (Optional but recommended):** Create two pill-shaped tabs at the top: `Incoming Grade 7` (Active by default) and `Grades 8-10 (Transferees)`. Note: Continuing students are automatically pre-registered, so this list focuses heavily on new entrants.
-*   **Search Bar:** Reuse the full-width search bar: `Q SEARCH LRN, FIRST NAME, LAST NAME...`.
+### 2. The Regular BEC Sorting Logic (Radio Group)
+Transform the static `Regular BEC Sections` text block into a prominent Radio Button Group (or selectable segmented cards) so the Principal can choose the sorting behavior for the remaining population.
 
-### 3. The Data Table (Homogeneous Optimization)
-Render a data table with the following specific headers to support academic ranking:
+*   **Group Label:** `Regular BEC Distribution Method`
+*   **Option A: Heterogeneous (Snake-Draft) - *Default***
+    *   *Label:* Heterogeneous / Even Distribution
+    *   *Description Text:* "Evenly distribute learners across all available sections to balance academic performance and male-to-female ratio."
+*   **Option B: Homogeneous (Strict Ranking)**
+    *   *Label:* Homogeneous / Strict Academic Ranking
+    *   *Description Text:* "Strictly rank and fill sections sequentially from highest to lowest Final General Average."
 
-*   **`LEARNER NAME & LRN`**: Render the avatar, bold name, and LRN just like the Learner Directory.
-*   **`TARGET GRADE`**: (e.g., "Grade 7").
-*   **`PREVIOUS SCHOOL`**: (e.g., "Hinigaran Elementary School"). This is critical for validating Grade 7 entrants.
-*   **`FINAL GEN AVE ↓` (Sortable - Crucial):** Display the student's Final General Average from their previous school year (e.g., `92.50`). This column header MUST be sortable. Default the table to sort by this column in *descending* order so the highest-ranking students naturally float to the top for the Pilot/Star section coordinators.
-*   **`REGISTRATION DATE`**: (e.g., "Jan 25, 2026").
-*   **`STATUS`**: A status pill. Default to a yellow/orange `PENDING VERIFICATION` badge.
-*   **`ACTION`**: A ghost button labeled `Review Form` or `Verify` that will eventually open a modal to check their submitted early registration data.
+### 3. State Management & Visual Transitions
+*   Ensure smooth vertical expanding/collapsing (e.g., using Framer Motion or CSS transitions) when the Top BEC toggle reveals or hides the number input.
+*   If Option B (Homogeneous) is selected, you might want to display a subtle UI warning or info alert: *"Note: Strict homogeneous sectioning may result in unbalanced gender ratios in certain sections."*
 
-### 4. Empty State
-If no early registrants exist for the selected tab, reuse the existing empty state component (the green checkmark or gray folder icon) with the text: *"No early registration records found for this category."*
+### 4. Backend Payload Structure
+Update the save configuration payload to send these explicit algorithmic rules to the backend. The API expects:
+```json
+{
+  "sectioning_rules": {
+    "enable_top_bec": true,
+    "top_bec_section_count": 1,
+    "regular_bec_mode": "HETEROGENEOUS" // or "HOMOGENEOUS"
+  }
+}

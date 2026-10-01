@@ -40,7 +40,7 @@ function Ticker({ value, duration = 0.8, className }: { value: number, duration?
 }
 
 export function AutoAssignVisualizer({ scene, poolStats }: Props) {
-  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
+  const { steEnabled, spaEnabled, spsEnabled, heterogeneousRoundRobin, enableHomogeneousSections } = useSettingsStore();
   const [animationReady, setAnimationReady] = useState(false);
   const [prevScene, setPrevScene] = useState(scene);
 
@@ -65,7 +65,7 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
       case 2:
         return "Phase 3: Grouping top-performing learners homogeneously into Pilot/Top sections based on their grades.";
       case 3:
-        return "Phase 4: Distributing the remaining learners heterogeneously across regular sections to balance gender and academic averages.";
+        return `Phase ${enableHomogeneousSections ? 4 : 3}: Distributing the remaining learners ${heterogeneousRoundRobin ? "heterogeneously across regular sections to balance gender and academic averages." : "homogeneously by strictly ranking them by final general average."}`;
       default:
         return "";
     }
@@ -153,8 +153,9 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
     return waitingNodesCount;
   }, [scene, animationReady, nodes, waitingNodesCount]);
 
-  const poolRows = Math.ceil(effectivePoolCount / 10);
-  const poolHeight = Math.max(50, 32 + (poolRows * 22) + 12);
+  const poolCols = 8;
+  const poolRows = Math.ceil(effectivePoolCount / poolCols);
+  const poolHeight = Math.max(50, 32 + (poolRows * 24) + 12);
 
   return (
     <div className="flex flex-col h-full bg-background border border-border rounded-xl overflow-hidden relative">
@@ -162,9 +163,12 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
         {getStatusText()}
       </div>
 
-      <div className="flex-1 p-6 relative overflow-hidden flex flex-col items-center">
+      <div className="flex-1 p-6 relative overflow-y-auto overflow-x-hidden flex flex-col items-center">
+        {/* Force scroll height to fit absolute pool bounding box */}
+        <div style={{ height: 215 + poolHeight + 20 }} className="absolute top-0 left-0 w-full pointer-events-none" />
+
         {/* Main Ticking Counter — single persistent Ticker to avoid remount re-animations */}
-        <div className="h-12 flex items-center justify-center font-extrabold text-2xl  mb-4 z-10">
+        <div className="h-12 flex items-center justify-center font-extrabold text-2xl z-10 shrink-0">
           <span>
             <Ticker value={(() => {
               const scpTotal = poolStats.scp.ste + poolStats.scp.spa + poolStats.scp.sps;
@@ -191,7 +195,7 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
-              className="absolute top-20 left-4 right-4 flex justify-around gap-2 z-10"
+              className="absolute top-16 left-4 right-4 flex justify-around gap-2 z-10"
             >
               {scene === 1 && (
                 <div className="w-full flex flex-col items-center gap-2 relative">
@@ -319,7 +323,7 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
                     {hasMore && (
                       <div className="flex-1 min-w-[80px] max-w-[100px] bg-muted/50 border-2 border-dashed border-border rounded-lg p-2 flex flex-col items-center justify-center h-20 shadow-sm opacity-70">
                         <span className="font-bold uppercase text-foreground">+{names.length - 4} More</span>
-                        <span className="text-center mt-1 text-foreground">Balanced evenly</span>
+                        <span className="text-center mt-1 text-foreground">{heterogeneousRoundRobin ? "Balanced evenly" : "Ranked strictly"}</span>
                       </div>
                     )}
                     </div>
@@ -389,21 +393,21 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
               } else if (scene === 0 && animationReady) {
                 // Phase 1b: dots gather into the pool grid
                 const allCount = nodes.length;
-                const cols = Math.min(10, allCount);
-                x = (i % cols) * 22 - ((cols - 1) / 2) * 22;
-                y = Math.floor(i / cols) * 22 + 245;
+                const cols = Math.min(8, allCount);
+                x = (i % cols) * 38 - ((cols - 1) / 2) * 38;
+                y = Math.floor(i / cols) * 24 + 245;
                 opacity = 1;
               } else if (scene >= 1 && !animationReady) {
                 // Pre-animation hold: ALL visible dots stay in pool for 2s
-                const cols = Math.min(10, visibleCount);
-                x = (node.preAnimIdx % cols) * 22 - ((cols - 1) / 2) * 22;
-                y = Math.floor(node.preAnimIdx / cols) * 22 + 245;
+                const cols = Math.min(8, visibleCount);
+                x = (node.preAnimIdx % cols) * 38 - ((cols - 1) / 2) * 38;
+                y = Math.floor(node.preAnimIdx / cols) * 24 + 245;
                 opacity = 1;
               } else if (node.isWaiting) {
                 // Post-animation: waiting nodes stay in pool grid
-                const cols = Math.min(10, waitingCount);
-                x = (node.waitIdx % cols) * 22 - ((cols - 1) / 2) * 22;
-                y = Math.floor(node.waitIdx / cols) * 22 + 245;
+                const cols = Math.min(8, waitingCount);
+                x = (node.waitIdx % cols) * 38 - ((cols - 1) / 2) * 38;
+                y = Math.floor(node.waitIdx / cols) * 24 + 245;
                 opacity = 1;
               } else if (scene >= 1) {
                 // Post-animation: active dots fly to their sections
@@ -464,12 +468,14 @@ export function AutoAssignVisualizer({ scene, poolStats }: Props) {
                     scale: { duration: 0.5, repeat: 0 }
                   }}
                   className={cn(
-                    "absolute w-5 h-5 rounded-full shadow-sm border-2",
-                    node.sex === 'M' ? "bg-blue-500 border-blue-600" : "bg-pink-500 border-pink-600",
+                    "absolute w-[36px] h-[20px] rounded-full shadow-sm border-2 flex items-center justify-center text-[10px] font-bold leading-none tracking-tighter",
+                    node.sex === 'M' ? "bg-blue-500 border-blue-600 text-white" : "bg-pink-500 border-pink-600 text-white",
                     node.track !== "REGULAR_BEC" && node.track !== "TOP_BEC" && scene === 0 && "ring-2 ring-yellow-400 ring-offset-1",
                     node.track === "TOP_BEC" && scene <= 1 && "ring-2 ring-emerald-400 ring-offset-1"
                   )}
-                />
+                >
+                  {node.ave.toFixed(1)}
+                </motion.div>
               );
             });
           })()}

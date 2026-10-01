@@ -624,6 +624,7 @@ export function SectioningWorkspace() {
 
   const queryClient = useQueryClient();
   const enableHomogeneousSections = useSettingsStore((s) => s.enableHomogeneousSections);
+  const heterogeneousRoundRobin = useSettingsStore((s) => s.heterogeneousRoundRobin);
 
   useEffect(() => () => {
     autoAssignTimers.current.forEach(clearTimeout);
@@ -2594,7 +2595,7 @@ export function SectioningWorkspace() {
                     className={cn("transition-colors cursor-pointer hover:opacity-80", isAnimationVisible && animationScene === 3 ? "font-bold text-primary" : "")}
                     onClick={() => { if (isAnimationVisible) setAnimationScene(3); }}
                   >
-                    Phase {enableHomogeneousSections ? 4 : 3}: Distributing the remaining learners heterogeneously across regular sections to balance gender and academic averages.
+                    Phase {enableHomogeneousSections ? 4 : 3}: Distributing the remaining learners {heterogeneousRoundRobin ? "heterogeneously across regular sections to balance gender and academic averages." : "homogeneously by strictly ranking them by final general average."}
                   </li>
                   <li className="text-foreground">
                     After this, you can still review, move, or swap learners before clicking Finalize Official Sections.

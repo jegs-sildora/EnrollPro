@@ -524,7 +524,7 @@ export default function Step1Personal() {
             Learner record found. Auto-filling form...
           </div>
         )}
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-sm text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
