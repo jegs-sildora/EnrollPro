@@ -109,6 +109,7 @@ interface PoolLearner {
   middleName: string | null;
   sex: "MALE" | "FEMALE";
   genAve: number | null;
+  status: string;
   gradeLevel: string;
   gradeLevelId: number;
   duplicateFlag?: boolean;
@@ -175,6 +176,7 @@ interface InlineMasterlistLearner {
   lastName: string;
   middleName: string | null;
   sex: string;
+  status: string;
   genAve: number | null;
 }
 
@@ -182,7 +184,7 @@ interface InlineMasterlistResponse {
   learners: InlineMasterlistLearner[];
 }
 
-function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sectionId: number, onMoveLearner?: (learnerId: number, currentSectionId: number) => void, onRemoveLearner?: (learnerId: number, currentSectionId: number) => void }) {
+function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner, onForfeitSlot }: { sectionId: number, onMoveLearner?: (learnerId: number, currentSectionId: number) => void, onRemoveLearner?: (learnerId: number, currentSectionId: number) => void, onForfeitSlot?: (learnerId: number, currentSectionId: number) => void }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["section-masterlist", sectionId],
     queryFn: () => api.get<InlineMasterlistResponse>(`/sections/${sectionId}/masterlist`).then(r => r.data),
@@ -193,12 +195,13 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
   if (data.learners.length === 0) return <div className="p-4 text-center text-sm font-bold text-foreground mt-4 border rounded-md">No learners assigned yet.</div>;
 
   return (
-    <div className="mt-4 overflow-hidden rounded-md border bg-card cursor-default" onClick={(e) => e.stopPropagation()}>
-      <table className="w-full text-left text-sm">
+    <div className="mt-4 overflow-x-auto rounded-md border bg-card cursor-default" onClick={(e) => e.stopPropagation()}>
+      <table className="w-full text-left text-sm whitespace-nowrap">
         <thead className="bg-muted text-foreground">
           <tr className="font-bold uppercase">
             <th className="p-3 font-bold">Learner</th>
             <th className="p-3 text-center font-bold">Sex</th>
+            <th className="p-3 text-center font-bold">Status</th>
             <th className="p-3 text-center font-bold">Gen Ave</th>
             <th className="p-3 text-right font-bold">Action</th>
           </tr>
@@ -224,6 +227,14 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
                   {l.sex === "MALE" ? "M" : "F"}
                 </Badge>
               </td>
+              <td className="p-2 text-center">
+                <Badge className={cn(
+                  "px-2 uppercase",
+                  l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                )}>
+                  {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
+                </Badge>
+              </td>
               <td className="p-3 text-center font-bold text-foreground">
                 {l.genAve?.toFixed(2) ?? "--"}
               </td>
@@ -243,9 +254,15 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner }: { sec
                         </DropdownMenuItem>
                       )}
                       {onRemoveLearner && (
-                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => onRemoveLearner(l.enrollmentApplicationId, sectionId)}>
+                        <DropdownMenuItem onClick={() => onRemoveLearner(l.enrollmentApplicationId, sectionId)}>
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Remove Learner
+                          Unassign Learner
+                        </DropdownMenuItem>
+                      )}
+                      {onForfeitSlot && (
+                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => onForfeitSlot(l.enrollmentApplicationId, sectionId)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove / Forfeit Slot
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -589,6 +606,7 @@ export function SectioningWorkspace() {
 
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
+  const [reRunWarningOpen, setReRunWarningOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [autoAssignPhase, setAutoAssignPhase] = useState<"idle" | "loading" | "resolving">("idle");
   const autoAssignTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -607,6 +625,10 @@ export function SectioningWorkspace() {
     fromSectionId: number;
   } | null>(null);
   const [normalRemoveAction, setNormalRemoveAction] = useState<{
+    learnerApplicationId: number;
+    fromSectionId: number;
+  } | null>(null);
+  const [forfeitAction, setForfeitAction] = useState<{
     learnerApplicationId: number;
     fromSectionId: number;
   } | null>(null);
@@ -1171,6 +1193,46 @@ export function SectioningWorkspace() {
     }
   };
 
+  const openForfeitDialog = (
+    learnerApplicationId: number,
+    fromSectionId: number,
+  ) => {
+    setForfeitAction({ learnerApplicationId, fromSectionId });
+  };
+
+  const executeForfeit = async () => {
+    if (!forfeitAction) return;
+
+    setProcessing(true);
+    try {
+      await api.post("/sections/forfeit-slot", {
+        enrollmentApplicationId: forfeitAction.learnerApplicationId,
+      });
+      sileo.success({
+        title: "Slot Forfeited",
+        description: "Learner slot has been forfeited and application withdrawn.",
+      });
+      const oldSectionId = forfeitAction.fromSectionId;
+      setForfeitAction(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningSections(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["section-masterlist", oldSectionId],
+      });
+    } catch (error) {
+      sileo.error({
+        title: "Failed to forfeit slot",
+        description: getApiMessage(error, "An unexpected error occurred"),
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const executeSwap = () => {
     if (!draftPlacement || !draftMoveAction || draftMoveAction.type !== "SWAP")
       return;
@@ -1322,6 +1384,7 @@ export function SectioningWorkspace() {
             middleName: learner.middleName,
             sex: learner.sex,
             genAve: learner.genAve,
+            status: learner.status,
           }));
 
         queryClient.setQueryData<InlineMasterlistResponse>(
@@ -1594,7 +1657,7 @@ export function SectioningWorkspace() {
                       LEARNERS READY FOR SECTIONING
                     </CardTitle>
                     <CardDescription className="text-sm text-foreground">
-                      Enrolled learners ready to be sectioned
+                      Unassigned Walk-ins, Transferees, and Late Enrollees
                     </CardDescription>
                   </div>
                   {selectedAppIds.length > 0 && (
@@ -1678,8 +1741,8 @@ export function SectioningWorkspace() {
                   </div>
                 </div>
               </CardHeader>
-              <div className="p-0 relative flex-1">
-                <table className="w-full text-left border-collapse">
+              <div className="p-0 relative flex-1 overflow-x-auto">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead className="sticky top-0 bg-muted z-20 border-b border-border shadow-sm">
                     <tr className="uppercase h-14">
                       <th className="px-4 w-10">
@@ -1743,7 +1806,7 @@ export function SectioningWorkspace() {
                             ) : (
                               <>
                                 <CheckCircle2 className="h-8 w-8 text-primary" />
-                                <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
+                                <p className="text-foreground font-extrabold">No pending unassigned learners.</p>
                               </>
                             )}
                           </div>
@@ -1872,6 +1935,12 @@ export function SectioningWorkspace() {
                                             l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                           )}>
                                           {l.sex === "MALE" ? "M" : "F"}
+                                        </Badge>
+                                        <Badge className={cn(
+                                          "px-2 uppercase",
+                                          l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                                        )}>
+                                          {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
                                         </Badge>
                                         {l.programType === "LATE_ENROLLEE" && (
                                           <Badge
@@ -2007,10 +2076,16 @@ export function SectioningWorkspace() {
                       autoAssignPhase !== "idle" ||
                       isHistoricalReadOnly
                     }
-                    onClick={generateDraftPlacement}
+                    onClick={() => {
+                      if (sections.some(s => s.currentCount > 0)) {
+                        setReRunWarningOpen(true);
+                      } else {
+                        generateDraftPlacement();
+                      }
+                    }}
                     className="w-full font-bold text-base uppercase tracking-normal gap-2 rounded-md">
                     {autoAssignPhase !== "idle" && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {autoAssignPhase !== "idle" ? "Running Sectioning Algorithm..." : "AUTO ASSIGN SECTIONS"}
+                    {autoAssignPhase !== "idle" ? "Running Sectioning Algorithm..." : "RE-RUN SECTIONING ALGORITHM"}
                   </Button>
                   <Button
                     type="button"
@@ -2225,13 +2300,14 @@ export function SectioningWorkspace() {
 
                               {draftPlacement && isExpanded && (
                                 <div
-                                  className="mt-4 overflow-hidden rounded-md border bg-card"
+                                  className="mt-4 overflow-x-auto rounded-md border bg-card"
                                   onClick={(event) => event.stopPropagation()}>
-                                  <table className="w-full text-left text-sm">
+                                  <table className="w-full text-left text-sm whitespace-nowrap">
                                     <thead className="bg-muted text-foreground">
                                       <tr className="uppercase">
                                         <th className="p-3 font-bold">Learner</th>
                                         <th className="p-3 text-center font-bold">Sex</th>
+                                        <th className="p-3 text-center font-bold">Status</th>
                                         <th className="p-3 text-center font-bold">Gen Ave</th>
                                         <th className="p-3 text-right font-bold">Action</th>
                                       </tr>
@@ -2240,7 +2316,7 @@ export function SectioningWorkspace() {
                                       {roster.learners.length === 0 ? (
                                         <tr>
                                           <td
-                                            colSpan={4}
+                                            colSpan={5}
                                             className="p-4 text-center font-bold text-foreground">
                                             No drafted learners in this section.
                                           </td>
@@ -2272,6 +2348,14 @@ export function SectioningWorkspace() {
                                                     : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                                 )}>
                                                 {learner.sex === "MALE" ? "M" : "F"}
+                                              </Badge>
+                                            </td>
+                                            <td className="p-2 text-center">
+                                              <Badge className={cn(
+                                                "px-2 uppercase",
+                                                learner.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                                              )}>
+                                                {learner.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
                                               </Badge>
                                             </td>
                                             <td className="p-3 font-bold text-center">
@@ -2324,6 +2408,7 @@ export function SectioningWorkspace() {
                                   sectionId={s.id}
                                   onMoveLearner={!isHistoricalReadOnly ? openNormalMoveDialog : undefined}
                                   onRemoveLearner={!isHistoricalReadOnly ? openRemoveDialog : undefined}
+                                  onForfeitSlot={!isHistoricalReadOnly ? openForfeitDialog : undefined}
                                 />
                               )}
                             </div>
@@ -2475,13 +2560,39 @@ export function SectioningWorkspace() {
       />
 
       <ConfirmationModal
+        open={reRunWarningOpen}
+        onOpenChange={setReRunWarningOpen}
+        title="Re-run Sectioning Algorithm?"
+        description="Warning: This will clear all current draft sections and re-sort all pre-registered and enrolled learners. Are you sure you want to reset the rosters?"
+        confirmText="Proceed"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setReRunWarningOpen(false);
+          generateDraftPlacement();
+        }}
+        variant="danger"
+      />
+
+      <ConfirmationModal
         open={!!normalRemoveAction}
         onOpenChange={(open) => !open && setNormalRemoveAction(null)}
-        title="Remove Assigned Learner"
-        description="Are you sure you want to remove this learner from the section? The learner will be returned to the pool of unsectioned learners."
-        confirmText="Remove Learner"
+        title="Unassign Learner"
+        description="Are you sure you want to unassign this learner from the section? The learner will be returned to the pool of unsectioned learners."
+        confirmText="Unassign Learner"
         cancelText="Cancel"
         onConfirm={executeNormalRemove}
+        loading={processing}
+        variant="danger"
+      />
+
+      <ConfirmationModal
+        open={!!forfeitAction}
+        onOpenChange={(open) => !open && setForfeitAction(null)}
+        title="Remove / Forfeit Slot"
+        description="Are you sure you want to forfeit this slot? The learner's enrollment application will be marked as WITHDRAWN and they will be removed from this section."
+        confirmText="Forfeit Slot"
+        cancelText="Cancel"
+        onConfirm={executeForfeit}
         loading={processing}
         variant="danger"
       />

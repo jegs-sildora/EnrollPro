@@ -15,6 +15,7 @@ import {
   inlineSlotLearner,
   handoverAdviser,
   transferLearner,
+  forfeitSlot,
 } from "./sections.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -182,6 +183,14 @@ router.post(
   authenticate,
   authorize(...sectionManagerRoles),
   transferLearner,
+  forfeitSlot,
+);
+
+router.post(
+  "/forfeit-slot",
+  authenticate,
+  authorize(...sectionManagerRoles),
+  forfeitSlot,
 );
 
 export default router;

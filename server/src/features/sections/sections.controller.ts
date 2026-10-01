@@ -1232,6 +1232,62 @@ export async function handoverAdviser(req: Request, res: Response) {
   }
 }
 
+export async function forfeitSlot(req: Request, res: Response) {
+  const { enrollmentApplicationId } = req.body;
+
+  try {
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id: enrollmentApplicationId },
+      include: {
+        enrollmentRecord: {
+          include: { section: true },
+        },
+      },
+    });
+
+    if (!application?.enrollmentRecord) {
+      return res.status(422).json({ message: "Learner is not currently enrolled in any section" });
+    }
+
+    if (!(await canManageSectionGrade(req, application.gradeLevelId))) {
+      sendGradeScopeForbidden(res);
+      return;
+    }
+
+    const oldSectionName = application.enrollmentRecord.section.name;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.enrollmentRecord.delete({
+        where: { id: application.enrollmentRecord!.id },
+      });
+      await tx.enrollmentApplication.update({
+        where: { id: enrollmentApplicationId },
+        data: { status: "WITHDRAWN" },
+      });
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "LEARNER_UNASSIGNED",
+      description: "Forfeited slot for learner app ID $enrollmentApplicationId from $oldSectionName.",
+      subjectType: "Section",
+      recordId: application.enrollmentRecord.sectionId,
+      req,
+    });
+
+    broadcastSectionInvalidation({
+      schoolYearId: application.schoolYearId,
+      sectionIds: [application.enrollmentRecord.sectionId],
+      learnerIds: [application.learnerId],
+    });
+
+    res.json({ message: "Slot forfeited successfully" });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function transferLearner(req: Request, res: Response) {
   const { enrollmentApplicationId, targetSectionId, reason } = req.body;
 

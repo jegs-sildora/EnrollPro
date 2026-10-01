@@ -205,14 +205,14 @@ export async function getBOSYReadiness(params: {
     prisma.enrollmentApplication.count({
       where: {
         ...baseWhere,
-        status: "READY_FOR_SECTIONING",
+        status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: false,
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
         ...baseWhere,
-        status: "READY_FOR_SECTIONING",
+        status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: true,
       },
     }),
@@ -481,12 +481,12 @@ function getQueueStateWhere(
       return { status: "PENDING_CONFIRMATION" }
     case "CONFIRMED":
       return {
-        status: "READY_FOR_SECTIONING",
+        status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: false,
       }
     case "TEMPORARY":
       return {
-        status: "READY_FOR_SECTIONING",
+        status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: true,
       }
     case "TRANSFER_REQUEST":
@@ -527,6 +527,7 @@ export async function confirmReturn(
       isMissingSf9: true,
       hasSf9CertificationLetter: true,
       gradeLevel: { select: { displayOrder: true } },
+      enrollmentRecord: { select: { id: true } },
       learner: {
         select: {
           id: true, lrn: true, firstName: true, lastName: true,
@@ -558,10 +559,14 @@ export async function confirmReturn(
 
   const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
 
+  const nextStatus = application.enrollmentRecord 
+    ? "OFFICIALLY_ENROLLED" 
+    : "READY_FOR_SECTIONING";
+
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
-      status: "READY_FOR_SECTIONING",
+      status: nextStatus,
       confirmationConsent: true,
       encodedById: actingUserId,
       isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
@@ -756,6 +761,7 @@ export async function bulkConfirmReturn(
       isMissingSf9: true,
       hasSf9CertificationLetter: true,
       gradeLevel: { select: { displayOrder: true } },
+      enrollmentRecord: { select: { id: true } },
       learner: {
         select: {
           hasPsaBirthCertificate: true,
@@ -766,8 +772,10 @@ export async function bulkConfirmReturn(
   });
 
   const appMap = new Map(applications.map((a) => [a.id, a]));
-  const completeIds: number[] = [];
-  const lackingIds: number[] = [];
+  const completeWithSection: number[] = [];
+  const completeWithoutSection: number[] = [];
+  const lackingWithSection: number[] = [];
+  const lackingWithoutSection: number[] = [];
 
   for (const id of applicationIds) {
     const app = appMap.get(id);
@@ -796,18 +804,34 @@ export async function bulkConfirmReturn(
     });
 
     if (documentReadiness.isTemporarilyEnrolled) {
-      lackingIds.push(id);
+      if (app.enrollmentRecord) lackingWithSection.push(id);
+      else lackingWithoutSection.push(id);
     } else {
-      completeIds.push(id);
+      if (app.enrollmentRecord) completeWithSection.push(id);
+      else completeWithoutSection.push(id);
     }
   }
 
   const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
   const isLate = setting?.systemPhase === "CLASSES_ONGOING";
 
-  if (completeIds.length > 0) {
+  if (completeWithSection.length > 0) {
     await prisma.enrollmentApplication.updateMany({
-      where: { id: { in: completeIds } },
+      where: { id: { in: completeWithSection } },
+      data: {
+        status: "OFFICIALLY_ENROLLED",
+        confirmationConsent: true,
+        encodedById: actingUserId,
+        isLateEnrollee: isLate,
+        isTemporarilyEnrolled: false,
+        complianceStatus: "COMPLIED",
+      },
+    });
+  }
+
+  if (completeWithoutSection.length > 0) {
+    await prisma.enrollmentApplication.updateMany({
+      where: { id: { in: completeWithoutSection } },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
@@ -819,9 +843,23 @@ export async function bulkConfirmReturn(
     });
   }
 
-  if (lackingIds.length > 0) {
+  if (lackingWithSection.length > 0) {
     await prisma.enrollmentApplication.updateMany({
-      where: { id: { in: lackingIds } },
+      where: { id: { in: lackingWithSection } },
+      data: {
+        status: "OFFICIALLY_ENROLLED",
+        confirmationConsent: true,
+        encodedById: actingUserId,
+        isLateEnrollee: isLate,
+        isTemporarilyEnrolled: true,
+        complianceStatus: "PENDING",
+      },
+    });
+  }
+
+  if (lackingWithoutSection.length > 0) {
+    await prisma.enrollmentApplication.updateMany({
+      where: { id: { in: lackingWithoutSection } },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
@@ -835,8 +873,8 @@ export async function bulkConfirmReturn(
 
   return {
     confirmed,
-    readyForSectioning: completeIds,
-    temporarilyEnrolled: lackingIds,
+    readyForSectioning: [...completeWithoutSection, ...completeWithSection],
+    temporarilyEnrolled: [...lackingWithoutSection, ...lackingWithSection],
     failed,
   };
 }

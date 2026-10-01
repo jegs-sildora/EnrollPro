@@ -307,7 +307,7 @@ export default function BOSYPage() {
               "The learner may proceed to section assignment while the listed school requirements are completed.",
           }
           : {
-            title: "Learner Ready for Section Assignment",
+            title: "Officially Enrolled",
             description:
               "The learner's enrollment and school requirements are confirmed.",
           },
@@ -459,7 +459,7 @@ export default function BOSYPage() {
         sileo.success({
           title: "Bulk Confirmation Completed",
           description:
-            `${result.readyForSectioning.length} ready for section assignment; ` +
+            `${result.readyForSectioning.length} officially enrolled; ` +
             `${result.temporarilyEnrolled.length} temporarily enrolled.`,
         });
         setProcessedIds((prev) => new Set([...prev, ...result.confirmed]));
@@ -599,7 +599,7 @@ export default function BOSYPage() {
                         isPrimaryMetric: false,
                       },
                       {
-                        label: "Ready for Section Assignment",
+                        label: "Officially Enrolled",
                         subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
                         value: readiness?.confirmedReadyCount ?? 0,
                         filterVal: "CONFIRMED" as const,
@@ -867,8 +867,8 @@ export default function BOSYPage() {
                                 <thead className="bg-gray-50 border-b">
                                   <tr>
                                     <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name & LRN</th>
-                                    <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                     <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
+                                    <th className="h-10 px-4 text-center font-bold text-foreground">Curricular Program</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -884,11 +884,6 @@ export default function BOSYPage() {
                                         LRN: {confirmSingleTarget.lrn ?? "No LRN"}
                                       </p>
                                     </td>
-                                    <td className="p-3 px-4 text-center border-r border-gray-100">
-                                      <span className="text-sm font-bold uppercase tracking-wider text-foreground">
-                                        {confirmSingleTarget.applicantType ? formatSectionProgramLabel(confirmSingleTarget.applicantType) : "BEC"}
-                                      </span>
-                                    </td>
                                     <td className="p-3 px-4 text-center">
                                       <Badge
                                         variant="outline"
@@ -896,6 +891,12 @@ export default function BOSYPage() {
                                       >
                                         {formatGradeLevel(confirmSingleTarget.gradeLevelName)}
                                       </Badge>
+                                    </td>
+                                    
+                                    <td className="p-3 px-4 text-center border-r border-gray-100">
+                                      <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                                        {confirmSingleTarget.applicantType ? formatSectionProgramLabel(confirmSingleTarget.applicantType) : "BEC"}
+                                      </span>
                                     </td>
                                   </tr>
                                 </tbody>

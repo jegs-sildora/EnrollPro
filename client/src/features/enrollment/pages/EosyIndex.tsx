@@ -1606,14 +1606,14 @@ export default function EosyUpdating() {
 
           const statusBadge = (
             <div className={cn(
-              "flex min-w-[220px] flex-col items-start rounded-md border px-3 py-2 text-left",
+              "flex min-w-[220px] flex-col items-center justify-center rounded-md border px-3 py-2 text-center",
               isDeparture || resolvedStatus === "CONDITIONALLY_PROMOTED" || resolvedStatus === "RETAINED"
                 ? "border-amber-200 bg-amber-50 text-amber-800"
                 : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
                   ? "border-green-200 bg-green-50 text-green-700"
                   : "border-red-200 bg-red-50 text-red-700",
             )}>
-              <span className="text-sm font-bold uppercase cursor-help">{displayLabel}</span>
+              <span className="text-sm font-bold uppercase cursor-help text-center">{displayLabel}</span>
             </div>
           );
 

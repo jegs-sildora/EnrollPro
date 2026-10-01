@@ -13,7 +13,7 @@ import {
 import { checkSmartRemedialRolloverBlock } from "../../integration/smart-remedial.service.js";
 import { resolveRolloverDestination } from "./school-year-transition.service.js";
 import { reserveTrackingNumber } from "../../admission/tracking-number.service.js";
-
+import { executeAutoSectioningBatch } from "../../sections/services/auto-sectioning.service.js";
 type DatabaseClient = Pick<
   typeof prisma,
   | "schoolYear"
@@ -1103,6 +1103,9 @@ export async function executeSchoolYearRollover({
           systemPhase: "OFFICIAL_ENROLLMENT",
         },
       });
+
+      // Phase 2: Automated Batch Sectioning
+      await executeAutoSectioningBatch(tx, targetYear.id, actingUserId);
       await tx.auditLog.create({
         data: {
           userId: actingUserId,

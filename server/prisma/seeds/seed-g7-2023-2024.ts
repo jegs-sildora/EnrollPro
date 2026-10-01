@@ -74,8 +74,8 @@ async function seedGrade7() {
       continue;
     }
 
-    for (let l = 0; l < 4; l++) {
-      const prismaLSex = l < 2 ? Sex.MALE : Sex.FEMALE;
+    for (let l = 0; l < 10; l++) {
+      const prismaLSex = l < 5 ? Sex.MALE : Sex.FEMALE;
       const learnerNameIndex = (prismaLSex === Sex.MALE ? maleLearnerIndex++ : femaleLearnerIndex++) + ((BASE_YEAR - 2020) * 1000);
       
       const baseAge = 12; // Grade 7

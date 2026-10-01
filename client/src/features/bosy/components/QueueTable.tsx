@@ -165,6 +165,15 @@ function formatGenAve(value: number | null): string | null {
   return value.toFixed(2);
 }
 
+const getPreviousGradeName = (currentName: string) => {
+  const match = currentName.match(/\d+/);
+  if (match) {
+    const prevGrade = parseInt(match[0], 10) - 1;
+    return `Grade ${prevGrade}`;
+  }
+  return "the previous grade level";
+};
+
 function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
   const s = item.academicStatus;
   if (!s) {
@@ -179,24 +188,25 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
   const currentGradeName = item.gradeLevelName;
   const isGrade10 = currentGradeName.includes("10");
   const currentGradeLabel = currentGradeName.toUpperCase();
-  const incomingGradeLabel = `INCOMING ${getNextGradeName(currentGradeName)}`.toUpperCase();
+  const previousGradeLabel = getPreviousGradeName(currentGradeName).toUpperCase();
+  const incomingGradeLabel = `INCOMING ${currentGradeName}`.toUpperCase();
   const currentProgramLabel = getProgramAbbreviation(item.applicantType);
 
   const statusTransition: EosyTransitionListProps | null = (() => {
-    if (item.isScpDemoted && s === "PROMOTED" && !isGrade10) {
+    if (item.isScpDemoted && s === "PROMOTED") {
       return { from: currentProgramLabel, to: "BEC" };
     }
 
     switch (s) {
       case "PROMOTED":
         return {
-          from: currentGradeLabel,
-          to: isGrade10 ? "JHS COMPLETER" : incomingGradeLabel,
+          from: previousGradeLabel,
+          to: incomingGradeLabel,
         };
       case "PROMOTED_TO_BEC":
         return { from: currentProgramLabel, to: "BEC" };
       case "CONDITIONALLY_PROMOTED":
-        return { from: currentGradeLabel, to: incomingGradeLabel };
+        return { from: previousGradeLabel, to: incomingGradeLabel };
       case "RETAINED":
         return { from: currentGradeLabel, to: currentGradeLabel };
       case "TRANSFERRED_OUT":
@@ -235,7 +245,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
     titleColorClass = "text-amber-800 border-b border-amber-200";
     hoverClass = "hover:bg-amber-100";
-  } else if (item.isScpDemoted && s === "PROMOTED" && !isGrade10) {
+  } else if (item.isScpDemoted && s === "PROMOTED") {
     title = "BEC Lateral Transfer";
     description = "Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to grade deficiency.";
     if (item.priorYearDeficiencyNote) {
@@ -263,7 +273,7 @@ function AcademicStatusTooltipBadge({ item }: { item: BOSYQueueItem }) {
     titleColorClass = "text-red-800 border-b border-red-200";
     hoverClass = "hover:bg-red-100";
   } else if (s === "PROMOTED") {
-    title = item.gradeLevelName.includes("11") ? "JHS COMPLETER" : "PROMOTED";
+    title = "PROMOTED";
     description = "Learner met all academic requirements and is eligible for the next grade level.";
     colorClass = "bg-green-50 border border-green-300 text-green-900";
     titleColorClass = "text-green-800 border-b border-green-200";
@@ -652,17 +662,25 @@ export function QueueTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Program Type"
-            className="justify-center"
+            title="Grade Level"
+            className="justify-center text-center"
           />
         ),
         cell: ({ row }) => {
           const type = row.original.applicantType;
-          if (!type) return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
+          const glName = row.original.gradeLevelName;
           return (
-            <div className="py-3 text-center">
-              <span className="text-sm font-bold uppercase tracking-wider text-foreground">
-                {getProgramAbbreviation(type)}
+            <div className="py-3 flex flex-col items-center justify-center gap-1.5">
+              <Badge 
+                className={cn(
+                  "px-3 py-1 uppercase font-extrabold text-base leading-tight rounded-md ",
+                  getGradeLevelBadgeStyles(glName)
+                )}
+              >
+                {formatGradeLevel(glName)}
+              </Badge>
+              <span className="text-sm font-extrabold uppercase tracking-wider text-foreground">
+                {type ? getProgramAbbreviation(type) : "—"}
               </span>
             </div>
           );

@@ -1,46 +1,33 @@
-# Prompt for UI/UX & React Implementation: Dynamic Auto-Sectioning Rules
+# Prompt for Backend Implementation: Chaining Auto-Sectioning to EOSY Rollover
 
 ## Role & Context
-Act as a React Frontend Developer. We are upgrading the `Automated Sectioning Rules` card inside the `System Configuration` module.
+Act as a Full-Stack / Backend Developer. We are fixing a critical automation bug in the End of School Year (EOSY) Rollover script for our DepEd JHS system.
 
-Currently, the UI hardcodes the assumption that Regular BEC sections use a heterogeneous (even distribution) sorting method. However, our system must support different DepEd school policies:
-- **School A:** Isolates the top students into Top BEC sections (Homogeneous), then snake-drafts the rest (Heterogeneous).
-- **School B:** Does not utilize Top BEC sections, but strictly ranks *all* students from highest to lowest grades across all sections (100% Homogeneous).
+Currently, when the system rolls over to the new school year, it successfully promotes Grades 7–9 learners and generates their new `EnrollmentApplication` records with a `PENDING_CONFIRMATION` status (which renders as `PRE-REGISTERED` in the UI). However, it drops them into the unassigned pool. 
 
-We need to transform this card into a dynamic configuration panel that dictates the exact logic branch the backend sorting algorithm will execute.
+According to DepEd's automatic pre-registration policy, these continuing learners must be automatically placed into draft sections based on their Final General Average *before* the Grade Coordinators even log in.
 
-## UI Component & Logic Requirements
+## Critical Technical Directive
+You must chain the existing Auto-Sectioning Service to the end of the EOSY Rollover Service. The rollover process is not complete until every `PRE-REGISTERED` learner for Grades 8, 9, and 10 has a corresponding `EnrollmentRecord` tying them to a specific Section.
 
-Please refactor the `Automated Sectioning Rules` card to include the following dynamic controls:
+## Backend Logic & Implementation Requirements
 
-### 1. The Top BEC Sections Configuration
-*   **The Toggle:** Retain the `Enable Top BEC Sections` toggle switch.
-*   **Conditional Input (New):** If the toggle is set to `TRUE`, dynamically reveal a number input directly below it labeled: `Number of Top BEC Sections (per grade level)`.
-    *   *Attributes:* `type="number"`, `min="1"`, `max="5"`, `defaultValue="1"`.
-    *   *Helper Text:* "The algorithm will isolate the highest-ranking learners to fill these specific sections first."
+Please update the `rolloverService` (or equivalent background job) to execute the following phases sequentially:
 
-### 2. The Regular BEC Sorting Logic (Radio Group)
-Transform the static `Regular BEC Sections` text block into a prominent Radio Button Group (or selectable segmented cards) so the Principal can choose the sorting behavior for the remaining population.
+### Phase 1: Promotion & Application Generation (Existing)
+*   Ensure the script continues to create `EnrollmentApplication` records for promoted learners with `status = 'PENDING_CONFIRMATION'`.
 
-*   **Group Label:** `Regular BEC Distribution Method`
-*   **Option A: Heterogeneous (Snake-Draft) - *Default***
-    *   *Label:* Heterogeneous / Even Distribution
-    *   *Description Text:* "Evenly distribute learners across all available sections to balance academic performance and male-to-female ratio."
-*   **Option B: Homogeneous (Strict Ranking)**
-    *   *Label:* Homogeneous / Strict Academic Ranking
-    *   *Description Text:* "Strictly rank and fill sections sequentially from highest to lowest Final General Average."
+### Phase 2: Automated Batch Sectioning (The Missing Link)
+Immediately after Phase 1 completes successfully, the script must trigger the auto-assign logic for Grades 8, 9, and 10:
+*   **Step 2A: Fetch Config.** Query the `SchoolSetting` table for the `sectioning_rules` (Top BEC count and Regular BEC distribution mode).
+*   **Step 2B: Fetch Pool.** For each grade level, fetch all applications created in Phase 1.
+*   **Step 2C: Fetch Targets.** Fetch all active `Sections` for that grade level in the new active school year.
+*   **Step 2D: Execute Algorithm.** Run the sorting algorithm (separating SCP, Top BEC, and distributing Regular BEC based on the school's configured logic).
 
-### 3. State Management & Visual Transitions
-*   Ensure smooth vertical expanding/collapsing (e.g., using Framer Motion or CSS transitions) when the Top BEC toggle reveals or hides the number input.
-*   If Option B (Homogeneous) is selected, you might want to display a subtle UI warning or info alert: *"Note: Strict homogeneous sectioning may result in unbalanced gender ratios in certain sections."*
+### Phase 3: Database Commits (Draft Roster Generation)
+*   For each learner placed by the algorithm, create an `EnrollmentRecord` in the database.
+*   Ensure these records correctly reference the `section_id` and the `application_id`. 
 
-### 4. Backend Payload Structure
-Update the save configuration payload to send these explicit algorithmic rules to the backend. The API expects:
-```json
-{
-  "sectioning_rules": {
-    "enable_top_bec": true,
-    "top_bec_section_count": 1,
-    "regular_bec_mode": "HETEROGENEOUS" // or "HOMOGENEOUS"
-  }
-}
+### Phase 4: Frontend Manual Override (Safety Net)
+*   In the event the backend job crashes halfway through, the UI must still allow the user to fix it manually.
+*   Ensure the `RE-RUN SECTIONING ALGORITHM` button on the frontend is capable of capturing these unassigned `PRE-REGISTERED` learners from the left pane and pushing them through the exact same sorting algorithm on demand.

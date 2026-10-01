@@ -66,7 +66,8 @@
     "db:wipe-ancillary-roles": "tsx prisma/seeds/ancillary-roles-wipe.ts",
     "audit:smart-grades": "tsx src/scripts/audit-smart-grade-sync.ts",
     "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts",
-    "term-events:tick": "tsx src/scripts/run-term-event-tick.ts"
+    "term-events:tick": "tsx src/scripts/run-term-event-tick.ts",
+    "db:wipe-rollover": "tsx prisma/seeds/wipe-rollover.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

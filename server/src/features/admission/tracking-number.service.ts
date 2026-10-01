@@ -22,6 +22,14 @@ interface TrackingNumberReservationClient {
         source: TrackingNumberSource
       }
     }): Promise<unknown>
+    findUnique(args: {
+      where: {
+        trackingNumber: string
+      }
+      select: {
+        trackingNumber: boolean
+      }
+    }): Promise<unknown>
   }
 }
 
@@ -59,6 +67,15 @@ export async function reserveTrackingNumber(
     const trackingNumber = attempt === 0
       ? buildPrimaryCandidate(input)
       : buildFallbackCandidate(input)
+
+    const existing = await tx.trackingNumberReservation.findUnique({
+      where: { trackingNumber },
+      select: { trackingNumber: true },
+    })
+
+    if (existing) {
+      continue
+    }
 
     try {
       await tx.trackingNumberReservation.create({
