@@ -747,7 +747,7 @@ async function syncFinalSmartSectionOutcomesInternal(
   await prisma.$transaction(
     async (tx) => {
       for (const { student, record } of matched) {
-        let nextYearCurriculum: ApplicantType | undefined = undefined;
+        let nextYearCurriculum: ApplicantType | null | undefined = undefined;
         const isScp = Boolean(section.programType && section.programType !== "REGULAR");
         if (isScp) {
           let hasViolation = false;
@@ -788,6 +788,8 @@ async function syncFinalSmartSectionOutcomesInternal(
           
           if (hasViolation || student.finalOutcome !== "PROMOTED") {
              nextYearCurriculum = "REGULAR";
+          } else {
+             nextYearCurriculum = null;
           }
         }
 
