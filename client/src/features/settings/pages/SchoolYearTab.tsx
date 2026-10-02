@@ -30,7 +30,6 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { Switch } from "@/shared/ui/switch";
 import { DatePicker } from "@/shared/ui/date-picker";
 
@@ -56,7 +55,6 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { DualPaneDateRangePicker } from "@/shared/components/DualPaneDateRangePicker";
 import {
@@ -64,6 +62,7 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
@@ -307,10 +306,29 @@ export default function SchoolYearTab() {
   } = useSettingsStore();
 
   const isArchived = viewingSchoolYearStatus === "ARCHIVED" || systemStatus === "ARCHIVED";
-  const [years, setYears] = useState<SYItem[]>([]);
-  const [defaults, setDefaults] = useState<Defaults | null>(null);
-  const [loading, setLoading] = useState(true);
-  const showSkeleton = useDelayedLoading(loading);
+  const queryClient = useQueryClient();
+
+  const { data: yearsData, isLoading: isLoadingYears } = useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: async () => {
+      const res = await api.get("/school-years");
+      return res.data.years as SYItem[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: defaultsData, isLoading: isLoadingDefaults } = useQuery({
+    queryKey: ["schoolYearsDefaults"],
+    queryFn: async () => {
+      const res = await api.get("/school-years/next-defaults");
+      return res.data as Defaults;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const years = yearsData ?? [];
+  const defaults = defaultsData ?? null;
+  const loading = isLoadingYears || isLoadingDefaults;
 
   // Create state
   const [creating, setCreating] = useState(false);
@@ -355,40 +373,21 @@ export default function SchoolYearTab() {
     [classEndYear],
   );
 
-  const fetchData = async () => {
-    try {
-      const [yearsRes, defaultsRes] = await Promise.all([
-        api.get("/school-years"),
-        api.get("/school-years/next-defaults"),
-      ]);
-      setYears(yearsRes.data.years);
-
-      const defs = defaultsRes.data;
-      setDefaults(defs);
-
-      // Initialize editable fields from defaults
-      setYearLabel(defs.yearLabel);
+  useEffect(() => {
+    if (defaults && !editYearLabel) {
+      setYearLabel(defaults.yearLabel);
       setClassOpening(
-        defs.classOpeningDate
-          ? normalizeDateToManila(new Date(defs.classOpeningDate))
+        defaults.classOpeningDate
+          ? normalizeDateToManila(new Date(defaults.classOpeningDate))
           : undefined,
       );
       setClassEnd(
-        defs.classEndDate
-          ? normalizeDateToManila(new Date(defs.classEndDate))
+        defaults.classEndDate
+          ? normalizeDateToManila(new Date(defaults.classEndDate))
           : undefined,
       );
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+  }, [defaults, editYearLabel]);
 
   useEffect(() => {
     if (!editClassOpening) {
@@ -607,7 +606,7 @@ export default function SchoolYearTab() {
         description: "Your school year settings have been successfully updated.",
       });
 
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: ["schoolYears"] });
       const pubRes = await api.get("/settings/public");
       setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase, systemPhase: pubRes.data.systemPhase });
       setShowPhaseModal(false);
@@ -827,7 +826,7 @@ export default function SchoolYearTab() {
       setShowNextForm(false);
       setRolloverDraftBaseline(null);
 
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: ["schoolYears"] });
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -852,41 +851,13 @@ export default function SchoolYearTab() {
     setShowNextForm(true);
   };
 
-  if (showSkeleton) {
-    return (
-      <div className="space-y-6 mx-auto">
-        <Card className="shadow-sm">
-          <CardHeader className="bg border-b border-border rounded-t-lg">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-6 w-6" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-            <Skeleton className="h-4 w-64 mt-2" />
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (loading) {
+    return null;
   }
 
   return (
     <fieldset disabled={isArchived} className="space-y-6 relative pb-6 group min-w-0">
-      {!loading && isZeroState ? (
+      {isZeroState ? (
         <Card className="shadow-lg bg-muted">
           <CardContent className="pt-12 pb-14 flex flex-col items-center text-center">
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
@@ -909,7 +880,7 @@ export default function SchoolYearTab() {
             </Button>
           </CardContent>
         </Card>
-      ) : !loading ? (
+      ) : (
         <>
           <Card
             className={cn(
@@ -1532,7 +1503,7 @@ export default function SchoolYearTab() {
 
 
         </>
-      ) : null}
+      )}
 
       <Dialog
         open={showNextForm}

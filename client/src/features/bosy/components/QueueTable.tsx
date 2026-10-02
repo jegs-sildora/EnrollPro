@@ -860,14 +860,14 @@ export function QueueTable({
           </AnimatePresence>
         ) : (
           <div className="rounded-2xl border border-border bg-background">
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-1.5 text-foreground">
-              <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+            <div className="flex min-h-[400px] flex-col items-center justify-center p-12 text-center gap-1 text-foreground">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-2xl font-extrabold text-primary">
+              <h3 className="text-2xl font-extrabold text-foreground">
                 No continuing learners match this enrollment status.
-              </p>
-              <p className="text-base text-muted-foreground">
+              </h3>
+              <p className="text-muted-foreground mx-auto">
                 Select another target grade or check the learner name or LRN.
               </p>
             </div>
@@ -882,14 +882,14 @@ export function QueueTable({
           tableClassName="w-full table-fixed"
           loading={loading}
           emptyStateContent={
-            <div className="flex flex-col items-center justify-center min-h-[320px] max-h-[300px] gap-1.5 text-foreground">
-              <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+            <div className="flex flex-col items-center justify-center min-h-[320px] max-h-[300px] p-12 text-center gap-1 text-foreground">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-2xl font-extrabold text-primary">
+              <h3 className="text-2xl font-extrabold text-foreground">
                 No continuing learners match this enrollment status.
-              </p>
-              <p className="text-base text-muted-foreground">
+              </h3>
+              <p className="text-muted-foreground mx-auto">
                 Select another target grade or check the learner name or LRN.
               </p>
             </div>

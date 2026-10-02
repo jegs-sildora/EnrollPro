@@ -22,7 +22,8 @@ async function seedGrade7() {
     process.exit(1);
   }
 
-  const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
+  const schoolSetting = await prisma.schoolSetting.findFirst();
+    const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
   if (!grade7) {
     console.error("❌ Grade 7 not found.");
     process.exit(1);
@@ -174,6 +175,7 @@ async function seedGrade7() {
           guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
+          learningModalities: ["MODULAR_PRINT"],
           previousSchool: {
             create: {
               ...getGrade7PreviousSchool(BASE_YEAR, learnerNameIndex),
@@ -245,6 +247,7 @@ async function seedGrade7() {
           schoolYearId: sy.id,
           learnerId: learner.id,
           enrolledById: enrolledById,
+          sf1Remarks: learnerType === "TRANSFEREE" ? "Transferred In" : null,
         }
       });
 

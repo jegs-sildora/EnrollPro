@@ -1213,24 +1213,132 @@ export default function Homerooms() {
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
       {showSkeleton ? (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    className="h-16 w-full rounded-lg"
-                  />
-                ))}
+        <Tabs value="1" className="w-full">
+          <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm pointer-events-none opacity-80">
+            {["GRADE 7", "GRADE 8", "GRADE 9", "GRADE 10"].map((g, i) => (
+              <div key={g} className="flex-1 min-w-32 py-2 px-3 flex items-center justify-center relative">
+                {i === 0 && (
+                  <div className="absolute inset-0 bg-primary shadow-sm rounded-lg" />
+                )}
+                <span className={cn("relative z-20 font-bold uppercase text-base", i === 0 ? "text-primary-foreground" : "text-foreground")}>{g}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            ))}
+          </TabsList>
+          
+          <div className="w-full">
+            <Card className="border-border shadow-sm">
+              <CardHeader className="flex flex-col items-center justify-between pb-6 gap-4">
+                <div>
+                  <CardTitle className="text-2xl font-extrabold uppercase text-transparent bg-muted rounded-md select-none animate-pulse">
+                    GRADE 7
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-8 pb-4">
+                  {/* Category 1 */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <h3 className="text-lg font-extrabold uppercase text-foreground tracking-tight flex items-center gap-2 opacity-80">
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                        SPECIAL CURRICULAR PROGRAMS (SCP)
+                      </h3>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 auto-rows-fr pb-4">
+                      {/* Section Card Skeleton */}
+                      <div className="group relative flex flex-col rounded-xl border bg-card p-5 transition-all w-full min-h-[300px]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <Skeleton className="h-6 w-32 mb-1" />
+                            <Skeleton className="h-5 w-16" />
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                          </div>
+                        </div>
+                        <div className="mt-auto space-y-4">
+                          <div className="flex items-center border-t border-border/50 pt-4">
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="flex-col w-full min-w-0 pr-2">
+                                <Skeleton className="h-4 w-20 mb-2" />
+                                <Skeleton className="h-11 w-full rounded-md" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5 border-t border-border/50 pt-4">
+                            <div className="flex items-center justify-between font-bold">
+                              <Skeleton className="h-4 w-20" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-2 w-full rounded-full" />
+                            <Skeleton className="h-10 w-full mt-4 rounded-md" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Add Section Card Skeleton */}
+                      <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/60 bg-muted/20 p-6 opacity-60 min-h-[300px]">
+                        <Skeleton className="h-8 w-8 rounded-full mb-4" />
+                        <Skeleton className="h-6 w-32 mb-2" />
+                        <Skeleton className="h-4 w-48" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 2 */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <h3 className="text-lg font-extrabold uppercase text-foreground tracking-tight flex items-center gap-2 opacity-80">
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                        BASIC EDUCATION CURRICULUM (BEC)
+                      </h3>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 auto-rows-fr pb-4">
+                      {/* Section Card Skeleton */}
+                      <div className="group relative flex flex-col rounded-xl border bg-card p-5 transition-all w-full min-h-[300px]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <Skeleton className="h-6 w-32 mb-1" />
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                          </div>
+                        </div>
+                        <div className="mt-auto space-y-4">
+                          <div className="flex items-center border-t border-border/50 pt-4">
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="flex-col w-full min-w-0 pr-2">
+                                <Skeleton className="h-4 w-20 mb-2" />
+                                <Skeleton className="h-11 w-full rounded-md" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5 border-t border-border/50 pt-4">
+                            <div className="flex items-center justify-between font-bold">
+                              <Skeleton className="h-4 w-20" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-2 w-full rounded-full" />
+                            <Skeleton className="h-10 w-full mt-4 rounded-md" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Add Section Card Skeleton */}
+                      <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/60 bg-muted/20 p-6 opacity-60 min-h-[300px]">
+                        <Skeleton className="h-8 w-8 rounded-full mb-4" />
+                        <Skeleton className="h-6 w-32 mb-2" />
+                        <Skeleton className="h-4 w-48" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </Tabs>
       ) : (
         /* Grade-level section list */
         <Tabs

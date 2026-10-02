@@ -12,6 +12,8 @@ import api from "@/shared/api/axiosInstance";
 import { useHeaderStore } from "@/store/header.slice";
 import { useGuardedTabChange } from "@/shared/hooks/useUnsavedChanges";
 
+import { useQuery } from "@tanstack/react-query";
+
 const VALID_TABS = [
   "profile",
   "school-year",
@@ -19,7 +21,7 @@ const VALID_TABS = [
 type SettingsTab = (typeof VALID_TABS)[number];
 
 export default function Settings() {
-  const { activeSchoolYearId, uiPreferences, updateUiPreference } = useSettingsStore();
+  const { uiPreferences, updateUiPreference } = useSettingsStore();
   const requestedTab = uiPreferences.settingsTab;
 
   const activeTab: SettingsTab = VALID_TABS.includes(
@@ -33,17 +35,23 @@ export default function Settings() {
   }, [updateUiPreference]);
   const guardedTabChange = useGuardedTabChange(handleTabChange);
 
-  useEffect(() => {
-    async function checkStatus() {
-      if (!activeSchoolYearId) return;
-      try {
-        await api.get("/school-years");
-      } catch (_err) {
-        // silent
-      }
-    }
-    checkStatus();
-  }, [activeSchoolYearId]);
+  useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: async () => {
+      const res = await api.get("/school-years");
+      return res.data.years;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useQuery({
+    queryKey: ["schoolYearsDefaults"],
+    queryFn: async () => {
+      const res = await api.get("/school-years/next-defaults");
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
   const setTitle = useHeaderStore((s) => s.setTitle);
 

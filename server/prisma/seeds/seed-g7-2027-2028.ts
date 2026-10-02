@@ -21,7 +21,8 @@ async function seedGrade7() {
     process.exit(1);
   }
 
-  const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
+  const schoolSetting = await prisma.schoolSetting.findFirst();
+    const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
   if (!grade7) {
     console.error("❌ Grade 7 not found.");
     process.exit(1);
@@ -44,6 +45,22 @@ async function seedGrade7() {
   let totalSeeded = 0;
 
   for (const section of sections) {
+    if (section.isHomogeneous && schoolSetting && !schoolSetting.enableHomogeneousSections) {
+      console.warn(`Skipping homogeneous section ${section.name} because enableHomogeneousSections is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SPECIAL_PROGRAM_IN_THE_ARTS' && schoolSetting && !schoolSetting.spaEnabled) {
+      console.warn(`Skipping SPA section ${section.name} because spaEnabled is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SCIENCE_TECHNOLOGY_AND_ENGINEERING' && schoolSetting && !schoolSetting.steEnabled) {
+      console.warn(`Skipping STE section ${section.name} because steEnabled is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SPECIAL_PROGRAM_IN_SPORTS' && schoolSetting && !schoolSetting.spsEnabled) {
+      console.warn(`Skipping SPS section ${section.name} because spsEnabled is disabled.`);
+      continue;
+    }
     const sectionAdviser = await prisma.sectionAdviser.findFirst({
       where: { sectionId: section.id, schoolYearId: sy.id },
       include: { teacher: true }
@@ -168,6 +185,7 @@ async function seedGrade7() {
           guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
+          learningModalities: ["MODULAR_PRINT"],
           previousSchool: {
             create: {
               ...getGrade7PreviousSchool(BASE_YEAR, learnerNameIndex),
@@ -239,6 +257,7 @@ async function seedGrade7() {
           schoolYearId: sy.id,
           learnerId: learner.id,
           enrolledById: enrolledById,
+          sf1Remarks: learnerType === "TRANSFEREE" ? "Transferred In" : null,
         }
       });
 

@@ -200,6 +200,27 @@ async function main() {
     console.error("❌ PSGC Seeder failed:", error);
   }
 
+  console.log("🌱 Running Task 01 Seeder...");
+  try {
+    execSync("npx tsx prisma/seeds/task-01-seed.ts", { stdio: "inherit" });
+  } catch (error) {
+    console.error("❌ Task 01 Seeder failed:", error);
+  }
+
+  console.log("🌱 Running Ancillary Roles Seeder...");
+  try {
+    execSync("npx tsx prisma/seeds/ancillary-roles-seed.ts", { stdio: "inherit" });
+  } catch (error) {
+    console.error("❌ Ancillary Roles Seeder failed:", error);
+  }
+
+  console.log("🌱 Running Task 01 Users Seeder...");
+  try {
+    execSync("npx tsx prisma/seeds/task-01-users-seed.ts", { stdio: "inherit" });
+  } catch (error) {
+    console.error("❌ Task 01 Users Seeder failed:", error);
+  }
+
   console.log("✅ Seed completed successfully.");
 }
 

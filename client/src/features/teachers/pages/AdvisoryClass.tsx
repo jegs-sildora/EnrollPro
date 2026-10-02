@@ -20,6 +20,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import {
   Table,
@@ -48,6 +49,7 @@ interface AdvisoryLearner {
   middleName: string | null;
   sex: string;
   birthdate?: string | null;
+  studentPhoto?: string | null;
 }
 
 interface AdvisoryRecord {
@@ -197,18 +199,25 @@ export default function AdvisoryClass() {
                         {idx + 1}
                       </TableCell>
                       <TableCell className="py-3 pl-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm uppercase text-foreground leading-tight">
-                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
-                          </span>
-                          <span className="text-sm font-bold uppercase text-foreground mt-0.5">
-                            {learner.lrn || "NO LRN"}
-                          </span>
-                          {remark && (
-                            <span className="text-sm font-bold uppercase text-amber-600 mt-0.5">
-                              {remark}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <UserPhoto
+                            photo={learner.studentPhoto || null}
+                            containerClassName="w-10 h-10 rounded-full shadow-sm border shrink-0 border-2 border-primary border-solid"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-extrabold text-sm uppercase text-foreground leading-tight">
+                              {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
                             </span>
-                          )}
+                            <span className="text-sm uppercase text-foreground mt-0.5">
+                              LRN: {learner.lrn || "NO LRN"}
+                            </span>
+                            {remark && (
+                              <span className="text-sm font-bold uppercase text-amber-600 mt-0.5">
+                                {remark}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-3">
@@ -345,22 +354,14 @@ export default function AdvisoryClass() {
 
         <CardContent className="p-0">
           {records.length === 0 ? (
-            <div className="flex py-38 w-full items-center justify-center">
-              <Card className="w-full border-none shadow-none">
-                <CardContent className="pt-10 pb-10 text-center space-y-3">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center mb-2">
-                    <Users className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-bold text-foreground text-lg">
-                      No Enrolled Learners
-                    </p>
-                    <p className="text-sm text-foreground leading-relaxed px-4">
-                      This class section has no enrolled learners yet.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex flex-col items-center justify-center p-12 text-center h-full border-none w-full">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-foreground">No Enrolled Learners</h3>
+              <p className="text-muted-foreground mx-auto">
+                This class section has no enrolled learners yet.
+              </p>
             </div>
           ) : (
             <div className="p-4">

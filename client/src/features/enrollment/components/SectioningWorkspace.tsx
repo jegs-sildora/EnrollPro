@@ -230,7 +230,7 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner, onForfe
               <td className="p-2 text-center">
                 <Badge className={cn(
                   "px-2 uppercase",
-                  l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                  l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-foreground border-muted hover:bg-muted"
                 )}>
                   {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
                 </Badge>
@@ -238,7 +238,7 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner, onForfe
               <td className="p-3 text-center font-bold text-foreground">
                 {l.genAve?.toFixed(2) ?? "--"}
               </td>
-              <td className="p-3 text-right">
+              <td className="p-3 text-center">
                 {(onMoveLearner || onRemoveLearner) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
