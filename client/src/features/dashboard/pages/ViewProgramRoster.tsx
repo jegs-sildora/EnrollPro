@@ -231,7 +231,7 @@ export default function ViewProgramRoster() {
   );
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="flex flex-col h-full min-h-0 space-y-6">
       <div className="mb-4 flex flex-col gap-3">
         <Link
           to="/dashboard"
@@ -241,8 +241,8 @@ export default function ViewProgramRoster() {
         </Link>
       </div>
 
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-        <CardHeader className="px-6 py-4">
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col flex-1 min-h-0">
+        <CardHeader className="px-6 py-4 shrink-0">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-base font-bold text-foreground whitespace-nowrap">
@@ -269,9 +269,9 @@ export default function ViewProgramRoster() {
           </div>
         </CardHeader>
 
-        <hr className="border-border" />
+        <hr className="border-border shrink-0" />
 
-        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
+        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4 shrink-0">
           <div>
             <CardTitle className="text-base sm:text-lg font-bold">
               Enrolled Learner Records
@@ -290,11 +290,11 @@ export default function ViewProgramRoster() {
           </div>
         </CardHeader>
         
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
           {loading ? (
             <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : learners.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center h-full border-none w-full">
+            <div className="flex flex-1 flex-col items-center justify-center p-12 text-center h-full border-none w-full">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
                 <Users className="h-8 w-8 text-primary" />
               </div>
@@ -304,7 +304,7 @@ export default function ViewProgramRoster() {
               </p>
             </div>
           ) : (
-            <div className="p-4">
+            <div className="p-4 flex-1 overflow-auto">
               <div className="flex flex-col xl:flex-row gap-6">
                 {renderTable(maleLearners, "Male Learners", "MALE")}
                 {renderTable(femaleLearners, "Female Learners", "FEMALE")}

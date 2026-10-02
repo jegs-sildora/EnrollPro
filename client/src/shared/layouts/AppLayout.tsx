@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
+import { useEffect, useState, memo, useCallback, type ReactNode, Fragment } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link, useOutlet } from "react-router";
 import axios from "axios";
@@ -606,6 +606,176 @@ function companionErrorMessage(error: unknown): string {
   return "The integrated system could not be opened.";
 }
 
+type AppNavConfigItem = {
+  label: string | React.ReactNode;
+  to?: string;
+  icon: React.ElementType;
+  access: (roles: string[], ancillary: string[], isStrictAdviser: boolean) => boolean;
+  companionSystem?: CompanionSystem;
+  subtext?: string;
+};
+
+type AppNavConfigGroup = {
+  id: string;
+  groupLabel: string | ((phase: string | null, isStrictAdviser: boolean) => string);
+  allowedPhases?: string[];
+  items: AppNavConfigItem[];
+};
+
+const NAVIGATION_MATRIX: AppNavConfigGroup[] = [
+  {
+    id: "enrollment_sectioning",
+    groupLabel: (phase, isStrict) =>
+      phase === "CLASSES_ONGOING"
+        ? "ACTIVE SCHOOL OPERATIONS"
+        : (isStrict ? "ENROLLMENT" : "ENROLLMENT AND SECTIONING"),
+    allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    items: [
+      {
+        label: "Dashboard",
+        to: "/dashboard",
+        icon: LayoutDashboard,
+        access: (roles, anc, isStrict) => !isStrict
+      },
+      {
+        label: "Early Registration",
+        to: "/early-registration-masterlist",
+        icon: FolderOpen,
+        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"].includes(r)) || anc.some(a => a.endsWith("COORDINATOR"))
+      },
+      {
+        label: "SCP Admission",
+        to: "/learner-admission",
+        icon: CheckCircle2,
+        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"].includes(r)) || anc.some(a => a.endsWith("HEAD TEACHER"))
+      },
+      {
+        label: "Learner Enrollment",
+        to: "/learner-enrollment",
+        icon: UserPlus,
+        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR", "CLASS_ADVISER"].includes(r)) || anc.some(a => a.endsWith("COORDINATOR"))
+      },
+      {
+        label: "Section Assignment",
+        to: "/section-assignment",
+        icon: Calendar,
+        access: (roles, anc, isStrict) => !isStrict && (roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"].includes(r)) || anc.some(a => a.endsWith("COORDINATOR")))
+      }
+    ]
+  },
+  {
+    id: "eosy_processing",
+    groupLabel: "END OF SCHOOL YEAR PROCESSING",
+    allowedPhases: ["EOSY_CLOSING"],
+    items: [
+      {
+        label: "Dashboard",
+        to: "/dashboard",
+        icon: LayoutDashboard,
+        access: (roles, anc, isStrict) => !isStrict
+      },
+      {
+        label: (
+          <div className="flex items-center justify-between w-full">
+            <span>EOSY Updating</span>
+          </div>
+        ),
+        to: "/eosy",
+        icon: ArrowUpRightSquare,
+        access: (roles, anc, isStrict) => !isStrict && (roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"].includes(r)) || anc.some(a => a.endsWith("COORDINATOR")))
+      }
+    ]
+  },
+  {
+    id: "school_records",
+    groupLabel: "School Records",
+    items: [
+      {
+        label: "Learner Directory",
+        to: "/learners",
+        icon: Users,
+        access: (roles, anc, isStrict) => !isStrict
+      },
+      {
+        label: "Personnel Directory",
+        to: "/personnel",
+        icon: Presentation,
+        access: (roles) => roles.some(r => ["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR"].includes(r))
+      },
+      {
+        label: "Class Sections",
+        to: "/sections",
+        icon: List,
+        access: (roles, anc, isStrict) => !isStrict
+      }
+    ]
+  },
+  {
+    id: "teaching_advisory",
+    groupLabel: "Teaching & Advisory",
+    items: [
+      {
+        label: "Advisory Class",
+        to: "/teacher/advisory",
+        icon: BookOpen,
+        access: (roles) => roles.includes("CLASS_ADVISER")
+      }
+    ]
+  },
+  {
+    id: "integrated_systems",
+    groupLabel: "Integrated Systems",
+    items: [
+      {
+        label: "AIMS",
+        icon: Database,
+        subtext: "Academic Info",
+        companionSystem: "AIMS",
+        access: (roles) => canSeeCompanion("AIMS", roles as Role[])
+      },
+      {
+        label: "SMART",
+        icon: CheckCircle2,
+        subtext: "Simplified Master Records and Tracking",
+        companionSystem: "SMART",
+        access: (roles) => canSeeCompanion("SMART", roles as Role[])
+      },
+      {
+        label: "ATLAS",
+        icon: CalendarClock,
+        subtext: "Teaching Loads and Schedules",
+        companionSystem: "ATLAS",
+        access: (roles) => canSeeCompanion("ATLAS", roles as Role[])
+      },
+      {
+        label: "MRF",
+        icon: Wrench,
+        subtext: "Maintenance Requests",
+        companionSystem: "MRF",
+        access: (roles) => canSeeCompanion("MRF", roles as Role[])
+      }
+    ]
+  },
+  {
+    id: "system_admin",
+    groupLabel: "System Administration",
+    items: [
+      {
+        label: "Activity Logs",
+        to: "/audit-logs",
+        icon: History,
+        access: (roles) => roles.includes("SYSTEM_ADMIN")
+      },
+      {
+        label: "System Configuration",
+        to: "/settings",
+        icon: Settings,
+        access: (roles) => roles.includes("SYSTEM_ADMIN")
+      }
+    ]
+  }
+];
+
 const CompanionNavItem = memo(function CompanionNavItem({
   system,
   icon: Icon,
@@ -812,195 +982,55 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, strict class adviser, and coordinators */}
-              {(isRegistrar || isAdmin || isStrictClassAdviser || isGradeLevelCoordinator || isScpCoordinator) && (
-                <>
-                  <NavDivider
-                    label={
-                      systemPhase === "CLASSES_ONGOING"
-                        ? "ACTIVE SCHOOL OPERATIONS"
-                        : systemPhase === "EOSY_CLOSING"
-                          ? "END OF SCHOOL YEAR PROCESSING"
-                          : (isStrictClassAdviser && !isGradeLevelCoordinator)
-                            ? "ENROLLMENT"
-                            : "ENROLLMENT AND SECTIONING"
-                    }
-                  />
-                  <NavItem
-                    to="/dashboard"
-                    icon={LayoutDashboard}
-                    label="Dashboard"
-                    pathname={pathname}
-                  />
+              {NAVIGATION_MATRIX.map((group) => {
+                // Filter items by allowed phases and roles
+                const phaseAllowed = !group.allowedPhases || group.allowedPhases.includes(systemPhase || "OFFICIAL_ENROLLMENT");
+                if (!phaseAllowed) return null;
 
-                  {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
-                    <>
-                      {(isAdmin || isRegistrar || isGradeLevelCoordinator) && (
+                const authorizedItems = group.items.filter((item) =>
+                  item.access(userRoles, ancillaryRoles, isStrictClassAdviser)
+                );
+
+                if (authorizedItems.length === 0) return null;
+
+                const labelStr = typeof group.groupLabel === "function"
+                  ? group.groupLabel(systemPhase || "OFFICIAL_ENROLLMENT", isStrictClassAdviser)
+                  : group.groupLabel;
+
+                return (
+                  <Fragment key={group.id}>
+                    <NavDivider label={labelStr} />
+                    {authorizedItems.map((item, idx) => {
+                      if (item.companionSystem) {
+                        return (
+                          <CompanionNavItem
+                            key={`${group.id}-${idx}`}
+                            system={item.companionSystem}
+                            icon={item.icon}
+                            label={item.label as string}
+                            subtext={item.subtext || ""}
+                            availability={companionAvailability(item.companionSystem)}
+                            fallbackReason={companionFallbackReason}
+                            isLaunching={launchingCompanion === item.companionSystem}
+                            launchBlocked={launchingCompanion !== null}
+                            onLaunch={launchCompanion}
+                          />
+                        );
+                      }
+
+                      return (
                         <NavItem
-                          to="/early-registration-masterlist"
-                          icon={FolderOpen}
-                          label="Early Registration"
+                          key={`${group.id}-${idx}`}
+                          to={item.to || ""}
+                          icon={item.icon}
+                          label={item.label}
                           pathname={pathname}
                         />
-                      )}
-                      {(isAdmin || isRegistrar || isScpCoordinator) && (
-                        <NavItem
-                          to="/learner-admission"
-                          icon={CheckCircle2}
-                          label="SCP Admission"
-                          pathname={pathname}
-                        />
-                      )}
-                      <NavItem
-                        to="/learner-enrollment"
-                        icon={UserPlus}
-                        label="Learner Enrollment"
-                        pathname={pathname}
-                      />
-                      {!isStrictClassAdviser && (
-                        <NavItem
-                          to="/section-assignment"
-                          icon={Calendar}
-                          label="Section Assignment"
-                          pathname={pathname}
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {!isStrictClassAdviser && systemPhase === "EOSY_CLOSING" && (
-                    <>
-
-                      <NavItem
-                        to="/eosy"
-                        icon={ArrowUpRightSquare}
-                        label={
-                          <div className="flex items-center justify-between w-full">
-                            <span>EOSY Updating</span>
-                          </div>
-                        }
-                        pathname={pathname}
-                      />
-                    </>
-                  )}
-
-                  {!isStrictClassAdviser && (
-                    <>
-                      <NavDivider label="School Records" />
-                      <NavItem
-                        to="/learners"
-                        icon={Users}
-                        label="Learner Directory"
-                        pathname={pathname}
-                      />
-                      {isAdmin && (
-                        <NavItem
-                          to="/personnel"
-                          icon={Presentation}
-                          label="Personnel Directory"
-                          pathname={pathname}
-                        />
-                      )}
-                      <NavItem
-                        to="/sections"
-                        icon={List}
-                        label="Class Sections"
-                        pathname={pathname}
-                      />
-                    </>
-                  )}
-                </>
-              )}
-
-              {userRoles.includes("CLASS_ADVISER") && (
-                <>
-                  <NavDivider label="Teaching & Advisory" />
-                  <NavItem
-                    to="/teacher/advisory"
-                    icon={BookOpen}
-                    label="Advisory Class"
-                    pathname={pathname}
-                  />
-                </>
-              )}
-
-              {hasCompanionNavigation && (
-                <>
-                  <NavDivider label="Integrated Systems" />
-                  {canSeeCompanion("AIMS", userRoles) && (
-                    <CompanionNavItem
-                      system="AIMS"
-                      icon={Database}
-                      label="AIMS"
-                      subtext="Academic Info"
-                      availability={companionAvailability("AIMS")}
-                      fallbackReason={companionFallbackReason}
-                      isLaunching={launchingCompanion === "AIMS"}
-                      launchBlocked={launchingCompanion !== null}
-                      onLaunch={launchCompanion}
-                    />
-                  )}
-                  {canSeeCompanion("SMART", userRoles) && (
-                    <CompanionNavItem
-                      system="SMART"
-                      icon={CheckCircle2}
-                      label="SMART"
-                      subtext="Simplified Master Records and Tracking"
-                      availability={companionAvailability("SMART")}
-                      fallbackReason={companionFallbackReason}
-                      isLaunching={launchingCompanion === "SMART"}
-                      launchBlocked={launchingCompanion !== null}
-                      onLaunch={launchCompanion}
-                    />
-                  )}
-                  {canSeeCompanion("ATLAS", userRoles) && (
-                    <CompanionNavItem
-                      system="ATLAS"
-                      icon={CalendarClock}
-                      label="ATLAS"
-                      subtext="Teaching Loads and Schedules"
-                      availability={companionAvailability("ATLAS")}
-                      fallbackReason={companionFallbackReason}
-                      isLaunching={launchingCompanion === "ATLAS"}
-                      launchBlocked={launchingCompanion !== null}
-                      onLaunch={launchCompanion}
-                    />
-                  )}
-                  {canSeeCompanion("MRF", userRoles) && (
-                    <CompanionNavItem
-                      system="MRF"
-                      icon={Wrench}
-                      label="MRF"
-                      subtext="Maintenance Requests"
-                      availability={companionAvailability("MRF")}
-                      fallbackReason={companionFallbackReason}
-                      isLaunching={launchingCompanion === "MRF"}
-                      launchBlocked={launchingCompanion !== null}
-                      onLaunch={launchCompanion}
-                    />
-                  )}
-                </>
-              )}
-
-              {isAdmin && (
-                <>
-                  <NavDivider label="System Administration" />
-                  <NavItem
-                    to="/audit-logs"
-                    icon={History}
-                    label="Activity Logs"
-                    pathname={pathname}
-                  />
-                  <NavItem
-                    to="/settings"
-                    icon={Settings}
-                    label="System Configuration"
-                    pathname={pathname}
-                  />
-                </>
-              )}
-
-
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

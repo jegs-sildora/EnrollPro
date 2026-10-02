@@ -335,13 +335,17 @@ export default function Login() {
         const isClassAdviser = data.user.roles?.includes("CLASS_ADVISER");
         const isGradeCoordinator = data.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
         
-        const destination = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
+        const isStrictClassAdviser = isClassAdviser && !isAdmin && !isRegistrar && !isGradeCoordinator;
+
+        const destination = (isRegistrar || isAdmin || isGradeCoordinator)
           ? "/dashboard"
-          : data.user.roles?.includes("TEACHER")
-            ? "/learners"
-            : data.user.roles?.includes("MRF")
-              ? "/my-activity"
-              : "/dashboard";
+          : isStrictClassAdviser
+            ? "/teacher/advisory"
+            : data.user.roles?.includes("TEACHER")
+              ? "/learners"
+              : data.user.roles?.includes("MRF")
+                ? "/my-activity"
+                : "/dashboard";
         navigate(destination, { replace: true });
       })
       .catch(() => {
@@ -430,13 +434,17 @@ export default function Login() {
       const isClassAdviser = payload.user.roles?.includes("CLASS_ADVISER");
       const isGradeCoordinator = payload.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
       
-      const destination = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
+      const isStrictClassAdviser = isClassAdviser && !isAdmin && !isRegistrar && !isGradeCoordinator;
+
+      const destination = (isRegistrar || isAdmin || isGradeCoordinator)
         ? "/dashboard"
-        : payload.user.roles?.includes("TEACHER")
-          ? "/learners"
-          : payload.user.roles?.includes("MRF")
-            ? "/my-activity"
-            : "/dashboard";
+        : isStrictClassAdviser
+          ? "/teacher/advisory"
+          : payload.user.roles?.includes("TEACHER")
+            ? "/learners"
+            : payload.user.roles?.includes("MRF")
+              ? "/my-activity"
+              : "/dashboard";
 
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate(destination, { replace: true });

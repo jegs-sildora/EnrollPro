@@ -165,19 +165,27 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Common Shared Routes
+          // Dashboard and Common Misc Routes
           {
-            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "TEACHER", "CLASS_ADVISER", "MRF"]} />,
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "TEACHER", "CLASS_ADVISER", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "MRF"]} />,
             children: [
               { path: "/dashboard", element: renderLazyPage(Dashboard) },
               { path: "/dashboard/program-roster/:programType", element: renderLazyPage(ViewProgramRoster) },
-              { path: "/learners", element: renderLazyPage(Students) },
-              { path: "/learner/:id", element: renderLazyPage(Profile) },
-              { path: "/personnel", element: renderLazyPage(Teachers) },
-              { path: "/sections", element: renderLazyPage(Homerooms) },
-              { path: "/sections/view-masterlist/:sectionId", element: renderLazyPage(ViewMasterlist) },
               { path: "/my-activity", element: renderLazyPage(MyActivity) },
               { path: "/help", element: renderLazyPage(HelpDocumentation) },
+            ],
+          },
+          // Learner Directory & Class Sections
+          {
+            element: <ProtectedRoute 
+              allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"]}
+              allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"]} 
+            />,
+            children: [
+              { path: "/learners", element: renderLazyPage(Students) },
+              { path: "/learner/:id", element: renderLazyPage(Profile) },
+              { path: "/sections", element: renderLazyPage(Homerooms) },
+              { path: "/sections/view-masterlist/:sectionId", element: renderLazyPage(ViewMasterlist) },
             ],
           },
           // Registration & Sectioning
@@ -187,6 +195,12 @@ export const router = createBrowserRouter([
               { path: "/early-registration-masterlist", element: renderLazyPage(EarlyRegistrationMasterlist) },
               { path: "/section-assignment", element: renderLazyPage(Enrollment) },
               { path: "/eosy", element: renderLazyPage(EosyUpdating) },
+            ],
+          },
+          // Learner Enrollment
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"]} allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"]} />,
+            children: [
               { path: "/learner-enrollment", element: renderLazyPage(BOSYPage) },
             ],
           },
@@ -209,6 +223,13 @@ export const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL"]} />,
             children: [
               { path: "/settings", element: renderLazyPage(Settings) },
+            ],
+          },
+          // Personnel Directory
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR"]} />,
+            children: [
+              { path: "/personnel", element: renderLazyPage(Teachers) },
             ],
           },
           // System Admin Only
