@@ -47,7 +47,7 @@ const optionalSf9GeneralAverage = z.preprocess(
     }, "General Average must not exceed two decimal places."),
 );
 
-export const EnrollmentFormSchema = z
+export const BaseEnrollmentFormSchema = z
   .object({
     // Phase 0: Data Privacy
     isPrivacyConsentGiven: z.boolean().refine((val) => val === true, {
@@ -214,27 +214,29 @@ export const EnrollmentFormSchema = z
     learningModalities: z.array(z.string()).default([]),
     bypassDuplicate: z.boolean().optional(),
 
-    // Section 10: Certification
     isCertifiedTrue: z.boolean().refine((val) => val === true, {
       message:
         "Verification and certification of the provided information is required.",
     }),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.hasSf9Deficiency && (data.generalAverage === undefined || data.generalAverage === null)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Final General Average (SF9) is required unless a temporary enrollment (D.O. 017) is declared.",
-        path: ["generalAverage"],
-      });
-    }
+  });
+  
+const createSuperRefineLogic = (isEarlyRegistration: boolean) => (data: any, ctx: z.RefinementCtx) => {
+    if (!isEarlyRegistration) {
+      if (!data.hasSf9Deficiency && (data.generalAverage === undefined || data.generalAverage === null)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Final General Average (SF9) is required unless a temporary enrollment (D.O. 017) is declared.",
+          path: ["generalAverage"],
+        });
+      }
 
-    if (data.hasSf9Deficiency && data.generalAverage !== undefined && data.generalAverage !== null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "General Average must be empty if you are temporarily enrolling without an SF9.",
-        path: ["generalAverage"],
-      });
+      if (data.hasSf9Deficiency && data.generalAverage !== undefined && data.generalAverage !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "General Average must be empty if you are temporarily enrolling without an SF9.",
+          path: ["generalAverage"],
+        });
+      }
     }
 
     const lrnValue = data.lrn?.trim() ?? "";
@@ -254,7 +256,8 @@ export const EnrollmentFormSchema = z
     if (data.hasNoLrn && lrnValue) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "The LRN field must be empty when declaring a No-LRN status.",
+        message:
+          "Please clear the Learner Reference Number input if the learner does not have an LRN.",
         path: ["lrn"],
       });
     }
@@ -262,199 +265,17 @@ export const EnrollmentFormSchema = z
     if (!data.hasNoLrn && !lrnValue) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Learner Reference Number is required.",
+        message:
+          "Please enter a valid 12-digit Learner Reference Number, or declare the learner has no LRN.",
         path: ["lrn"],
       });
     }
 
-    const isScpEligible =
-      data.learnerType === "NEW_ENROLLEE" && data.gradeLevel === "7";
-
-    if (data.isScpApplication && !isScpEligible) {
+    if (data.isScpApplication && !data.scpType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Special Curricular Program (SCP) eligibility is restricted to New Enrollees for Grade 7.",
-        path: ["isScpApplication"],
-      });
-    }
-
-    if (data.isScpApplication) {
-      if (!data.scpType) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "A Special Curricular Program (SCP) track selection is required.",
-          path: ["scpType"],
-        });
-      }
-
-      if (!data.hasScpFallbackConsent) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "You must acknowledge the SCP assessment and placement terms.",
-          path: ["hasScpFallbackConsent"],
-        });
-      }
-
-      if (data.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !data.artField) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Preferred Art Field selection is required for SPA applicants.",
-          path: ["artField"],
-        });
-      }
-      if (
-        data.scpType === "SPECIAL_PROGRAM_IN_SPORTS" &&
-        (!data.sportsList || data.sportsList.length === 0)
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "At least one primary sport must be selected for SPS applicants.",
-          path: ["sportsList"],
-        });
-      }
-
-    }
-
-    const isMotherAvailable = !data.hasNoMother;
-    const isFatherAvailable = !data.hasNoFather;
-
-    if (!isMotherAvailable && !isFatherAvailable) {
-      if (!data.guardian?.lastName?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Guardian's last name is required when parental information is unavailable.",
-          path: ["guardian", "lastName"],
-        });
-      }
-
-      if (!data.guardian?.firstName?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Guardian's first name is required when parental information is unavailable.",
-          path: ["guardian", "firstName"],
-        });
-      }
-
-      if (
-        !data.guardianRelationship?.trim() &&
-        !data.guardian?.relationship?.trim()
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Relationship to guardian is required when parental information is unavailable.",
-          path: ["guardianRelationship"],
-        });
-      }
-    }
-
-    if (data.primaryContact === "MOTHER" && !isMotherAvailable) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Primary contact selection is invalid due to missing maternal data.",
-        path: ["primaryContact"],
-      });
-    }
-
-    if (data.primaryContact === "FATHER" && !isFatherAvailable) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Primary contact selection is invalid due to missing paternal data.",
-        path: ["primaryContact"],
-      });
-    }
-
-    if (
-      data.primaryContact === "GUARDIAN" &&
-      (!data.guardian?.firstName?.trim() || !data.guardian?.lastName?.trim())
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Please provide complete guardian details before designating as the primary contact.",
-        path: ["primaryContact"],
-      });
-    }
-
-    if (data.isLearnerWithDisability) {
-      if (!data.specialNeedsCategory) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Please select either a1 or a2 for Special Needs Category.",
-          path: ["specialNeedsCategory"],
-        });
-      } else {
-        const types = data.disabilityTypes || [];
-        if (types.length === 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Please select at least one condition.",
-            path: ["disabilityTypes"],
-          });
-        } else {
-          // Check for sub-options
-          const hasSpecialHealth = types.includes("Special Health Problem/Chronic Disease");
-          const hasVisualImpairment = types.includes("Visual Impairment");
-          
-          const mainSelections = types.filter(
-            t => !SPECIAL_HEALTH_SUB_OPTIONS.includes(t) && !VISUAL_IMPAIRMENT_SUB_OPTIONS.includes(t)
-          );
-
-          if (mainSelections.length > 1) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Please check only 1 main condition, either from a1 or a2.",
-              path: ["disabilityTypes"],
-            });
-          }
-
-          if (hasSpecialHealth) {
-            const hasSubOption = types.some(t => SPECIAL_HEALTH_SUB_OPTIONS.includes(t));
-            if (!hasSubOption) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Please select a specific type for Special Health Problem/Chronic Disease.",
-                path: ["disabilityTypes"],
-              });
-            }
-          }
-
-          if (hasVisualImpairment) {
-            const hasSubOption = types.some(t => VISUAL_IMPAIRMENT_SUB_OPTIONS.includes(t));
-            if (!hasSubOption) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Please select a specific type for Visual Impairment.",
-                path: ["disabilityTypes"],
-              });
-            }
-          }
-        }
-      }
-    }
-
-    if (data.isIpCommunity && !data.ipGroupName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please specify the IP Group Name.",
-        path: ["ipGroupName"],
-      });
-    }
-
-    if (data.is4PsBeneficiary && !data.householdId4Ps?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please provide the 4Ps Household ID Number.",
-        path: ["householdId4Ps"],
+        message: "Please select a specific Special Curricular Program.",
+        path: ["scpType"],
       });
     }
 
@@ -462,28 +283,126 @@ export const EnrollmentFormSchema = z
       if (!data.lastYearEnrolled?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please specify the last school year attended.",
+          message: "Please provide the school year the learner was last enrolled.",
           path: ["lastYearEnrolled"],
         });
       }
       if (!data.lastGradeLevel?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please specify the last grade level completed.",
+          message: "Please select the learner's last grade level.",
           path: ["lastGradeLevel"],
         });
       }
     }
 
-    if (data.isLearnerWithDisability && data.hasPwdId === undefined) {
+    if (data.isLearnerWithDisability) {
+      if (!data.specialNeedsCategory) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please categorize the learner's special educational needs.",
+          path: ["specialNeedsCategory"],
+        });
+      }
+
+      if (!data.disabilityTypes || data.disabilityTypes.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select at least one applicable disability type.",
+          path: ["disabilityTypes"],
+        });
+      }
+    }
+
+    if (data.is4PsBeneficiary && !data.householdId4Ps?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please specify if the learner has a PWD ID.",
-        path: ["hasPwdId"],
+        message: "Please provide the 4Ps Household ID number.",
+        path: ["householdId4Ps"],
       });
     }
 
-  });
+    if (data.isIpCommunity && !data.ipGroupName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the indigenous community group.",
+        path: ["ipGroupName"],
+      });
+    }
+
+    if (data.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !data.artField?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select an art specialization.",
+        path: ["artField"],
+      });
+    }
+
+    if (data.scpType === "SPECIAL_PROGRAM_IN_SPORTS" && data.sportsList.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select at least one sport.",
+        path: ["sportsList"],
+      });
+    }
+
+    if (data.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" && !data.foreignLanguage?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please enter the foreign language.",
+        path: ["foreignLanguage"],
+      });
+    }
+
+    if (data.primaryContact === "MOTHER" && data.hasNoMother) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "You cannot assign the mother as primary contact if you have checked 'Learner has no mother'.",
+        path: ["primaryContact"],
+      });
+    }
+
+    if (data.primaryContact === "FATHER" && data.hasNoFather) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "You cannot assign the father as primary contact if you have checked 'Learner has no father'.",
+        path: ["primaryContact"],
+      });
+    }
+
+    if (data.primaryContact === "GUARDIAN") {
+      if (!data.guardian?.firstName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian's first name is required when assigned as primary contact.",
+          path: ["guardian.firstName"],
+        });
+      }
+      if (!data.guardian?.lastName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian's last name is required when assigned as primary contact.",
+          path: ["guardian.lastName"],
+        });
+      }
+      if (!data.guardianRelationship?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian's relationship to the learner is required when assigned as primary contact.",
+          path: ["guardianRelationship"],
+        });
+      }
+    }
+  };
+
+export const EnrollmentFormSchema = BaseEnrollmentFormSchema.superRefine(createSuperRefineLogic(false));
+
+export const EarlyRegistrationFormSchema = BaseEnrollmentFormSchema.omit({
+  isIpCommunity: true,
+  is4PsBeneficiary: true,
+  isBalikAral: true,
+  isLearnerWithDisability: true,
+}).superRefine(createSuperRefineLogic(true));
 
 export type EnrollmentFormData = z.infer<typeof EnrollmentFormSchema>;
 

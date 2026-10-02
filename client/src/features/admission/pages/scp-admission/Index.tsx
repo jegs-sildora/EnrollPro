@@ -179,7 +179,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title={activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} ADMISSION PORTAL` : "ADMISSION PORTAL"}
+          title={activeSchoolYearLabel ? `S.Y. ${activeSchoolYearLabel} SCP ADMISSION FORM` : "ADMISSION FORM"}
         />
 
         <main

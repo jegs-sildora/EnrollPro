@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useForm, FormProvider, Controller } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
-import { EnrollmentFormSchema, type EnrollmentFormData } from "../online-enrollment/types";
+import { EarlyRegistrationFormSchema, type EnrollmentFormData } from "../online-enrollment/types";
 
 import Step1Personal from "../online-enrollment/components/Step1Personal";
 import Step2Family from "../online-enrollment/components/Step2Family";
@@ -278,7 +278,7 @@ export default function EarlyRegistrationForm({
 
   const methods = useForm<EnrollmentFormData, unknown, EnrollmentFormData>({
     resolver: zodResolver(
-      EnrollmentFormSchema,
+      EarlyRegistrationFormSchema,
     ) as import("react-hook-form").Resolver<EnrollmentFormData>,
     defaultValues: initialDraft || {
       ...DEFAULT_VALUES,

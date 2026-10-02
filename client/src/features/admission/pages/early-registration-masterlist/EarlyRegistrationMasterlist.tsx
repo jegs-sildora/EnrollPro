@@ -46,7 +46,7 @@ export default function EarlyRegistrationMasterlist() {
   const setTitle = useHeaderStore((state: any) => state.setTitle);
   const [selectedTab, setSelectedTab] = useState<"7" | "8-10">("7");
   const [searchTerm, setSearchTerm] = useState("");
-  const [sorting, setSorting] = useState<SortingState>([{ id: "finalGenAve", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "applicant", desc: false }]);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
@@ -112,15 +112,6 @@ export default function EarlyRegistrationMasterlist() {
       },
     },
     {
-      id: "targetGrade",
-      size: 150,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="TARGET GRADE" />,
-      accessorFn: (row) => row.gradeLevel.name,
-      cell: ({ getValue }) => (
-        <span className="font-bold uppercase text-foreground">{getValue() as string}</span>
-      ),
-    },
-    {
       id: "previousSchool",
       size: 250,
       header: ({ column }) => <DataTableColumnHeader column={column} title="PREVIOUS SCHOOL" />,
@@ -130,42 +121,15 @@ export default function EarlyRegistrationMasterlist() {
       ),
     },
     {
-      id: "finalGenAve",
-      size: 180,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" />,
-      accessorFn: (row) => row.previousSchool?.generalAverage || 0,
-      sortDescFirst: true,
-      cell: ({ row }) => {
-        const ave = row.original.previousSchool?.generalAverage;
-        return (
-          <span className="font-extrabold text-primary text-base">
-            {ave ? ave.toFixed(2) : "---"}
-          </span>
-        );
-      },
-    },
-    {
-      id: "registrationDate",
-      size: 180,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="REGISTRATION DATE" />,
-      accessorFn: (row) => row.createdAt,
-      cell: ({ row }) => (
-        <span className="font-bold uppercase text-foreground">
-          {format(new Date(row.original.createdAt), "MMM d, yyyy")}
-        </span>
+      id: "targetGrade",
+      size: 150,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="TARGET GRADE" />,
+      accessorFn: (row) => row.gradeLevel.name,
+      cell: ({ getValue }) => (
+        <span className="font-bold uppercase text-foreground">{getValue() as string}</span>
       ),
     },
-    {
-      id: "status",
-      size: 200,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
-      accessorFn: () => "Pending Verification",
-      cell: () => (
-        <span className="mt-1 inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold leading-none text-amber-800 uppercase shadow-sm">
-          Pending Verification
-        </span>
-      ),
-    },
+
     {
       id: "action",
       size: 150,

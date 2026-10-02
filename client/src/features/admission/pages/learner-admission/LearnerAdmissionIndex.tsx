@@ -155,7 +155,7 @@ function EnrollmentStatusBadge({ application }: { application: RankedApplication
       <span
         className="mt-1 inline-flex w-fit rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-sm font-bold leading-none text-slate-700 uppercase"
       >
-        Pending LESF Submission
+        Pending Enrollment Submission
       </span>
     )
   }

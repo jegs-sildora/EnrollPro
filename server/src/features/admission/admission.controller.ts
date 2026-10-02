@@ -436,6 +436,7 @@ async function processAdmissionSubmission(
       : await getOpenPublicEnrollmentSetting(req, res, true);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+    const currentDate = getSystemDate(req);
 
     if (
       isStaffWalkIn &&
@@ -520,6 +521,8 @@ async function processAdmissionSubmission(
         underSpecialScienceCurriculum: data.underSpecialScienceCurriculum ?? false,
         artsSpecialization: data.artsSpecialization || null,
         chosenSport: data.chosenSport || null,
+        createdAt: currentDate,
+        updatedAt: currentDate,
         
         addresses: {
           create: [
@@ -637,6 +640,7 @@ export async function submitEnrollment(req: Request, res: Response) {
     const schoolSetting = await getOpenPublicEnrollmentSetting(req, res, false);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+    const currentDate = getSystemDate(req);
 
     let learner;
     const lrn = data.hasNoLrn ? null : data.lrn;
@@ -742,6 +746,8 @@ export async function submitEnrollment(req: Request, res: Response) {
         intakeWeightKg: data.intakeWeightKg || null,
         status: "PENDING_VERIFICATION",
         duplicateFlag: false,
+        createdAt: currentDate,
+        updatedAt: currentDate,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
@@ -856,6 +862,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
     const schoolSetting = await getOpenPublicEnrollmentSetting(req, res);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+    const currentDate = getSystemDate(req);
 
     const lrn = data.hasNoLrn ? null : data.lrn;
     if (!lrn) {
@@ -1029,6 +1036,7 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
     const schoolSetting = await getActiveEnrollmentSetting(res);
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
+    const currentDate = getSystemDate(req);
 
     let learner;
     const lrn = data.hasNoLrn ? null : data.lrn;
@@ -1109,6 +1117,8 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
         isPrivacyConsentGiven: data.isPrivacyConsentGiven,
         status: "EARLY_REGISTRATION",
         duplicateFlag: false,
+        createdAt: currentDate,
+        updatedAt: currentDate,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: false,
