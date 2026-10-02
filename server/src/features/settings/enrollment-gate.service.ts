@@ -55,6 +55,19 @@ export function isScpAdmissionOpen(
   );
 }
 
+export function isEarlyRegistrationOpen(
+  year: Pick<SchoolYear, "earlyRegOpenDate" | "earlyRegCloseDate">,
+  currentDate: Date = new Date(),
+): boolean {
+  if (!year.earlyRegOpenDate || !year.earlyRegCloseDate) return false;
+
+  const todayToken = toManilaDateToken(currentDate);
+  return (
+    todayToken >= toManilaDateToken(year.earlyRegOpenDate)
+    && todayToken <= toManilaDateToken(year.earlyRegCloseDate)
+  );
+}
+
 export function isStaffIntakeAllowed(systemPhase?: string): boolean {
   return systemPhase !== "EOSY_CLOSING";
 }

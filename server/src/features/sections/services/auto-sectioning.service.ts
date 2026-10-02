@@ -132,6 +132,7 @@ export async function executeAutoSectioningBatch(
               dateSectioned: commitDate,
               enrolledAt: commitDate,
               isLateEnrollee: false,
+              isDraft: true,
               sectioningMethod: "BATCH_ALGORITHM",
             }
           });

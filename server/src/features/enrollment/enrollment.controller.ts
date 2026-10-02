@@ -487,6 +487,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
       },
       OR: [
         { applicantType: { in: ["REGULAR", "LATE_ENROLLEE"] } },
+        { status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] } },
         { scpAdmission: { assessmentResult: "QUALIFIED" } },
         // Compatibility for enrollment records created before SCP admission
         // assessments moved to the dedicated ScpAdmission model.

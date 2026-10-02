@@ -339,6 +339,8 @@ function sendTermContractMutationError(
       classEndDate,
       enrollOpenDate,
       enrollCloseDate,
+      earlyRegOpenDate,
+      earlyRegCloseDate,
       scpAdmissionOpenDate,
       scpAdmissionCloseDate,
     } = req.body;
@@ -352,6 +354,8 @@ function sendTermContractMutationError(
         classEndDate: true,
         enrollOpenDate: true,
         enrollCloseDate: true,
+        earlyRegOpenDate: true,
+        earlyRegCloseDate: true,
         scpAdmissionOpenDate: true,
         scpAdmissionCloseDate: true,
       },
@@ -434,6 +438,30 @@ function sendTermContractMutationError(
       }
     }
 
+    const nextEarlyRegOpenDate =
+      earlyRegOpenDate !== undefined
+        ? earlyRegOpenDate
+          ? normalizeDateToUtcNoon(new Date(earlyRegOpenDate))
+          : null
+        : existingYear.earlyRegOpenDate;
+
+    const nextEarlyRegCloseDate =
+      earlyRegCloseDate !== undefined
+        ? earlyRegCloseDate
+          ? normalizeDateToUtcNoon(new Date(earlyRegCloseDate))
+          : null
+        : existingYear.earlyRegCloseDate;
+
+    if (nextEarlyRegOpenDate && nextEarlyRegCloseDate) {
+      if (nextEarlyRegCloseDate.getTime() < nextEarlyRegOpenDate.getTime()) {
+        res.status(400).json({
+          message:
+            "Early Registration close date cannot be earlier than its open date.",
+        });
+        return;
+      }
+    }
+
     const nextScpAdmissionOpenDate =
       scpAdmissionOpenDate !== undefined
         ? scpAdmissionOpenDate
@@ -485,6 +513,20 @@ function sendTermContractMutationError(
                 : null,
             }
           : {}),
+        ...(earlyRegOpenDate !== undefined
+          ? {
+              earlyRegOpenDate: earlyRegOpenDate
+                ? normalizeDateToUtcNoon(new Date(earlyRegOpenDate))
+                : null,
+            }
+          : {}),
+        ...(earlyRegCloseDate !== undefined
+          ? {
+              earlyRegCloseDate: earlyRegCloseDate
+                ? normalizeDateToUtcNoon(new Date(earlyRegCloseDate))
+                : null,
+            }
+          : {}),
         ...(scpAdmissionOpenDate !== undefined
           ? {
               scpAdmissionOpenDate: scpAdmissionOpenDate
@@ -512,7 +554,7 @@ function sendTermContractMutationError(
 
   export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, scpAdmissionOpenDate, scpAdmissionCloseDate } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, termLabels, enrollOpenDate, enrollCloseDate, earlyRegOpenDate, earlyRegCloseDate, scpAdmissionOpenDate, scpAdmissionCloseDate } = req.body;
 
     const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -596,6 +638,8 @@ function sendTermContractMutationError(
           : {}),
         ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),
         ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
+        ...(earlyRegOpenDate !== undefined ? { earlyRegOpenDate: earlyRegOpenDate ? normalizeDateToUtcNoon(new Date(earlyRegOpenDate)) : null } : {}),
+        ...(earlyRegCloseDate !== undefined ? { earlyRegCloseDate: earlyRegCloseDate ? normalizeDateToUtcNoon(new Date(earlyRegCloseDate)) : null } : {}),
         ...(scpAdmissionOpenDate !== undefined ? { scpAdmissionOpenDate: scpAdmissionOpenDate ? normalizeDateToUtcNoon(new Date(scpAdmissionOpenDate)) : null } : {}),
         ...(scpAdmissionCloseDate !== undefined ? { scpAdmissionCloseDate: scpAdmissionCloseDate ? normalizeDateToUtcNoon(new Date(scpAdmissionCloseDate)) : null } : {}),
       },

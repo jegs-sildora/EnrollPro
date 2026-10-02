@@ -47,6 +47,22 @@ async function seedGrade7() {
   let totalSeeded = 0;
 
   for (const [sectionIndex, section] of sections.entries()) {
+    if (section.isHomogeneous && schoolSetting && !schoolSetting.enableHomogeneousSections) {
+      console.warn(`Skipping homogeneous section ${section.name} because enableHomogeneousSections is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SPECIAL_PROGRAM_IN_THE_ARTS' && schoolSetting && !schoolSetting.spaEnabled) {
+      console.warn(`Skipping SPA section ${section.name} because spaEnabled is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SCIENCE_TECHNOLOGY_AND_ENGINEERING' && schoolSetting && !schoolSetting.steEnabled) {
+      console.warn(`Skipping STE section ${section.name} because steEnabled is disabled.`);
+      continue;
+    }
+    if (section.programType === 'SPECIAL_PROGRAM_IN_SPORTS' && schoolSetting && !schoolSetting.spsEnabled) {
+      console.warn(`Skipping SPS section ${section.name} because spsEnabled is disabled.`);
+      continue;
+    }
     const sectionAdviser = await prisma.sectionAdviser.findFirst({
       where: { sectionId: section.id, schoolYearId: sy.id },
       include: { teacher: true }

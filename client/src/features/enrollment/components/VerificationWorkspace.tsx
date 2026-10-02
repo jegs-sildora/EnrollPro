@@ -5,7 +5,7 @@ import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   CheckCircle2, XCircle, AlertCircle, Trash2,
-  Loader2, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Mars, Venus, Eye,
+  Loader2, Search, SlidersHorizontal, Plus, Clock, AlertTriangle, Eye,
   Maximize2, Minimize2
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -1196,9 +1196,9 @@ export function VerificationWorkspace() {
                           {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                         </h2>
                         {selectedApp.learner.sex === "MALE" ? (
-                          <Badge variant="outline" className="border-blue-600/30 text-blue-600 bg-blue-50 font-bold text-base px-1 py-1"><Mars className="w-4 h-4" /></Badge>
+                          <Badge variant="outline" className="border-blue-600 border-2 text-blue-600 bg-blue-600/10 font-bold text-base px-2 py-0">M</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 font-bold text-base px-1 py-1"><Venus className="w-4 h-4" /></Badge>
+                          <Badge variant="outline" className="border-pink-600 border-2 text-pink-600 bg-pink-600/10 font-bold text-base px-2 py-0">F</Badge>
                         )}
                       </div>
                       <span className="font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>

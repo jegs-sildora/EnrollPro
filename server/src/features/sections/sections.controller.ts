@@ -386,6 +386,10 @@ export async function createSection(
 
     if (isHomogeneous && normalizedProgramType === "REGULAR") {
       const settings = await prisma.schoolSetting.findFirst();
+      if (!settings?.enableHomogeneousSections) {
+        res.status(400).json({ message: "Top BEC sections are currently disabled in System Configuration." });
+        return;
+      }
       const limit = settings?.homogeneousSectionCount ?? 5;
       const count = await prisma.section.count({
         where: {
@@ -544,6 +548,10 @@ export async function updateSection(
 
     if (newIsHomogeneous && newProgramType === "REGULAR" && (!existing.isHomogeneous || existing.programType !== "REGULAR")) {
       const settings = await prisma.schoolSetting.findFirst();
+      if (!settings?.enableHomogeneousSections) {
+        res.status(400).json({ message: "Top BEC sections are currently disabled in System Configuration." });
+        return;
+      }
       const limit = settings?.homogeneousSectionCount ?? 5;
       const count = await prisma.section.count({
         where: {

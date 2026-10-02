@@ -211,6 +211,8 @@ model SchoolYear {
   classEndDate           DateTime?                @map("class_end_date") @db.Date
   enrollOpenDate         DateTime?                @map("enroll_open_date") @db.Date
   enrollCloseDate        DateTime?                @map("enroll_close_date") @db.Date
+  earlyRegOpenDate       DateTime?                @map("early_reg_open_date") @db.Date
+  earlyRegCloseDate      DateTime?                @map("early_reg_close_date") @db.Date
   scpAdmissionOpenDate   DateTime?                @map("scp_admission_open_date") @db.Date
   scpAdmissionCloseDate  DateTime?                @map("scp_admission_close_date") @db.Date
   steRosterLocked        Boolean                  @default(false) @map("ste_roster_locked")
@@ -610,6 +612,7 @@ model EnrollmentRecord {
   sectionId                Int                   @map("section_id")
   schoolYearId             Int                   @map("school_year_id")
   isLateEnrollee           Boolean               @default(false) @map("is_late_enrollee")
+  isDraft                  Boolean               @default(false) @map("is_draft")
   enrolledAt               DateTime              @default(now()) @map("enrolled_at") @db.Timestamptz(6)
   enrolledById             Int                   @map("enrolled_by_id")
   dropOutReason            String?               @map("drop_out_reason")

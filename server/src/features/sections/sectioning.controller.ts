@@ -119,8 +119,11 @@ export async function getSectionsSummary(req: Request, res: Response) {
     });
 
     const summary = sections.map((s) => {
-      const boys = s.enrollmentRecords.filter((r) => r.learner.sex === "MALE").length;
-      const girls = s.enrollmentRecords.filter((r) => r.learner.sex === "FEMALE").length;
+      const officialRecords = s.enrollmentRecords.filter((r) => !r.isDraft);
+      const draftRecords = s.enrollmentRecords.filter((r) => r.isDraft);
+      
+      const boys = officialRecords.filter((r) => r.learner.sex === "MALE").length;
+      const girls = officialRecords.filter((r) => r.learner.sex === "FEMALE").length;
 
       return {
         id: s.id,
@@ -133,7 +136,8 @@ export async function getSectionsSummary(req: Request, res: Response) {
         isHomogeneous: s.isHomogeneous,
         sectionRank: s.sectionRank,
         maxCapacity: s.maxCapacity,
-        currentCount: s.enrollmentRecords.length,
+        currentCount: officialRecords.length,
+        draftCount: draftRecords.length,
         boys,
         girls,
         adviser: s.advisers[0]?.teacher
@@ -181,8 +185,11 @@ export async function getSectioningPool(req: Request, res: Response) {
 
     const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
-      status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED", "PENDING_CONFIRMATION"] },
-      enrollmentRecord: null, // Critical: Only learners not yet assigned
+      status: { in: ["READY_FOR_SECTIONING", "PENDING_CONFIRMATION"] },
+      OR: [
+        { enrollmentRecord: null },
+        { enrollmentRecord: { isDraft: true } }
+      ],
     };
 
     if (requestedGradeLevelId !== undefined) {
@@ -194,6 +201,9 @@ export async function getSectioningPool(req: Request, res: Response) {
     const applications = await prisma.enrollmentApplication.findMany({
       where,
       include: {
+        enrollmentRecord: {
+          select: { sectionId: true, isDraft: true }
+        },
         learner: {
           select: {
             lrn: true,
@@ -244,6 +254,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       programType: app.assignedProgram || app.applicantType,
       academicStatus: app.academicStatus,
       status: app.status,
+      draftSectionId: app.enrollmentRecord?.isDraft ? app.enrollmentRecord.sectionId : undefined,
     }));
 
     return res.json(pool);

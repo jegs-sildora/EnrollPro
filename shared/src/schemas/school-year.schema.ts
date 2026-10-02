@@ -13,6 +13,8 @@ export const createSchoolYearSchema = z.object({
   enrollCloseDate: z.string().or(z.date()).optional().nullable(),
   scpAdmissionOpenDate: z.string().or(z.date()).optional().nullable(),
   scpAdmissionCloseDate: z.string().or(z.date()).optional().nullable(),
+  earlyRegOpenDate: z.string().or(z.date()).optional().nullable(),
+  earlyRegCloseDate: z.string().or(z.date()).optional().nullable(),
   term1Start: z.string().or(z.date()).optional().nullable(),
   term1End: z.string().or(z.date()).optional().nullable(),
   term2Start: z.string().or(z.date()).optional().nullable(),

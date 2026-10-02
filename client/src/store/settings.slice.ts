@@ -28,6 +28,8 @@ export interface SettingsState {
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
   scpAdmissionOpenDate: string | null;
+  earlyRegOpenDate: string | null;
+  earlyRegCloseDate: string | null;
   scpAdmissionCloseDate: string | null;
   facebookPageUrl: string | null;
   depedEmail: string | null;
@@ -50,6 +52,7 @@ export interface SettingsState {
   heterogeneousRoundRobin: boolean;
   isBosyEnrollmentOpen: boolean;
   isScpAdmissionOpen: boolean;
+  isEarlyRegistrationOpen: boolean;
   currentSystemDate: string | null;
   currentSystemDateReceivedAt: number | null;
   enrollmentPhase:
@@ -130,6 +133,8 @@ export const useSettingsStore = create<SettingsState>()(
       enrollOpenDate: null,
       enrollCloseDate: null,
       scpAdmissionOpenDate: null,
+      earlyRegOpenDate: null,
+      earlyRegCloseDate: null,
       scpAdmissionCloseDate: null,
       facebookPageUrl: null,
       depedEmail: null,
@@ -152,6 +157,7 @@ export const useSettingsStore = create<SettingsState>()(
       heterogeneousRoundRobin: true,
       isBosyEnrollmentOpen: false,
       isScpAdmissionOpen: false,
+      isEarlyRegistrationOpen: false,
       currentSystemDate: null,
       currentSystemDateReceivedAt: null,
       enrollmentPhase: "CLOSED",

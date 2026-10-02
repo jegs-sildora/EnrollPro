@@ -823,15 +823,15 @@ function AppSidebar() {
                   {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                     <>
                       <NavItem
-                        to="/learner-admission"
-                        icon={CheckCircle2}
-                        label="SCP Admission"
-                        pathname={pathname}
-                      />
-                      <NavItem
                         to="/early-registration-masterlist"
                         icon={FolderOpen}
                         label="Early Registration"
+                        pathname={pathname}
+                      />
+                      <NavItem
+                        to="/learner-admission"
+                        icon={CheckCircle2}
+                        label="SCP Admission"
                         pathname={pathname}
                       />
                       <NavItem

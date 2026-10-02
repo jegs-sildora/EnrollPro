@@ -229,6 +229,8 @@ interface SYItem {
   term4End: string | null;
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
+  earlyRegOpenDate: string | null;
+  earlyRegCloseDate: string | null;
   scpAdmissionOpenDate: string | null;
   scpAdmissionCloseDate: string | null;
   termFormat: "TRIMESTER" | "QUARTERS" | null;
@@ -442,6 +444,8 @@ export default function SchoolYearTab() {
         term4End: activeYear.term4End ? activeYear.term4End.split('T')[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
+        earlyRegOpenDate: activeYear.earlyRegOpenDate ? activeYear.earlyRegOpenDate.split('T')[0] : "",
+        earlyRegCloseDate: activeYear.earlyRegCloseDate ? activeYear.earlyRegCloseDate.split('T')[0] : "",
         scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split('T')[0] : "",
         scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split('T')[0] : "",
       });
@@ -464,6 +468,8 @@ export default function SchoolYearTab() {
       localCalendarState.term4End !== getVal(activeYear.term4End) ||
       localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
       localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate) ||
+      localCalendarState.earlyRegOpenDate !== getVal(activeYear.earlyRegOpenDate) ||
+      localCalendarState.earlyRegCloseDate !== getVal(activeYear.earlyRegCloseDate) ||
       localCalendarState.scpAdmissionOpenDate !== getVal(activeYear.scpAdmissionOpenDate) ||
       localCalendarState.scpAdmissionCloseDate !== getVal(activeYear.scpAdmissionCloseDate)
     );
@@ -522,6 +528,8 @@ export default function SchoolYearTab() {
         term4End: activeYear.term4End ? activeYear.term4End.split("T")[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split("T")[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split("T")[0] : "",
+        earlyRegOpenDate: activeYear.earlyRegOpenDate ? activeYear.earlyRegOpenDate.split("T")[0] : "",
+        earlyRegCloseDate: activeYear.earlyRegCloseDate ? activeYear.earlyRegCloseDate.split("T")[0] : "",
         scpAdmissionOpenDate: activeYear.scpAdmissionOpenDate ? activeYear.scpAdmissionOpenDate.split("T")[0] : "",
         scpAdmissionCloseDate: activeYear.scpAdmissionCloseDate ? activeYear.scpAdmissionCloseDate.split("T")[0] : "",
       });
@@ -569,6 +577,8 @@ export default function SchoolYearTab() {
         }
         if (payload.enrollOpenDate) payload.enrollOpenDate = new Date(payload.enrollOpenDate).toISOString();
         if (payload.enrollCloseDate) payload.enrollCloseDate = new Date(payload.enrollCloseDate).toISOString();
+        if (payload.earlyRegOpenDate) payload.earlyRegOpenDate = new Date(payload.earlyRegOpenDate).toISOString();
+        if (payload.earlyRegCloseDate) payload.earlyRegCloseDate = new Date(payload.earlyRegCloseDate).toISOString();
         if (payload.scpAdmissionOpenDate) payload.scpAdmissionOpenDate = new Date(payload.scpAdmissionOpenDate).toISOString();
         if (payload.scpAdmissionCloseDate) payload.scpAdmissionCloseDate = new Date(payload.scpAdmissionCloseDate).toISOString();
 
@@ -678,6 +688,18 @@ export default function SchoolYearTab() {
         "ADMISSION"
       ),
     [localCalendarState.scpAdmissionCloseDate, localCalendarState.scpAdmissionOpenDate, systemNow],
+  );
+
+  const earlyRegPhaseStatus = useMemo(
+    () =>
+      getEnrollmentWindowStatus(
+        localCalendarState.earlyRegOpenDate ?? null,
+        localCalendarState.earlyRegCloseDate ?? null,
+        systemNow,
+        true,
+        "ADMISSION"
+      ),
+    [localCalendarState.earlyRegCloseDate, localCalendarState.earlyRegOpenDate, systemNow],
   );
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
@@ -1138,6 +1160,77 @@ export default function SchoolYearTab() {
                         </div>
                       )
                     })}
+                  </div>
+
+                  {/* Early Registration Period */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-xl text-foreground uppercase tracking-wide break-words">
+                            Early Registration Period
+                          </h4>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger type="button" className="cursor-help text-muted-foreground hover:text-foreground">
+                                <HelpCircle className="h-5 w-5 text-foreground hover:text-primary" />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-primary text-primary-foreground max-w-sm">
+                                <p className="text-sm">
+                                  Set the dates when the system will accept early registration forms for incoming learners.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${earlyRegPhaseStatus.color}`}>
+                        {earlyRegPhaseStatus.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-secondary/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                        <div className="space-y-2 relative">
+                          <Label className="text-base font-bold uppercase text-foreground">
+                            Opens On
+                          </Label>
+                          <HybridDatePicker
+                            value={localCalendarState.earlyRegOpenDate || ""}
+                            onChange={(val) => {
+                              setLocalCalendarState(prev => ({ ...prev, earlyRegOpenDate: val || "" }));
+                            }}
+                            minDate={new Date()}
+                            placeholder="Set start date"
+                            className="text-primary"
+                          />
+                        </div>
+                        <div className="space-y-2 relative">
+                          <Label className="text-base font-bold uppercase text-foreground">
+                            Closes On
+                          </Label>
+                          <HybridDatePicker
+                            value={localCalendarState.earlyRegCloseDate || ""}
+                            onChange={(val) => {
+                              setLocalCalendarState(prev => ({ ...prev, earlyRegCloseDate: val || "" }));
+                            }}
+                            minDate={new Date()}
+                            placeholder="Set end date"
+                            className="text-primary"
+                          />
+                        </div>
+                      </div>
+
+                      {localCalendarState.earlyRegOpenDate !== "" &&
+                        localCalendarState.earlyRegCloseDate !== "" &&
+                        toManilaDateToken(localCalendarState.earlyRegCloseDate) < toManilaDateToken(localCalendarState.earlyRegOpenDate) && (
+                          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <p>End date cannot be earlier than start date.</p>
+                          </div>
+                        )}
+                    </div>
                   </div>
 
                   {/* SCP Admission Period */}

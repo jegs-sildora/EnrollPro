@@ -99,6 +99,7 @@ interface SectionSummary {
   programType: ApplicantType;
   isHomogeneous?: boolean;
   sectionRank?: number | null;
+  draftCount?: number;
 }
 
 interface PoolLearner {
@@ -120,6 +121,7 @@ interface PoolLearner {
   programType: ApplicantType;
   academicStatus: string;
   studentPhoto?: string | null;
+  draftSectionId?: number;
 }
 
 interface GradeLevelOption {
@@ -457,6 +459,41 @@ const snakeDraftLearners = (
   }
 
   return unplaced;
+}
+
+const loadDraftPlacementFromServer = (
+  gradeLevelId: number,
+  learners: PoolLearner[],
+  sections: SectionSummary[],
+): DraftPlacement => {
+  const rostersBySectionId = new Map<number, DraftLearnerPlacement[]>(
+    sections.map((section) => [section.id, []])
+  );
+  const unplacedLearners: PoolLearner[] = [];
+
+  for (const learner of learners) {
+    if (learner.draftSectionId) {
+      if (!rostersBySectionId.has(learner.draftSectionId)) {
+        rostersBySectionId.set(learner.draftSectionId, []);
+      }
+      rostersBySectionId.get(learner.draftSectionId)!.push({
+        ...learner,
+        sectionId: learner.draftSectionId,
+        isOverridden: false,
+      });
+    } else {
+      unplacedLearners.push(learner);
+    }
+  }
+
+  return {
+    gradeLevelId,
+    generatedAt: new Date().toISOString(),
+    rosters: sections.map((section) =>
+      buildRoster(section, rostersBySectionId.get(section.id) ?? [])
+    ),
+    unplacedLearners,
+  };
 };
 
 const createDraftPlacement = (
@@ -953,6 +990,27 @@ export function SectioningWorkspace() {
       setProcessing(false);
     }
   };
+
+  useEffect(() => {
+    if (poolInitialLoading || sectionsInitialLoading || draftPlacement) return;
+
+    if (currentGradePool.some((l) => l.draftSectionId)) {
+      const draft = loadDraftPlacementFromServer(
+        Number(activeGradeLevelId),
+        currentGradePool,
+        currentGradeSections
+      );
+      const populatedSectionIds = draft.rosters
+        .filter((roster) => roster.learners.length > 0)
+        .map((roster) => roster.section.id);
+
+      setDraftPlacement(draft);
+      setExpandedSectionIds(new Set(populatedSectionIds));
+      setSelectedAppIds([]);
+      setTargetSectionId(null);
+      setAllowCapacityOverride(false);
+    }
+  }, [currentGradePool, currentGradeSections, draftPlacement, activeGradeLevelId, poolInitialLoading, sectionsInitialLoading]);
 
   const generateDraftPlacement = () => {
     if (!activeGradeLevelId || autoAssignPhase !== "idle" || draftPlacement || processing) return;

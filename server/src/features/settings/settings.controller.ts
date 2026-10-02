@@ -13,6 +13,7 @@ import {
   getEnrollmentPhase,
   isPublicEnrollmentOpen,
   isScpAdmissionOpen,
+  isEarlyRegistrationOpen,
 } from "./enrollment-gate.service.js";
 import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
@@ -129,6 +130,10 @@ export async function getPublicSettings(
       ? isScpAdmissionOpen(contextSy, currentDate)
       : false;
 
+    const isEarlyRegistrationOpenFlag = contextSy
+      ? isEarlyRegistrationOpen(contextSy, currentDate)
+      : false;
+
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;
     const activeCorrection = lock && lock.expiresAt > Date.now() ? {
       userId: lock.userId,
@@ -160,6 +165,8 @@ export async function getPublicSettings(
       classEndDate: contextSy?.classEndDate ?? null,
       enrollOpenDate: contextSy?.enrollOpenDate ?? null,
       enrollCloseDate: contextSy?.enrollCloseDate ?? null,
+      earlyRegOpenDate: contextSy?.earlyRegOpenDate ?? null,
+      earlyRegCloseDate: contextSy?.earlyRegCloseDate ?? null,
       scpAdmissionOpenDate: contextSy?.scpAdmissionOpenDate ?? null,
       scpAdmissionCloseDate: contextSy?.scpAdmissionCloseDate ?? null,
       facebookPageUrl: settings.facebookPageUrl,
@@ -184,6 +191,7 @@ export async function getPublicSettings(
       enrollmentPhase,
       isBosyEnrollmentOpen,
       isScpAdmissionOpen: isScpAdmissionOpenFlag,
+      isEarlyRegistrationOpen: isEarlyRegistrationOpenFlag,
       currentSystemDate: currentDate.toISOString(),
       systemPhase: effectiveSystemStatus === "ARCHIVED" ? "EOSY_CLOSING" : settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
@@ -576,6 +584,13 @@ export async function updateAlgorithm(req: Request, res: Response): Promise<void
       heterogeneousRoundRobin: regular_bec_mode === "HETEROGENEOUS",
     },
   });
+
+  if (!enable_top_bec) {
+    await prisma.section.updateMany({
+      where: { programType: "REGULAR", isHomogeneous: true },
+      data: { isHomogeneous: false }
+    });
+  }
 
   await auditLog({
     userId: req.user!.userId,

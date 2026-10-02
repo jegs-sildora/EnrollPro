@@ -12,6 +12,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
 const CONSENT_KEY = "enrollpro_early_reg_consent";
+const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 type EnrollmentSubmitSuccessPayload = Pick<
   ApplicationSubmitResponse,
@@ -36,7 +37,14 @@ export default function EarlyRegistrationIndex() {
   const {
     schoolName,
     logoUrl,
+    activeSchoolYearLabel,
+    facebookPageUrl,
+    isEarlyRegistrationOpen,
+    earlyRegOpenDate,
+    earlyRegCloseDate,
   } = useSettingsStore();
+
+  const isClosed = !isEarlyRegistrationOpen;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -61,6 +69,7 @@ export default function EarlyRegistrationIndex() {
       <div
         className={cn(
           "relative min-h-screen flex flex-col",
+          isClosed && "h-screen overflow-hidden",
         )}>
         <div
           className="fixed inset-0 -z-10"
@@ -138,7 +147,7 @@ export default function EarlyRegistrationIndex() {
         </div>
 
         <AdmissionHeader
-          isClosed={false}
+          isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
           title="BASIC EDUCATION EARLY REGISTRATION FORM"
@@ -147,14 +156,77 @@ export default function EarlyRegistrationIndex() {
         <main
           className={cn(
             "px-4 sm:px-6 lg:px-8 flex flex-col flex-1",
-            "py-8",
+            isClosed ? "justify-center items-center" : "py-8",
           )}>
           <div
             className={cn(
               "w-full mx-auto flex flex-col",
-              "max-w-6xl flex-1",
+              isClosed ? "max-w-3xl" : "max-w-6xl flex-1",
             )}>
-            <div className="flex flex-col h-auto">
+            {isClosed ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center space-y-6 py-8 px-6 sm:px-10 bg-muted/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-destructive/50 to-transparent" />
+                <div className="space-y-6 relative z-10">
+                  {logoUrl ? (
+                    <img
+                      src={`${API_BASE}${logoUrl}`}
+                      className="h-24 w-24 mx-auto object-contain drop-shadow-md"
+                      alt={schoolName}
+                    />
+                  ) : (
+                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-bold text-primary">
+                      {schoolName?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <h2 className="text-2xl sm:text-3xl font-bold uppercase text-foreground">
+                      {schoolName}
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4 max-w-lg mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+                      S.Y. {activeSchoolYearLabel || "Admissions"} Early Registration Period is
+                      Currently Closed
+                    </h3>
+                    <p className="text-base sm:text-base text-foreground leading-relaxed">
+                      The online portal for S.Y.{" "}
+                      {activeSchoolYearLabel || "Admissions"} is not currently
+                      accepting Early Registration applications. Registration periods are
+                      scheduled according to the DepEd school calendar.
+                    </p>
+                    <div className="pt-6 border-t border-border/50 space-y-4 flex flex-col">
+                      <p className={cn(
+                        "leading-relaxed text-center",
+                        facebookPageUrl
+                          ? "text-base font-bold text-foreground uppercase"
+                          : "text-base leading-tight text-foreground font-bold"
+                      )}>
+                        {facebookPageUrl
+                          ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."
+                          : "Please stay tuned to our official school social media pages or visit the school campus for announcements regarding the next registration schedule."}
+                      </p>
+                      <a
+                        href={facebookPageUrl || "https://www.facebook.com"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                        <svg
+                          className="w-5 h-5 fill-current"
+                          viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        Visit Official Facebook Page
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="flex flex-col h-auto">
               <AnimatePresence mode="wait">
                 {submittedSuccessData ? (
                   <motion.div
@@ -203,6 +275,7 @@ export default function EarlyRegistrationIndex() {
                 )}
               </AnimatePresence>
             </div>
+            )}
           </div>
         </main>
       </div>

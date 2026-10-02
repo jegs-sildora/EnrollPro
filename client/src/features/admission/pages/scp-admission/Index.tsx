@@ -265,7 +265,7 @@ export default function Apply() {
                         Currently Closed
                       </h3>
                       <p className="text-base sm:text-base text-foreground leading-relaxed">
-                        The online portal for{" "}
+                        The online portal for S.Y. {" "}
                         {activeSchoolYearLabel || "Admissions"} is not currently
                         accepting SCP applications. Registration periods are
                         scheduled according to the DepEd school calendar.

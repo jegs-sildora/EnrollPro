@@ -483,11 +483,23 @@ function getQueueStateWhere(
       return {
         status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: false,
+        NOT: {
+          AND: [
+            { status: "OFFICIALLY_ENROLLED" },
+            { applicantType: "REGULAR" },
+          ]
+        },
       }
     case "TEMPORARY":
       return {
         status: { in: ["READY_FOR_SECTIONING", "OFFICIALLY_ENROLLED"] },
         isTemporarilyEnrolled: true,
+        NOT: {
+          AND: [
+            { status: "OFFICIALLY_ENROLLED" },
+            { applicantType: "REGULAR" },
+          ]
+        },
       }
     case "TRANSFER_REQUEST":
       return { status: "TRANSFERRING_OUT" }
