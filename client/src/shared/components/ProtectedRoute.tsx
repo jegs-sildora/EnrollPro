@@ -1,13 +1,16 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuthStore } from "@/store/auth.slice";
 import type { AuthRole } from "@/store/auth.slice";
+import Forbidden from "./Forbidden";
+import type { ReactNode } from "react";
 
 interface ProtectedRouteProps {
   allowedRoles?: AuthRole[];
   allowedAncillaryRoles?: string[];
+  children?: ReactNode;
 }
 
-export default function ProtectedRoute({ allowedRoles, allowedAncillaryRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ allowedRoles, allowedAncillaryRoles, children }: ProtectedRouteProps) {
   const staffAuth = useAuthStore();
   const user = staffAuth.user;
   const hasSession = Boolean(staffAuth.user);
@@ -41,27 +44,11 @@ export default function ProtectedRoute({ allowedRoles, allowedAncillaryRoles }: 
   }
 
   if (!isAllowed) {
-    // Redirect to role-appropriate home rather than /login (avoids loops)
-    const isRegistrar = user.roles?.includes("HEAD_REGISTRAR") || user.roles?.includes("SCHOOL_REGISTRAR");
-    const isAdmin = user.roles?.includes("SYSTEM_ADMIN");
-    const isClassAdviser = user.roles?.includes("CLASS_ADVISER");
-    const isGradeCoordinator = user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
-    
-    const fallbackRoute = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
-      ? "/dashboard"
-      : user.roles?.includes("TEACHER")
-        ? "/learners"
-        : user.roles?.includes("MRF")
-          ? "/my-activity"
-          : "/dashboard";
-
-    return (
-      <Navigate
-        to={fallbackRoute}
-        replace
-      />
-    );
+    // Render the 403 page component directly rather than redirecting, 
+    // obscuring the existence of protected routes to unauthorized users
+    // while providing a clear access denied state.
+    return <Forbidden />;
   }
 
-  return <Outlet />;
+  return children ? <>{children}</> : <Outlet />;
 }

@@ -602,10 +602,37 @@ export function WalkInEncodePanel() {
           cancelText="Cancel"
           onConfirm={clearForm}
         />
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background relative z-0">
+          <div className="absolute inset-0 pointer-events-none -z-10 bg-background overflow-hidden">
+            <svg
+              className="absolute inset-0 w-full h-full opacity-[0.08]"
+              xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern
+                  id="walkin-pixel-grid"
+                  x="0"
+                  y="0"
+                  width="80"
+                  height="80"
+                  patternUnits="userSpaceOnUse">
+                  <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                  <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                  <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                  <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#walkin-pixel-grid)" />
+            </svg>
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+              }}
+            />
+          </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0" autoComplete="off">
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-muted/10">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 relative z-10" autoComplete="off">
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-transparent">
 
                 <div className="space-y-4">
                   {/* LEARNER PROFILE BLOCK */}

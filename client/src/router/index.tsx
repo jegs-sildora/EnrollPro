@@ -10,6 +10,7 @@ import AppLayout from "@/shared/layouts/AppLayout";
 import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
 import LearnerAuthLayout from "@/shared/layouts/LearnerAuthLayout";
+import MinimalLayout from "@/shared/layouts/MinimalLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 import NotFound from "@/shared/components/NotFound";
 
@@ -160,137 +161,78 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 4. Protected routes for Head Registrar and System Admin (and strict class adviser)
+      // 4. Protected App Routes
       {
-        element: (
-          <ProtectedRoute
-            allowedRoles={["HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER"]}
-            allowedAncillaryRoles={["COORDINATOR"]}
-          />
-        ),
+        element: <AppLayout />,
         children: [
+          // Common Shared Routes
           {
-            element: <AppLayout />,
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "TEACHER", "CLASS_ADVISER", "MRF"]} />,
             children: [
-              {
-                path: "/dashboard",
-                element: renderLazyPage(Dashboard),
-              },
-              {
-                path: "/dashboard/program-roster/:programType",
-                element: renderLazyPage(ViewProgramRoster),
-              },
-              {
-                path: "/section-assignment",
-                element: renderLazyPage(Enrollment),
-              },
-              {
-                path: "/eosy",
-                element: renderLazyPage(EosyUpdating),
-              },
-              {
-                path: "/learner-enrollment",
-                element: renderLazyPage(BOSYPage),
-              },
-              {
-                path: "/learner-admission",
-                element: renderLazyPage(LearnerAdmissionIndex),
-              },
-              {
-                path: "/early-registration-masterlist",
-                element: renderLazyPage(EarlyRegistrationMasterlist),
-              },
-              {
-                path: "/learners",
-                element: renderLazyPage(Students),
-              },
-              {
-                path: "/learner/:id",
-                element: renderLazyPage(Profile),
-              },
-              {
-                path: "/sections",
-                element: renderLazyPage(Homerooms),
-              },
-              {
-                path: "/sections/view-masterlist/:sectionId",
-                element: renderLazyPage(ViewMasterlist),
-              },
-              {
-                path: "/settings",
-                element: renderLazyPage(Settings),
-              },
-              {
-                path: "/personnel",
-                element: renderLazyPage(Teachers),
-              },
-              {
-                path: "/my-activity",
-                element: renderLazyPage(MyActivity),
-              },
-              {
-                path: "/help",
-                element: renderLazyPage(HelpDocumentation),
-              },
-              // Protected routes for System Admin Only
-              {
-                element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
-                children: [
-                  {
-                    path: "/admin/system",
-                    element: renderLazyPage(SystemHealth),
-                  },
-                  {
-                    path: "/audit-logs",
-                    element: renderLazyPage(AuditLogs),
-                  },
-                ],
-              },
+              { path: "/dashboard", element: renderLazyPage(Dashboard) },
+              { path: "/dashboard/program-roster/:programType", element: renderLazyPage(ViewProgramRoster) },
+              { path: "/learners", element: renderLazyPage(Students) },
+              { path: "/learner/:id", element: renderLazyPage(Profile) },
+              { path: "/personnel", element: renderLazyPage(Teachers) },
+              { path: "/sections", element: renderLazyPage(Homerooms) },
+              { path: "/sections/view-masterlist/:sectionId", element: renderLazyPage(ViewMasterlist) },
+              { path: "/my-activity", element: renderLazyPage(MyActivity) },
+              { path: "/help", element: renderLazyPage(HelpDocumentation) },
+            ],
+          },
+          // Registration & Sectioning
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"]} allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"]} />,
+            children: [
+              { path: "/early-registration-masterlist", element: renderLazyPage(EarlyRegistrationMasterlist) },
+              { path: "/section-assignment", element: renderLazyPage(Enrollment) },
+              { path: "/eosy", element: renderLazyPage(EosyUpdating) },
+              { path: "/learner-enrollment", element: renderLazyPage(BOSYPage) },
+            ],
+          },
+          // SCP Admission
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"]} allowedAncillaryRoles={["STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"]} />,
+            children: [
+              { path: "/learner-admission", element: renderLazyPage(LearnerAdmissionIndex) },
+            ],
+          },
+          // Class Adviser Only
+          {
+            element: <ProtectedRoute allowedRoles={["CLASS_ADVISER"]} />,
+            children: [
+              { path: "/teacher/advisory", element: renderLazyPage(AdvisoryClass) },
+            ],
+          },
+          // System Configuration
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL"]} />,
+            children: [
+              { path: "/settings", element: renderLazyPage(Settings) },
+            ],
+          },
+          // System Admin Only
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
+            children: [
+              { path: "/admin/system", element: renderLazyPage(SystemHealth) },
+              { path: "/audit-logs", element: renderLazyPage(AuditLogs) },
             ],
           },
         ],
       },
 
-      // 5. Teacher Routes
+      // 5. Default redirects & Fallback (Out-of-app errors)
       {
-        element: (
-          <ProtectedRoute
-            allowedRoles={[
-              "HEAD_REGISTRAR",
-              "SYSTEM_ADMIN",
-              "TEACHER",
-              "CLASS_ADVISER",
-              "MRF",
-            ]}
-          />
-        ),
+        element: <MinimalLayout />,
         children: [
           {
-            element: <AppLayout />,
-            children: [
-              {
-                path: "/teacher/advisory",
-                element: renderLazyPage(AdvisoryClass),
-              },
-              {
-                path: "/my-activity",
-                element: renderLazyPage(MyActivity),
-              },
-              {
-                path: "/help",
-                element: renderLazyPage(HelpDocumentation),
-              },
-            ],
+            path: "/",
+            element: <NotFound />,
           },
-        ],
+          { path: "*", element: <NotFound /> },
+        ]
       },
-
-      // 6. Default redirects & Fallback
-      {
-        path: "/",
-        element: <NotFound />,
-      },
-      { path: "*", element: <NotFound /> },
     ],
   },
 ]);

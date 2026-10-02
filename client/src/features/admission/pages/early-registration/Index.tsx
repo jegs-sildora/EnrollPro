@@ -5,7 +5,7 @@ import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
-import EnrollmentSuccess from "../online-enrollment/components/EnrollmentSuccess";
+import EarlyRegistrationSuccess from "./components/EarlyRegistrationSuccess";
 
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -17,7 +17,6 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 type EnrollmentSubmitSuccessPayload = Pick<
   ApplicationSubmitResponse,
   | "trackingNumber"
-  | "applicantType"
   | "programType"
   | "status"
   | "currentStep"
@@ -235,12 +234,7 @@ export default function EarlyRegistrationIndex() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.4 }}>
-                    <EnrollmentSuccess
-                      trackingNumber={submittedSuccessData.trackingNumber}
-                      applicantType={submittedSuccessData.applicantType}
-                      programType={submittedSuccessData.programType}
-                      status={submittedSuccessData.status}
-                      currentStep={submittedSuccessData.currentStep}
+                    <EarlyRegistrationSuccess
                       learnerName={submittedSuccessData.learnerName}
                       onBackHome={handleBackHome}
                     />

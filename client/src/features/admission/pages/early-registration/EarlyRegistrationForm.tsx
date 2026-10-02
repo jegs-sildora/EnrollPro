@@ -232,7 +232,6 @@ function extractErrorMessages(
 type EnrollmentSubmitSuccessPayload = Pick<
   ApplicationSubmitResponse,
   | "trackingNumber"
-  | "applicantType"
   | "programType"
   | "status"
   | "currentStep"
@@ -515,7 +514,6 @@ export default function EarlyRegistrationForm({
 
         onSuccess({
           trackingNumber: responseData.trackingNumber,
-          applicantType: responseData.applicantType,
           programType: responseData.programType,
           status: responseData.status,
           currentStep: responseData.currentStep,
@@ -693,7 +691,6 @@ export default function EarlyRegistrationForm({
             if (onSuccess) {
               onSuccess({
                 trackingNumber: response.data.trackingNumber,
-                applicantType: response.data.applicantType,
                 programType: response.data.programType,
                 status: response.data.status,
                 currentStep: response.data.currentStep,

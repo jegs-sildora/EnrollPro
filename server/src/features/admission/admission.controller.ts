@@ -1096,23 +1096,13 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
 
     const yearPrefix = schoolSetting.activeSchoolYear?.yearLabel?.split("-")[0] || new Date().getFullYear().toString();
     const application = await prisma.$transaction(async (tx) => {
-      const trackingNumber = await reserveTrackingNumber(tx, {
-        source: "ENROLLMENT",
-        prefix: "ENR",
-        programAcronym: "BEC",
-        schoolYearStart: yearPrefix,
-        learnerId: learner.id,
-      });
-
       return tx.enrollmentApplication.create({
         data: {
         learnerId: learner.id,
         schoolYearId: activeSchoolYearId,
         gradeLevelId: gradeLevelRecord.id,
-        applicantType: "REGULAR",
         learnerType: data.learnerType,
         admissionChannel: "ONLINE",
-        trackingNumber,
         learningModalities: data.learningModalities,
         isPrivacyConsentGiven: data.isPrivacyConsentGiven,
         status: "EARLY_REGISTRATION",
@@ -1249,6 +1239,42 @@ export async function getEarlyRegistrations(req: Request, res: Response) {
     res.json(applications);
   } catch (error) {
     console.error("Error fetching early registrations:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
+
+export async function getEarlyRegistrationDetail(req: Request, res: Response) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      res.status(400).json({ message: "Invalid application ID." });
+      return;
+    }
+
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id },
+      include: {
+        learner: true,
+        gradeLevel: true,
+        previousSchool: true,
+        addresses: true,
+        familyMembers: true,
+      },
+    });
+
+    if (!application) {
+      res.status(404).json({ message: "Application not found." });
+      return;
+    }
+
+    if (application.status !== "EARLY_REGISTRATION") {
+      res.status(400).json({ message: "This application is not an early registration." });
+      return;
+    }
+
+    res.json(application);
+  } catch (error) {
+    console.error("Error fetching early registration detail:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 }

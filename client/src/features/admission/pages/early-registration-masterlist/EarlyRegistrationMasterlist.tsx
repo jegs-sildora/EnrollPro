@@ -1,21 +1,21 @@
 import { useEffect, useState, useMemo, startTransition } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/shared/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { DataTable } from "@/shared/ui/data-table";
 import { Button } from "@/shared/ui/button";
 import { useHeaderStore } from "@/store/header.slice";
-import { Search, FolderOpen, FileText } from "lucide-react";
+import { Search, FolderOpen, FileText, Eye } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { format } from "date-fns";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { cn } from "@/shared/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { motion } from "motion/react";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { EarlyRegistrationReviewModal } from "./EarlyRegistrationReviewModal";
 
 type Learner = {
   firstName: string;
@@ -43,11 +43,13 @@ type ApplicationWithRelations = {
 };
 
 export default function EarlyRegistrationMasterlist() {
-  const setTitle = useHeaderStore((state: any) => state.setTitle);
+  const setTitle = useHeaderStore((state: { setTitle: (title: string | null) => void }) => state.setTitle);
   const [selectedTab, setSelectedTab] = useState<"7" | "8-10">("7");
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([{ id: "applicant", desc: false }]);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
 
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
 
@@ -135,9 +137,16 @@ export default function EarlyRegistrationMasterlist() {
       size: 150,
       meta: { pin: "right" },
       header: "ACTION",
-      cell: () => (
-        <Button variant="ghost" size="sm" className="font-bold uppercase tracking-wider text-primary hover:text-primary/80">
-          <FileText className="w-4 h-4 mr-2" />
+      cell: ({ row }) => (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedApplicationId(row.original.id);
+          }}>
+          <Eye className="w-4 h-4 mr-2" />
           Review Form
         </Button>
       ),
@@ -158,7 +167,7 @@ export default function EarlyRegistrationMasterlist() {
 
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col px-4 sm:px-6 py-6">
-      <Tabs value={selectedTab} onValueChange={(val: any) => { setSelectedTab(val); setPage(1); }} className="flex min-h-0 flex-1 flex-col w-full h-full">
+      <Tabs value={selectedTab} onValueChange={(val: string) => { setSelectedTab(val as "7" | "8-10"); setPage(1); }} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
             value="7"
@@ -231,6 +240,14 @@ export default function EarlyRegistrationMasterlist() {
           </Card>
         </div>
       </Tabs>
+
+      <EarlyRegistrationReviewModal
+        id={selectedApplicationId}
+        onClose={() => setSelectedApplicationId(null)}
+        onRefreshData={() => {
+          void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
+        }}
+      />
     </div>
   );
 }

@@ -667,7 +667,20 @@ function AppSidebar() {
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 9 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 10 COORDINATOR");
-  const isGradeCoordinator = ancillaryRoles.some(role => role.includes("COORDINATOR"));
+  const isGradeLevelCoordinator = 
+    userRoles.includes("GRADE_LEVEL_COORDINATOR") ||
+    ancillaryRoles.includes("GRADE 7 COORDINATOR") ||
+    ancillaryRoles.includes("GRADE 8 COORDINATOR") ||
+    ancillaryRoles.includes("GRADE 9 COORDINATOR") ||
+    ancillaryRoles.includes("GRADE 10 COORDINATOR");
+
+  const isScpCoordinator = 
+    userRoles.includes("STE_COORDINATOR") ||
+    userRoles.includes("SPA_COORDINATOR") ||
+    userRoles.includes("SPS_COORDINATOR") ||
+    ancillaryRoles.includes("STE HEAD TEACHER") ||
+    ancillaryRoles.includes("SPA HEAD TEACHER") ||
+    ancillaryRoles.includes("SPS HEAD TEACHER");
   const [companionCatalog, setCompanionCatalog] = useState<
     CompanionSsoCatalogItem[]
   >([]);
@@ -799,8 +812,8 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, strict class adviser, and grade coordinator */}
-              {(isRegistrar || isAdmin || isStrictClassAdviser || isGradeCoordinator) && (
+              {/* Items 1–7: shared between registrar role, SYSTEM_ADMIN, strict class adviser, and coordinators */}
+              {(isRegistrar || isAdmin || isStrictClassAdviser || isGradeLevelCoordinator || isScpCoordinator) && (
                 <>
                   <NavDivider
                     label={
@@ -808,7 +821,7 @@ function AppSidebar() {
                         ? "ACTIVE SCHOOL OPERATIONS"
                         : systemPhase === "EOSY_CLOSING"
                           ? "END OF SCHOOL YEAR PROCESSING"
-                          : (isStrictClassAdviser && !isGradeCoordinator)
+                          : (isStrictClassAdviser && !isGradeLevelCoordinator)
                             ? "ENROLLMENT"
                             : "ENROLLMENT AND SECTIONING"
                     }
@@ -822,18 +835,22 @@ function AppSidebar() {
 
                   {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                     <>
-                      <NavItem
-                        to="/early-registration-masterlist"
-                        icon={FolderOpen}
-                        label="Early Registration"
-                        pathname={pathname}
-                      />
-                      <NavItem
-                        to="/learner-admission"
-                        icon={CheckCircle2}
-                        label="SCP Admission"
-                        pathname={pathname}
-                      />
+                      {(isAdmin || isRegistrar || isGradeLevelCoordinator) && (
+                        <NavItem
+                          to="/early-registration-masterlist"
+                          icon={FolderOpen}
+                          label="Early Registration"
+                          pathname={pathname}
+                        />
+                      )}
+                      {(isAdmin || isRegistrar || isScpCoordinator) && (
+                        <NavItem
+                          to="/learner-admission"
+                          icon={CheckCircle2}
+                          label="SCP Admission"
+                          pathname={pathname}
+                        />
+                      )}
                       <NavItem
                         to="/learner-enrollment"
                         icon={UserPlus}

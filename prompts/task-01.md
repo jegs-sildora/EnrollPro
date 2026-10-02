@@ -1,34 +1,35 @@
-# Prompt for Backend & UI Logic: EOSY Rollover Draft State Enforecement
+# System Prompt: Modernize 403 Access Restricted UI (Design Instructions Only)
 
-## Role & Context
-Act as a Full-Stack Developer. We are refining the End of School Year (EOSY) Rollover script and the corresponding `Section Assignment` UI to ensure data integrity and user control.
+**Role:** Senior UI/UX Engineer & DepEd JHS Domain Expert
 
-Previously, the rollover script was intended to finalize the auto-sectioning. However, this bypasses the crucial "Review" phase. When the EOSY rollover runs, the continuing learners (Grades 8-10) must be auto-assigned into sections, but these assignments must remain in a `DRAFT` (Temporary) state. 
+## Context
+We have a working 403 "Access Restricted" page for the "EnrollPro" DepEd JHS administration platform (`image_574a9f.jpg`)[cite: 23]. While functional and correctly integrated within our `AppLayout`, the current card design feels a bit dated and visually heavy[cite: 23]. We need to refine the aesthetics to look more like a polished, enterprise-grade modern web application.
 
-This forces the Grade Coordinator to log in, see the `TEMPORARY SECTIONS PENDING REVIEW` banner across the Grade 8, 9, and 10 tabs, and explicitly click `FINALIZE OFFICIAL SECTIONS` when they are satisfied with the algorithm's distribution.
+## Task
+Provide specific, actionable design instructions to refine the 403 page's visual hierarchy, soften the typography, and improve the button styling. 
 
-## Backend Implementation (EOSY Script Update)
+## Strict Execution Constraints (CRITICAL)
+1. **NO NEW CODE GENERATION:** Do not generate raw React components, HTML, or custom CSS. 
+2. **USE EXISTING DESIGN SYSTEM:** All design improvements must be achievable using our existing UI components (e.g., `<Card>`, `<Button>`, `<Icon>`, `<Typography>`) by updating their variant props (e.g., `variant="outline"`, `elevation="soft"`). 
+3. **NO NEW COMPONENT CREATION:** Do not invent new structural elements. Work strictly within the layout currently present on the page[cite: 23].
 
-Please modify the `rolloverService` chaining logic:
-*   **The Change:** When the script executes Phase 3 (Database Commits) after running the sorting algorithm, do NOT create official `EnrollmentRecord` entries. 
-*   **The Draft Table:** Instead, the script must insert these assignments into the `DraftSectionRecord` table (or set `is_draft = true` on your unified records table, depending on your schema). 
-*   **The Goal:** The data state immediately following the rollover must perfectly simulate a user manually clicking the `RE-RUN SECTIONING ALGORITHM` button on the frontend.
+## Required UI/UX Refinements
 
-## Frontend UI Refinements (Section Assignment Page)
+### 1. Card Container Elevation
+*   **Current State:** The card looks a bit flat against the grid background[cite: 23].
+*   **Instruction:** Update the `<Card>` component props to apply a softer, more dispersed drop shadow and a very subtle border to make it pop cleanly off the grid. Increase the internal padding to give the elements more breathing room.
 
-Ensure the UI correctly mounts in "Draft Mode" if the backend returns draft records for that grade level upon initial load:
+### 2. Iconography Polish
+*   **Current State:** The yellow lock icon has a glowing background that feels slightly generic[cite: 23].
+*   **Instruction:** Replace this with a clean, flat icon (e.g., a Shield or Lock from our existing icon library). Apply a soft background color badge (e.g., a light maroon/rose background with a darker maroon icon) to tie it back to the school's branding, rather than the default yellow.
 
-### 1. The Global Draft Banner
-*   If *any* draft records exist for the selected grade, immediately mount the full-width alert banner: `TEMPORARY SECTIONS PENDING REVIEW`.
+### 3. Typography & Hierarchy
+*   **Current State:** "ACCESS RESTRICTED" is in heavy, solid black all-caps[cite: 23].
+*   **Instruction:** Update the `<Typography>` props to soften the aggression. Change the title to Title Case ("Access Restricted") using a dark slate color and a semi-bold weight. For the body text, increase the line height and ensure the text color is a readable, muted gray to create a clear visual hierarchy below the title.
 
-### 2. Section Card Draft Aesthetics
-*   **Card Styling:** Apply the pink/red background tint to the section cards to visually indicate they are in a temporary state.
-*   **Header Badge:** Ensure the small yellow `DRAFT: [X]` badge appears next to the capacity counter, reflecting the number of drafted learners in that specific section.
-*   **Title Change:** Update the right pane header from `AVAILABLE SECTIONS` to `TEMPORARY CLASS LISTS`.
+### 4. Button Styling (Crucial)
+*   **Current State:** The secondary "Go Back to Previous Page" button is a solid light gray block, which visually competes with the primary button or looks "disabled"[cite: 23].
+*   **Instruction:** Update the secondary `<Button>` to use an "outline" or "ghost" variant so it acts as a true secondary action. Keep the primary "Return to Dashboard" button in the solid DepEd maroon. Ensure there is adequate gap spacing between the two buttons.
 
-### 3. Action Buttons
-*   **Hide the Trigger:** Hide the primary `RE-RUN SECTIONING ALGORITHM` button at the top of the right pane.
-*   **Reveal the Controls:** At the bottom of the right pane, render the sticky action footer containing the `FINALIZE OFFICIAL SECTIONS` (Solid Red) and `CANCEL TEMPORARY SECTIONS` (Ghost/Outline) buttons. 
-
-### 4. Status Alignment
-*   Even though they are in a draft section, the learners' individual status pills must still accurately reflect `PRE-REGISTERED` (since they haven't submitted their LESF yet).
+## Output Requirement
+Output a clear, bulleted list of prop updates and design token changes that a frontend developer can directly apply to the existing components. Do not output the actual code block.
