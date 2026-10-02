@@ -23,8 +23,8 @@ export default function Forbidden() {
           </div>
 
           <div className="w-full space-y-3 pt-2">
-            <Button asChild className="w-full font-bold h-11">
-              <Link to="/dashboard">Return to Dashboard</Link>
+            <Button className="w-full font-bold h-11" onClick={() => navigate("/dashboard")}>
+              Return to Dashboard
             </Button>
             <Button variant="outline" className="w-full font-bold h-11" onClick={() => navigate(-1)}>
               Go Back to Previous Page

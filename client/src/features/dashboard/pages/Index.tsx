@@ -1,158 +1,149 @@
-import { motion } from "motion/react";
-import { useEffect, useState, useMemo } from "react";
-import type { ReactNode } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useCallback, useEffect, useState } from "react";
+import api from "@/shared/api/axiosInstance";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useHeaderStore } from "@/store/header.slice";
-import { useAuthStore } from "@/store/auth.slice";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
-import { cn } from "@/shared/lib/utils";
+import type { DashboardStats } from "../types";
+import {
+  REALTIME_INVALIDATION_EVENT,
+  type RealtimeInvalidationEvent,
+} from "@/shared/hooks/useRealtimeInvalidations";
 
-import { GlobalAdminDashboardView } from "./views/GlobalAdminDashboardView";
-import { GradeLevelCoordinatorDashboardView } from "./views/GradeLevelCoordinatorDashboardView";
-import { SCPCoordinatorDashboardView } from "./views/SCPCoordinatorDashboardView";
-import { ClassAdviserDashboardView } from "./views/ClassAdviserDashboardView";
-import { SubjectTeacherDashboardView } from "./views/SubjectTeacherDashboardView";
+import { PhaseOfficial } from "./PhaseOfficial";
+import { PhaseOngoing } from "./PhaseOngoing";
+import { PhaseEOSY } from "./PhaseEOSY";
+import {
+  DashboardActionToolbar,
+  DashboardSummaryRibbon,
+} from "../components/DashboardCommandCenter";
+
+interface DashboardStatsResponse {
+  stats: DashboardStats;
+}
+
+function DashboardPhaseBanner({
+  phase,
+  isArchived,
+  ayLabel,
+  children,
+}: {
+  phase: string;
+  isArchived: boolean;
+  ayLabel: string | null;
+  children?: React.ReactNode;
+}) {
+  let title = "";
+  let subtitle = "";
+
+  if (isArchived) {
+    title = "Archived School Year Summary";
+    subtitle = `Final records for S.Y. ${ayLabel}. Changes are not allowed for an archived school year.`;
+  } else if (phase === "ENROLLMENT_OPERATIONS") {
+    title = `Enrollment Operations for S.Y. ${ayLabel}`;
+    subtitle = "Process learner applications, verify school requirements, and complete section assignment.";
+  } else if (phase === "EOSY_CLOSING") {
+    title = `EOSY Closing for S.Y. ${ayLabel}`;
+    subtitle = "Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.";
+  } else {
+    title = `Ongoing Classes for S.Y. ${ayLabel}`;
+    subtitle = "Manage learner records, track attendance, and record health profiles.";
+  }
+
+  return (
+    <div className="rounded-2xl bg-primary p-6 shadow-md flex flex-col gap-6 text-primary-foreground relative overflow-hidden mt-6">
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+          <p className="text-sm text-primary-foreground">{subtitle}</p>
+        </div>
+      </div>
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardIndex() {
-  const { ayLabel } = useSchoolYearContext();
+  const { ayId, viewingStatus, ayLabel } = useSchoolYearContext();
   const setTitle = useHeaderStore((s) => s.setTitle);
-  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    setTitle(`Dashboard | S.Y. ${ayLabel || ""}`);
+    setTitle("Dashboard");
     return () => setTitle(null);
-  }, [setTitle, ayLabel]);
+  }, [setTitle]);
 
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Simulate loading to prove layout scaffold
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const availableViews = useMemo(() => {
-    if (!user) return [];
-    
-    const views: { id: string; label: string; component: ReactNode }[] = [];
-    const roles = user.roles || [];
-    const ancillary = user.ancillaryRoles || [];
-
-    // 1. Global Admin View
-    if (roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR") || roles.includes("PRINCIPAL")) {
-      views.push({
-        id: "global",
-        label: "Global Admin",
-        component: <GlobalAdminDashboardView 
-          totalEnrollees={3450} 
-          pendingEnrollments={124} 
-          missingRequirementsCount={45} 
-          sectionCapacities={[
-            { gradeLevel: 7, currentEnrolled: 800, totalCapacity: 850 },
-            { gradeLevel: 8, currentEnrolled: 820, totalCapacity: 850 },
-            { gradeLevel: 9, currentEnrolled: 900, totalCapacity: 950 },
-            { gradeLevel: 10, currentEnrolled: 930, totalCapacity: 950 },
-          ]}
-          onOpenEnrollment={() => {}}
-          onAutoAssignSections={() => {}}
-          onViewAuditLogs={() => {}}
-        />
-      });
+  const loadStats = useCallback(async () => {
+    if (!ayId) return;
+    try {
+      setLoading(true);
+      const res = await api.get<DashboardStatsResponse>("/dashboard/stats");
+      setStats(res.data.stats);
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err);
+    } finally {
+      setLoading(false);
     }
-
-    // 2. Grade Level Coordinator View
-    const glcMatch = ancillary.find(r => r.includes("GRADE") && r.includes("COORDINATOR"));
-    if (roles.includes("GRADE_LEVEL_COORDINATOR") || glcMatch) {
-      views.push({
-        id: "glc",
-        label: glcMatch ? `${glcMatch} View` : "GLC View",
-        component: <GradeLevelCoordinatorDashboardView 
-          assignedGradeLevel={glcMatch?.split(" ")[1] ? `Grade ${glcMatch.split(" ")[1]}` : "Assigned Grade"}
-          totalGradeEnrollees={800}
-          unsectionedLearnersCount={15}
-          pendingWalkInApprovals={4}
-          sectionFillRates={[
-            { sectionName: "Pearl", fillPercentage: 100, maleCount: 20, femaleCount: 25 },
-            { sectionName: "Diamond", fillPercentage: 95, maleCount: 18, femaleCount: 24 },
-          ]}
-          onAssignSections={() => {}}
-          onViewMasterlist={() => {}}
-        />
-      });
-    }
-
-    // 3. SCP Coordinator View
-    const scpMatch = ancillary.find(r => (r.includes("STE") || r.includes("SPA") || r.includes("SPS")) && (r.includes("HEAD") || r.includes("COORDINATOR")));
-    if (scpMatch || roles.includes("STE_COORDINATOR") || roles.includes("SPA_COORDINATOR") || roles.includes("SPS_COORDINATOR")) {
-      views.push({
-        id: "scp",
-        label: scpMatch ? `${scpMatch.split(" ")[0]} Coordinator` : "SCP Coordinator",
-        component: <SCPCoordinatorDashboardView 
-          scpProgramName={scpMatch ? scpMatch.split(" ")[0] : "SCP"}
-          totalApplicants={120}
-          availableSlotsPerGrade={{ 7: 70, 8: 10, 9: 5, 10: 2 }}
-          pendingScreeningCount={45}
-          missingRequirementsAlerts={[
-            { applicantName: "Dela Cruz, Juan", missingDocs: ["Medical Certificate"] }
-          ]}
-          onReviewApplications={() => {}}
-          onGenerateRankList={() => {}}
-        />
-      });
-    }
-
-    // 4. Class Adviser View
-    if (roles.includes("CLASS_ADVISER")) {
-      views.push({
-        id: "adviser",
-        label: "Advisory Class",
-        component: <ClassAdviserDashboardView 
-          advisorySectionName="Grade 10 - Rizal"
-          totalLearners={45}
-          maxCapacity={45}
-          maleCount={20}
-          femaleCount={25}
-          missingDocumentsAlerts={[
-            { learnerName: "Santos, Maria", missingDocs: ["SF9"] }
-          ]}
-          onGoToAdvisoryRoster={() => {}}
-          onDownloadSF1={() => {}}
-          onEncodeSF9Grades={() => {}}
-        />
-      });
-    }
-
-    // 5. Subject Teacher View
-    if (roles.includes("TEACHER")) {
-      views.push({
-        id: "teacher",
-        label: "Teaching Loads",
-        component: <SubjectTeacherDashboardView 
-          assignedTeachingLoads={6}
-          classesToday={4}
-          pendingGradeEncodings={[
-            { subjectName: "Mathematics 10", sectionName: "Grade 10 - Rizal", deadline: "Oct 15" }
-          ]}
-          onViewSchedule={() => {}}
-          onAccessSMART={() => {}}
-        />
-      });
-    }
-
-    return views;
-  }, [user]);
-
-  const [activeTab, setActiveTab] = useState<string>("");
+  }, [ayId]);
 
   useEffect(() => {
-    if (availableViews.length > 0 && !activeTab) {
-      setActiveTab(availableViews[0].id);
-    }
-  }, [availableViews, activeTab]);
+    void loadStats();
+  }, [loadStats]);
 
-  if (loading) {
+  useEffect(() => {
+    const handleRealtimeInvalidation = (event: Event) => {
+      const payload = (event as CustomEvent<RealtimeInvalidationEvent>).detail;
+      if (!payload?.topics) return;
+      if (payload.schoolYearId && ayId && payload.schoolYearId !== ayId) return;
+
+      const shouldRefresh = payload.topics.some((topic) =>
+        ["dashboard:summary", "settings:public"].includes(topic),
+      );
+
+      if (shouldRefresh) {
+        void loadStats();
+      }
+    };
+
+    window.addEventListener(
+      REALTIME_INVALIDATION_EVENT,
+      handleRealtimeInvalidation,
+    );
+
+    return () => {
+      window.removeEventListener(
+        REALTIME_INVALIDATION_EVENT,
+        handleRealtimeInvalidation,
+      );
+    };
+  }, [ayId, loadStats]);
+
+  if (loading || !stats) {
     return <PageLoadingSkeleton />;
+  }
+
+  const phase = stats.systemPhase;
+  const isArchived = stats.isArchived || viewingStatus === "ARCHIVED";
+  const dashboardPhase = phase === "EOSY_CLOSING"
+    ? "EOSY_CLOSING"
+    : phase === "CLASSES_ONGOING"
+      ? "CLASSES_ONGOING"
+      : "ENROLLMENT_OPERATIONS";
+
+  let content;
+
+  if (isArchived) {
+    content = <PhaseOfficial stats={stats} />;
+  } else if (phase === "OFFICIAL_ENROLLMENT") {
+    content = <PhaseOfficial stats={stats} />;
+  } else if (phase === "EOSY_CLOSING") {
+    content = <PhaseEOSY stats={stats} />;
+  } else {
+    content = <PhaseOngoing stats={stats} />;
   }
 
   return (
@@ -160,45 +151,22 @@ export default function DashboardIndex() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex min-h-0 min-w-0 w-full flex-1 flex-col pb-6"
+      className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 pb-6"
     >
-      {availableViews.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">
-          No dashboard views available for your role.
-        </div>
-      ) : availableViews.length === 1 ? (
-        <div className="pt-6">
-          {availableViews[0].component}
-        </div>
-      ) : (
-        <Tabs value={activeTab || availableViews[0].id} onValueChange={setActiveTab} className="w-full mt-6">
-          <TabsList className="w-full flex flex-col sm:flex-row h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
-            {availableViews.map((view) => (
-              <TabsTrigger 
-                key={view.id} 
-                value={view.id}
-                className="w-full sm:flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2"
-              >
-                {activeTab === view.id && (
-                  <motion.div
-                    layoutId="dashboard-active-pill"
-                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                  />
-                )}
-                <span className={cn("relative z-20 uppercase text-sm sm:text-base", activeTab === view.id ? "text-primary-foreground" : "text-foreground")}>
-                  {view.label}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {availableViews.map((view) => (
-            <TabsContent key={view.id} value={view.id} className="pt-2 mt-0 border-none outline-none">
-              {view.component}
-            </TabsContent>
-          ))}
-        </Tabs>
-      )}
+      <DashboardPhaseBanner
+        phase={dashboardPhase}
+        isArchived={isArchived}
+        ayLabel={ayLabel}
+      >
+        <DashboardSummaryRibbon summary={stats.summaryRibbon} />
+      </DashboardPhaseBanner>
+      
+      <DashboardActionToolbar
+        phase={dashboardPhase}
+        isArchived={isArchived}
+      />
+      
+      <div className="min-w-0 flex-1">{content}</div>
     </motion.div>
   );
 }

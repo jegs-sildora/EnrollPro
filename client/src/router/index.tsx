@@ -199,7 +199,7 @@ export const router = createBrowserRouter([
           },
           // Learner Enrollment
           {
-            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"]} allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"]} />,
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR", "CLASS_ADVISER"]} allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"]} />,
             children: [
               { path: "/learner-enrollment", element: renderLazyPage(BOSYPage) },
             ],

@@ -1,9 +1,10 @@
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { FileQuestion } from "lucide-react";
 
 export default function NotFound() {
+  const navigate = useNavigate();
   return (
     <div className="flex h-full flex-1 min-h-[60vh] items-center justify-center p-4">
       <Card className="max-w-md w-full border-muted-foreground/20 shadow-lg relative overflow-hidden">
@@ -27,8 +28,8 @@ export default function NotFound() {
           </div>
 
           <div className="w-full pt-2">
-            <Button asChild className="w-full font-bold h-11">
-              <Link to="/dashboard">Return to Dashboard</Link>
+            <Button className="w-full font-bold h-11" onClick={() => navigate("/dashboard")}>
+              Return to Dashboard
             </Button>
           </div>
         </CardContent>
