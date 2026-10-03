@@ -189,10 +189,10 @@ export function WalkInEncodePanel() {
     storageKey: "walk-in-enrollment-modal",
   });
 
-  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const userRoles = useAuthStore((s) => s.user?.roles) ?? [];
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
   const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
   const coordinatorGradeOrder = useMemo(() => {
     const coordinatorRole = ancillaryRoles.find((role) =>
       /^GRADE (7|8|9|10) COORDINATOR$/.test(role),

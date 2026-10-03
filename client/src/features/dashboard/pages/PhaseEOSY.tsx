@@ -53,7 +53,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
             Rollover Readiness Checklist
             <TooltipProvider delayDuration={200}>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger className="border-none bg-transparent p-0 m-0 leading-none outline-none">
                   <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
@@ -74,7 +74,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
                   <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">Section Finalization</p>
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
-                      <TooltipTrigger asChild>
+                      <TooltipTrigger className="border-none bg-transparent p-0 m-0 leading-none outline-none">
                         <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" onClick={(e) => e.preventDefault()} />
                       </TooltipTrigger>
                       <TooltipContent>
@@ -95,7 +95,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
                   <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">EOSY Grade Synchronization</p>
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
-                      <TooltipTrigger asChild>
+                      <TooltipTrigger className="border-none bg-transparent p-0 m-0 leading-none outline-none">
                         <HelpCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" onClick={(e) => e.preventDefault()} />
                       </TooltipTrigger>
                       <TooltipContent>

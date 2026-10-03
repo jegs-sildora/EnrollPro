@@ -188,10 +188,8 @@ export function ConfirmationModal({
         <DialogHeader className={cn("space-y-2", headerAlignClass)}>
           <DialogTitle className={cn("text-2xl font-extrabold uppercase", titleAlignClass)}>{title}</DialogTitle>
           <div className="space-y-4 w-full">
-            <DialogDescription asChild>
-              <div className={cn("leading-relaxed text-foreground w-full", descAlignClass)}>
-                {description}
-              </div>
+            <DialogDescription className={cn("leading-relaxed text-foreground w-full", descAlignClass)}>
+              {description}
             </DialogDescription>
             {footerWarning && (
               <div className="font-bold text-primary mt-2 p-3 bg-primary/5 rounded-md border-2 border-primary">

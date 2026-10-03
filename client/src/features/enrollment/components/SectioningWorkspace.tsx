@@ -712,7 +712,7 @@ export function SectioningWorkspace() {
   }, []);
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
     const { spaEnabled, spsEnabled, steEnabled } = useSettingsStore();
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
   
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["school-years", "active", "grade-levels"],
@@ -723,7 +723,7 @@ export function SectioningWorkspace() {
     staleTime: 60_000,
   });
 
-  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const userRoles = useAuthStore((s) => s.user?.roles) ?? [];
   const isAdminOrRegistrar = userRoles.includes("SYSTEM_ADMIN") || userRoles.includes("HEAD_REGISTRAR") || userRoles.includes("SCHOOL_REGISTRAR");
 
   const assignedGradeLevelId = useMemo(() => {

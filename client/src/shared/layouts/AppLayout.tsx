@@ -133,8 +133,14 @@ function UserNav() {
     } catch {
       // Ignore network/logout failures and clear local session regardless.
     }
+    // Clear persisted auth state (writes to localStorage immediately).
     clearAuth();
-    navigate("/personnel/login");
+    // Hard reload to the login page. This avoids the React 19 + Radix UI
+    // ref-composition crash that occurs when the entire component tree
+    // (with Tooltip/Dialog/Presence refs) unmounts via client-side navigation.
+    // A full reload also properly clears all in-memory state, query caches,
+    // and WebSocket connections — which is the correct behavior for logout.
+    window.location.href = "/personnel/login";
   };
 
   const initials = user?.firstName
@@ -158,7 +164,6 @@ function UserNav() {
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             size="lg"
-            tooltip="Account menu"
             className="h-14 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               {initials}
@@ -376,19 +381,17 @@ function SYSwitcher() {
     <div className="relative">
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={() => setOpen(!open)}>
-              <Calendar className="text-foreground w-4 h-4" />
-              <span className="text-sm sm:text-sm text-foreground whitespace-nowrap font-bold">
-                {currentLabel}
-              </span>
-              <div className="hidden md:block">
-                {currentStatus ? renderStatusBadge(currentStatus) : null}
-              </div>
-              <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
-            </button>
+          <TooltipTrigger
+            className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+            onClick={() => setOpen(!open)}>
+            <Calendar className="text-foreground w-4 h-4" />
+            <span className="text-sm sm:text-sm text-foreground whitespace-nowrap font-bold">
+              {currentLabel}
+            </span>
+            <div className="hidden md:block">
+              {currentStatus ? renderStatusBadge(currentStatus) : null}
+            </div>
+            <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
           </TooltipTrigger>
           <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base text-primary-foreground">
             Switch School Year
@@ -505,7 +508,7 @@ const NavItem = memo(function NavItem({
   const accentHsl = selectedAccentHsl;
 
   const handleNavigationClick = useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
+    (event: React.MouseEvent<HTMLElement>) => {
       if (
         event.defaultPrevented ||
         event.button !== 0 ||
@@ -566,16 +569,14 @@ const NavItem = memo(function NavItem({
         />
       )}
       <SidebarMenuButton
-        asChild
         isActive={isActive}
+        onClick={handleNavigationClick}
         tooltip={typeof label === "string" ? label : undefined}>
-        <Link to={to} onClick={handleNavigationClick}>
-          <Icon className="size-4 shrink-0" />
-          <div className="flex flex-col items-start justify-center overflow-hidden w-full">
-            <span className={cn("truncate w-full text-left leading-tight font-semibold", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-sm  truncate w-full text-left leading-tight">{subtext}</span>}
-          </div>
-        </Link>
+        <Icon className="size-4 shrink-0" />
+        <div className="flex flex-col items-start justify-center overflow-hidden w-full">
+          <span className={cn("truncate w-full text-left leading-tight font-semibold", isActive && "font-bold")}>{label}</span>
+          {subtext && <span className="text-sm  truncate w-full text-left leading-tight">{subtext}</span>}
+        </div>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -635,13 +636,13 @@ const NAVIGATION_MATRIX: AppNavConfigGroup[] = [
         label: "Dashboard",
         to: "/dashboard",
         icon: LayoutDashboard,
-        access: (roles, anc, isStrict) => !isStrict
+        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"].includes(r)) || anc.some(a => ["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"].includes(a))
       },
       {
         label: "Early Registration",
         to: "/early-registration-masterlist",
         icon: FolderOpen,
-        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"].includes(r)) || anc.some(a => a.endsWith("COORDINATOR"))
+        access: (roles, anc) => roles.some(r => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"].includes(r)) || anc.some(a => ["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"].includes(a))
       },
       {
         label: "SCP Admission",
@@ -825,13 +826,13 @@ const CompanionNavItem = memo(function CompanionNavItem({
 function AppSidebar() {
   const location = useLocation();
   const { schoolName, logoUrl, systemPhase } = useSettingsStore();
-  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const userRoles = useAuthStore((s) => s.user?.roles) ?? [];
   const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
   const isHeadRegistrar = useAuthStore(
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
   );
   const isRegistrar = isHeadRegistrar;
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
   const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
     !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&

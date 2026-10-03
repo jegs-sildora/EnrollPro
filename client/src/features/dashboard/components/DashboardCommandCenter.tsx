@@ -102,11 +102,9 @@ export function DashboardSummaryRibbon({
                   </p>
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="mt-0.5 text-primary-foreground/70 hover:text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                          <HelpCircle className="size-4" />
-                          <span className="sr-only">Help</span>
-                        </button>
+                      <TooltipTrigger className="mt-0.5 text-primary-foreground/70 hover:text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                        <HelpCircle className="size-4" />
+                        <span className="sr-only">Help</span>
                       </TooltipTrigger>
                       <TooltipContent side="top" align="start" className="max-w-xs text-primary bg-card">
                         {item.helper}
@@ -136,7 +134,7 @@ export function DashboardActionToolbar({
   isArchived,
 }: DashboardActionToolbarProps) {
   const navigate = useNavigate()
-  const roles = useAuthStore((state) => state.user?.roles ?? [])
+  const roles = useAuthStore((state) => state.user?.roles) ?? [];
   const canManageEnrollment = roles.some((role) =>
     ["HEAD_REGISTRAR", "SYSTEM_ADMIN"].includes(role),
   )
@@ -167,11 +165,9 @@ export function DashboardActionToolbar({
           </p>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center">
-                  <HelpCircle className="size-4" />
-                  <span className="sr-only">Help</span>
-                </button>
+              <TooltipTrigger className="text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
               </TooltipTrigger>
               <TooltipContent side="top" align="start" className="max-w-xs">
                 {isEosy
@@ -279,11 +275,9 @@ export function OperationalQueueCard({
           <CardTitle className="text-xl font-extrabold">{title}</CardTitle>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                  <HelpCircle className="size-4" />
-                  <span className="sr-only">Help</span>
-                </button>
+              <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
               </TooltipTrigger>
               <TooltipContent side="top" align="start" className="max-w-xs">
                 {detail}
@@ -359,11 +353,9 @@ export function CurriculumDistributionPanel({
         </CardTitle>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center transition-opacity duration-200">
-                <HelpCircle className="size-4" />
-                <span className="sr-only">Help</span>
-              </button>
+            <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center transition-opacity duration-200">
+              <HelpCircle className="size-4" />
+              <span className="sr-only">Help</span>
             </TooltipTrigger>
             <TooltipContent side="top" align="start" className="max-w-xs">
               Enrolled learners grouped by their current Curricular Program.
@@ -387,8 +379,8 @@ export function CurriculumDistributionPanel({
                   <div className="min-w-0">
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <p className="font-extrabold text-foreground uppercase cursor-help text-2xl">{item.acronym}</p>
+                        <TooltipTrigger className="font-extrabold text-foreground uppercase cursor-help text-2xl border-none bg-transparent p-0 m-0 leading-none">
+                          {item.acronym}
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-primary text-primary-foreground">
                           <p className="font-bold text-sm">{item.label}</p>
@@ -407,8 +399,12 @@ export function CurriculumDistributionPanel({
                   </div>
                   
                   <div className="pt-2">
-                    <Button variant="default" className="w-full font-bold group-hover/card:bg-primary group-hover/card:text-primary-foreground transition-colors" asChild>
-                      <Link to={`/dashboard/program-roster/${item.programType.toLowerCase()}`}>View Roster →</Link>
+                    <Button 
+                      variant="default" 
+                      className="w-full font-bold group-hover/card:bg-primary group-hover/card:text-primary-foreground transition-colors"
+                      onClick={() => navigate(`/dashboard/program-roster/${item.programType.toLowerCase()}`)}
+                    >
+                      View Roster →
                     </Button>
                   </div>
                 </div>
@@ -434,11 +430,9 @@ export function IntakePipelinePanel({
         </CardTitle>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                <HelpCircle className="size-4" />
-                <span className="sr-only">Help</span>
-              </button>
+            <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+              <HelpCircle className="size-4" />
+              <span className="sr-only">Help</span>
             </TooltipTrigger>
             <TooltipContent side="top" align="start" className="max-w-xs">
               Continuing or promoted learners, new entrants, and transferees for each grade level.
@@ -539,11 +533,9 @@ export function SectionSaturationPanel({
           </CardTitle>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                  <HelpCircle className="size-4" />
-                  <span className="sr-only">Help</span>
-                </button>
+              <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
               </TooltipTrigger>
               <TooltipContent side="top" align="start" className="max-w-xs">
                 Highest seat occupancy per grade level
@@ -655,11 +647,9 @@ export function Sf1CompliancePanel({
           </CardTitle>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                  <HelpCircle className="size-4" />
-                  <span className="sr-only">Help</span>
-                </button>
+              <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
               </TooltipTrigger>
               <TooltipContent side="top" align="start" className="max-w-xs">
                 Learner information required for School Form 1.
@@ -682,13 +672,8 @@ export function Sf1CompliancePanel({
         <div className="flex flex-col space-y-2">
           {items.map(([label, value]) => {
             const hasLearners = value.count > 0;
-            const ItemContent = (
-              <div
-                className={cn(
-                  "flex h-[76px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base",
-                  hasLearners && "cursor-pointer hover:bg-slate-50 transition-colors"
-                )}
-              >
+            const itemInner = (
+              <>
                 <span className="font-bold text-foreground">{label}</span>
                 <span
                   className={cn(
@@ -698,17 +683,23 @@ export function Sf1CompliancePanel({
                 >
                   {value.count}
                 </span>
-              </div>
+              </>
             );
 
             if (!hasLearners) {
-              return <div key={label}>{ItemContent}</div>;
+              return (
+                <div key={label}>
+                  <div className="flex h-[76px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base">
+                    {itemInner}
+                  </div>
+                </div>
+              );
             }
 
             return (
               <Popover key={label}>
-                <PopoverTrigger asChild>
-                  {ItemContent}
+                <PopoverTrigger className="flex h-[76px] w-full items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base cursor-pointer hover:bg-slate-50 transition-colors">
+                  {itemInner}
                 </PopoverTrigger>
                 <PopoverContent className="w-80 max-h-[300px] overflow-y-auto p-4" align="start">
                   <h4 className="font-bold mb-3">{label}</h4>
@@ -755,11 +746,9 @@ export function ActiveTallyPanel({
         </CardTitle>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
-                <HelpCircle className="size-4" />
-                <span className="sr-only">Help</span>
-              </button>
+            <TooltipTrigger className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+              <HelpCircle className="size-4" />
+              <span className="sr-only">Help</span>
             </TooltipTrigger>
             <TooltipContent side="top" align="start" className="max-w-xs">
               BOSY enrollment plus late enrollees, minus officially dropped learners.

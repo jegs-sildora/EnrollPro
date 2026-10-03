@@ -58,6 +58,41 @@ type SchoolMetaSettings = SettingsState & {
   schoolRegion?: string | null;
 };
 
+export function getHomeRoute(user: AuthResponseUser): string {
+  const roles = user.roles || [];
+  const anc = user.ancillaryRoles || [];
+
+  const isDashboardUser = 
+    roles.includes("SYSTEM_ADMIN") ||
+    roles.includes("PRINCIPAL") ||
+    roles.includes("HEAD_REGISTRAR") ||
+    roles.includes("SCHOOL_REGISTRAR") ||
+    roles.includes("GRADE_LEVEL_COORDINATOR") ||
+    roles.includes("STE_COORDINATOR") ||
+    roles.includes("SPA_COORDINATOR") ||
+    roles.includes("SPS_COORDINATOR") ||
+    anc.some(r => ["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR"].includes(r)) ||
+    anc.some(r => ["STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"].includes(r));
+
+  if (isDashboardUser) {
+    return "/dashboard";
+  }
+
+  if (roles.includes("CLASS_ADVISER")) {
+    return "/teacher/advisory";
+  }
+
+  if (roles.includes("TEACHER")) {
+    return "/learners";
+  }
+
+  if (roles.includes("MRF")) {
+    return "/my-activity";
+  }
+
+  return "/dashboard";
+}
+
 function reverseSsoErrorMessage(
   code: string,
   source: string | null,
@@ -330,22 +365,7 @@ export default function Login() {
     void api.get<AuthResponsePayload>("/auth/me")
       .then(({ data }) => {
         setAuth(data.user);
-        const isRegistrar = data.user.roles?.includes("HEAD_REGISTRAR") || data.user.roles?.includes("SCHOOL_REGISTRAR");
-        const isAdmin = data.user.roles?.includes("SYSTEM_ADMIN");
-        const isClassAdviser = data.user.roles?.includes("CLASS_ADVISER");
-        const isGradeCoordinator = data.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
-        
-        const isStrictClassAdviser = isClassAdviser && !isAdmin && !isRegistrar && !isGradeCoordinator;
-
-        const destination = (isRegistrar || isAdmin || isGradeCoordinator)
-          ? "/dashboard"
-          : isStrictClassAdviser
-            ? "/teacher/advisory"
-            : data.user.roles?.includes("TEACHER")
-              ? "/learners"
-              : data.user.roles?.includes("MRF")
-                ? "/my-activity"
-                : "/dashboard";
+        const destination = getHomeRoute(data.user);
         navigate(destination, { replace: true });
       })
       .catch(() => {
@@ -429,22 +449,7 @@ export default function Login() {
         return;
       }
 
-      const isRegistrar = payload.user.roles?.includes("HEAD_REGISTRAR") || payload.user.roles?.includes("SCHOOL_REGISTRAR");
-      const isAdmin = payload.user.roles?.includes("SYSTEM_ADMIN");
-      const isClassAdviser = payload.user.roles?.includes("CLASS_ADVISER");
-      const isGradeCoordinator = payload.user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
-      
-      const isStrictClassAdviser = isClassAdviser && !isAdmin && !isRegistrar && !isGradeCoordinator;
-
-      const destination = (isRegistrar || isAdmin || isGradeCoordinator)
-        ? "/dashboard"
-        : isStrictClassAdviser
-          ? "/teacher/advisory"
-          : payload.user.roles?.includes("TEACHER")
-            ? "/learners"
-            : payload.user.roles?.includes("MRF")
-              ? "/my-activity"
-              : "/dashboard";
+      const destination = getHomeRoute(payload.user);
 
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate(destination, { replace: true });
@@ -485,18 +490,7 @@ export default function Login() {
     && !reverseSsoErrorCode
     && !reverseSsoSucceeded
   ) {
-    const isRegistrar = user.roles?.includes("HEAD_REGISTRAR") || user.roles?.includes("SCHOOL_REGISTRAR");
-    const isAdmin = user.roles?.includes("SYSTEM_ADMIN");
-    const isClassAdviser = user.roles?.includes("CLASS_ADVISER");
-    const isGradeCoordinator = user.ancillaryRoles?.some(r => r.includes("COORDINATOR"));
-    
-    const homeRoute = (isRegistrar || isAdmin || isClassAdviser || isGradeCoordinator)
-      ? "/dashboard"
-      : user.roles?.includes("TEACHER")
-        ? "/learners"
-        : user.roles?.includes("MRF")
-          ? "/my-activity"
-          : "/dashboard";
+    const homeRoute = getHomeRoute(user);
     return (
       <Navigate
         to={homeRoute}

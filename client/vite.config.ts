@@ -93,6 +93,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Patch: swap Radix compose-refs with a React 19-compatible version
+      // that returns a stable callback ref identity (prevents infinite loop).
+      "@radix-ui/react-compose-refs": path.resolve(__dirname, "./src/lib/compose-refs-patch.ts"),
     },
   },
   server: {

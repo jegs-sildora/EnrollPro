@@ -168,7 +168,7 @@ function VerificationRow({ label, children, valueClassName }: { label: React.Rea
 export function VerificationWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const queryClient = useQueryClient();
-  const ancillaryRoles = useAuthStore((state) => state.user?.ancillaryRoles ?? []);
+  const ancillaryRoles = useAuthStore((state) => state.user?.ancillaryRoles) ?? [];
   const coordinatorGradeOrder = useMemo(() => {
     const coordinatorRole = ancillaryRoles.find((role) =>
       /^GRADE (7|8|9|10) COORDINATOR$/.test(role),

@@ -116,10 +116,10 @@ export default function BOSYPage() {
 
   const [queueState, setQueueState] = useState<BOSYQueueState>("PENDING");
 
-  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
+  const userRoles = useAuthStore((s) => s.user?.roles) ?? [];
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
   const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles ?? []);
+  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
   const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
     !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&

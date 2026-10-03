@@ -165,12 +165,18 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Dashboard and Common Misc Routes
+          // Dashboard
           {
-            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "TEACHER", "CLASS_ADVISER", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "MRF"]} />,
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR"]} allowedAncillaryRoles={["GRADE 7 COORDINATOR", "GRADE 8 COORDINATOR", "GRADE 9 COORDINATOR", "GRADE 10 COORDINATOR", "STE HEAD TEACHER", "SPA HEAD TEACHER", "SPS HEAD TEACHER"]} />,
             children: [
               { path: "/dashboard", element: renderLazyPage(Dashboard) },
               { path: "/dashboard/program-roster/:programType", element: renderLazyPage(ViewProgramRoster) },
+            ],
+          },
+          // Common Misc Routes
+          {
+            element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "PRINCIPAL", "HEAD_REGISTRAR", "SCHOOL_REGISTRAR", "TEACHER", "CLASS_ADVISER", "GRADE_LEVEL_COORDINATOR", "STE_COORDINATOR", "SPA_COORDINATOR", "SPS_COORDINATOR", "MRF"]} />,
+            children: [
               { path: "/my-activity", element: renderLazyPage(MyActivity) },
               { path: "/help", element: renderLazyPage(HelpDocumentation) },
             ],

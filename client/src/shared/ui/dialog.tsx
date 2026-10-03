@@ -72,6 +72,9 @@ function useDeferredMount() {
   return ready;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MotionDialogOverlay = motion.create(DialogPrimitive.Overlay as any) as any;
+
 const DialogOverlay = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -79,24 +82,20 @@ const DialogOverlay = React.forwardRef<
   const ready = useDeferredMount();
 
   return (
-    <DialogPrimitive.Overlay
-      asChild
+    <MotionDialogOverlay
       forceMount
       ref={ref}
+      initial={{ opacity: 0 }}
+      animate={ready ? { opacity: 1 } : { opacity: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+      style={{ willChange: "opacity" }}
+      className={cn(
+        "fixed inset-0 z-50 bg-black/80",
+        className,
+      )}
       {...props}
-    >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={ready ? { opacity: 1 } : { opacity: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-        style={{ willChange: "opacity" }}
-        className={cn(
-          "fixed inset-0 z-50 bg-black/80",
-          className,
-        )}
-      />
-    </DialogPrimitive.Overlay>
+    />
   );
 });
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
@@ -105,38 +104,48 @@ interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof Dialo
   showClose?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MotionDialogContent = motion.create(DialogPrimitive.Content as any) as any;
+
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
 >(({ className, children, showClose = true, ...props }, ref) => {
   const { open } = React.useContext(DialogContext);
+  const ready = useDeferredMount();
 
   return (
     <AnimatePresence>
       {open && (
         <DialogPortal forceMount>
           <DialogOverlay />
-          <DialogPrimitive.Content
-            asChild
+          <MotionDialogContent
             forceMount
             ref={ref}
             aria-describedby={props["aria-describedby"] ?? undefined}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={ready ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            style={{ willChange: "transform, opacity" }}
+            className={cn(
+              "fixed inset-0 m-auto z-50 grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
+              className,
+            )}
             {...props}
           >
-            <DeferredDialogPanel className={className}>
-              <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
-              {children}
-              {showClose ? (
-                <DialogPrimitive.Close className={cn(
-                  "absolute right-4 top-3 rounded-full p-2 text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none",
-                  motionClassNames.closeButton,
-                )}>
-                  <X strokeWidth={3} className="h-5 w-5" />
-                  <span className="sr-only">Close</span>
-                </DialogPrimitive.Close>
-              ) : null}
-            </DeferredDialogPanel>
-          </DialogPrimitive.Content>
+            <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
+            {children}
+            {showClose ? (
+              <DialogPrimitive.Close className={cn(
+                "absolute right-4 top-3 rounded-full p-2 text-primary-foreground bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none",
+                motionClassNames.closeButton,
+              )}>
+                <X strokeWidth={3} className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </DialogPrimitive.Close>
+            ) : null}
+          </MotionDialogContent>
         </DialogPortal>
       )}
     </AnimatePresence>
@@ -144,35 +153,7 @@ const DialogContent = React.forwardRef<
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-/**
- * Inner panel that defers the scale+fade animation start by one paint
- * cycle so the browser has finished layout before the first frame.
- */
-const DeferredDialogPanel = React.forwardRef<
-  HTMLDivElement,
-  React.PropsWithChildren<{ className?: string }>
->(({ className, children, ...props }, ref) => {
-  const ready = useDeferredMount();
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={ready ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-      style={{ willChange: "transform, opacity" }}
-      className={cn(
-        "fixed inset-0 m-auto z-50 grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </motion.div>
-  );
-});
-DeferredDialogPanel.displayName = "DeferredDialogPanel";
+// DeferredDialogPanel was removed since we inline the motion component in DialogContent
 
 const DialogHeader = ({
   className,

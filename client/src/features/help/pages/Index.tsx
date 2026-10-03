@@ -72,7 +72,7 @@ function GuideSection({
 }
 
 export default function HelpDocumentation() {
-  const roles = useAuthStore((state) => state.user?.roles ?? []);
+  const roles = useAuthStore((state) => state.user?.roles) ?? [];
   const canManageSchoolYear =
     roles.includes("SYSTEM_ADMIN") || roles.includes("HEAD_REGISTRAR");
   const canManagePersonnel = roles.includes("SYSTEM_ADMIN");
