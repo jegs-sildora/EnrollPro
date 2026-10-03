@@ -391,6 +391,8 @@ export default function ScpAdmissionForm({
       if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
       if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
     }
+    
+    sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
   }, [pendingProfile, setValue]);
 
   const handleDateTyping = (

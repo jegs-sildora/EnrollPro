@@ -1046,6 +1046,8 @@ export default function LearnerAdmissionIndex() {
         <DialogContent
           showClose={false}
           aria-describedby={undefined}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
           className="flex h-[90vh] w-[95vw] max-w-6xl flex-col overflow-hidden p-0"
         >
           <DialogHeader className="shrink-0 border-b bg-muted/30 px-6 py-4">

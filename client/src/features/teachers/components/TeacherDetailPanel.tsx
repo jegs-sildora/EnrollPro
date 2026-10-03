@@ -63,7 +63,10 @@ import {
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS,
   DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
   TEACHER_UNDERGRADUATE_DEGREE_OPTIONS,
+  TEACHER_UNDERGRADUATE_DEGREE_VALUES,
+  DEPED_TEACHER_SPECIALIZATION_VALUES,
   TEACHER_POSTGRADUATE_DEGREE_OPTIONS,
+  TEACHER_POSTGRADUATE_DEGREE_VALUES,
   IP_COMMUNITY_OPTIONS,
   IP_COMMUNITY_VALUES,
 } from "@enrollpro/shared";
@@ -107,28 +110,49 @@ function isTemporaryAppointment(
 
 const formSchema = z
   .object({
-    firstName: z.string().min(1, "Enter the first name."),
-    lastName: z.string().min(1, "Enter the last name."),
+    firstName: z.string().min(1, "Please enter the name using only letters and spaces.").regex(/^[A-Za-z\s.-]+$/, "Please enter the name using only letters and spaces."),
+    lastName: z.string().min(1, "Please enter the name using only letters and spaces.").regex(/^[A-Za-z\s.-]+$/, "Please enter the name using only letters and spaces."),
     middleName: z.string().optional().nullable(),
     suffix: z.string().optional().nullable(),
-    sex: z.enum(["MALE", "FEMALE"], { message: "Select the sex." }),
-    birthdate: z.string().min(1, "Select the date of birth.").nullable(),
+    sex: z.enum(["MALE", "FEMALE"], { message: "Please select a biological sex." }),
+    birthdate: z.string()
+      .min(1, "Please enter a valid date of birth. The personnel must be at least 18 years old.")
+      .refine((dateStr) => {
+        const bd = new Date(dateStr);
+        const today = new Date();
+        let age = today.getFullYear() - bd.getFullYear();
+        const m = today.getMonth() - bd.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) {
+          age--;
+        }
+        return age >= 18;
+      }, "Please enter a valid date of birth. The personnel must be at least 18 years old."),
 
     personnelType: z.enum(["TEACHING", "NON_TEACHING"]).nullable(),
     employeeId: z.string().trim().optional().nullable(),
-    plantillaPosition: z.string().min(1, "Select the DepEd position (plantilla)."),
+    plantillaPosition: z.string().min(1, "Please select the official DepEd Plantilla position."),
     departments: z.array(z.string()).default([]),
     functionalAssignment: z.string().optional().nullable(),
-    specialization: z.string().optional().nullable(),
-    undergraduateDegree: z.string().optional().nullable(),
+    specialization: z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid specialization." }).optional().nullable().or(z.literal("")),
+    undergraduateDegree: z.enum(TEACHER_UNDERGRADUATE_DEGREE_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid undergraduate degree." }).optional().nullable().or(z.literal("")),
     bachelorMajor: z.string().optional().nullable(),
     bachelorMinor: z.string().optional().nullable(),
     postgraduateDegrees: z.array(z.object({
-      degree: z.string(),
+      degree: z.enum(TEACHER_POSTGRADUATE_DEGREE_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid postgraduate degree." }),
       major: z.string().optional().nullable(),
       minor: z.string().optional().nullable(),
-    })).min(1),
-    indigenousCommunity: z.enum(IP_COMMUNITY_VALUES).optional().nullable().default("NOT APPLICABLE"),
+    })).superRefine((data, ctx) => {
+      data.forEach((item, index) => {
+        if ((item.major?.trim() || item.minor?.trim()) && (!item.degree || item.degree.trim() === "")) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please select a postgraduate degree if you have provided a major or minor.",
+            path: [index, "degree"],
+          });
+        }
+      });
+    }),
+    indigenousCommunity: z.enum(IP_COMMUNITY_VALUES as unknown as [string, ...string[]], { message: "Please select a valid group from the dropdown list, or choose 'NOT APPLICABLE'." }).optional().nullable().default("NOT APPLICABLE"),
     natureOfAppointment: z.enum([
       "REGULAR_PERMANENT",
       "PROVISIONAL",
@@ -147,12 +171,12 @@ const formSchema = z
       "OTHER",
     ]).optional().nullable(),
     ancillaryRoles: z.array(z.string()).default([]),
-    roles: z.array(z.string()),
+    roles: z.array(z.string()).min(1, "Please select at least one system role for this personnel."),
 
     contactNumber: z
       .string()
       .trim()
-      .regex(/^09\d{2}-\d{3}-\d{4}$/, "Enter an 11-digit mobile number in the format 09XX-XXX-XXXX."),
+      .regex(/^09\d{2}-\d{3}-\d{4}$/, "Please enter a valid 11-digit mobile number starting with 09 (e.g., 09123456789)."),
 
     serviceStatus: z
       .enum([
@@ -177,7 +201,7 @@ const formSchema = z
     if (!isTemporary && !data.employeeId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Enter the 7-digit DepEd Employee ID.",
+        message: "Please enter a valid 7-digit DepEd Employee ID.",
         path: ["employeeId"],
       });
     }
@@ -185,7 +209,7 @@ const formSchema = z
     if (data.employeeId && !/^\d{7}$/.test(data.employeeId)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Enter the 7-digit DepEd Employee ID.",
+        message: "Please enter a valid 7-digit DepEd Employee ID.",
         path: ["employeeId"],
       });
     }
@@ -193,8 +217,16 @@ const formSchema = z
     if (isTemporary && !data.accessExpirationDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Select the contract end date.",
+        message: "Please select the contract end date.",
         path: ["accessExpirationDate"],
+      });
+    }
+
+    if (data.undergraduateDegree && (!data.bachelorMajor || data.bachelorMajor.trim().length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the major or specialization.",
+        path: ["bachelorMajor"],
       });
     }
 
@@ -202,28 +234,22 @@ const formSchema = z
       if (!data.undergraduateDegree || data.undergraduateDegree.trim().length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Enter the bachelor degree.",
+          message: "Please select a bachelor's degree.",
           path: ["undergraduateDegree"],
         });
       }
-      if (data.undergraduateDegree && (!data.bachelorMajor || data.bachelorMajor.trim().length === 0)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Enter the bachelor degree major or specialization.",
-          path: ["bachelorMajor"],
-        });
-      }
+
       if (!data.natureOfAppointment) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Select the nature of appointment.",
+          message: "Please select the nature of appointment.",
           path: ["natureOfAppointment"],
         });
       }
       if (!data.fundingSource) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Select the fund source.",
+          message: "Please select the fund source.",
           path: ["fundingSource"],
         });
       }
@@ -338,16 +364,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     reset,
     watch,
     setValue,
+    trigger,
     formState: { isDirty, errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
       middleName: "",
       suffix: "",
       sex: undefined as unknown as FormValues["sex"],
-      birthdate: null,
+      birthdate: "",
       personnelType: null,
       employeeId: null,
       plantillaPosition: "",
@@ -425,24 +453,24 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         middleName: (teacher.middleName || "").toUpperCase(),
         suffix: (teacher.suffix || "").toUpperCase(),
         sex: teacher.sex,
-        birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : null,
+        birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : "",
         personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
         plantillaPosition: teacher.plantillaPosition === "MRF Coordinator" ? "" : (teacher.plantillaPosition || ""),
         departments: !isTeacherOrAdviser ? [] : (teacher.departments || []),
         functionalAssignment: teacher.functionalAssignment || "",
-        specialization: teacher.specialization || "",
-        undergraduateDegree: teacher.undergraduateDegree || "",
-        bachelorMajor: teacher.bachelorMajor || "",
-        bachelorMinor: teacher.bachelorMinor || "",
+        specialization: (teacher.specialization === "NONE" ? "" : teacher.specialization) || "",
+        undergraduateDegree: (teacher.undergraduateDegree === "NONE" ? "" : teacher.undergraduateDegree) || "",
+        bachelorMajor: (teacher.bachelorMajor === "NONE" ? "" : teacher.bachelorMajor) || "",
+        bachelorMinor: (teacher.bachelorMinor === "NONE" ? "" : teacher.bachelorMinor) || "",
         postgraduateDegrees: teacher.postgraduateDegrees?.length
           ? teacher.postgraduateDegrees.map((entry) => ({
-            degree: entry.degree,
+            degree: entry.degree === "NONE" ? "" : entry.degree,
             major: entry.major || "",
             minor: entry.minor || "",
           }))
           : [{
-            degree: teacher.postgraduateDegree || "",
+            degree: (teacher.postgraduateDegree === "NONE" ? "" : teacher.postgraduateDegree) || "",
             major: teacher.majorSpecialization || "",
             minor: teacher.minorSpecialization || "",
           }],
@@ -467,7 +495,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         middleName: "",
         suffix: "",
         sex: undefined as unknown as FormValues["sex"],
-        birthdate: null,
+        birthdate: "",
         personnelType: null,
         employeeId: null,
         plantillaPosition: "",
@@ -632,7 +660,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           }
         }
 
-        sileo.success({ title: "Profile Updated", description: "The faculty/staff profile has been saved." });
+        sileo.success({ title: "Profile Updated", description: "The personnel profile has been saved." });
       }
 
       if (selectedPhoto) {
@@ -656,6 +684,27 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      // Look for elements commonly indicating an error
+      const errorElement = document.querySelector(
+        '[aria-invalid="true"], .border-destructive, .animated-error'
+      ) as HTMLElement;
+
+      if (errorElement) {
+        if (
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA" ||
+          errorElement.tagName === "BUTTON"
+        ) {
+          errorElement.focus({ preventScroll: true });
+        }
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
   };
   // Helper maps for human-readable labels in view mode
   const ROLE_LABEL_MAP: Record<string, string> = {
@@ -749,7 +798,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               </div>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <form onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
 
                 {/* ════════════════════════════════════════════════════════════ */}
@@ -834,32 +883,32 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Mobile Edit Button */}
                     {!isEditing && !isAdding && (
                       <div className="mt-4 sm:hidden flex flex-col gap-2 w-full">
-                          <Button
-                            variant="outline"
-                            className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setIsEditing(true);
-                            }}
-                          >
-                            <UserRoundPen className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
-                            Edit Profile
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleResetPassword();
-                            }}
-                          >
-                            <Key className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
-                            Reset Password
-                          </Button>
+                        <Button
+                          variant="outline"
+                          className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsEditing(true);
+                          }}
+                        >
+                          <UserRoundPen className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+                          Edit Profile
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="font-bold text-sm h-9 px-4 uppercase border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm rounded-md transition-all active:scale-[0.98] w-full"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleResetPassword();
+                          }}
+                        >
+                          <Key className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+                          Reset Password
+                        </Button>
                       </div>
                     )}
 
@@ -1070,15 +1119,15 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                         let newRoles = isChecked
                                           ? [...field.value, roleOption.value]
                                           : field.value.filter((r) => r !== roleOption.value);
-                                          
+
                                         if (isChecked && roleOption.value === "CLASS_ADVISER" && !newRoles.includes("TEACHER")) {
                                           newRoles.push("TEACHER");
                                         }
-                                        
+
                                         if (!isChecked && roleOption.value === "TEACHER") {
                                           newRoles = newRoles.filter(r => r !== "CLASS_ADVISER");
                                         }
-                                        
+
                                         field.onChange(newRoles);
                                       }}
                                       className="cursor-pointer"
@@ -1160,93 +1209,93 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
 
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
-                            <Controller
-                              name="firstName"
-                              control={control}
-                              render={({ field }) => (
-                                <Input autoComplete="off" disabled={!isEditing}
-                                  {...field}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  placeholder="e.g. JUAN"
-                                  className={cn(
-                                    "font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
-                                    errors.firstName && "border-destructive focus-visible:ring-destructive"
-                                  )}
-                                />
-                              )}
-                            />
-                            <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Middle Name <span className="text-foreground font-bold ml-1">(optional)</span></Label>
-                            <Controller
-                              name="middleName"
-                              control={control}
-                              render={({ field }) => (
-                                <Input autoComplete="off" disabled={!isEditing}
-                                  {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  placeholder="e.g. SANTOS"
-                                  className="font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
-                                />
-                              )}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Last Name <span className="text-destructive">*</span></Label>
-                            <Controller
-                              name="lastName"
-                              control={control}
-                              render={({ field }) => (
-                                <Input autoComplete="off" disabled={!isEditing}
-                                  {...field}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  placeholder="e.g. DELA CRUZ"
-                                  className={cn(
-                                    "font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
-                                    errors.lastName && "border-destructive focus-visible:ring-destructive"
-                                  )}
-                                />
-                              )}
-                            />
-                            <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground">Suffix <span className="text-foreground font-bold ml-1">(e.g., JR., III)</span></Label>
-                            <Controller
-                              name="suffix"
-                              control={control}
-                              render={({ field }) => (
-                                <Select
-                                  disabled={!isEditing}
-                                  value={field.value || "NONE"}
-                                  onValueChange={(val) => field.onChange(val === "NONE" ? "" : val)}
-                                >
-                                  <SelectTrigger className={cn("font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase", !field.value && "text-muted-foreground")}>
-                                    <SelectValue placeholder="Select Suffix" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="NONE" className="uppercase font-bold">None</SelectItem>
-                                    <SelectItem value="JR." className="uppercase font-bold">JR.</SelectItem>
-                                    <SelectItem value="SR." className="uppercase font-bold">SR.</SelectItem>
-                                    <SelectItem value="I" className="uppercase font-bold">I</SelectItem>
-                                    <SelectItem value="II" className="uppercase font-bold">II</SelectItem>
-                                    <SelectItem value="III" className="uppercase font-bold">III</SelectItem>
-                                    <SelectItem value="IV" className="uppercase font-bold">IV</SelectItem>
-                                    <SelectItem value="V" className="uppercase font-bold">V</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </div>
+                            <div className="space-y-1.5 min-h-[6rem]">
+                              <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
+                              <Controller
+                                name="firstName"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input autoComplete="off" disabled={!isEditing}
+                                    {...field}
+                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    placeholder="e.g. JUAN"
+                                    className={cn(
+                                      "font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
+                                      errors.firstName && "border-destructive focus-visible:ring-destructive"
+                                    )}
+                                  />
+                                )}
+                              />
+                              <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
+                            </div>
+                            <div className="space-y-1.5 min-h-[6rem]">
+                              <Label className="text-base font-bold uppercase text-foreground">Middle Name <span className="text-foreground font-bold ml-1">(optional)</span></Label>
+                              <Controller
+                                name="middleName"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input autoComplete="off" disabled={!isEditing}
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    placeholder="e.g. SANTOS"
+                                    className="font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
+                                  />
+                                )}
+                              />
+                            </div>
+                            <div className="space-y-1.5 min-h-[6rem]">
+                              <Label className="text-base font-bold uppercase text-foreground">Last Name <span className="text-destructive">*</span></Label>
+                              <Controller
+                                name="lastName"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input autoComplete="off" disabled={!isEditing}
+                                    {...field}
+                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    placeholder="e.g. DELA CRUZ"
+                                    className={cn(
+                                      "font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
+                                      errors.lastName && "border-destructive focus-visible:ring-destructive"
+                                    )}
+                                  />
+                                )}
+                              />
+                              <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
+                            </div>
+                            <div className="space-y-1.5 min-h-[6rem]">
+                              <Label className="text-base font-bold uppercase text-foreground">Suffix <span className="text-foreground font-bold ml-1">(e.g., JR., III)</span></Label>
+                              <Controller
+                                name="suffix"
+                                control={control}
+                                render={({ field }) => (
+                                  <Select
+                                    disabled={!isEditing}
+                                    value={field.value || "NONE"}
+                                    onValueChange={(val) => field.onChange(val === "NONE" ? "" : val)}
+                                  >
+                                    <SelectTrigger className={cn("font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase", !field.value && "text-muted-foreground")}>
+                                      <SelectValue placeholder="Select Suffix" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="NONE" className="uppercase font-bold">None</SelectItem>
+                                      <SelectItem value="JR." className="uppercase font-bold">JR.</SelectItem>
+                                      <SelectItem value="SR." className="uppercase font-bold">SR.</SelectItem>
+                                      <SelectItem value="I" className="uppercase font-bold">I</SelectItem>
+                                      <SelectItem value="II" className="uppercase font-bold">II</SelectItem>
+                                      <SelectItem value="III" className="uppercase font-bold">III</SelectItem>
+                                      <SelectItem value="IV" className="uppercase font-bold">IV</SelectItem>
+                                      <SelectItem value="V" className="uppercase font-bold">V</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
                           </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground">Sex <span className="text-destructive">*</span></Label>
                             <Controller
                               name="sex"
@@ -1283,9 +1332,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 </div>
                               )}
                             />
+                            <AnimatedError error={errors.sex?.message as string} />
                           </div>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground">Date of Birth <span className="text-destructive">*</span></Label>
                             <Controller
                               name="birthdate"
@@ -1304,7 +1354,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
                           </div>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground flex items-center gap-1 h-6">
                               <Smartphone className="size-3" />
                               Mobile Number <span className="text-destructive">*</span>
@@ -1336,7 +1386,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                           </div>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground flex items-center h-6">IP Community / Ethnic Group</Label>
                             <Controller
                               name="indigenousCommunity"
@@ -1345,14 +1395,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 <SearchableCombobox
                                   items={IP_COMMUNITY_OPTIONS}
                                   value={field.value || "NOT APPLICABLE"}
-                                  onChange={(value) => field.onChange(value)}
+                                  onChange={(value) => field.onChange(value || "NOT APPLICABLE")}
                                   disabled={!isEditing}
                                   placeholder="Select ethnic group (e.g., Aeta, Mangyan)"
                                   searchPlaceholder="Search communities..."
-                                  className="w-full font-bold text-base leading-tight uppercase"
+                                  className={cn(
+                                    "w-full font-bold text-base leading-tight uppercase",
+                                    errors.indigenousCommunity && "border-destructive focus-visible:ring-destructive"
+                                  )}
                                 />
                               )}
                             />
+                            <AnimatedError error={errors.indigenousCommunity?.message as string} />
                           </div>
                         </div>
                       </div>
@@ -1368,7 +1422,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
                       <div className="px-5 pb-5 pt-4 space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground">
                               DepEd Employee ID {!isTemporaryPersonnel && <span className="text-destructive">*</span>}
                             </Label>
@@ -1397,7 +1451,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             )}
                           </div>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 min-h-[6rem]">
                             <Label className="text-base font-bold uppercase text-foreground">DepEd Position (Plantilla) <span className="text-destructive">*</span></Label>
                             <Controller
                               name="plantillaPosition"
@@ -1420,7 +1474,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         {formPersonnelType === "TEACHING" && (
                           <div className="grid gap-4 mt-4 pt-4 border-t border-border">
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Subject Area / Major</Label>
                               <Controller
                                 name="departments"
@@ -1461,7 +1515,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <div className="space-y-4">
                               <div className="mb-6 rounded-lg border border-border bg-muted/10 p-3">
                                 <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr] lg:items-end">
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1.5 min-h-[6rem]">
                                     <Label className="text-sm font-bold uppercase text-foreground">Bachelor Degree <span className="text-destructive">*</span></Label>
                                     <Controller
                                       name="undergraduateDegree"
@@ -1483,7 +1537,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     />
                                     <AnimatedError error={errors.undergraduateDegree?.message as string} />
                                   </div>
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1.5 min-h-[6rem]">
                                     <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization <span className="text-destructive">*</span></Label>
                                     <Controller
                                       name="bachelorMajor"
@@ -1504,7 +1558,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     />
                                     <AnimatedError error={errors.bachelorMajor?.message as string} />
                                   </div>
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1.5 min-h-[6rem]">
                                     <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
                                     <Controller
                                       name="bachelorMinor"
@@ -1527,7 +1581,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 {postgraduateFields.map((postgraduateField, index) => (
                                   <div key={postgraduateField.id} className="rounded-lg border border-border bg-muted/10 p-3">
                                     <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                                      <div className="space-y-1.5">
+                                      <div className="space-y-1.5 min-h-[6rem]">
                                         <Label className="text-sm font-bold uppercase text-foreground">Postgraduate Degree</Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.degree`}
@@ -1540,12 +1594,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                               disabled={!isEditing}
                                               placeholder="Select postgraduate degree"
                                               searchPlaceholder="Search degrees..."
-                                              className="h-10 w-full bg-background text-base font-bold leading-tight text-foreground border-border"
+                                              className={cn("h-10 w-full bg-background text-base font-bold leading-tight text-foreground border-border", errors.postgraduateDegrees?.[index]?.degree && "border-destructive focus-visible:ring-destructive")}
                                             />
                                           )}
                                         />
+                                        <AnimatedError error={errors.postgraduateDegrees?.[index]?.degree?.message as string} />
                                       </div>
-                                      <div className="space-y-1.5">
+                                      <div className="space-y-1.5 min-h-[6rem]">
                                         <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization</Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.major`}
@@ -1557,12 +1612,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                               disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
                                               onChange={(event) => field.onChange(event.target.value.toUpperCase())}
                                               placeholder="e.g. EDUCATIONAL MANAGEMENT"
-                                              className="h-10 bg-background text-base font-bold uppercase"
+                                              className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.major && "border-destructive")}
                                             />
                                           )}
                                         />
+                                        <AnimatedError error={errors.postgraduateDegrees?.[index]?.major?.message as string} />
                                       </div>
-                                      <div className="space-y-1.5">
+                                      <div className="space-y-1.5 min-h-[6rem]">
                                         <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.minor`}
@@ -1574,10 +1630,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                               disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
                                               onChange={(event) => field.onChange(event.target.value.toUpperCase())}
                                               placeholder="e.g. CURRICULUM STUDIES"
-                                              className="h-10 bg-background text-base font-bold uppercase"
+                                              className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.minor && "border-destructive")}
                                             />
                                           )}
                                         />
+                                        <AnimatedError error={errors.postgraduateDegrees?.[index]?.minor?.message as string} />
                                       </div>
                                       {index > 0 && isEditing && (
                                         <Button
@@ -1607,60 +1664,60 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 )}
                               </div>
                               <div className="grid gap-4 sm:grid-cols-2">
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment <span className="text-destructive">*</span></Label>
-                                <Controller
-                                  name="natureOfAppointment"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Select
-                                      onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
-                                      value={field.value ?? undefined}
-                                    >
-                                      <SelectTrigger disabled={!isEditing} className={cn("font-bold text-base leading-tight h-10 uppercase", errors.natureOfAppointment && "border-destructive focus-visible:ring-destructive")}>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
-                                          <SelectItem key={option.value} value={option.value} className="uppercase">
-                                            {option.label}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                />
-                                <AnimatedError error={errors.natureOfAppointment?.message as string} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-base font-bold uppercase text-foreground">Fund Source <span className="text-destructive">*</span></Label>
-                                <Controller
-                                  name="fundingSource"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Select
-                                      onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
-                                      value={field.value ?? undefined}
-                                    >
-                                      <SelectTrigger disabled={!isEditing} className={cn("font-bold text-base leading-tight h-10 uppercase", errors.fundingSource && "border-destructive focus-visible:ring-destructive")}>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
-                                          <SelectItem key={option.value} value={option.value} className="uppercase">
-                                            {option.label}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                />
-                                <AnimatedError error={errors.fundingSource?.message as string} />
-                              </div>
+                                <div className="space-y-1.5 min-h-[6rem]">
+                                  <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment <span className="text-destructive">*</span></Label>
+                                  <Controller
+                                    name="natureOfAppointment"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
+                                        value={field.value ?? undefined}
+                                      >
+                                        <SelectTrigger disabled={!isEditing} className={cn("font-bold text-base leading-tight h-10 uppercase", errors.natureOfAppointment && "border-destructive focus-visible:ring-destructive")}>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value} className="uppercase">
+                                              {option.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                  <AnimatedError error={errors.natureOfAppointment?.message as string} />
+                                </div>
+                                <div className="space-y-1.5 min-h-[6rem]">
+                                  <Label className="text-base font-bold uppercase text-foreground">Fund Source <span className="text-destructive">*</span></Label>
+                                  <Controller
+                                    name="fundingSource"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
+                                        value={field.value ?? undefined}
+                                      >
+                                        <SelectTrigger disabled={!isEditing} className={cn("font-bold text-base leading-tight h-10 uppercase", errors.fundingSource && "border-destructive focus-visible:ring-destructive")}>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value} className="uppercase">
+                                              {option.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                  <AnimatedError error={errors.fundingSource?.message as string} />
+                                </div>
                               </div>
                             </div>
 
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Ancillary Roles</Label>
                               <Controller
                                 name="ancillaryRoles"
@@ -1685,7 +1742,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         <div className="space-y-4 pt-4 border-t border-border mt-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Service Status</Label>
                               <Controller
                                 name="serviceStatus"
@@ -1707,7 +1764,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               />
                             </div>
                             {formServiceStatus !== "ACTIVE" && (
-                              <div className="space-y-1.5">
+                              <div className="space-y-1.5 min-h-[6rem]">
                                 <Label className="text-base font-bold uppercase text-foreground">Date Started</Label>
                                 <Controller
                                   name="serviceEffectiveDate"
@@ -1724,7 +1781,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             )}
                           </div>
                           {formServiceStatus !== "ACTIVE" && (
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Notes for this status <span className="text-foreground font-bold ml-1">(optional)</span></Label>
                               <Controller
                                 name="serviceRemarks"
@@ -1875,12 +1932,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
               {/* ─── Footer ─── */}
               {(isEditing || isAdding) && (
-                <div className="p-4 bg-background border-t flex gap-3 shrink-0">
+                <div className="p-4 bg-background border-t grid grid-cols-2 gap-4 shrink-0">
                   {!isAdding && (
                     <Button
                       type="button"
                       variant="ghost"
-                      className="font-bold uppercase"
+                      className="font-bold uppercase w-full"
                       onClick={() => {
                         discardProfileChanges();
                         setIsEditing(false);
@@ -1893,7 +1950,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <Button
                     type="submit"
                     className={cn(
-                      "flex-1 font-bold uppercase transition-all duration-200",
+                      "font-bold uppercase transition-all duration-200 w-full",
+                      isAdding ? "col-span-2" : "",
                       !hasUnsavedChanges ? "opacity-50 bg-gray-400 cursor-not-allowed text-primary-foreground hover:bg-gray-400" : ""
                     )}
                     disabled={!hasUnsavedChanges || isSubmitting}

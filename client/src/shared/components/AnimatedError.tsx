@@ -13,18 +13,18 @@ export function AnimatedError({ error, className }: AnimatedErrorProps) {
       {error && (
         <motion.div
           initial={{ opacity: 0, height: 0, marginTop: 0 }}
-          animate={{ opacity: 1, height: "auto", marginTop: 4 }}
+          animate={{ opacity: 1, height: "auto", marginTop: 6 }}
           exit={{ opacity: 0, height: 0, marginTop: 0 }}
           transition={{ duration: 0.2, ease: "easeInOut" }}
           className="overflow-hidden animated-error"
         >
           <p
             className={cn(
-              "text-sm text-destructive font-bold flex items-center gap-1",
+              "text-xs text-destructive flex items-start gap-1 leading-tight",
               className
             )}
           >
-            <AlertCircle className="w-3 h-3 shrink-0" />
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
             <span>{error}</span>
           </p>
         </motion.div>

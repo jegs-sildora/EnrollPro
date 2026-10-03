@@ -152,7 +152,7 @@ export const teacherSchemaBase = z
           if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
           return value;
         },
-        z.union([teacherJhsSpecializationSchema, z.null()])
+        z.union([optionalUpperText, z.null()])
       )
       .optional(),
     minorSpecialization: z
@@ -162,7 +162,7 @@ export const teacherSchemaBase = z
           if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
           return value;
         },
-        teacherJhsMinorSpecializationSchema
+        optionalUpperText
       )
       .optional(),
     indigenousCommunity: z.enum(IP_COMMUNITY_VALUES).optional().nullable().default("NOT APPLICABLE"),

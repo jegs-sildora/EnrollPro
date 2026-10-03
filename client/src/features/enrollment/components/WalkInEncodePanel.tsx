@@ -41,6 +41,7 @@ import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, A
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
+import { LearnerFoundModal } from "@/features/admission/components/LearnerFoundModal";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
 import { useAuthStore } from "@/store/auth.slice";
@@ -177,6 +178,8 @@ export function WalkInEncodePanel() {
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isLearnerModalOpen, setIsLearnerModalOpen] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState<LearnerLookupResponse | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
   const lastLookedUpLrn = useRef<string>("");
@@ -378,73 +381,8 @@ export function WalkInEncodePanel() {
     try {
       const res = await api.get<LearnerLookupResponse>(`/learner/lookup?lrn=${lrn}`);
       const data = res.data;
-
-      const updateOptions = { shouldDirty: true, shouldValidate: true } as const;
-      const currentAddress = data.addresses?.find((address) => address.addressType === "CURRENT")
-        ?? data.addresses?.[0];
-      const permanentAddress = data.addresses?.find((address) => address.addressType === "PERMANENT");
-      const primaryContact = data.familyMembers?.find((member) => member.relationship === "GUARDIAN")
-        ?? data.familyMembers?.find((member) => member.relationship === "MOTHER")
-        ?? data.familyMembers?.find((member) => member.relationship === "FATHER");
-      const incomingGrade = activeSchoolYear?.gradeLevels?.find(
-        (gradeLevel) => gradeLevel.name.trim().toUpperCase() === data.gradeLevelToEnroll?.trim().toUpperCase(),
-      );
-      const lookupProgram = isWalkInProgram(data.assignedProgram)
-        && programOptions.some((program) => program.val === data.assignedProgram)
-        ? data.assignedProgram
-        : "REGULAR";
-      const eligibilityStatus = data.academicStatus ?? data.promotionStatus;
-
-      form.setValue("firstName", data.firstName.trim(), updateOptions);
-      form.setValue("lastName", data.lastName.trim(), updateOptions);
-      form.setValue("middleName", data.middleName?.trim() ?? "", updateOptions);
-      form.setValue("extensionName", data.extensionName?.trim() ?? "", updateOptions);
-      form.setValue("birthdate", data.birthdate?.slice(0, 10) ?? "", updateOptions);
-      if (data.sex) form.setValue("sex", data.sex, updateOptions);
-      form.setValue("motherTongue", data.motherTongue?.trim() ?? "", updateOptions);
-      form.setValue("studentPhoto", data.studentPhoto ?? "", updateOptions);
-
-      form.setValue("addressStreet", currentAddress?.houseNoStreet?.trim() || currentAddress?.street?.trim() || "", updateOptions);
-      form.setValue("addressSitio", currentAddress?.sitio?.trim() ?? "", updateOptions);
-      form.setValue("addressRegion", currentAddress?.region?.trim() ?? "", updateOptions);
-      form.setValue("addressProvince", currentAddress?.province?.trim() ?? "", updateOptions);
-      form.setValue("addressCity", currentAddress?.cityMunicipality?.trim() ?? "", updateOptions);
-      form.setValue("addressBarangay", currentAddress?.barangay?.trim() ?? "", updateOptions);
-      form.setValue(
-        "permanentAddressSameAsCurrent",
-        Boolean(currentAddress && (!permanentAddress || addressesMatch(currentAddress, permanentAddress))),
-        updateOptions,
-      );
-
-      if (!assignedGradeLevelId && incomingGrade) {
-        form.setValue("gradeLevelId", incomingGrade.id, updateOptions);
-      }
-      form.setValue("assignedProgram", lookupProgram, updateOptions);
-
-      form.setValue("previousSchoolName", data.previousSchool?.schoolName?.trim() ?? "", updateOptions);
-      form.setValue("lastGradeCompleted", data.previousSchool?.lastGradeCompleted?.trim() ?? "", updateOptions);
-      form.setValue("originatingSchoolId", data.previousSchool?.schoolId?.trim() ?? "", updateOptions);
-      form.setValue(
-        "previousGenAve",
-        data.previousSchool?.generalAverage ?? data.previousGenAve ?? undefined,
-        updateOptions,
-      );
-
-      form.setValue("guardianFirstName", primaryContact?.firstName.trim() ?? "", updateOptions);
-      form.setValue("guardianMiddleName", primaryContact?.middleName?.trim() ?? "", updateOptions);
-      form.setValue("guardianLastName", primaryContact?.lastName.trim() ?? "", updateOptions);
-      form.setValue("guardianContact", primaryContact?.contactNumber?.trim() ?? "", updateOptions);
-      if (primaryContact) {
-        form.setValue("guardianRelationship", primaryContact.relationship, updateOptions);
-      }
-
-      form.setValue("hasPsa", data.hasPsaBirthCertificate ?? false, updateOptions);
-      form.setValue("hasSf9", data.isMissingSf9 === false, updateOptions);
-      if (eligibilityStatus) {
-        form.setValue("sf9EligibilityStatus", eligibilityStatus, updateOptions);
-      }
-
-      sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
+      setPendingProfile(res.data);
+      setIsLearnerModalOpen(true);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.status === 404) {
         const currentLearnerType = form.getValues("learnerType");
@@ -551,6 +489,78 @@ export function WalkInEncodePanel() {
     }
   };
 
+  const applyPendingProfile = useCallback(() => {
+    if (!pendingProfile) return;
+    const data = pendingProfile;
+    const updateOptions = { shouldDirty: true, shouldValidate: true } as const;
+
+    const currentAddress = data.addresses?.find((address) => address.addressType === "CURRENT")
+      ?? data.addresses?.[0];
+    const permanentAddress = data.addresses?.find((address) => address.addressType === "PERMANENT");
+    const primaryContact = data.familyMembers?.find((member) => member.relationship === "GUARDIAN")
+      ?? data.familyMembers?.find((member) => member.relationship === "MOTHER")
+      ?? data.familyMembers?.find((member) => member.relationship === "FATHER");
+    const incomingGrade = activeSchoolYear?.gradeLevels?.find(
+      (gradeLevel) => gradeLevel.name.trim().toUpperCase() === data.gradeLevelToEnroll?.trim().toUpperCase(),
+    );
+    const lookupProgram = isWalkInProgram(data.assignedProgram)
+      && programOptions.some((program) => program.val === data.assignedProgram)
+      ? data.assignedProgram
+      : "REGULAR";
+    const eligibilityStatus = data.academicStatus ?? data.promotionStatus;
+
+    form.setValue("firstName", data.firstName.trim(), updateOptions);
+    form.setValue("lastName", data.lastName.trim(), updateOptions);
+    form.setValue("middleName", data.middleName?.trim() ?? "", updateOptions);
+    form.setValue("extensionName", data.extensionName?.trim() ?? "", updateOptions);
+    form.setValue("birthdate", data.birthdate?.slice(0, 10) ?? "", updateOptions);
+    if (data.sex) form.setValue("sex", data.sex, updateOptions);
+    form.setValue("motherTongue", data.motherTongue?.trim() ?? "", updateOptions);
+    form.setValue("studentPhoto", data.studentPhoto ?? "", updateOptions);
+
+    form.setValue("addressStreet", currentAddress?.houseNoStreet?.trim() || currentAddress?.street?.trim() || "", updateOptions);
+    form.setValue("addressSitio", currentAddress?.sitio?.trim() ?? "", updateOptions);
+    form.setValue("addressRegion", currentAddress?.region?.trim() ?? "", updateOptions);
+    form.setValue("addressProvince", currentAddress?.province?.trim() ?? "", updateOptions);
+    form.setValue("addressCity", currentAddress?.cityMunicipality?.trim() ?? "", updateOptions);
+    form.setValue("addressBarangay", currentAddress?.barangay?.trim() ?? "", updateOptions);
+    form.setValue(
+      "permanentAddressSameAsCurrent",
+      Boolean(currentAddress && (!permanentAddress || addressesMatch(currentAddress, permanentAddress))),
+      updateOptions,
+    );
+
+    if (!assignedGradeLevelId && incomingGrade) {
+      form.setValue("gradeLevelId", incomingGrade.id, updateOptions);
+    }
+    form.setValue("assignedProgram", lookupProgram, updateOptions);
+
+    form.setValue("previousSchoolName", data.previousSchool?.schoolName?.trim() ?? "", updateOptions);
+    form.setValue("lastGradeCompleted", data.previousSchool?.lastGradeCompleted?.trim() ?? "", updateOptions);
+    form.setValue("originatingSchoolId", data.previousSchool?.schoolId?.trim() ?? "", updateOptions);
+    form.setValue(
+      "previousGenAve",
+      data.previousSchool?.generalAverage ?? data.previousGenAve ?? undefined,
+      updateOptions,
+    );
+
+    form.setValue("guardianFirstName", primaryContact?.firstName.trim() ?? "", updateOptions);
+    form.setValue("guardianMiddleName", primaryContact?.middleName?.trim() ?? "", updateOptions);
+    form.setValue("guardianLastName", primaryContact?.lastName.trim() ?? "", updateOptions);
+    form.setValue("guardianContact", primaryContact?.contactNumber?.trim() ?? "", updateOptions);
+    if (primaryContact) {
+      form.setValue("guardianRelationship", primaryContact.relationship, updateOptions);
+    }
+
+    form.setValue("hasPsa", data.hasPsaBirthCertificate ?? false, updateOptions);
+    form.setValue("hasSf9", data.isMissingSf9 === false, updateOptions);
+    if (eligibilityStatus) {
+      form.setValue("sf9EligibilityStatus", eligibilityStatus, updateOptions);
+    }
+
+    sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
+  }, [pendingProfile, form, activeSchoolYear, assignedGradeLevelId, programOptions]);
+
   // The encoder is intentionally non-dismissible through outside clicks or Escape.
   // Closing is handled only through explicit Cancel, close, discard, or successful save.
   const handleOpenChange = (newOpen: boolean) => {
@@ -574,6 +584,8 @@ export function WalkInEncodePanel() {
         </Button>
       </DialogTrigger>
       <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
         aria-describedby={undefined}
         className="p-0 flex flex-col h-[90vh] overflow-visible w-[95vw] sm:w-full max-w-none transition-[width] duration-75 ease-linear"
         style={
@@ -1721,6 +1733,23 @@ export function WalkInEncodePanel() {
           </Form>
         </div>
       </DialogContent>
+
+      <LearnerFoundModal
+        isOpen={isLearnerModalOpen}
+        onOpenChange={setIsLearnerModalOpen}
+        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        lrn={form.getValues("lrn") || ""}
+        onProceed={() => {
+          setIsLearnerModalOpen(false);
+          applyPendingProfile();
+          setPendingProfile(null);
+        }}
+        onCancel={() => {
+          setIsLearnerModalOpen(false);
+          setPendingProfile(null);
+          form.setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+        }}
+      />
     </Dialog>
   );
 }

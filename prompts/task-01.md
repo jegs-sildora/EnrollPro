@@ -1,31 +1,35 @@
-# System Prompt: Refactor Early Registration Masterlist Data Flow & UI States
+# Technical Specification: Global Input Validation UI/UX Architecture
 
 **Role:** Senior React/Next.js UI Engineer & DepEd JHS Domain Expert
 
 ## Context
-We have a critical domain logic error in the "Early Registration Masterlist" component (`image_9d2d18.jpg`). Currently, the list behaves like a disappearing task queue—when a registrar clicks "Review Form" and officially enrolls the learner, the record is deducted/removed from the masterlist view. 
+Following the UX review of the Personnel Profile module, we are standardizing the input validation UI across the entire "EnrollPro" platform. The current implementation suffers from layout shifting (grid breaking), reduced contrast due to background tints, and overly aggressive error styling (red labels). 
 
-**Domain Insight:** In DepEd public schools, an Early Registration list is a permanent headcount ledger. Registrars use this list months later to track enrollment conversion (i.e., identifying early registrants who failed to show up for official enrollment). Removing processed learners destroys this historical data.
+This document serves as the comprehensive implementation plan for developers to build a stable, accessible, and user-friendly validation system for all input fields (Text, Select/Dropdowns, Date Pickers, and Checkboxes).
 
-## Task
-Refactor the Masterlist UI to utilize a status-driven data flow rather than a deletion/deduction model. The learner must remain on the list permanently, but their UI state must visually communicate that they have been processed.
+## Phase 1: Reusable Component Architecture
+To ensure absolute consistency and prevent developers from manually styling error states on every page, we must create a centralized wrapper component (e.g., `FormField.tsx` or `ValidatedInput.tsx`).
 
-## Design & Logic Constraints (CRITICAL)
+### 1. Layout Stability (The Anti-Shift Grid)
+*   **Implementation:** Wrap every input and its associated error message in a container with a fixed minimum height (e.g., `min-h-[5.5rem]`) or use absolute positioning for the error text container.
+*   **Outcome:** When the error message appears, it fills the pre-allocated empty space below the input rather than pushing the surrounding elements down. This keeps multi-column grids (like the Bachelor Degree / Major / Minor row) perfectly aligned.
 
-### 1. Introduce Tabbed Filtering
-To prevent the main view from becoming cluttered with processed records, implement a tabbed navigation structure below the main "INCOMING GRADE 7" header.
-*   **Tabs:** "Pending Review" (Default Active), "Officially Enrolled", "Cancelled/No Show", and "All Registrants".
-*   **Logic:** The system should filter the displayed table rows based on the selected tab without mutating the underlying dataset.
+### 2. Styling Rules (Tailwind CSS)
+Enforce strict separation between the label, the input border, and the error text.
+*   **Labels:** Must strictly remain a neutral dark gray (e.g., `text-slate-700 font-medium`), even when the field is in an error state. Do not turn labels red.
+*   **Input Backgrounds:** Must strictly remain solid white (`bg-white`). Do not use pink or red background tints, as they muddy the placeholder text and violate contrast accessibility standards.
+*   **Input Borders (Error State):** Apply a crisp red border and ring only when invalid (`border-red-500 focus:ring-red-500 focus:border-red-500`).
+*   **Error Message Text:** Use a small, highly legible red text (`text-red-600 text-xs mt-1.5`) paired with a small SVG alert icon to ensure colorblind accessibility.
 
-### 2. Implement Status Badges
-Inject a new "Status" column into the data table, or append a status badge directly beneath the "LEARNER NAME & LRN" column.
-*   **Pending:** `<Badge variant="warning">Pending Enrollment</Badge>`
-*   **Processed:** `<Badge variant="success">Officially Enrolled</Badge>`
+## Phase 2: Validation Logic Integration (React Hook Form + Zod)
+Manage form state and validation schemas centrally so the UI components only have to react to passed-down error strings.
 
-### 3. Action Button State Mutation
-The primary action button must react to the learner's current enrollment status to prevent double-processing.
-*   **If Status === 'Pending':** Render the primary maroon button as "Review Form" (Current state).
-*   **If Status === 'Officially Enrolled':** Change the button to a secondary/outline variant (e.g., `<Button variant="outline">`) and change the label to "View Learner Profile". The route should now point to their official enrollment record, not the early registration review panel.
-
-## Output Requirement
-Provide the updated React component code for the Masterlist. Focus specifically on implementing the state-driven row rendering, the tabbed filter logic, and the conditional rendering of the action buttons based on the learner's status. Use existing design system components (`<Tabs>`, `<Badge>`, `<Button>`).
+### 1. Schema Definition
+Define the validation schema (e.g., using Zod) mirroring the layman's terms established for DepEd personnel.
+```typescript
+// Example snippet of the central schema concept
+const personnelSchema = z.object({
+  firstName: z.string().min(1, "Please enter the name using only letters and spaces."),
+  depEdId: z.string().length(7, "Please enter a valid 7-digit DepEd Employee ID."),
+  // ... apply to all fields
+});

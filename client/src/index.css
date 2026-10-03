@@ -9,10 +9,6 @@
   /* other base styles */
 }
 
-div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus-visible, > button:focus, > button:focus-visible, > [role="combobox"]:focus, > [role="combobox"][aria-expanded="true"])>.animated-error {
-  opacity: 0 !important;
-  pointer-events: none;
-}
 
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
