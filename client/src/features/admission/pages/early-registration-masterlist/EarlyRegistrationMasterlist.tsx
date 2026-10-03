@@ -9,7 +9,7 @@ import { Search, FolderOpen, FileText, Eye } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelButtonStyles } from "@/shared/lib/utils";
 import { motion } from "motion/react";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
@@ -17,8 +17,10 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { EarlyRegistrationReviewModal } from "./EarlyRegistrationReviewModal";
+import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
 
 type Learner = {
+  id: number;
   firstName: string;
   lastName: string;
   middleName: string | null;
@@ -51,6 +53,7 @@ export default function EarlyRegistrationMasterlist() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([{ id: "applicant", desc: false }]);
   const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
+  const [viewingLearnerId, setViewingLearnerId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -121,18 +124,18 @@ export default function EarlyRegistrationMasterlist() {
                 {learner.lastName}, {learner.firstName}
                 {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
               </p>
-              <p className="text-sm font-bold text-muted-foreground mb-1.5">
+              <p className="text-sm text-foreground mb-1.5">
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
               <div>
                 {application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION" ? (
-                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200">Pending Enrollment</Badge>
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200 px-2 py-0">Pending Enrollment</Badge>
                 ) : application.status === "OFFICIALLY_ENROLLED" ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200">Officially Enrolled</Badge>
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200 px-2 py-0">Officially Enrolled</Badge>
                 ) : application.status === "WITHDRAWN" || application.status === "DROPPED" || application.status === "ARCHIVED_NO_SHOW" ? (
-                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200">{application.status.replace(/_/g, " ")}</Badge>
+                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>
                 ) : (
-                  <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 uppercase border border-slate-200">{application.status.replace(/_/g, " ")}</Badge>
+                  <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 uppercase border border-slate-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>
                 )}
               </div>
             </div>
@@ -173,14 +176,18 @@ export default function EarlyRegistrationMasterlist() {
             <Button
               variant="outline"
               size="sm"
-              className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+              className={cn(
+                "h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer",
+                application.gradeLevel?.name 
+                  ? getGradeLevelButtonStyles(application.gradeLevel.name)
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+              )}
               onClick={(e) => {
                 e.stopPropagation();
-                // We point to learner directory profile as instructed
-                window.location.href = `/school-records/learner-directory`;
+                setViewingLearnerId(application.learner.id);
               }}>
               <Eye className="w-4 h-4 mr-2" />
-              View Learner Profile
+              Profile
             </Button>
           );
         }
@@ -189,7 +196,12 @@ export default function EarlyRegistrationMasterlist() {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+            className={cn(
+              "h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer",
+              application.gradeLevel?.name
+                ? getGradeLevelButtonStyles(application.gradeLevel.name)
+                : "bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+            )}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedApplicationId(row.original.id);
@@ -345,6 +357,10 @@ export default function EarlyRegistrationMasterlist() {
         onRefreshData={() => {
           void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
         }}
+      />
+      <StudentDetailModal 
+        id={viewingLearnerId}
+        onClose={() => setViewingLearnerId(null)}
       />
     </div>
   );
