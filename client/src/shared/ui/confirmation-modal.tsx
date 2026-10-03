@@ -50,6 +50,7 @@ interface ConfirmationModalProps {
   align?: "left" | "center";
   className?: string;
   onCancel?: () => void;
+  preventOutsideClick?: boolean;
 }
 
 const variantStyles: Record<
@@ -115,6 +116,7 @@ export function ConfirmationModal({
   align = "center",
   className,
   onCancel,
+  preventOutsideClick = false,
 }: ConfirmationModalProps) {
   const { colorScheme, selectedAccentHsl } = useSettingsStore();
 
@@ -146,6 +148,11 @@ export function ConfirmationModal({
         <DialogPrimitive.Overlay className={cn("fixed inset-0 z-[9999] bg-black/72 backdrop-blur-[1px]", motionClassNames.overlay)} />
         <DialogPrimitive.Content
           aria-describedby={undefined}
+          onInteractOutside={(e) => {
+            if (preventOutsideClick) {
+              e.preventDefault();
+            }
+          }}
           className={cn(
             "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-sidebar p-8 shadow-2xl",
             motionClassNames.dialogContent,

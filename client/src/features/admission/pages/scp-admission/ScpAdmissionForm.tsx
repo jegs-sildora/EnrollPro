@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Calendar } from "@/shared/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { AlertCircle, ArrowLeft, Calendar as CalendarIcon, Camera, CheckCircle, Info, Loader2, Mars, Search, Venus, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Calendar as CalendarIcon, Camera, CheckCircle, Info, Loader2, Mars, Search, Trash2, Venus, X } from "lucide-react";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { LearnerFoundModal } from "@/features/admission/components/LearnerFoundModal";
 import api from "@/shared/api/axiosInstance";
 import { cn } from "@/shared/lib/utils";
 import type { z } from "zod";
@@ -60,6 +61,15 @@ interface LearnerProfileResponse {
   specialNeedsCategory?: ScpFormData["specialNeedsCategory"];
   disabilityTypes?: ScpFormData["disabilityTypes"];
   addresses?: LearnerProfileAddress[];
+  familyMembers?: {
+    relationship?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    middleName?: string | null;
+    contactNumber?: string | null;
+    occupation?: string | null;
+  }[];
+  hasAppliedForScpThisYear?: boolean;
   previousSchool?: {
     schoolName?: string | null;
     schoolId?: string | null;
@@ -205,7 +215,7 @@ export default function ScpAdmissionForm({
 
   const form = useForm<ScpFormData>({
     resolver: zodResolver(scpAdmissionSubmitSchema),
-    mode: "onChange",
+    mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: parsedSavedState ?? getEmptyValues(intakeChoice, initialProgram),
   });
@@ -236,20 +246,29 @@ export default function ScpAdmissionForm({
   const { errors, isSubmitting, isDirty } = form.formState;
   const [isValidatingLrn, setIsValidatingLrn] = useState(false);
   const [duplicateDetected, setDuplicateDetected] = useState(false);
+  const [learnerFound, setLearnerFound] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState<LearnerProfileResponse | null>(null);
+  const [isLearnerModalOpen, setIsLearnerModalOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [dateInput, setDateInput] = useState("");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [hasNoMiddleName, setHasNoMiddleName] = useState(false);
   const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
   const { confirmOrRun } = useUnsavedChangesPrompt();
   
   const discardScpDraft = useCallback(() => {
-    form.reset(getEmptyValues(intakeChoice, initialProgram) as ScpFormData);
+    form.reset(getEmptyValues(intakeChoice, undefined) as ScpFormData);
     if (!isStaffWalkIn) sessionStorage.removeItem(SCP_FORM_STATE_KEY);
     setValue("studentPhoto", "");
-  }, [form, initialProgram, intakeChoice, isStaffWalkIn, setValue]);
+  }, [form, intakeChoice, isStaffWalkIn, setValue]);
+
+  const handleStartOver = () => {
+    discardScpDraft();
+    setIsClearModalOpen(false);
+  };
 
   useUnsavedChanges({
     id: "scp-admission-form",
@@ -287,6 +306,92 @@ export default function ScpAdmissionForm({
     };
     reader.readAsDataURL(file);
   };
+
+  const applyPendingProfile = useCallback(() => {
+    if (!pendingProfile) return;
+    const profile = pendingProfile;
+    
+    setLearnerFound(true);
+    
+    // 1. Personal Info
+    if (profile.studentPhoto) setValue("studentPhoto", profile.studentPhoto, { shouldValidate: true, shouldDirty: true });
+    if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
+    if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
+    if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
+    if (profile.extensionName) setValue("extensionName", profile.extensionName, { shouldValidate: true, shouldDirty: true });
+    
+    if (profile.birthdate) {
+      const d = new Date(profile.birthdate);
+      if (!isNaN(d.getTime())) {
+        setValue("birthdate", format(d, "yyyy-MM-dd"), { shouldValidate: true, shouldDirty: true });
+        setDateInput(format(d, "MM/dd/yyyy"));
+        setCalendarMonth(d);
+      }
+    }
+    
+    if (profile.sex) {
+      setValue("sex", profile.sex, { shouldValidate: true, shouldDirty: true });
+    }
+
+    if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
+    if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
+    if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+    if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
+    if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
+    if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
+    if (profile.disabilityTypes?.length) setValue("disabilityTypes", profile.disabilityTypes, { shouldValidate: true, shouldDirty: true });
+    if (profile.is4PsBeneficiary !== undefined) setValue("is4PsBeneficiary", profile.is4PsBeneficiary, { shouldValidate: true, shouldDirty: true });
+    if (profile.householdId4Ps) setValue("householdId4Ps", profile.householdId4Ps, { shouldValidate: true, shouldDirty: true });
+    if (profile.hasPwdId !== undefined) setValue("hasPwdId", profile.hasPwdId, { shouldValidate: true, shouldDirty: true });
+    if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
+
+    const mapAddress = (addr: LearnerProfileAddress) => ({
+      houseNoStreet: addr.houseNoStreet || "",
+      sitio: addr.sitio || "",
+      region: addr.region || "",
+      province: addr.province || "",
+      cityMunicipality: addr.cityMunicipality || "",
+      barangay: addr.barangay || "",
+    });
+
+    // 2. Addresses
+    if (profile.addresses && profile.addresses.length > 0) {
+      const addresses = profile.addresses;
+      const current = addresses.find((address) => address.addressType === "CURRENT");
+      if (current) setValue("currentAddress", mapAddress(current), { shouldValidate: true, shouldDirty: true });
+
+      const permanent = addresses.find((address) => address.addressType === "PERMANENT");
+      if (permanent) setValue("permanentAddress", mapAddress(permanent), { shouldValidate: true, shouldDirty: true });
+    }
+
+    // 3. Family
+    if (profile.familyMembers && profile.familyMembers.length > 0) {
+      const mother = profile.familyMembers.find((m) => m.relationship === "MOTHER");
+      if (mother) {
+        setValue("mother.firstName", mother.firstName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("mother.lastName", mother.lastName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("mother.middleName", mother.middleName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("mother.contactNumber", mother.contactNumber || "", { shouldValidate: true, shouldDirty: true });
+        setValue("mother.occupation", mother.occupation || "", { shouldValidate: true, shouldDirty: true });
+      }
+
+      const father = profile.familyMembers.find((m) => m.relationship === "FATHER");
+      if (father) {
+        setValue("father.firstName", father.firstName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("father.lastName", father.lastName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("father.middleName", father.middleName || "", { shouldValidate: true, shouldDirty: true });
+        setValue("father.contactNumber", father.contactNumber || "", { shouldValidate: true, shouldDirty: true });
+        setValue("father.occupation", father.occupation || "", { shouldValidate: true, shouldDirty: true });
+      }
+    }
+
+    // 4. Previous School
+    if (profile.previousSchool) {
+      if (profile.previousSchool.schoolName) setValue("lastSchoolName", profile.previousSchool.schoolName, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [pendingProfile, setValue]);
 
   const handleDateTyping = (
     value: string,
@@ -329,16 +434,31 @@ export default function ScpAdmissionForm({
       // Keep the duplicate-check indicators synchronized with the LRN field.
       setIsValidatingLrn(false);
       setDuplicateDetected(false);
+      setLearnerFound(false);
       return;
     }
 
     setIsValidatingLrn(true);
     setDuplicateDetected(false);
-    api.get(`/applications/validate-lrn/${lrn}`)
+    setLearnerFound(false);
+    
+    api.get(`/applications/learner-profile/${lrn}`)
       .then((response) => {
-        if (active) setDuplicateDetected(response.data.isDuplicate);
+        if (active) {
+          const profile = response.data;
+          if (profile.hasAppliedForScpThisYear) {
+            setDuplicateDetected(true);
+          } else {
+            setPendingProfile(profile);
+            setIsLearnerModalOpen(true);
+          }
+        }
       })
-      .catch((error) => console.error("LRN validation error:", error))
+      .catch((error) => {
+        if (error.response?.status !== 404) {
+          console.error("LRN validation error:", error);
+        }
+      })
       .finally(() => {
         if (active) setIsValidatingLrn(false);
       });
@@ -346,7 +466,7 @@ export default function ScpAdmissionForm({
     return () => {
       active = false;
     };
-  }, [lrn, hasNoLrn]);
+  }, [lrn, hasNoLrn, setValue]);
 
   useEffect(() => {
     let active = true;
@@ -535,14 +655,49 @@ export default function ScpAdmissionForm({
 
       <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
         <CardContent className="p-6 md:p-10">
-          <div className="mb-8 pb-6 border-b border-border/50">
-            <h2 className="text-xl font-bold text-foreground leading-tight">
-              {isStaffWalkIn ? "Walk-in SCP Admission Form" : "Learner Admission Form"}
-            </h2>
-            <p className="text-base leading-tight text-foreground mt-0.5">
-              Please complete all required fields below.
-            </p>
+          <div className="mb-8 pb-6 border-b border-border/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground leading-tight">
+                {isStaffWalkIn ? "Walk-in SCP Admission Form" : "Learner Admission Form"}
+              </h2>
+              <p className="text-base leading-tight text-foreground mt-0.5">
+                Please complete all required fields below.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isDirty && !isStaffWalkIn && (
+                <div className="text-sm text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Draft Auto Saved
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:text-destructive transition-colors px-2"
+                onClick={() => setIsClearModalOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Clear Form
+              </Button>
+            </div>
           </div>
+
+          <ConfirmationModal
+            open={isClearModalOpen}
+            onOpenChange={setIsClearModalOpen}
+            title="Clear Entire Form?"
+            description="Are you sure you want to start over? This will permanently delete all the information you have entered so far."
+            variant="danger"
+            confirmText="Yes, Clear Form"
+            cancelText="Cancel"
+            onConfirm={handleStartOver}
+          />
 
           <Form {...form}>
             <form onSubmit={(event) => { event.preventDefault(); void handleAttemptSubmit(); }} className="space-y-16">
@@ -642,7 +797,9 @@ export default function ScpAdmissionForm({
                                 hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",
                                 fieldState.error || duplicateDetected
                                   ? "border-destructive focus-visible:ring-destructive"
-                                  : "border-primary/30 focus:border-primary",
+                                  : learnerFound
+                                    ? "border-green-500 focus:border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.1)] transition-all duration-300"
+                                    : "border-primary/30 focus:border-primary",
                               )}
                               onInput={(event) => {
                                 event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "");
@@ -656,6 +813,12 @@ export default function ScpAdmissionForm({
                     {duplicateDetected && (
                       <div className="bg-destructive/10 text-destructive text-sm font-bold p-3 rounded-lg flex items-center gap-2 justify-center">
                         This LRN already exists in our database. Admission application is a duplicate.
+                      </div>
+                    )}
+                    {learnerFound && !hasNoLrn && (
+                      <div className="bg-green-500/10 text-green-600 text-sm font-bold p-3 rounded-lg flex items-center gap-2 justify-center">
+                        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                        Learner record found. Auto-filling form...
                       </div>
                     )}
                     <p className="text-base text-foreground">
@@ -1203,6 +1366,30 @@ export default function ScpAdmissionForm({
         confirmText={isStaffWalkIn ? "Yes, Encode Application" : "Yes, Submit Application"}
         loading={isSubmitting}
         variant="primary"
+      />
+      <LearnerFoundModal
+        isOpen={isLearnerModalOpen}
+        onOpenChange={setIsLearnerModalOpen}
+        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        lrn={lrn || ""}
+        onProceed={() => {
+          setIsLearnerModalOpen(false);
+          applyPendingProfile();
+          setPendingProfile(null);
+          
+          // Wait for React to render the fields before scrolling
+          setTimeout(() => {
+            const personalInfoSection = document.getElementById("personal-information");
+            if (personalInfoSection) {
+              personalInfoSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }, 100);
+        }}
+        onCancel={() => {
+          setIsLearnerModalOpen(false);
+          setPendingProfile(null);
+          setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+        }}
       />
     </div>
   );

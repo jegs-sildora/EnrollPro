@@ -411,6 +411,7 @@ export async function getLearnerProfile(req: Request, res: Response) {
       // SCP Status
       scpAdmissionStatus,
       scpProgram,
+      hasAppliedForScpThisYear: admission?.schoolYearId === setting.activeSchoolYearId,
     });
   } catch (error) {
     console.error("Failed to fetch learner profile:", error);

@@ -130,7 +130,7 @@ export function ChangePasswordForm({
     formState: { errors, isDirty },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(schema),
-    mode: "onChange",
+    mode: "onTouched",
     defaultValues,
   });
 

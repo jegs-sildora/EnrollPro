@@ -41,6 +41,7 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { LearnerFoundModal } from "@/features/admission/components/LearnerFoundModal";
 
 interface LearnerProfileAddress {
   addressType: "CURRENT" | "PERMANENT";
@@ -53,6 +54,51 @@ interface LearnerProfileAddress {
   barangay?: string | null;
   country?: string | null;
   zipCode?: string | null;
+}
+
+interface LearnerProfileResponse {
+  studentPhoto?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleName?: string | null;
+  extensionName?: string | null;
+  birthdate?: string | null;
+  sex?: string;
+  placeOfBirth?: string | null;
+  religion?: string | null;
+  motherTongue?: string | null;
+  isIpCommunity?: boolean;
+  ipGroupName?: string | null;
+  is4PsBeneficiary?: boolean;
+  householdId4Ps?: string | null;
+  isLearnerWithDisability?: boolean;
+  hasPwdId?: boolean;
+  specialNeedsCategory?: "a1" | "a2";
+  disabilityTypes?: string[];
+  isBalikAral?: boolean;
+  lastYearEnrolled?: string | null;
+  psaBirthCertNumber?: string | null;
+  addresses?: LearnerProfileAddress[];
+  familyMembers?: {
+    relationship?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    middleName?: string | null;
+    contactNumber?: string | null;
+    email?: string | null;
+    occupation?: string | null;
+  }[];
+  hasAppliedForScpThisYear?: boolean;
+  previousSchool?: {
+    schoolName?: string | null;
+    schoolId?: string | null;
+    schoolAddress?: string | null;
+    schoolType?: string | null;
+    transferCertificateNo?: string | null;
+    generalAverage?: number | null;
+  } | null;
+  scpProgram?: string | null;
+  scpAdmissionStatus?: string | null;
 }
 
 const MOTHER_TONGUE_OPTIONS = [
@@ -150,6 +196,8 @@ export default function Step1Personal() {
   const [isValidatingLrn, setIsValidatingLrn] = useState(false);
   const [duplicateDetected, setDuplicateDetected] = useState(false);
   const [learnerFound, setLearnerFound] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState<LearnerProfileResponse | null>(null);
+  const [isLearnerModalOpen, setIsLearnerModalOpen] = useState(false);
 
   const birthdate = watch("birthdate");
   const studentPhoto = watch("studentPhoto");
@@ -183,6 +231,7 @@ export default function Step1Personal() {
       setValue("isValidatingLrn", false, { shouldDirty: false });
       setDuplicateDetected(false);
       setLearnerFound(false);
+      setPendingProfile(null);
       return;
     }
 
@@ -195,107 +244,17 @@ export default function Step1Personal() {
       .then((res) => {
         if (active) {
           const profile = res.data;
-          setLearnerFound(true);
-
-          // 1. Personal Info
-          if (profile.studentPhoto) setValue("studentPhoto", profile.studentPhoto, { shouldValidate: true, shouldDirty: true });
-          if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
-          if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
-          if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
-          if (profile.extensionName) setValue("extensionName", profile.extensionName, { shouldValidate: true, shouldDirty: true });
           
-          if (profile.birthdate) {
-            const d = new Date(profile.birthdate);
-            if (!isNaN(d.getTime())) {
-              setValue("birthdate", d, { shouldValidate: true, shouldDirty: true });
-            }
+          if (profile.hasAppliedForScpThisYear) {
+            // Note: For regular enrollment, this flag doesn't necessarily mean it's a duplicate.
+            // Wait, this is online-enrollment... it shouldn't block enrollment just because they applied for SCP.
+            // The existing logic doesn't use `duplicateDetected` based on `hasAppliedForScpThisYear`. 
+            // It actually checks later or on submit. But we will just show the modal for prefill.
           }
           
-          if (profile.sex) {
-            setValue("sex", profile.sex === "MALE" ? "Male" : "Female", { shouldValidate: true, shouldDirty: true });
-          }
-
-          if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
-          if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
-          if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
-          if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
-          if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
-          if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
-          if (profile.disabilityTypes?.length) setValue("disabilityTypes", profile.disabilityTypes, { shouldValidate: true, shouldDirty: true });
-          if (profile.is4PsBeneficiary !== undefined) setValue("is4PsBeneficiary", profile.is4PsBeneficiary, { shouldValidate: true, shouldDirty: true });
-          if (profile.householdId4Ps) setValue("householdId4Ps", profile.householdId4Ps, { shouldValidate: true, shouldDirty: true });
-          if (profile.hasPwdId !== undefined) setValue("hasPwdId", profile.hasPwdId, { shouldValidate: true, shouldDirty: true });
-          if (profile.isBalikAral !== undefined) setValue("isBalikAral", profile.isBalikAral, { shouldValidate: true, shouldDirty: true });
-          if (profile.lastYearEnrolled) setValue("lastYearEnrolled", profile.lastYearEnrolled, { shouldValidate: true, shouldDirty: true });
-          if (profile.psaBirthCertNumber) setValue("psaBirthCertNumber", profile.psaBirthCertNumber, { shouldValidate: true, shouldDirty: true });
-          if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
-
-          const mapAddress = (addr: LearnerProfileAddress) => ({
-            houseNo: addr.houseNoStreet || "",
-            // New admission records store Sitio/Purok in `sitio`. Keep the
-            // legacy `street` fallback so existing enrollment records still prefill.
-            street: addr.sitio || addr.street || "",
-            region: addr.region || "",
-            province: addr.province || "",
-            cityMunicipality: addr.cityMunicipality || "",
-            barangay: addr.barangay || "",
-            country: addr.country || "Philippines",
-            zipCode: addr.zipCode || "",
-          });
-
-          // 2. Addresses
-          if (profile.addresses?.length > 0) {
-            const addresses = profile.addresses as LearnerProfileAddress[];
-            const current = addresses.find((address) => address.addressType === "CURRENT");
-            if (current) setValue("currentAddress", mapAddress(current), { shouldValidate: true, shouldDirty: true });
-            
-            const permanent = addresses.find((address) => address.addressType === "PERMANENT");
-            if (permanent) setValue("permanentAddress", mapAddress(permanent), { shouldValidate: true, shouldDirty: true });
-          }
-
-          const mapFamily = (f: any) => ({
-            lastName: f.lastName || "",
-            firstName: f.firstName || "",
-            middleName: f.middleName || "",
-            contactNumber: f.contactNumber || "",
-            email: f.email || "",
-            occupation: f.occupation || "",
-          });
-
-          // 3. Family Members
-          if (profile.familyMembers?.length > 0) {
-            const mother = profile.familyMembers.find((f: any) => f.relationship === "MOTHER");
-            if (mother) setValue("mother", mapFamily(mother), { shouldValidate: true, shouldDirty: true });
-            
-            const father = profile.familyMembers.find((f: any) => f.relationship === "FATHER");
-            if (father) setValue("father", mapFamily(father), { shouldValidate: true, shouldDirty: true });
-            
-            const guardian = profile.familyMembers.find((f: any) => f.relationship === "GUARDIAN");
-            if (guardian) setValue("guardian", mapFamily(guardian), { shouldValidate: true, shouldDirty: true });
-          }
-
-          // 4. Previous School
-          if (profile.previousSchool) {
-            const mapSchoolType = (type: string | undefined | null) => {
-              if (!type) return undefined;
-              if (type === "PUBLIC") return "Public";
-              if (type === "PRIVATE") return "Private";
-              if (type === "INTERNATIONAL") return "International";
-              if (type === "ALS") return "ALS";
-              return type as any;
-            };
-
-            if (profile.previousSchool.schoolName) setValue("lastSchoolName", profile.previousSchool.schoolName, { shouldValidate: true, shouldDirty: true });
-            if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
-            if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
-            if (profile.previousSchool.schoolType) setValue("lastSchoolType", mapSchoolType(profile.previousSchool.schoolType), { shouldValidate: true, shouldDirty: true });
-            if (profile.previousSchool.transferCertificateNo) setValue("transferCertificateNo", profile.previousSchool.transferCertificateNo, { shouldValidate: true, shouldDirty: true });
-            if (profile.previousSchool.generalAverage) setValue("generalAverage", profile.previousSchool.generalAverage, { shouldValidate: true, shouldDirty: true });
-          }
-
-          // 5. SCP Validation
-          setValue("scpProgram", profile.scpProgram, { shouldValidate: true });
-          setValue("scpAdmissionStatus", profile.scpAdmissionStatus, { shouldValidate: true });
+          // Let's just set pending profile and open modal
+          setPendingProfile(profile);
+          setIsLearnerModalOpen(true);
         }
       })
       .catch((err) => {
@@ -411,6 +370,137 @@ export default function Step1Personal() {
       onChange(undefined);
     }
   };
+
+  const applyPendingProfile = useCallback(() => {
+    if (!pendingProfile) return;
+    const profile = pendingProfile;
+    
+    setLearnerFound(true);
+
+    // 1. Personal Info
+    if (profile.studentPhoto) setValue("studentPhoto", profile.studentPhoto, { shouldValidate: true, shouldDirty: true });
+    if (profile.firstName) setValue("firstName", profile.firstName, { shouldValidate: true, shouldDirty: true });
+    if (profile.lastName) setValue("lastName", profile.lastName, { shouldValidate: true, shouldDirty: true });
+    if (profile.middleName) setValue("middleName", profile.middleName, { shouldValidate: true, shouldDirty: true });
+    if (profile.extensionName) setValue("extensionName", profile.extensionName, { shouldValidate: true, shouldDirty: true });
+    
+    if (profile.birthdate) {
+      const d = new Date(profile.birthdate);
+      if (!isNaN(d.getTime())) {
+        setValue("birthdate", d, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+    
+    if (profile.sex) {
+      setValue("sex", profile.sex === "MALE" ? "Male" : "Female", { shouldValidate: true, shouldDirty: true });
+    }
+
+    if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
+    if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
+    if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+    if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
+    if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
+    if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
+    if (profile.disabilityTypes?.length) setValue("disabilityTypes", profile.disabilityTypes, { shouldValidate: true, shouldDirty: true });
+    if (profile.is4PsBeneficiary !== undefined) setValue("is4PsBeneficiary", profile.is4PsBeneficiary, { shouldValidate: true, shouldDirty: true });
+    if (profile.householdId4Ps) setValue("householdId4Ps", profile.householdId4Ps, { shouldValidate: true, shouldDirty: true });
+    if (profile.hasPwdId !== undefined) setValue("hasPwdId", profile.hasPwdId, { shouldValidate: true, shouldDirty: true });
+    if (profile.isBalikAral !== undefined) setValue("isBalikAral", profile.isBalikAral, { shouldValidate: true, shouldDirty: true });
+    if (profile.lastYearEnrolled) setValue("lastYearEnrolled", profile.lastYearEnrolled, { shouldValidate: true, shouldDirty: true });
+    if (profile.psaBirthCertNumber) setValue("psaBirthCertNumber", profile.psaBirthCertNumber, { shouldValidate: true, shouldDirty: true });
+    if (profile.specialNeedsCategory) setValue("specialNeedsCategory", profile.specialNeedsCategory, { shouldValidate: true, shouldDirty: true });
+
+    const mapAddress = (addr: LearnerProfileAddress) => ({
+      houseNo: addr.houseNoStreet || "",
+      // New admission records store Sitio/Purok in `sitio`. Keep the
+      // legacy `street` fallback so existing enrollment records still prefill.
+      street: addr.sitio || addr.street || "",
+      region: addr.region || "",
+      province: addr.province || "",
+      cityMunicipality: addr.cityMunicipality || "",
+      barangay: addr.barangay || "",
+      country: addr.country || "Philippines",
+      zipCode: addr.zipCode || "",
+    });
+
+    // 2. Addresses
+    if (profile.addresses && profile.addresses.length > 0) {
+      const addresses = profile.addresses;
+      const current = addresses.find((address) => address.addressType === "CURRENT");
+      if (current) setValue("currentAddress", mapAddress(current), { shouldValidate: true, shouldDirty: true });
+      
+      const permanent = addresses.find((address) => address.addressType === "PERMANENT");
+      if (permanent) setValue("permanentAddress", mapAddress(permanent), { shouldValidate: true, shouldDirty: true });
+    }
+
+    const mapFamily = (f: NonNullable<LearnerProfileResponse["familyMembers"]>[0]) => ({
+      lastName: f.lastName || "",
+      firstName: f.firstName || "",
+      middleName: f.middleName || "",
+      contactNumber: f.contactNumber || "",
+      email: f.email || "",
+      occupation: f.occupation || "",
+    });
+
+    // 3. Family Members
+    let primaryContactAssigned = false;
+
+    if (profile.familyMembers && profile.familyMembers.length > 0) {
+      const mother = profile.familyMembers.find((f: any) => f.relationship === "MOTHER");
+      if (mother) {
+        setValue("mother", mapFamily(mother), { shouldValidate: true, shouldDirty: true });
+        if (!primaryContactAssigned && mother.contactNumber) {
+          setValue("primaryContact", "MOTHER", { shouldValidate: true, shouldDirty: true });
+          setValue("contactNumber", mother.contactNumber, { shouldValidate: true, shouldDirty: true });
+          primaryContactAssigned = true;
+        }
+      }
+      
+      const father = profile.familyMembers.find((f: any) => f.relationship === "FATHER");
+      if (father) {
+        setValue("father", mapFamily(father), { shouldValidate: true, shouldDirty: true });
+        if (!primaryContactAssigned && father.contactNumber) {
+          setValue("primaryContact", "FATHER", { shouldValidate: true, shouldDirty: true });
+          setValue("contactNumber", father.contactNumber, { shouldValidate: true, shouldDirty: true });
+          primaryContactAssigned = true;
+        }
+      }
+      
+      const guardian = profile.familyMembers.find((f: any) => f.relationship === "GUARDIAN");
+      if (guardian) {
+        setValue("guardian", mapFamily(guardian), { shouldValidate: true, shouldDirty: true });
+        if (!primaryContactAssigned && guardian.contactNumber) {
+          setValue("primaryContact", "GUARDIAN", { shouldValidate: true, shouldDirty: true });
+          setValue("contactNumber", guardian.contactNumber, { shouldValidate: true, shouldDirty: true });
+          primaryContactAssigned = true;
+        }
+      }
+    }
+
+    // 4. Previous School
+    if (profile.previousSchool) {
+      const mapSchoolType = (type: string | undefined | null) => {
+        if (!type) return undefined;
+        if (type === "PUBLIC") return "Public";
+        if (type === "PRIVATE") return "Private";
+        if (type === "INTERNATIONAL") return "International";
+        if (type === "ALS") return "ALS";
+        return type as EnrollmentFormData["lastSchoolType"];
+      };
+
+      if (profile.previousSchool.schoolName) setValue("lastSchoolName", profile.previousSchool.schoolName, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
+      const schoolType = mapSchoolType(profile.previousSchool.schoolType);
+      if (schoolType) setValue("lastSchoolType", schoolType, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.transferCertificateNo) setValue("transferCertificateNo", profile.previousSchool.transferCertificateNo, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.generalAverage) setValue("generalAverage", profile.previousSchool.generalAverage, { shouldValidate: true, shouldDirty: true });
+    }
+
+    // 5. SCP Validation
+    setValue("scpProgram", profile.scpProgram, { shouldValidate: true });
+    setValue("scpAdmissionStatus", profile.scpAdmissionStatus, { shouldValidate: true });
+  }, [pendingProfile, setValue]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1221,6 +1311,23 @@ export default function Step1Personal() {
           )}
         </AnimatePresence>
       </div>
+
+      <LearnerFoundModal
+        isOpen={isLearnerModalOpen}
+        onOpenChange={setIsLearnerModalOpen}
+        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        lrn={lrn || ""}
+        onProceed={() => {
+          setIsLearnerModalOpen(false);
+          applyPendingProfile();
+          setPendingProfile(null);
+        }}
+        onCancel={() => {
+          setIsLearnerModalOpen(false);
+          setPendingProfile(null);
+          setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+        }}
+      />
     </div>
   );
 }

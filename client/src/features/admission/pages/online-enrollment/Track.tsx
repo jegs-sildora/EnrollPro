@@ -153,7 +153,7 @@ export default function TrackApplication({
     formState: { errors },
   } = useForm<TrackFormData>({
     resolver: zodResolver(trackSchema),
-    mode: "onChange",
+    mode: "onTouched",
     defaultValues: {
       trackingNumber: searchParams.get("trackingNumber") || "",
     },

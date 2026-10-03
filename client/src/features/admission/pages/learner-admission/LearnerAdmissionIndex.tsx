@@ -147,8 +147,9 @@ function ResultBadge({ result }: { result: AssessmentResult }) {
 
 function EnrollmentStatusBadge({ application }: { application: RankedApplication }) {
   const enrollment = application.enrollmentApplication
+  const hasSubmittedEnrollment = enrollment && enrollment.status !== "EARLY_REGISTRATION"
 
-  if (!enrollment) {
+  if (!hasSubmittedEnrollment) {
     if (application.finalResult !== "QUALIFIED") return null
 
     return (
@@ -820,7 +821,7 @@ export default function LearnerAdmissionIndex() {
         {isRosterLocked && (
           <Alert className="mb-4 bg-emerald-50 border-emerald-200 text-emerald-800">
             <Info className="h-4 w-4 text-emerald-600" />
-            <AlertTitle>OFFICIAL LIST OF QUALIFIED APPLICANTS</AlertTitle>
+            <AlertTitle className="font-extrabold">OFFICIAL LIST OF QUALIFIED APPLICANTS</AlertTitle>
             <AlertDescription className="text-sm">
               All {maxSlots || "N/A"} slots are filled and the list is now final. If a student backs out, use the row menu to forfeit their slot and automatically promote a waitlisted applicant.
             </AlertDescription>

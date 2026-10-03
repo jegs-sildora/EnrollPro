@@ -1,45 +1,33 @@
-# System Prompt: Implement RBAC-Driven Dynamic Sidebar Navigation
+# System Prompt: Implement LRN Verification Interception Modal
 
 **Role:** Senior React/Next.js UI Engineer & DepEd JHS Domain Expert
 
 ## Context
-We are refining the global navigation architecture for the "EnrollPro" platform. Currently, the sidebar exposes all system modules to every logged-in user, regardless of their position. As highlighted in the system mockups, a System Administrator sees highly sensitive modules like "System Administration" (Activity Logs, System Configuration) and "Personnel Directory"[cite: 28, 29]. Exposing these to regular Subject Teachers or Class Advisers creates severe UI clutter and violates data privacy principles. 
+We are refining the Learner Reference Number (LRN) validation UX on the SCP Admission Form and Basic Education Enrollment Form (`image_849d77.jpg`)[cite: 30]. Currently, when a valid 12-digit LRN is entered, the system relies on an inline green success alert ("Learner record found. Auto-filling form...") and instantly populates the fields below[cite: 30]. 
 
-Furthermore, the sidebar needs to be context-aware of the academic calendar, swapping between "Enrollment and Sectioning"[cite: 28, 29] and "End of School Year Processing" (EOSY) depending on the active school year phase.
+**Domain & UX Insight:** In public school admissions, parents or registrars might accidentally mistype a 12-digit LRN. If the system instantly auto-fills the page without a hard stop, the user might blindly scroll down and submit an application for the wrong learner. To prevent this data integrity issue, we need an interception modal that explicitly halts the user, announces the successful database match, and requires a conscious acknowledgment before revealing the populated data.
 
 ## Task
-Refactor the `Sidebar.tsx` component to act as an intelligent, RBAC-driven navigation hub. You must create a centralized navigation configuration matrix that dynamically filters and renders menu items based on the active user's roles and the current school year phase.
+Design and implement a React modal component (e.g., `LearnerFoundModal.tsx`) that triggers immediately after a successful LRN database lookup, replacing the passive inline alert flow.
 
-## Design & Logic Constraints (CRITICAL)
+## Design Constraints & Execution Steps (CRITICAL)
 
-### 1. The Navigation Configuration Matrix
-Define a robust TypeScript object/array (e.g., `NAVIGATION_ITEMS`) that maps every sidebar group and link to its allowed DepEd roles. 
+### 1. Modal Trigger Logic
+*   The modal must only trigger when the LRN lookup API returns a successful match.
+*   The underlying form fields (Personal Information) should remain locked, hidden, or in a skeleton-loading state until this modal is dismissed.
 
-**Required Role Mappings:**
-*   **System Administration Group:**
-    *   *Activity Logs & System Configuration:* Strictly limit to `System Admin`[cite: 28, 29]. 
-*   **Enrollment & Sectioning Group (Active during start of year):**
-    *   *Early Registration & Learner Enrollment:* Limit to `System Admin`, `Head Registrar`, and `Grade Level Coordinator (GLC)`[cite: 28].
-    *   *SCP Admission:* Limit to `System Admin`, `Head Registrar`, and `SCP Coordinators (STE, SPA, SPS)`[cite: 28].
-    *   *Section Assignment:* Limit to `System Admin`, `Head Registrar`, and `GLC`[cite: 28].
-*   **End of School Year (EOSY) Group (Active during year-end):**
-    *   *EOSY Updating:* Limit to `System Admin`, `Head Registrar`, and `GLC`.
-*   **Teaching & Advisory Group:**
-    *   *Advisory Class:* Strictly limit to users with the `Class Adviser` role.
-*   **School Records Group:**
-    *   *Learner Directory & Class Sections:* Accessible by `System Admin`, `School Head`, `Head Registrar`, `GLC`, `SCP Coordinator`[cite: 28].
-    *   *Personnel Directory:* Limit to `System Admin`, `School Head`, and `Head Registrar`[cite: 28].
-*   **Integrated Systems Group:**
-    *   *SMART (Grading):* Accessible by `Class Adviser` and `Subject Teacher`[cite: 28].
+### 2. Modal UI/UX Content
+Utilize our existing design system's `<Dialog>` or `<Modal>` wrapper. Do not generate custom CSS.
+*   **Iconography:** Use a prominent success icon (e.g., a green checkmark or badge) centered at the top of the modal.
+*   **Title:** "Learner Record Found"
+*   **Message Body:** Use clear, non-technical language. 
+    *   *Draft Copy:* "An existing school record was found for LRN **[Insert 12-digit LRN]**. To save you time and ensure data accuracy, the system will now automatically fill in the learner's personal information."
+*   **Learner Preview (Optional but Recommended):** Display the fetched learner's masked or full name (e.g., "Learner: SAMPLE, SAMPLE") so the user can immediately verify if it's the correct child[cite: 30].
 
-### 2. Handling Multiple Overlapping Roles
-In DepEd, a single faculty member often holds multiple designations (e.g., a Subject Teacher who is also a Grade 7 GLC and a Class Adviser). 
-*   The sidebar logic must **aggregate** permissions. If a user's role array includes `['TEACHER', 'GLC', 'CLASS_ADVISER']`, the filtering function must merge the allowed routes for all three roles, displaying a unified sidebar without duplicate links.
-
-### 3. Academic Phase Toggling
-*   The sidebar must read the `schoolYearPhase` from the global settings state.
-*   If the phase is `ENROLLMENT` or `CLASSES_ONGOING`, render the "Enrollment and Sectioning" group[cite: 28].
-*   If the phase is `EOSY_CLOSING`, hide the enrollment links and dynamically render the "End of School Year Processing" group.
+### 3. Action Button
+*   **Primary Action:** A full-width or prominent `<Button>` labeled **"Got it"** or **"Proceed"**.
+*   **Action Logic:** Clicking this button closes the modal, unlocks the form, executes the auto-fill animation/render, and smoothly scrolls the user down to the "Personal Information" section to review the data[cite: 30].
+*   **Secondary Action:** A subtle "Cancel" or "Wrong LRN?" text link that clears the input and lets them type the LRN again.
 
 ## Output Requirement
-Provide the complete TypeScript implementation for the RBAC-driven sidebar. Focus on the data structure of the `NAVIGATION_ITEMS` matrix and the exact filtering function used to derive the authorized menu items before mapping them to the UI. You do not need to generate the raw HTML/CSS for the sidebar itself, just the logic and configuration strategy ensuring strict domain compliance.
+Provide the complete TypeScript implementation for the `LearnerFoundModal.tsx` component and a brief snippet showing how to integrate its open/close state with the existing LRN input handler. Strictly utilize existing UI components (`<Dialog>`, `<Button>`, `<Typography>`) to maintain the established visual language.

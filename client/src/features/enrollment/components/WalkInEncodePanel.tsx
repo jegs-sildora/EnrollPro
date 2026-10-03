@@ -253,7 +253,7 @@ export function WalkInEncodePanel() {
 
   const form = useForm<DirectEncodeWalkInPayload>({
     resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
-    mode: "onChange",
+    mode: "onTouched",
     defaultValues: {
       learnerType: isTransfereeOnlyCoordinator ? "TRANSFEREE" : "NEW_ENROLLEE",
       lrn: "",
@@ -642,17 +642,28 @@ export function WalkInEncodePanel() {
                         <User className="h-4 w-4 text-primary" />
                         Learner Profile
                       </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={isSubmitting || isLookingUp}
-                        className="px-2 font-bold text-foreground hover:text-destructive"
-                        onClick={() => setIsClearModalOpen(true)}
-                      >
-                        <Trash2 className="mr-1.5 h-4 w-4" />
-                        Clear Form
-                      </Button>
+                      <div className="flex items-center gap-3">
+                        {isDirty && (
+                          <div className="text-sm normal-case font-medium text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            Draft Auto Saved
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isSubmitting || isLookingUp}
+                          className="px-2 font-bold text-foreground hover:text-destructive normal-case"
+                          onClick={() => setIsClearModalOpen(true)}
+                        >
+                          <Trash2 className="mr-1.5 h-4 w-4" />
+                          Clear Form
+                        </Button>
+                      </div>
                     </div>
                     <div className="px-5 pt-5 pb-1">
                       <div className={cn("grid gap-4 font-bold", isTransfereeOnlyCoordinator ? "grid-cols-1" : "grid-cols-3")}>
