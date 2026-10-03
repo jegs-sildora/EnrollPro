@@ -1008,7 +1008,7 @@ export function VerificationWorkspace() {
                                 <Icon className={cn("w-4 h-4 relative z-20 block sm:hidden", isNarrow && "sm:block")} />
                                 <span className={cn(
                                   "shrink-0 rounded-full bg-primary text-sm text-primary-foreground relative z-20 font-bold", 
-                                  isNarrow || isActive ? "ml-1.5 px-1.5 py-0.5" : "hidden sm:inline-flex ml-1 px-1.5 py-0.5",
+                                  isNarrow || isActive ? "ml-1.5 px-1.5 py-0.5 bg-background text-primary" : "hidden sm:inline-flex ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground",
                                   (!isNarrow && !isActive) && "hidden sm:inline-flex"
                                 )}>
                                   {m.value}
@@ -1129,7 +1129,7 @@ export function VerificationWorkspace() {
           {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
           <div
             className={cn(
-              "flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground relative",
+              "@container/verification flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground relative",
               "transition-[left,box-shadow] duration-300 ease-in-out",
               isDesktopViewport && "absolute inset-y-0 right-0",
               expandedPane === "RIGHT" ? "z-[60] shadow-2xl" : "z-0",
@@ -1191,17 +1191,17 @@ export function VerificationWorkspace() {
                       alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
                     />
                     <div className="flex min-w-0 flex-col">
-                      <div className="flex min-w-0 items-start gap-2">
-                        <h2 className="min-w-0 break-words text-2xl font-extrabold uppercase leading-none tracking-tight text-foreground">
-                          {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
-                        </h2>
+                      <h2 className="min-w-0 break-words text-2xl font-extrabold uppercase leading-none tracking-tight text-foreground">
+                        {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                         {selectedApp.learner.sex === "MALE" ? (
-                          <Badge variant="outline" className="border-blue-600 border-2 text-blue-600 bg-blue-600/10 font-bold text-base px-2 py-0">M</Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-pink-600 border-2 text-pink-600 bg-pink-600/10 font-bold text-base px-2 py-0">F</Badge>
+                          <Badge variant="outline" className="border-blue-600 border text-blue-600 bg-blue-600/5 font-bold px-1.5 py-0">M</Badge>
+                        ) : ( 
+                          <Badge variant="outline" className="border-pink-600 border text-pink-600 bg-pink-600/5 font-bold px-1.5 py-0">F</Badge>
                         )}
                       </div>
-                      <span className="font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                     </div>
                   </div>
                   
@@ -1649,17 +1649,17 @@ export function VerificationWorkspace() {
 
                 {/* Action Footer */}
                 {selectedApp.status === "WITHDRAWN" ? (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex flex-col-reverse @xl/verification:flex-row gap-4 w-full shrink-0">
                     <Button
                       variant="ghost"
-                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
+                      className="w-full @xl/verification:w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
                       onClick={() => setDeleteModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
                       Delete Application
                     </Button>
                     <Button
-                      className="w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-primary text-white"
+                      className="w-full @xl/verification:w-1/2 h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-primary text-white"
                       onClick={() => setRestoreModalOpen(true)}
                       disabled={processing || isHistoricalReadOnly}
                     >
@@ -1667,11 +1667,11 @@ export function VerificationWorkspace() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex flex-col-reverse @xl/verification:flex-row gap-4 w-full shrink-0">
                     {(selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION") && (
                       <Button
                         variant="ghost"
-                        className="h-14 w-[35%] text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
+                        className="h-14 w-full @xl/verification:w-[35%] text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
                         onClick={() => setCancelModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
@@ -1681,7 +1681,7 @@ export function VerificationWorkspace() {
                     {(selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED") && (
                       <Button
                         variant="ghost"
-                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/10 hover:text-primary border border-primary shrink-0", hasChecklistModifications ? "w-1/2" : "w-full")}
+                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/10 hover:text-primary border border-primary shrink-0", hasChecklistModifications ? "w-full @xl/verification:w-1/2" : "w-full")}
                         onClick={() => setRevertModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
@@ -1689,7 +1689,7 @@ export function VerificationWorkspace() {
                       </Button>
                     )}
                     {(selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" || hasChecklistModifications) && (
-                      <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-[65%]" : "w-1/2"}>
+                      <div className={selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "w-full @xl/verification:w-[65%]" : "w-full @xl/verification:w-1/2"}>
                         {!(sf9Verified && psaVerified) ? (
                           <Button
                             onClick={() => {

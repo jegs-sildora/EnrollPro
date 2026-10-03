@@ -1234,7 +1234,12 @@ export default function Teachers() {
                       />
                     )}
                     <span className="relative z-20 whitespace-normal text-center break-words leading-snug">{m.title}</span>
-                    <span className="ml-3 shrink-0 rounded-full bg-primary px-2 py-0.5 text-sm text-primary-foreground relative z-20">{m.value}</span>
+                    <span className={cn(
+                      "ml-2 sm:ml-3 shrink-0 rounded-full px-2 py-0.5 text-xs sm:text-sm relative z-20 transition-colors",
+                      isActive ? "bg-background text-primary" : "bg-primary text-primary-foreground"
+                    )}>
+                      {m.value}
+                    </span>
                   </button>
                 );
               })}

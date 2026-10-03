@@ -416,6 +416,7 @@ model EnrollmentApplication {
   learningModalities         String[]                  @map("learning_modalities")
   isTemporarilyEnrolled      Boolean                   @default(false) @map("is_temporarily_enrolled")
   isLateEnrollee             Boolean                   @default(false) @map("is_late_enrollee")
+  isEarlyRegistrant          Boolean                   @default(false) @map("is_early_registrant")
   complianceStatus           ComplianceStatus?         @map("compliance_status")
   rejectionReason            String?                   @map("rejection_reason")
   isPrivacyConsentGiven      Boolean                   @default(false) @map("is_privacy_consent_given")

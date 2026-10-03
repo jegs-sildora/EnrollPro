@@ -161,12 +161,32 @@ function EnrollmentStatusBadge({ application }: { application: RankedApplication
     )
   }
 
-  if (enrollment.status === "OFFICIALLY_ENROLLED" && enrollment.isSectioned) {
+  if (enrollment.status === "OFFICIALLY_ENROLLED") {
     return (
       <span
         className="mt-1 inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-bold leading-none text-emerald-700 uppercase"
       >
         Officially Enrolled
+      </span>
+    )
+  }
+
+  if (enrollment.status === "READY_FOR_SECTIONING") {
+    return (
+      <span
+        className="mt-1 inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-sm font-bold leading-none text-blue-700 uppercase"
+      >
+        Verified
+      </span>
+    )
+  }
+
+  if (enrollment.status === "WITHDRAWN" || enrollment.status === "DROPPED") {
+    return (
+      <span
+        className="mt-1 inline-flex w-fit rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-sm font-bold leading-none text-rose-700 uppercase"
+      >
+        {enrollment.status.replace("_", " ")}
       </span>
     )
   }

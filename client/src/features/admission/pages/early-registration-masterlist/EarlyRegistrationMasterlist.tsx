@@ -12,6 +12,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { cn } from "@/shared/lib/utils";
 import { motion } from "motion/react";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -36,6 +37,7 @@ type EnrollmentPreviousSchool = {
 
 type ApplicationWithRelations = {
   id: number;
+  status: string;
   createdAt: string;
   learner: Learner;
   gradeLevel: GradeLevel;
@@ -45,6 +47,7 @@ type ApplicationWithRelations = {
 export default function EarlyRegistrationMasterlist() {
   const setTitle = useHeaderStore((state: { setTitle: (title: string | null) => void }) => state.setTitle);
   const [selectedTab, setSelectedTab] = useState<"7" | "8-10">("7");
+  const [filterTab, setFilterTab] = useState<"pending" | "enrolled" | "cancelled" | "all">("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([{ id: "applicant", desc: false }]);
   const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
@@ -68,7 +71,7 @@ export default function EarlyRegistrationMasterlist() {
     },
   });
 
-  const filteredData = useMemo(() => {
+  const baseFilteredData = useMemo(() => {
     return applications.filter((app) => {
       const q = searchTerm.toLowerCase();
       const learner = app.learner;
@@ -77,6 +80,19 @@ export default function EarlyRegistrationMasterlist() {
       return fullName.includes(q) || lrn.includes(q);
     });
   }, [applications, searchTerm]);
+
+  const filteredData = useMemo(() => {
+    return baseFilteredData.filter((app) => {
+      if (filterTab === "pending") {
+         return app.status === "EARLY_REGISTRATION" || app.status === "PENDING_VERIFICATION";
+      } else if (filterTab === "enrolled") {
+         return app.status === "OFFICIALLY_ENROLLED";
+      } else if (filterTab === "cancelled") {
+         return app.status === "WITHDRAWN" || app.status === "DROPPED" || app.status === "ARCHIVED_NO_SHOW";
+      }
+      return true;
+    });
+  }, [baseFilteredData, filterTab]);
 
   const paginatedData = useMemo(() => {
     const start = (page - 1) * limit;
@@ -105,9 +121,20 @@ export default function EarlyRegistrationMasterlist() {
                 {learner.lastName}, {learner.firstName}
                 {learner.middleName ? ` ${learner.middleName.charAt(0)}.` : ""}
               </p>
-              <p className="text-sm">
+              <p className="text-sm font-bold text-muted-foreground mb-1.5">
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
+              <div>
+                {application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION" ? (
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200">Pending Enrollment</Badge>
+                ) : application.status === "OFFICIALLY_ENROLLED" ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200">Officially Enrolled</Badge>
+                ) : application.status === "WITHDRAWN" || application.status === "DROPPED" || application.status === "ARCHIVED_NO_SHOW" ? (
+                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200">{application.status.replace(/_/g, " ")}</Badge>
+                ) : (
+                  <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 uppercase border border-slate-200">{application.status.replace(/_/g, " ")}</Badge>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -137,19 +164,41 @@ export default function EarlyRegistrationMasterlist() {
       size: 150,
       meta: { pin: "right" },
       header: "ACTION",
-      cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedApplicationId(row.original.id);
-          }}>
-          <Eye className="w-4 h-4 mr-2" />
-          Review Form
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const application = row.original;
+        const isPending = application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION";
+
+        if (!isPending) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                // We point to learner directory profile as instructed
+                window.location.href = `/school-records/learner-directory`;
+              }}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Learner Profile
+            </Button>
+          );
+        }
+
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedApplicationId(row.original.id);
+            }}>
+            <Eye className="w-4 h-4 mr-2" />
+            Review Form
+          </Button>
+        );
+      },
     },
   ];
 
@@ -203,6 +252,55 @@ export default function EarlyRegistrationMasterlist() {
 
         <div className="flex-1 flex min-h-0 flex-col w-full h-full">
           <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+            {(() => {
+              const pendingCount = baseFilteredData.filter((app) => app.status === "EARLY_REGISTRATION" || app.status === "PENDING_VERIFICATION").length;
+              const enrolledCount = baseFilteredData.filter((app) => app.status === "OFFICIALLY_ENROLLED").length;
+              const cancelledCount = baseFilteredData.filter((app) => app.status === "WITHDRAWN" || app.status === "DROPPED" || app.status === "ARCHIVED_NO_SHOW").length;
+              const allCount = baseFilteredData.length;
+
+              const metrics = [
+                { key: "pending", title: "Pending Review", value: pendingCount },
+                { key: "enrolled", title: "Officially Enrolled", value: enrolledCount },
+                { key: "cancelled", title: "Cancelled/No Show", value: cancelledCount },
+                { key: "all", title: "All Registrants", value: allCount },
+              ] as const;
+
+              return (
+                <div className="grid grid-cols-2 lg:grid-cols-4 h-auto min-h-10 border-b border-gray-200 bg-white shrink-0 md:divide-x md:divide-y-0 divide-y divide-gray-200">
+                  {metrics.map((m) => {
+                    const isActive = filterTab === m.key;
+                    return (
+                      <button
+                        key={m.key}
+                        onClick={() => { setFilterTab(m.key); setPage(1); }}
+                        className={cn(
+                          "relative flex items-center justify-between px-4 py-2 md:py-0 h-10 md:h-full transition-colors uppercase font-bold z-10",
+                          isActive
+                            ? "text-primary-foreground bg-primary"
+                            : "text-foreground hover:bg-gray-50"
+                        )}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="er-metric-pill"
+                            className="absolute inset-0 bg-primary"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                          />
+                        )}
+                        <span className="relative z-20 whitespace-normal text-left break-words leading-snug text-xs sm:text-sm">{m.title}</span>
+                        <span className={cn(
+                          "ml-2 sm:ml-3 shrink-0 rounded-full px-2 py-0.5 text-xs sm:text-sm relative z-20 transition-colors",
+                          isActive ? "bg-background text-primary" : "bg-primary text-primary-foreground"
+                        )}>
+                          {m.value}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+            
             <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6">
               <div className="relative w-full flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

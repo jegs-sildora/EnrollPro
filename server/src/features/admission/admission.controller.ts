@@ -691,7 +691,7 @@ export async function submitEnrollment(req: Request, res: Response) {
       if (existingEnrollment.status === "PENDING_VERIFICATION") {
         res.status(409).json({ duplicate_detected: true, requires_auth: true, message: "Learner already has a pending application for this school year." });
         return;
-      } else {
+      } else if (existingEnrollment.status !== "EARLY_REGISTRATION") {
         res.status(400).json({ message: "Learner already has an application for this school year." });
         return;
       }
@@ -731,98 +731,124 @@ export async function submitEnrollment(req: Request, res: Response) {
         learnerId: learner.id,
       });
 
-      return tx.enrollmentApplication.create({
-        data: {
+      const applicationData = {
         learnerId: learner.id,
         schoolYearId: activeSchoolYearId,
         gradeLevelId: gradeLevelRecord.id,
         applicantType: assignedProgram as ApplicantType,
         learnerType: data.learnerType,
-        admissionChannel: "ONLINE",
-        trackingNumber,
+        admissionChannel: "ONLINE" as const,
         scpAdmissionId,
         learningModalities: data.learningModalities,
         isPrivacyConsentGiven: data.isPrivacyConsentGiven,
         intakeHeightCm: data.intakeHeightCm || null,
         intakeWeightKg: data.intakeWeightKg || null,
-        status: "PENDING_VERIFICATION",
+        status: "PENDING_VERIFICATION" as const,
         duplicateFlag: false,
-        createdAt: currentDate,
         updatedAt: currentDate,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
-        
-        addresses: {
-          create: [
-            {
-              addressType: "CURRENT",
-              houseNoStreet: data.currentAddress.houseNoStreet || null,
-              sitio: data.currentAddress.sitio || null,
-              barangay: data.currentAddress.barangay,
-              cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.province,
-              region: data.currentAddress.region,
-            },
-            ...(data.permanentAddress && data.permanentAddress.barangay
-              ? [{
-                  addressType: "PERMANENT" as const,
-                  houseNoStreet: data.permanentAddress.houseNoStreet || null,
-                  sitio: data.permanentAddress.sitio || null,
-                  barangay: data.permanentAddress.barangay,
-                  cityMunicipality: data.permanentAddress.cityMunicipality,
-                  province: data.permanentAddress.province,
-                  region: data.permanentAddress.region,
-                }]
-              : []),
-          ],
-        },
-        familyMembers: {
-          create: [
-            ...(data.mother.firstName && data.mother.lastName
-              ? [{
-                  relationship: "MOTHER" as const,
-                  firstName: data.mother.firstName,
-                  lastName: data.mother.lastName,
-                  middleName: data.mother.middleName || null,
-                  contactNumber: data.mother.contactNumber || null,
-                  email: data.mother.email || null,
-                }]
-              : []),
-            ...(data.father.firstName && data.father.lastName
-              ? [{
-                  relationship: "FATHER" as const,
-                  firstName: data.father.firstName,
-                  lastName: data.father.lastName,
-                  middleName: data.father.middleName || null,
-                  contactNumber: data.father.contactNumber || null,
-                  email: data.father.email || null,
-                }]
-              : []),
-            ...(data.guardian?.firstName
-              ? [{
-                  relationship: "GUARDIAN" as const,
-                  firstName: data.guardian.firstName,
-                  lastName: data.guardian.lastName || "",
-                  middleName: data.guardian.middleName || null,
-                  contactNumber: data.guardian.contactNumber || null,
-                  email: data.guardian.email || null,
-                }]
-              : []),
-          ],
-        },
-        previousSchool: {
-          create: {
-            schoolName: data.lastSchoolName,
-            schoolId: data.lastSchoolId || null,
-            schoolAddress: data.lastSchoolAddress || null,
-            schoolType: data.lastSchoolType,
-            lastGradeCompleted: data.lastGradeCompleted,
-            schoolYearLastAttended: data.schoolYearLastAttended,
-            generalAverage: data.generalAverage || null,
-            transferCertificateNo: data.transferCertificateNo || null,
+      };
+
+      const addressesData = {
+        create: [
+          {
+            addressType: "CURRENT" as const,
+            houseNoStreet: data.currentAddress.houseNoStreet || null,
+            sitio: data.currentAddress.sitio || null,
+            barangay: data.currentAddress.barangay,
+            cityMunicipality: data.currentAddress.cityMunicipality,
+            province: data.currentAddress.province,
+            region: data.currentAddress.region,
           },
-        }
+          ...(data.permanentAddress && data.permanentAddress.barangay
+            ? [{
+                addressType: "PERMANENT" as const,
+                houseNoStreet: data.permanentAddress.houseNoStreet || null,
+                sitio: data.permanentAddress.sitio || null,
+                barangay: data.permanentAddress.barangay,
+                cityMunicipality: data.permanentAddress.cityMunicipality,
+                province: data.permanentAddress.province,
+                region: data.permanentAddress.region,
+              }]
+            : []),
+        ],
+      };
+
+      const familyMembersData = {
+        create: [
+          ...(data.mother.firstName && data.mother.lastName
+            ? [{
+                relationship: "MOTHER" as const,
+                firstName: data.mother.firstName,
+                lastName: data.mother.lastName,
+                middleName: data.mother.middleName || null,
+                contactNumber: data.mother.contactNumber || null,
+                email: data.mother.email || null,
+              }]
+            : []),
+          ...(data.father.firstName && data.father.lastName
+            ? [{
+                relationship: "FATHER" as const,
+                firstName: data.father.firstName,
+                lastName: data.father.lastName,
+                middleName: data.father.middleName || null,
+                contactNumber: data.father.contactNumber || null,
+                email: data.father.email || null,
+              }]
+            : []),
+          ...(data.guardian?.firstName
+            ? [{
+                relationship: "GUARDIAN" as const,
+                firstName: data.guardian.firstName,
+                lastName: data.guardian.lastName || "",
+                middleName: data.guardian.middleName || null,
+                contactNumber: data.guardian.contactNumber || null,
+                email: data.guardian.email || null,
+              }]
+            : []),
+        ],
+      };
+
+      const previousSchoolData = {
+        create: {
+          schoolName: data.lastSchoolName,
+          schoolId: data.lastSchoolId || null,
+          schoolAddress: data.lastSchoolAddress || null,
+          schoolType: data.lastSchoolType,
+          lastGradeCompleted: data.lastGradeCompleted,
+          schoolYearLastAttended: data.schoolYearLastAttended,
+          generalAverage: data.generalAverage || null,
+          transferCertificateNo: data.transferCertificateNo || null,
+        },
+      };
+
+      if (existingEnrollment && existingEnrollment.status === "EARLY_REGISTRATION") {
+        await tx.applicationAddress.deleteMany({ where: { enrollmentId: existingEnrollment.id } });
+        await tx.applicationFamilyMember.deleteMany({ where: { enrollmentId: existingEnrollment.id } });
+        await tx.enrollmentPreviousSchool.deleteMany({ where: { enrollmentId: existingEnrollment.id } });
+        
+        return tx.enrollmentApplication.update({
+          where: { id: existingEnrollment.id },
+          data: {
+            ...applicationData,
+            trackingNumber,
+            addresses: addressesData,
+            familyMembers: familyMembersData,
+            previousSchool: previousSchoolData,
+          },
+        });
+      }
+
+      return tx.enrollmentApplication.create({
+        data: {
+          ...applicationData,
+          trackingNumber,
+          createdAt: currentDate,
+          addresses: addressesData,
+          familyMembers: familyMembersData,
+          previousSchool: previousSchoolData,
         },
       });
     });
@@ -1113,6 +1139,7 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: false,
+        isEarlyRegistrant: true,
         
         addresses: {
           create: [
@@ -1213,7 +1240,7 @@ export async function getEarlyRegistrations(req: Request, res: Response) {
     const { gradeLevel } = req.query;
 
     const whereClause: any = {
-      status: "EARLY_REGISTRATION",
+      isEarlyRegistrant: true,
       schoolYearId: schoolSetting.activeSchoolYearId,
     };
 

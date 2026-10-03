@@ -500,6 +500,16 @@ export default function Step1Personal() {
     // 5. SCP Validation
     setValue("scpProgram", profile.scpProgram, { shouldValidate: true });
     setValue("scpAdmissionStatus", profile.scpAdmissionStatus, { shouldValidate: true });
+
+    if (profile.scpAdmissionStatus === "QUALIFIED" && profile.scpProgram) {
+      setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
+      setValue("scpType", profile.scpProgram as NonNullable<EnrollmentFormData["scpType"]>, { shouldValidate: true, shouldDirty: true });
+      setValue("hasScpFallbackConsent", true, { shouldValidate: true, shouldDirty: true });
+    } else {
+      setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
+      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+    }
   }, [pendingProfile, setValue]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

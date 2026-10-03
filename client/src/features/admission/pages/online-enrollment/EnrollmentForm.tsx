@@ -894,7 +894,7 @@ export default function EnrollmentForm({
                         setIsConfirmDialogOpen(true);
                       }
                     }}>
-                    Submit Registration
+                    Submit Enrollment Form
                   </Button>
                   <p className="text-base text-foreground flex items-center gap-1.5 italic">
                     <Info className="w-3.5 h-3.5" />
