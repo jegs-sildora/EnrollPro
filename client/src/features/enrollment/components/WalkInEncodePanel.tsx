@@ -16,6 +16,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Label } from "@/shared/ui/label";
 import {
   Form,
   FormControl,
@@ -37,7 +38,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, FileCheck, Mars, Venus, AlertCircle, CheckCircle2, Camera, Trash2, X, Lock } from "lucide-react";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
@@ -45,6 +46,9 @@ import { LearnerFoundModal } from "@/features/admission/components/LearnerFoundM
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
 import { useAuthStore } from "@/store/auth.slice";
+import { motion, AnimatePresence } from "motion/react";
+import { Badge } from "@/shared/ui/badge";
+import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2, SPECIAL_HEALTH_SUB_OPTIONS, VISUAL_IMPAIRMENT_SUB_OPTIONS } from "@/features/admission/pages/online-enrollment/types";
 
 const MOTHER_TONGUE_OPTIONS = [
   { value: "Tagalog", label: "Tagalog" },
@@ -94,6 +98,15 @@ interface LearnerLookupResponse {
   assignedProgram?: string | null;
   hasPsaBirthCertificate?: boolean;
   isMissingSf9?: boolean | null;
+  isIpCommunity?: boolean;
+  ipGroupName?: string | null;
+  is4PsBeneficiary?: boolean;
+  householdId4Ps?: string | null;
+  isBalikAral?: boolean;
+  isLearnerWithDisability?: boolean;
+  specialNeedsCategory?: string | null;
+  disabilityTypes?: string[];
+  hasPwdId?: boolean;
   addresses?: Array<{
     addressType: "CURRENT" | "PERMANENT";
     houseNoStreet?: string | null;
@@ -291,6 +304,15 @@ export function WalkInEncodePanel() {
       sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
       conditionalSubjects: [],
       sectionId: undefined,
+      isIpCommunity: undefined,
+      ipGroupName: "",
+      is4PsBeneficiary: undefined,
+      householdId4Ps: "",
+      isBalikAral: undefined,
+      isLearnerWithDisability: undefined,
+      specialNeedsCategory: undefined,
+      disabilityTypes: [],
+      hasPwdId: undefined,
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
@@ -558,6 +580,16 @@ export function WalkInEncodePanel() {
       form.setValue("sf9EligibilityStatus", eligibilityStatus, updateOptions);
     }
 
+    if (data.isIpCommunity !== undefined) form.setValue("isIpCommunity", data.isIpCommunity, updateOptions);
+    if (data.ipGroupName) form.setValue("ipGroupName", data.ipGroupName, updateOptions);
+    if (data.is4PsBeneficiary !== undefined) form.setValue("is4PsBeneficiary", data.is4PsBeneficiary, updateOptions);
+    if (data.householdId4Ps) form.setValue("householdId4Ps", data.householdId4Ps, updateOptions);
+    if (data.isBalikAral !== undefined) form.setValue("isBalikAral", data.isBalikAral, updateOptions);
+    if (data.isLearnerWithDisability !== undefined) form.setValue("isLearnerWithDisability", data.isLearnerWithDisability, updateOptions);
+    if (data.specialNeedsCategory) form.setValue("specialNeedsCategory", data.specialNeedsCategory as "a1" | "a2", updateOptions);
+    if (data.disabilityTypes) form.setValue("disabilityTypes", data.disabilityTypes, updateOptions);
+    if (data.hasPwdId !== undefined) form.setValue("hasPwdId", data.hasPwdId, updateOptions);
+
     sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
   }, [pendingProfile, form, activeSchoolYear, assignedGradeLevelId, programOptions]);
 
@@ -656,7 +688,7 @@ export function WalkInEncodePanel() {
                       </span>
                       <div className="flex items-center gap-3">
                         {isDirty && (
-                          <div className="text-sm normal-case font-medium text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                          <div className="text-sm normal-case font-bold text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
                             <span className="relative flex h-2 w-2">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -669,7 +701,7 @@ export function WalkInEncodePanel() {
                           variant="ghost"
                           size="sm"
                           disabled={isSubmitting || isLookingUp}
-                          className="px-2 font-bold text-foreground hover:text-destructive normal-case"
+                          className="px-2 font-bold text-foreground hover:text-destructive normal-case text-sm"
                           onClick={() => setIsClearModalOpen(true)}
                         >
                           <Trash2 className="mr-1.5 h-4 w-4" />
@@ -1107,6 +1139,473 @@ export function WalkInEncodePanel() {
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="learningModalities"
+                          render={({ field }) => (
+                            <FormItem className="col-span-full pt-4 border-t border-border mt-6">
+                              <div className="flex flex-col space-y-1 mb-4">
+                                <FormLabel className="text-base font-bold uppercase text-foreground">
+                                  Alternative Learning Modality Preferences <span className="text-destructive">*</span>
+                                </FormLabel>
+                                <p className="text-sm">
+                                  If the school will implement other distance learning modalities aside from face-to-face instruction, what would you prefer for your child? (Check all that applies)
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {([
+                                  { value: "BLENDED", label: "Blended (Combination)" },
+                                  { value: "EDUCATIONAL_TELEVISION", label: "Educational Television" },
+                                  { value: "HOMESCHOOLING", label: "Homeschooling" },
+                                  { value: "MODULAR_DIGITAL", label: "Modular (Digital)" },
+                                  { value: "MODULAR_PRINT", label: "Modular (Print)" },
+                                  { value: "ONLINE", label: "Online" },
+                                  { value: "RADIO_BASED_TELEVISION", label: "Radio-Based Television" },
+                                ] as const).map((option) => (
+                                  <div key={option.value} className="flex items-center space-x-3">
+                                    <Checkbox
+                                      id={`walkin-modality-${option.value}`}
+                                      checked={field.value?.includes(option.value as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        const next = checked
+                                          ? [...current, option.value as any]
+                                          : current.filter((val: string) => val !== option.value);
+                                        field.onChange(next as any);
+                                      }}
+                                      className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary bg-white"
+                                    />
+                                    <Label htmlFor={`walkin-modality-${option.value}`} className="text-base font-bold cursor-pointer text-slate-700">
+                                      {option.label}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* BACKGROUND & SPECIAL CATEGORIES BLOCK */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-3 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        Background & Special Categories
+                      </span>
+                    </div>
+                    <div className="px-5 pt-4 pb-5 space-y-8">
+                      {/* IP Community */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-base leading-tight font-bold flex items-center gap-2">
+                            Is the learner a member of an IP cultural community?
+                          </FormLabel>
+                          <Badge
+                            variant="outline"
+                            className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
+                            <Lock className="w-2.5 h-2.5" /> Confidential
+                          </Badge>
+                        </div>
+                        <div id="isIpCommunity" className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("isIpCommunity", false, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isIpCommunity") === false
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">No</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("isIpCommunity", true, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isIpCommunity") === true
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">Yes</span>
+                          </button>
+                        </div>
+                        <AnimatedError error={form.formState.errors.isIpCommunity?.message as string} />
+                        <AnimatePresence>
+                          {form.watch("isIpCommunity") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden p-1">
+                              <div className="pt-4 space-y-2 w-full">
+                                <FormLabel htmlFor="ip-group" className="font-bold uppercase">
+                                  Specify IP Group Name
+                                </FormLabel>
+                                <Input
+                                  autoComplete="off"
+                                  id="ip-group"
+                                  {...form.register("ipGroupName")}
+                                  placeholder="e.g. Ati, Mangyan"
+                                  className={cn("h-11 font-bold uppercase", form.formState.errors.ipGroupName && "border-destructive focus-visible:ring-destructive")}
+                                />
+                                <AnimatedError error={form.formState.errors.ipGroupName?.message as string} />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* 4Ps Beneficiary */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-base leading-tight font-bold">
+                            Does the learner's household currently receive benefits under the 4Ps?
+                          </FormLabel>
+                          <Badge
+                            variant="outline"
+                            className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
+                            <Lock className="w-2.5 h-2.5" /> Confidential
+                          </Badge>
+                        </div>
+                        <div id="is4PsBeneficiary" className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("is4PsBeneficiary", false, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("is4PsBeneficiary") === false
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">No</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("is4PsBeneficiary", true, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("is4PsBeneficiary") === true
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">Yes</span>
+                          </button>
+                        </div>
+                        <AnimatedError error={form.formState.errors.is4PsBeneficiary?.message as string} />
+                        <AnimatePresence>
+                          {form.watch("is4PsBeneficiary") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden p-1">
+                              <div className="pt-4 space-y-2 w-full">
+                                <FormLabel htmlFor="household-id" className="font-bold uppercase">
+                                  4Ps Household ID Number
+                                </FormLabel>
+                                <Input
+                                  autoComplete="off"
+                                  id="household-id"
+                                  {...form.register("householdId4Ps")}
+                                  placeholder="Household ID"
+                                  className={cn("h-11 font-bold uppercase", form.formState.errors.householdId4Ps && "border-destructive focus-visible:ring-destructive")}
+                                />
+                                <AnimatedError error={form.formState.errors.householdId4Ps?.message as string} />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Balik Aral */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-base leading-tight font-bold">
+                            Is this learner returning to school after a gap of 1 year or more? (Balik-Aral)
+                          </FormLabel>
+                          <Badge
+                            variant="outline"
+                            className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
+                            <Lock className="w-2.5 h-2.5" /> Confidential
+                          </Badge>
+                        </div>
+                        <div id="isBalikAral" className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("isBalikAral", false, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isBalikAral") === false
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">No</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("isBalikAral", true, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isBalikAral") === true
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">Yes</span>
+                          </button>
+                        </div>
+                        <AnimatedError error={form.formState.errors.isBalikAral?.message as string} />
+                      </div>
+
+                      {/* SNED / Disability */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-base leading-tight font-bold">
+                            Is the learner under the Special Needs Education Program?
+                          </FormLabel>
+                          <Badge
+                            variant="outline"
+                            className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
+                            <Lock className="w-2.5 h-2.5" /> Confidential
+                          </Badge>
+                        </div>
+                        <div id="isLearnerWithDisability" className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              form.setValue("isLearnerWithDisability", false, { shouldValidate: true, shouldDirty: true });
+                              form.setValue("specialNeedsCategory", undefined, { shouldValidate: true, shouldDirty: true });
+                              form.setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
+                              form.setValue("hasPwdId", false, { shouldValidate: true, shouldDirty: true });
+                            }}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isLearnerWithDisability") === false
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">No</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => form.setValue("isLearnerWithDisability", true, { shouldValidate: true, shouldDirty: true })}
+                            className={cn(
+                              "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                              form.watch("isLearnerWithDisability") === true
+                                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                            )}>
+                            <span className="font-bold text-base leading-tight">Yes</span>
+                          </button>
+                        </div>
+                        <AnimatedError error={form.formState.errors.isLearnerWithDisability?.message as string} />
+
+                        <AnimatePresence>
+                          {form.watch("isLearnerWithDisability") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden p-1">
+                              <div className="pt-4 space-y-6">
+                                <p className="text-base font-bold uppercase text-foreground">
+                                  If Yes, check only 1, either from a1 or a2
+                                </p>
+                                <AnimatedError error={form.formState.errors.specialNeedsCategory?.message as string} />
+
+                                {/* a1 */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id="sned-a1"
+                                      checked={form.watch("specialNeedsCategory") === "a1"}
+                                      onCheckedChange={(checked) => {
+                                        form.setValue(
+                                          "specialNeedsCategory",
+                                          checked ? "a1" : undefined,
+                                          { shouldValidate: true, shouldDirty: true }
+                                        );
+                                        form.setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
+                                      }}
+                                      className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                    />
+                                    <FormLabel htmlFor="sned-a1" className="text-base leading-tight font-bold cursor-pointer">
+                                      a1. With Diagnosis from Licensed Medical Specialist
+                                    </FormLabel>
+                                  </div>
+                                  <AnimatePresence>
+                                    {form.watch("specialNeedsCategory") === "a1" && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden">
+                                        <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          {DISABILITY_TYPES_A1.map((type) => {
+                                            const isChecked = form.watch("disabilityTypes")?.includes(type);
+                                            const subOptions = type === "Special Health Problem/Chronic Disease"
+                                              ? SPECIAL_HEALTH_SUB_OPTIONS
+                                              : type === "Visual Impairment"
+                                                ? VISUAL_IMPAIRMENT_SUB_OPTIONS
+                                                : null;
+
+                                            return (
+                                              <div key={type} className="flex flex-col space-y-3">
+                                                <div className="flex items-center space-x-3">
+                                                  <Checkbox
+                                                    id={`disability-${type}`}
+                                                    checked={isChecked}
+                                                    onCheckedChange={(checked) => {
+                                                      const current = form.watch("disabilityTypes") || [];
+                                                      let newTypes = checked ? [...current, type] : current.filter((t) => t !== type);
+                                                      if (!checked && subOptions) {
+                                                        newTypes = newTypes.filter(t => !subOptions.includes(t));
+                                                      }
+                                                      form.setValue("disabilityTypes", newTypes, { shouldValidate: true, shouldDirty: true });
+                                                    }}
+                                                    className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                                  />
+                                                  <FormLabel htmlFor={`disability-${type}`} className="text-base leading-tight font-bold cursor-pointer">
+                                                    {type}
+                                                  </FormLabel>
+                                                </div>
+
+                                                <AnimatePresence>
+                                                  {isChecked && subOptions && (
+                                                    <motion.div
+                                                      initial={{ height: 0, opacity: 0 }}
+                                                      animate={{ height: "auto", opacity: 1 }}
+                                                      exit={{ height: 0, opacity: 0 }}
+                                                      className="overflow-hidden ml-7 flex flex-col space-y-3"
+                                                    >
+                                                      {subOptions.map((subType) => (
+                                                        <div key={subType} className="flex items-center space-x-3">
+                                                          <Checkbox
+                                                            id={`disability-${subType}`}
+                                                            checked={form.watch("disabilityTypes")?.includes(subType)}
+                                                            onCheckedChange={(checked) => {
+                                                              const current = form.watch("disabilityTypes") || [];
+                                                              const withoutOtherSubOptions = current.filter(t => !subOptions.includes(t));
+                                                              form.setValue(
+                                                                "disabilityTypes",
+                                                                checked ? [...withoutOtherSubOptions, subType] : current.filter((t) => t !== subType),
+                                                                { shouldValidate: true, shouldDirty: true }
+                                                              );
+                                                            }}
+                                                            className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                                          />
+                                                          <FormLabel htmlFor={`disability-${subType}`} className="text-sm leading-tight font-bold cursor-pointer">
+                                                            {subType}
+                                                          </FormLabel>
+                                                        </div>
+                                                      ))}
+                                                    </motion.div>
+                                                  )}
+                                                </AnimatePresence>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                        <AnimatedError error={form.formState.errors.disabilityTypes?.message as string} />
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                {/* a2 */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id="sned-a2"
+                                      checked={form.watch("specialNeedsCategory") === "a2"}
+                                      onCheckedChange={(checked) => {
+                                        form.setValue(
+                                          "specialNeedsCategory",
+                                          checked ? "a2" : undefined,
+                                          { shouldValidate: true, shouldDirty: true }
+                                        );
+                                        form.setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
+                                      }}
+                                      className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                    />
+                                    <FormLabel htmlFor="sned-a2" className="text-base leading-tight font-bold cursor-pointer">
+                                      a2. With Manifestations
+                                    </FormLabel>
+                                  </div>
+                                  <AnimatePresence>
+                                    {form.watch("specialNeedsCategory") === "a2" && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden">
+                                        <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          {DISABILITY_TYPES_A2.map((type) => (
+                                            <div key={type} className="flex items-center space-x-3">
+                                              <Checkbox
+                                                id={`disability-${type}`}
+                                                checked={form.watch("disabilityTypes")?.includes(type)}
+                                                onCheckedChange={(checked) => {
+                                                  const current = form.watch("disabilityTypes") || [];
+                                                  form.setValue(
+                                                    "disabilityTypes",
+                                                    checked ? [...current, type] : current.filter((t) => t !== type),
+                                                    { shouldValidate: true, shouldDirty: true }
+                                                  );
+                                                }}
+                                                className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                              />
+                                              <FormLabel htmlFor={`disability-${type}`} className="text-base leading-tight font-bold cursor-pointer">
+                                                {type}
+                                              </FormLabel>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <AnimatedError error={form.formState.errors.disabilityTypes?.message as string} />
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                {/* b. PWD ID */}
+                                <div className="space-y-2">
+                                  <FormLabel className="text-base leading-tight font-bold">
+                                    b. Does the Learner have a PWD ID?
+                                  </FormLabel>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => form.setValue("hasPwdId", false, { shouldValidate: true, shouldDirty: true })}
+                                      className={cn(
+                                        "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                                        !form.watch("hasPwdId")
+                                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                          : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                                      )}>
+                                      <span className="font-bold text-base leading-tight">No</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => form.setValue("hasPwdId", true, { shouldValidate: true, shouldDirty: true })}
+                                      className={cn(
+                                        "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                                        form.watch("hasPwdId")
+                                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                          : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                                      )}>
+                                      <span className="font-bold text-base leading-tight">Yes</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </div>

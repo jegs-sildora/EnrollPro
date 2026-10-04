@@ -828,7 +828,12 @@ export async function directEncodeWalkIn(
       motherTongue, 
       addressStreet, addressSitio, addressRegion, addressProvince, addressCity, addressBarangay,
       studentPhoto, permanentAddressSameAsCurrent, extensionName,
-      sectionId
+      sectionId,
+      isIpCommunity, ipGroupName,
+      is4PsBeneficiary, householdId4Ps,
+      isBalikAral, isLearnerWithDisability,
+      specialNeedsCategory, disabilityTypes, hasPwdId,
+      learningModalities
     } = payload;
 
     const schoolYearId = intakeContext.schoolYearId;
@@ -887,6 +892,15 @@ export async function directEncodeWalkIn(
             motherTongue: motherTongue,
             studentPhoto: studentPhoto,
             hasPsaBirthCertificate: hasPsa,
+            isIpCommunity: isIpCommunity || false,
+            ipGroupName: isIpCommunity ? (ipGroupName || null) : null,
+            is4PsBeneficiary: is4PsBeneficiary || false,
+            householdId4Ps: is4PsBeneficiary ? (householdId4Ps || null) : null,
+            isBalikAral: isBalikAral || false,
+            isLearnerWithDisability: isLearnerWithDisability || false,
+            specialNeedsCategory: isLearnerWithDisability ? (specialNeedsCategory || null) : null,
+            disabilityTypes: isLearnerWithDisability ? (disabilityTypes || []) : [],
+            hasPwdId: isLearnerWithDisability ? (hasPwdId || false) : false,
           }
         });
       } else {
@@ -898,10 +912,15 @@ export async function directEncodeWalkIn(
             middleName: middleName || null,
             birthdate: normalizeDateToUtcNoon(new Date(birthdate)),
             sex: sex,
-            isIpCommunity: false,
-            isLearnerWithDisability: false,
-            is4PsBeneficiary: false,
-            hasPwdId: false,
+            isIpCommunity: isIpCommunity || false,
+            ipGroupName: isIpCommunity ? (ipGroupName || null) : null,
+            isLearnerWithDisability: isLearnerWithDisability || false,
+            specialNeedsCategory: isLearnerWithDisability ? (specialNeedsCategory || null) : null,
+            disabilityTypes: isLearnerWithDisability ? (disabilityTypes || []) : [],
+            is4PsBeneficiary: is4PsBeneficiary || false,
+            householdId4Ps: is4PsBeneficiary ? (householdId4Ps || null) : null,
+            isBalikAral: isBalikAral || false,
+            hasPwdId: isLearnerWithDisability ? (hasPwdId || false) : false,
             motherTongue: motherTongue,
             studentPhoto: studentPhoto,
             hasPsaBirthCertificate: hasPsa,
@@ -919,6 +938,7 @@ export async function directEncodeWalkIn(
           gradeLevelId,
           applicantType,
           learnerType,
+          learningModalities: learningModalities ?? [],
           assignedProgram: assignedProgram || null,
           isLateEnrollee: intakeContext.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",

@@ -211,7 +211,7 @@ export const BaseEnrollmentFormSchema = z
 
     // Section 9.2: Learner Type
     learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"], { message: "Please select a valid learner type." }),
-    learningModalities: z.array(z.string()).default([]),
+    learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).default([]),
     bypassDuplicate: z.boolean().optional(),
 
     isCertifiedTrue: z.boolean().refine((val) => val === true, {

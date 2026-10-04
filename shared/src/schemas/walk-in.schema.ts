@@ -3,6 +3,15 @@ import { addressSchema } from "./application.schema.js";
 
 export const directEncodeWalkInSchema = z.object({
   learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"]),
+  learningModalities: z.array(z.enum([
+    "BLENDED",
+    "EDUCATIONAL_TELEVISION",
+    "HOMESCHOOLING",
+    "MODULAR_DIGITAL",
+    "MODULAR_PRINT",
+    "ONLINE",
+    "RADIO_BASED_TELEVISION",
+  ])).min(1, "Please select at least one learning modality preference."),
   lrn: z.string().optional(),
   firstName: z.string().min(1, "First Name is required"),
   lastName: z.string().min(1, "Last Name is required"),
@@ -74,6 +83,15 @@ export const directEncodeWalkInSchema = z.object({
   addressCity: z.string().min(1, "City/Municipality is required"),
   addressBarangay: z.string().min(1, "Barangay is required"),
   permanentAddressSameAsCurrent: z.boolean().default(true),
+  isIpCommunity: z.boolean().optional(),
+  ipGroupName: z.string().optional(),
+  is4PsBeneficiary: z.boolean().optional(),
+  householdId4Ps: z.string().optional(),
+  isBalikAral: z.boolean().optional(),
+  isLearnerWithDisability: z.boolean().optional(),
+  specialNeedsCategory: z.enum(["a1", "a2"]).optional(),
+  disabilityTypes: z.array(z.string()).default([]),
+  hasPwdId: z.boolean().optional(),
 })
 .superRefine((obj, ctx) => {
   const { learnerType, lrn } = obj;

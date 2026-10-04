@@ -177,7 +177,7 @@ export const applicationSubmitSchema = z
       message: "Consent is required",
     }),
     learnerType: LearnerTypeEnum,
-    learningModalities: z.array(z.string()).default([]),
+    learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).min(1, "Please select at least one learning modality preference."),
     bypassDuplicate: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {

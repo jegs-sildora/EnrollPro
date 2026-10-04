@@ -169,6 +169,15 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       academicStatus: latestApp?.academicStatus ?? learner.promotionStatus,
       assignedProgram,
       scpAdmissionStatus: latestAdmission?.assessmentResult ?? null,
+      isIpCommunity: learner.isIpCommunity,
+      ipGroupName: learner.ipGroupName,
+      is4PsBeneficiary: learner.is4PsBeneficiary,
+      householdId4Ps: learner.householdId4Ps,
+      isBalikAral: learner.isBalikAral,
+      isLearnerWithDisability: learner.isLearnerWithDisability,
+      specialNeedsCategory: learner.specialNeedsCategory,
+      disabilityTypes: learner.disabilityTypes,
+      hasPwdId: learner.hasPwdId,
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);

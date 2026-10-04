@@ -21,6 +21,16 @@ import {
 } from "@/shared/ui/select";
 import { useSettingsStore } from "@/store/settings.slice";
 
+const MODALITY_OPTIONS = [
+  { value: "BLENDED", label: "Blended (Combination)" },
+  { value: "EDUCATIONAL_TELEVISION", label: "Educational Television" },
+  { value: "HOMESCHOOLING", label: "Homeschooling" },
+  { value: "MODULAR_DIGITAL", label: "Modular (Digital)" },
+  { value: "MODULAR_PRINT", label: "Modular (Print)" },
+  { value: "ONLINE", label: "Online" },
+  { value: "RADIO_BASED_TELEVISION", label: "Radio-Based Television" },
+];
+
 const LEARNER_TYPES = [
   { value: "NEW_ENROLLEE", label: "Incoming Grade 7" },
   { value: "TRANSFEREE", label: "TRANSFEREE" },
@@ -565,6 +575,45 @@ export default function Step5Enrollment() {
         </div>
       </div>
       )}
+
+      {/* Alternative Learning Modality Preferences */}
+      <div className="space-y-4 pb-8">
+        <div className="flex flex-col space-y-1">
+          <Label className="text-base font-bold uppercase text-foreground">
+            ALTERNATIVE LEARNING MODALITY PREFERENCES <span className="text-destructive">*</span>
+          </Label>
+          <p className="text-sm">
+            If the school will implement other distance learning modalities aside from face-to-face instruction, what would you prefer for your child? (Check all that applies)
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+          {MODALITY_OPTIONS.map((option) => (
+            <div key={option.value} className="flex items-center space-x-3">
+              <Checkbox
+                id={`modality-${option.value}`}
+                checked={watch("learningModalities")?.includes(option.value as any)}
+                onCheckedChange={(checked) => {
+                  const current = watch("learningModalities") || [];
+                  const next = checked
+                    ? [...current, option.value as any]
+                    : current.filter((val: string) => val !== option.value);
+                  setValue("learningModalities", next as any, { shouldDirty: true, shouldValidate: true });
+                }}
+                className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+              />
+              <Label htmlFor={`modality-${option.value}`} className="text-base font-bold cursor-pointer">
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {errors.learningModalities?.message && (
+          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-1">
+            <AlertCircle className="w-3 h-3" /> {errors.learningModalities.message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
