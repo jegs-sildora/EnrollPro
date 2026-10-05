@@ -120,7 +120,7 @@ export default function BOSYPage() {
   const isAdmin = userRoles.includes("SYSTEM_ADMIN");
   const isHeadRegistrar = userRoles.includes("HEAD_REGISTRAR");
   const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
-  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar && 
+  const isStrictClassAdviser = userRoles.includes("CLASS_ADVISER") && !isAdmin && !isHeadRegistrar &&
     !ancillaryRoles.includes("GRADE 7 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 8 COORDINATOR") &&
     !ancillaryRoles.includes("GRADE 9 COORDINATOR") &&
@@ -138,10 +138,13 @@ export default function BOSYPage() {
     );
     return coordinatorRole?.match(/^GRADE (7|8|9|10) COORDINATOR$/)?.[1] ?? null;
   }, [ancillaryRoles]);
-  const assignedTargetGradeOrder = coordinatorTargetGradeOrder
-    ?? (isStrictClassAdviser && advisoryData?.section?.gradeLevel?.displayOrder
-      ? String(advisoryData.section.gradeLevel.displayOrder)
-      : null);
+
+  const assignedTargetGradeOrder = (isAdmin || isHeadRegistrar)
+    ? null
+    : coordinatorTargetGradeOrder
+      ?? (isStrictClassAdviser && advisoryData?.section?.gradeLevel?.displayOrder
+        ? String(advisoryData.section.gradeLevel.displayOrder)
+        : null);
 
   const targetGrade = useSettingsStore((s) => s.uiPreferences.bosyGradeId);
   const scopedTargetGrade = assignedTargetGradeOrder ?? targetGrade;
@@ -704,6 +707,7 @@ export default function BOSYPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="ALL" className="leading-tight font-bold">All Incoming Grades</SelectItem>
+                                    <SelectItem value="7" className="leading-tight font-bold">Grade 7</SelectItem>
                                     <SelectItem value="8" className="leading-tight font-bold">Grade 8</SelectItem>
                                     <SelectItem value="9" className="leading-tight font-bold">Grade 9</SelectItem>
                                     <SelectItem value="10" className="leading-tight font-bold">Grade 10</SelectItem>
@@ -892,7 +896,7 @@ export default function BOSYPage() {
                                         {formatGradeLevel(confirmSingleTarget.gradeLevelName)}
                                       </Badge>
                                     </td>
-                                    
+
                                     <td className="p-3 px-4 text-center border-r border-gray-100">
                                       <span className="text-sm font-bold uppercase tracking-wider text-foreground">
                                         {confirmSingleTarget.applicantType ? formatSectionProgramLabel(confirmSingleTarget.applicantType) : "BEC"}
@@ -1060,10 +1064,10 @@ export default function BOSYPage() {
                                       </td>
                                       <td className="p-3 px-4 text-center font-bold uppercase">
                                         {item.applicantType === "REGULAR" ? "BEC" :
-                                         item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
-                                         item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
-                                         item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
-                                         item.applicantType ?? "—"}
+                                          item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
+                                            item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
+                                              item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
+                                                item.applicantType ?? "—"}
                                       </td>
                                       <td className="p-3 px-4 text-center">
                                         <Badge
@@ -1112,10 +1116,10 @@ export default function BOSYPage() {
                                         </td>
                                         <td className="p-3 px-4 text-center font-bold uppercase">
                                           {item.applicantType === "REGULAR" ? "BEC" :
-                                           item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
-                                           item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
-                                           item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
-                                           item.applicantType ?? "—"}
+                                            item.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" :
+                                              item.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" :
+                                                item.applicantType === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" :
+                                                  item.applicantType ?? "—"}
                                         </td>
                                         <td className="p-3 px-4 text-center">
                                           <Badge

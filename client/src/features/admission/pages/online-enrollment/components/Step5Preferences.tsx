@@ -94,6 +94,7 @@ export default function Step5Enrollment() {
   const gradeLevel = watch("gradeLevel");
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
+  const hasScpFallbackConsent = watch("hasScpFallbackConsent");
 
   const hasNoLrn = watch("hasNoLrn");
   const scpProgram = watch("scpProgram");
@@ -238,7 +239,7 @@ export default function Step5Enrollment() {
 
   useEffect(() => {
     if (!canDeclareNoLrn && hasNoLrn) {
-      setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: true });
+      setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: false });
       clearErrors("hasNoLrn");
     }
   }, [canDeclareNoLrn, hasNoLrn, setValue, clearErrors]);
@@ -249,11 +250,13 @@ export default function Step5Enrollment() {
 
   useEffect(() => {
     if (hasNoLrn || isRegularOrDisqualified) {
-      setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
-      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
-      setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+      if (isScpApplication !== false || scpType !== undefined || hasScpFallbackConsent !== false) {
+        setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: false });
+        setValue("scpType", undefined, { shouldValidate: true, shouldDirty: false });
+        setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: false });
+      }
     }
-  }, [hasNoLrn, isRegularOrDisqualified, setValue]);
+  }, [hasNoLrn, isRegularOrDisqualified, isScpApplication, scpType, hasScpFallbackConsent, setValue]);
 
   return (
     <div className="space-y-12">
@@ -577,9 +580,19 @@ export default function Step5Enrollment() {
       )}
 
       {/* Alternative Learning Modality Preferences */}
-      <div className="space-y-4 pb-8">
+      <div 
+        id="learningModalities" 
+        className={cn(
+          "space-y-4 scroll-mt-24",
+          errors.learningModalities ? "border-2 border-destructive p-4 rounded-xl mb-4" : "pb-8"
+        )}
+        aria-invalid={!!errors.learningModalities}
+      >
         <div className="flex flex-col space-y-1">
-          <Label className="text-base font-bold uppercase text-foreground">
+          <Label className={cn(
+            "text-base font-bold uppercase",
+            errors.learningModalities ? "text-destructive" : "text-foreground"
+          )}>
             ALTERNATIVE LEARNING MODALITY PREFERENCES <span className="text-destructive">*</span>
           </Label>
           <p className="text-sm">

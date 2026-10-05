@@ -252,7 +252,7 @@ export const applicationTrackingStateSchema = z.object({
 
 export const applicationSubmitResponseSchema = z
   .object({
-    trackingNumber: z.string().min(1),
+    trackingNumber: z.string().nullable().optional(),
     applicantType: ApplicantTypeEnum,
   })
   .merge(applicationTrackingStateSchema);
@@ -260,7 +260,7 @@ export const applicationSubmitResponseSchema = z
 export const applicationTrackResponseSchema = applicationTrackingStateSchema.partial()
   .merge(
     z.object({
-      trackingNumber: z.string().min(1),
+      trackingNumber: z.string().nullable().optional(),
       applicantType: ApplicantTypeEnum,
       application_type: z.enum(["ADMISSION", "ENROLLMENT"]),
       current_step: z.number(),

@@ -1681,7 +1681,7 @@ export function VerificationWorkspace() {
                     {(selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED") && (
                       <Button
                         variant="ghost"
-                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary hover:bg-primary/10 hover:text-primary border border-primary shrink-0", hasChecklistModifications ? "w-full @xl/verification:w-1/2" : "w-full")}
+                        className={cn("h-14 text-sm sm:text-base leading-tight font-bold uppercase text-primary-foreground bg-primary hover:bg-primary hover:text-primary-foreground border border-primary shrink-0", hasChecklistModifications ? "w-full @xl/verification:w-1/2" : "w-full")}
                         onClick={() => setRevertModalOpen(true)}
                         disabled={processing || isHistoricalReadOnly}
                       >
@@ -1702,7 +1702,7 @@ export function VerificationWorkspace() {
                             }}
                             disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                             variant="ghost"
-                            className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
+                            className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase bg-amber-600 text-white hover:bg-amber-600 hover:text-white border-amber-600 overflow-hidden"
                           >
                             <span className="truncate">
                               {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? "Enroll as Temporary (Missing Docs)" : "Update Changes"}
@@ -1748,7 +1748,7 @@ export function VerificationWorkspace() {
                   <Search className="h-10 w-10 text-primary" />
                 </div>
                 <div className="font-extrabold text-2xl text-primary">No Learner Selected</div>
-                <p className="font-bold text-base leading-tight max-w-[300px]">Select a learner from the left pane to begin verification.</p>
+                <p className="text-muted-foreground font-bold text-base leading-tight max-w-[300px]">Select a learner from the left pane to begin verification.</p>
               </div>
             )}
           </div>

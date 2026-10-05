@@ -105,6 +105,7 @@ const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
   bypassDuplicate: false,
 
   isCertifiedTrue: false,
+  isValidatingLrn: false,
 };
 
 type ValidationIssue = {
@@ -690,7 +691,9 @@ export default function EnrollmentForm({
             const response = await api.put<ApplicationSubmitResponse>("/applications/update-existing", payload);
             sileo.success({
               title: "Application Updated!",
-              description: `Your tracking number remains ${response.data.trackingNumber}.`,
+              description: response.data.trackingNumber 
+                ? `Your tracking number remains ${response.data.trackingNumber}.`
+                : "Your application has been successfully updated.",
             });
             if (onSuccess) {
               onSuccess({

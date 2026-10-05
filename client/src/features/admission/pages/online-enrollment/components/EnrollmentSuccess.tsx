@@ -75,7 +75,9 @@ export default function EnrollmentSuccess({
   }, [isStaffWalkIn, showConfirmModal]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(trackingNumber);
+    if (trackingNumber) {
+      navigator.clipboard.writeText(trackingNumber);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -104,42 +106,59 @@ export default function EnrollmentSuccess({
             </div>
           )}
 
-          <div
-            onClick={handleCopy}
-            className={cn(
-              "bg-muted p-8 rounded-2xl text-center space-y-3 border-2 border-dashed cursor-pointer transition-all duration-200 group relative overflow-hidden",
-              copied
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
-            )}>
-            <p className="text-base text-foreground uppercase font-bold">
-              Application Tracking Number
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <p className="text-xl sm:text-4xl font-extrabold text-primary">
-                {trackingNumber}
+          {trackingNumber ? (
+            <div
+              onClick={handleCopy}
+              className={cn(
+                "bg-muted p-8 rounded-2xl text-center space-y-3 border-2 border-dashed cursor-pointer transition-all duration-200 group relative overflow-hidden",
+                copied
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
+              )}>
+              <p className="text-base text-foreground uppercase font-bold">
+                Application Tracking Number
+              </p>
+              <div className="flex items-center justify-center gap-4">
+                <p className="text-xl sm:text-4xl font-extrabold text-primary">
+                  {trackingNumber}
+                </p>
+              </div>
+              {learnerName && (
+                <p className="text-base leading-tight font-extrabold text-foreground mt-2 uppercase">
+                  Learner: {learnerName}
+                </p>
+              )}
+              <p
+                className={cn(
+                  "text-sm transition-all duration-200 mt-2 print:hidden font-bold",
+                  copied ? "text-primary scale-105" : "text-foreground",
+                )}>
+                {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
               </p>
             </div>
-            {learnerName && (
-              <p className="text-base leading-tight font-extrabold text-foreground mt-2 uppercase">
-                Learner: {learnerName}
-              </p>
-            )}
-            <p
-              className={cn(
-                "text-sm transition-all duration-200 mt-2 print:hidden font-bold",
-                copied ? "text-primary scale-105" : "text-foreground",
-              )}>
-              {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
-            </p>
-          </div>
+          ) : (
+            learnerName && (
+              <div className="bg-muted p-6 rounded-2xl text-center border-2 border-dashed border-muted-foreground/20 mb-6">
+                <p className="text-base text-foreground uppercase font-bold">
+                  Learner Name
+                </p>
+                <p className="text-xl sm:text-2xl font-extrabold text-primary mt-2 uppercase">
+                  {learnerName}
+                </p>
+              </div>
+            )
+          )}
 
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4 mt-6">
             <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-base leading-relaxed text-left">
               {isStaffWalkIn
-                ? "Write this tracking number on a piece of paper and give it to the learner. The learner can use it to track the application status."
-                : "Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar."}
+                ? trackingNumber
+                  ? "Write this tracking number on a piece of paper and give it to the learner. The learner can use it to track the application status."
+                  : "Please inform the learner that their application has been recorded."
+                : trackingNumber
+                  ? "Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar."
+                  : "Important tip: Please take a screenshot of this page before closing this window. You will need to show this to the guard and registrar."}
             </p>
           </div>
 
@@ -148,19 +167,24 @@ export default function EnrollmentSuccess({
             <Button
               type="button"
               variant="outline"
-              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 border-primary text-primary hover:bg-primary/10 hover:text-primary shadow-md uppercase"
+              className={cn(
+                "h-12 px-12 font-bold gap-2 border-primary text-primary-foreground bg-primary shadow-md uppercase hover:bg-primary hover:text-primary-foreground",
+                trackingNumber ? "w-full sm:w-1/2" : "w-full"
+              )}
               onClick={() => setShowConfirmModal(true)}>
               Back to Home
             </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 shadow-md uppercase"
-              onClick={() => {
-                navigate(`/track-application?trackingNumber=${trackingNumber}`);
-              }}>
-              Track Application
-            </Button>
+            {trackingNumber && (
+              <Button
+                type="button"
+                variant="default"
+                className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 shadow-md uppercase"
+                onClick={() => {
+                  navigate(`/track-application?trackingNumber=${trackingNumber}`);
+                }}>
+                Track Application
+              </Button>
+            )}
           </div>
           )}
         </CardContent>
@@ -170,12 +194,12 @@ export default function EnrollmentSuccess({
         open={showConfirmModal}
         onOpenChange={setShowConfirmModal}
         title="Confirm Navigation"
-        description="Are you sure you want to go back to home? Please ensure you have taken a screenshot or copied your tracking number before leaving this page."
+        description={trackingNumber ? "Are you sure you want to go back to home? Please ensure you have taken a screenshot or copied your tracking number before leaving this page." : "Are you sure you want to go back to home? Please ensure you have taken a screenshot before leaving this page."}
         confirmText="Yes, I have saved it"
         onConfirm={() => {
           if (onBackHome) onBackHome();
         }}
-        variant="warning"
+        variant="primary"
       />}
     </div>
   );

@@ -684,10 +684,10 @@ export default function SchoolYearTab() {
         localCalendarState.scpAdmissionOpenDate ?? null,
         localCalendarState.scpAdmissionCloseDate ?? null,
         systemNow,
-        true, // SCP Admission doesn't necessarily depend on systemPhase in the same way, but let's assume it's always evaluated if dates are valid
+        systemPhase === "OFFICIAL_ENROLLMENT",
         "ADMISSION"
       ),
-    [localCalendarState.scpAdmissionCloseDate, localCalendarState.scpAdmissionOpenDate, systemNow],
+    [localCalendarState.scpAdmissionCloseDate, localCalendarState.scpAdmissionOpenDate, systemNow, systemPhase],
   );
 
   const earlyRegPhaseStatus = useMemo(
@@ -696,10 +696,10 @@ export default function SchoolYearTab() {
         localCalendarState.earlyRegOpenDate ?? null,
         localCalendarState.earlyRegCloseDate ?? null,
         systemNow,
-        true,
+        systemPhase === "OFFICIAL_ENROLLMENT",
         "REGISTRATION"
       ),
-    [localCalendarState.earlyRegCloseDate, localCalendarState.earlyRegOpenDate, systemNow],
+    [localCalendarState.earlyRegCloseDate, localCalendarState.earlyRegOpenDate, systemNow, systemPhase],
   );
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
@@ -877,6 +877,10 @@ export default function SchoolYearTab() {
     return null;
   }
 
+  const activePhase = selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT";
+  const isEnrollmentLocked = activePhase === "CLASSES_ONGOING" || activePhase === "EOSY_CLOSING";
+  const isAllDatesLocked = activePhase === "EOSY_CLOSING";
+
   return (
     <fieldset disabled={isArchived} className="space-y-6 relative pb-6 group min-w-0">
       {isZeroState ? (
@@ -961,7 +965,7 @@ export default function SchoolYearTab() {
                             className={cn(
                               "relative flex h-full flex-col rounded-md border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
                               isChecked
-                                ? "border-primary ring-1 ring-primary text-primary"
+                                ? "border-primary ring-1 ring-primary text-primary bg-primary/5"
                                 : "border-border hover:border-primary"
                             )}
                           >
@@ -1009,7 +1013,7 @@ export default function SchoolYearTab() {
                             className={cn(
                               "relative flex h-full flex-col items-center justify-center rounded-md border bg-card p-4 text-center shadow-sm transition-colors text-foreground",
                               isChecked
-                                ? "border-primary ring-1 ring-primary text-primary"
+                                ? "border-primary ring-1 ring-primary text-primary bg-primary/5"
                                 : "border-border hover:border-primary"
                             )}
                           >
@@ -1095,7 +1099,7 @@ export default function SchoolYearTab() {
                                       setLocalCalendarState(prev => ({ ...prev, [term.startField]: val }));
                                     }}
                                     hideCalendarIcon
-                                    disabled={isCompleted}
+                                    disabled={isCompleted || isAllDatesLocked}
                                     className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground disabled:opacity-100 disabled:text-primary"
                                   />
                                   <DualPaneDateRangePicker
@@ -1127,7 +1131,7 @@ export default function SchoolYearTab() {
                                       setLocalCalendarState(prev => ({ ...prev, [term.endField]: val }));
                                     }}
                                     hideCalendarIcon
-                                    disabled={isCompleted}
+                                    disabled={isCompleted || isAllDatesLocked}
                                     className="border-none shadow-none p-0 h-auto text-primary bg-transparent w-full focus:outline-none placeholder:text-muted-foreground disabled:opacity-100 disabled:text-primary"
                                   />
                                   <DualPaneDateRangePicker
@@ -1203,6 +1207,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set start date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1217,6 +1222,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set end date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1274,6 +1280,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set start date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1288,6 +1295,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set end date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1345,6 +1353,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set start date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1359,6 +1368,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set end date"
+                            disabled={isEnrollmentLocked}
                             className="text-primary"
                           />
                         </div>
@@ -1431,7 +1441,7 @@ export default function SchoolYearTab() {
                         className={cn(
                           "relative flex h-full flex-col items-center justify-center rounded-md border bg-card px-4 py-5 text-center shadow-sm transition-colors text-foreground",
                           isChecked
-                            ? "border-primary ring-1 ring-primary text-primary"
+                            ? "border-primary ring-1 ring-primary text-primary bg-primary/5"
                             : "border-border hover:border-primary",
                           isArchived && "opacity-60 cursor-not-allowed pointer-events-none"
                         )}

@@ -60,7 +60,6 @@ export default function Step4PreviousSchool() {
   const isReturning = learnerType === "RETURNING";
   const derivedGrade = GRADE_PROGRESSION[gradeLevel] ?? "";
 
-  // Auto-fill lastGradeCompleted based on context
   useEffect(() => {
     if (isAls) {
       if (lastGradeCompleted !== "A&E Test Passer") {
@@ -81,10 +80,12 @@ export default function Step4PreviousSchool() {
 
   useEffect(() => {
     if (!lastSchoolType && lastSchoolType !== "Public") {
-      setValue("lastSchoolType", "Public", {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+      if (lastSchoolType !== "Public") {
+        setValue("lastSchoolType", "Public", {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
+      }
     }
   }, [lastSchoolType, setValue]);
 

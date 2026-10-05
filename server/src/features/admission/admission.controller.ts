@@ -200,79 +200,8 @@ export async function trackApplication(req: Request, res: Response) {
       return;
     }
 
-    const application = await prisma.enrollmentApplication.findUnique({
-      where: { trackingNumber },
-      select: {
-        trackingNumber: true,
-        applicantType: true,
-        status: true,
-        createdAt: true,
-        complianceStatus: true,
-        learnerType: true,
-        scpAdmission: {
-          select: { 
-            assessmentResult: true, 
-            requirementsStatus: true,
-            writtenExamStatus: true,
-            interviewStatus: true
-          },
-        },
-        learner: {
-          select: { firstName: true, middleName: true, lastName: true },
-        },
-        gradeLevel: {
-          select: { name: true },
-        },
-        enrollmentRecord: {
-          select: {
-            enrolledAt: true,
-            section: { select: { name: true } },
-          },
-        },
-      },
-    });
-
-    if (!application) {
-      res.status(404).json({ message: "No application found for the provided Tracking Number." });
-      return;
-    }
-
-    const { learner, enrollmentRecord, gradeLevel, scpAdmission, ...appData } = application;
-    const applicantName = `${learner.firstName} ${learner.middleName ? learner.middleName + ' ' : ''}${learner.lastName}`;
-    
-    let application_type = "ENROLLMENT";
-    if (appData.applicantType !== "REGULAR" && appData.learnerType !== "NEW_ENROLLEE" && appData.learnerType !== "TRANSFEREE") {
-      // Actually it's just ENROLLMENT now because admission is separated!
-      application_type = "ENROLLMENT";
-    }
-
-    let current_step = 1;
-    if (appData.status === "READY_FOR_SECTIONING" || appData.status === "PENDING_CONFIRMATION") {
-      current_step = 2;
-    } else if (appData.status === "OFFICIALLY_ENROLLED") {
-      current_step = 3;
-    }
-
-    res.status(200).json({
-      trackingNumber: appData.trackingNumber,
-      applicantName,
-      firstName: learner.firstName,
-      middleName: learner.middleName,
-      lastName: learner.lastName,
-      createdAt: appData.createdAt,
-      status: appData.status,
-      complianceStatus: appData.complianceStatus,
-      applicantType: appData.applicantType,
-      gradeLevel: { name: gradeLevel.name },
-      scpAdmissionStatus: scpAdmission?.assessmentResult || null,
-      scpProgram: scpAdmission ? appData.applicantType : null,
-      enrollment: enrollmentRecord ? {
-        section: { name: enrollmentRecord.section?.name || "" },
-        enrolledAt: enrollmentRecord.enrolledAt,
-      } : null,
-      application_type,
-      current_step,
-    });
+    res.status(404).json({ message: "No application found for the provided Tracking Number." });
+    return;
   } catch (error) {
     console.error("Failed to track application:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -723,13 +652,7 @@ export async function submitEnrollment(req: Request, res: Response) {
                            assignedProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA" : 
                            assignedProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS" : "BEC";
     const application = await prisma.$transaction(async (tx) => {
-      const trackingNumber = await reserveTrackingNumber(tx, {
-        source: "ENROLLMENT",
-        prefix: "ENR",
-        programAcronym,
-        schoolYearStart: yearPrefix,
-        learnerId: learner.id,
-      });
+      const trackingNumber = null;
 
       const applicationData = {
         learnerId: learner.id,
@@ -875,11 +798,10 @@ export async function submitEnrollment(req: Request, res: Response) {
 export async function updateExistingApplication(req: Request, res: Response) {
   try {
     const parsed = applicationSubmitSchema.safeParse(req.body);
-    const { originalTrackingNumber } = req.body;
 
-    if (!parsed.success || !originalTrackingNumber) {
+    if (!parsed.success) {
       res.status(400).json({
-        message: "Validation failed or missing original tracking number",
+        message: "Validation failed",
       });
       return;
     }
@@ -900,16 +822,16 @@ export async function updateExistingApplication(req: Request, res: Response) {
     // Verify existing record
     const existingApplication = await prisma.enrollmentApplication.findFirst({
       where: {
-        trackingNumber: originalTrackingNumber,
         schoolYearId: activeSchoolYearId,
         learner: { lrn },
         status: "PENDING_VERIFICATION"
       },
+      orderBy: { createdAt: 'desc' },
       include: { learner: true }
     });
 
     if (!existingApplication) {
-      res.status(404).json({ message: "No pending application found for the provided Tracking Number and LRN." });
+      res.status(404).json({ message: "No pending application found for the provided LRN." });
       return;
     }
 

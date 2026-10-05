@@ -228,7 +228,9 @@ export default function Step1Personal() {
 
     if (!lrn || lrn.length !== 12 || hasNoLrn) {
       setIsValidatingLrn(false);
-      setValue("isValidatingLrn", false, { shouldDirty: false });
+      if (getValues("isValidatingLrn") !== false) {
+        setValue("isValidatingLrn", false, { shouldDirty: false });
+      }
       setDuplicateDetected(false);
       setLearnerFound(false);
       setPendingProfile(null);
@@ -236,7 +238,9 @@ export default function Step1Personal() {
     }
 
     setIsValidatingLrn(true);
-    setValue("isValidatingLrn", true, { shouldDirty: false });
+    if (getValues("isValidatingLrn") !== true) {
+      setValue("isValidatingLrn", true, { shouldDirty: false });
+    }
     setDuplicateDetected(false);
     setLearnerFound(false);
 
@@ -268,7 +272,9 @@ export default function Step1Personal() {
       .finally(() => {
         if (active) {
           setIsValidatingLrn(false);
-          setValue("isValidatingLrn", false, { shouldDirty: false });
+          if (getValues("isValidatingLrn") !== false) {
+            setValue("isValidatingLrn", false, { shouldDirty: false });
+          }
         }
       });
 
