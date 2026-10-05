@@ -209,6 +209,8 @@ export const teacherSchemaBase = z
       )
       .optional()
       .default([]),
+    atlasAssignTeachingLoad: z.boolean().optional().default(false),
+    atlasBuildSchedules: z.boolean().optional().default(false),
     accessExpirationDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Access expiration date must be in YYYY-MM-DD format")

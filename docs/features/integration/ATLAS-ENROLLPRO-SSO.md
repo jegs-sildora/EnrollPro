@@ -112,3 +112,23 @@ Verified on 2026-09-22:
 - The outbound EnrollPro-to-ATLAS launch targets the ATLAS server callback at
   `/api/v1/auth/enrollpro/callback`; `/auth/sso/callback` remains ATLAS's result
   page and must not receive an EnrollPro authorization code directly.
+
+## ATLAS Access Profile (C01)
+
+Starting in version C01, the EnrollPro SSO identity response and the faculty integration feed include an ATLAS-specific access configuration object. This profile specifies the active school year context and explicitly grants or denies granular administrative capabilities for ATLAS.
+
+`jsonc
+"companionAccess": {
+  "atlas": {
+    "schoolYearId": 12,
+    "assignTeachingLoad": true,
+    "buildSchedules": false,
+    "gradeLevelIds": null
+  }
+}
+`
+
+- **ssignTeachingLoad**: Boolean flag indicating if the personnel is permitted to create and change teaching-load assignments in ATLAS.
+- **uildSchedules**: Boolean flag indicating if the personnel may edit, generate, and review the timetable, and request publication in ATLAS.
+
+These flags are sourced from the user's TeacherDesignation in the active school year, allowing access permissions to roll over and adapt smoothly per term without ATLAS keeping an out-of-sync duplicate mapping.

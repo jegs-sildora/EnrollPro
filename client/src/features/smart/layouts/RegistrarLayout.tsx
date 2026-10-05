@@ -114,8 +114,18 @@ export default function RegistrarLayout() {
   }, [navigate]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
+    sessionStorage.clear();
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.includes("filter") ||
+        key.includes("pagination") ||
+        key.includes("search") ||
+        key.includes("table") ||
+        key.includes("limit")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
     navigate("/dashboard");
   };
 

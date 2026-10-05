@@ -186,6 +186,18 @@ export default function LearnerDashboard() {
 
   const handleLogout = () => {
     clearAuth();
+    sessionStorage.clear();
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.includes("filter") ||
+        key.includes("pagination") ||
+        key.includes("search") ||
+        key.includes("table") ||
+        key.includes("limit")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
     navigate("/learner/login", { replace: true });
   };
 

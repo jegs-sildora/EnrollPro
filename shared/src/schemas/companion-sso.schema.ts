@@ -52,6 +52,14 @@ export const companionSsoExchangeResponseSchema = z.object({
     middleName: z.string().nullable(),
     lastName: z.string(),
     roles: z.array(RoleEnum),
+    companionAccess: z.object({
+      atlas: z.object({
+        schoolYearId: z.number().int().positive(),
+        assignTeachingLoad: z.boolean(),
+        buildSchedules: z.boolean(),
+        gradeLevelIds: z.array(z.number().int().positive()).nullable(),
+      }).optional(),
+    }).optional(),
   }),
   activeSchoolYear: z.object({
     id: z.number().int().positive(),

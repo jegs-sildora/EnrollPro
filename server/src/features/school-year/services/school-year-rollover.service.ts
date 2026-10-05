@@ -1104,6 +1104,24 @@ export async function executeSchoolYearRollover({
         },
       });
 
+      // Phase 1.5: Carry over teacher designations (ancillary roles & ATLAS switches)
+      const sourceDesignations = await tx.teacherDesignation.findMany({
+        where: { schoolYearId: sourceSchoolYearId },
+      });
+      if (sourceDesignations.length > 0) {
+        await tx.teacherDesignation.createMany({
+          data: sourceDesignations.map((desig) => ({
+            teacherId: desig.teacherId,
+            schoolYearId: targetYear.id,
+            ancillaryRoles: desig.ancillaryRoles,
+            atlasAssignTeachingLoad: desig.atlasAssignTeachingLoad,
+            atlasBuildSchedules: desig.atlasBuildSchedules,
+            updatedById: actingUserId,
+            updateReason: "Rollover from previous school year",
+          })),
+        });
+      }
+
       // Phase 2: Automated Batch Sectioning
       await executeAutoSectioningBatch(tx, targetYear.id, actingUserId);
       await tx.auditLog.create({

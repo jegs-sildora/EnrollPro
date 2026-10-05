@@ -16,6 +16,7 @@ import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+import { gradeCoordinatorRoleToOrder } from "../sections/grade-level-scope.service.js";
 import { normalizeApplicationRoles } from "./application-role.service.js";
 
 const AUTHORIZATION_CODE_TTL_MS = 60_000;
@@ -33,6 +34,8 @@ const ALLOWED_ROLES: Record<CompanionSystem, readonly Role[]> = {
     "TEACHER",
     "CLASS_ADVISER",
     "GRADE_LEVEL_COORDINATOR",
+    "PRINCIPAL",
+    "SCHOOL_REGISTRAR",
   ],
   AIMS: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
   SMART: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
@@ -429,6 +432,12 @@ export async function exchangeCompanionSsoCode(input: {
   let exchanged: {
     user: SsoUser;
     activeSchoolYear: { id: number; yearLabel: string };
+    atlasAccess?: {
+      schoolYearId: number;
+      assignTeachingLoad: boolean;
+      buildSchedules: boolean;
+      gradeLevelIds: number[] | null;
+    };
   };
   try {
     exchanged = await prisma.$transaction(
@@ -511,12 +520,49 @@ export async function exchangeCompanionSsoCode(input: {
         const user: SsoUser = authorizationCode.user;
         assertUserCanLaunch(input.system, user);
 
+        let atlasAccess = undefined;
+        if (input.system === "ATLAS") {
+          const employeeId = user.teacherProfile?.employeeId ?? user.employeeId;
+          if (employeeId) {
+            const designation = await tx.teacherDesignation.findFirst({
+              where: {
+                schoolYearId: activeSchoolYear.active.schoolYearId,
+                teacher: { employeeId: employeeId }
+              },
+              include: { teacher: true }
+            });
+            if (designation) {
+              const mergedAncillary = Array.from(new Set([...designation.teacher.ancillaryRoles, ...designation.ancillaryRoles]));
+              const displayOrders = Object.entries(gradeCoordinatorRoleToOrder)
+                .filter(([role]) => mergedAncillary.includes(role))
+                .map(([, displayOrder]) => displayOrder);
+              
+              let gradeLevelIds: number[] | null = null;
+              if (displayOrders.length > 0) {
+                const gradeLevels = await tx.gradeLevel.findMany({
+                  where: { displayOrder: { in: displayOrders as number[] } },
+                  select: { id: true },
+                });
+                gradeLevelIds = gradeLevels.map(g => g.id);
+              }
+
+              atlasAccess = {
+                schoolYearId: activeSchoolYear.active.schoolYearId,
+                assignTeachingLoad: designation.atlasAssignTeachingLoad,
+                buildSchedules: designation.atlasBuildSchedules,
+                gradeLevelIds
+              };
+            }
+          }
+        }
+
         return {
           user,
           activeSchoolYear: {
             id: activeSchoolYear.active.schoolYearId,
             yearLabel: activeSchoolYear.active.yearLabel,
           },
+          atlasAccess
         };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -547,6 +593,7 @@ export async function exchangeCompanionSsoCode(input: {
       middleName: exchanged.user.middleName,
       lastName: exchanged.user.lastName,
       roles: projectCompanionRoles(input.system, exchanged.user.roles),
+      ...(exchanged.atlasAccess ? { companionAccess: { atlas: exchanged.atlasAccess } } : {}),
     },
     activeSchoolYear: exchanged.activeSchoolYear,
     authenticatedAt: now.toISOString(),

@@ -135,6 +135,18 @@ function UserNav() {
     }
     // Clear persisted auth state (writes to localStorage immediately).
     clearAuth();
+    sessionStorage.clear();
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.includes("filter") ||
+        key.includes("pagination") ||
+        key.includes("search") ||
+        key.includes("table") ||
+        key.includes("limit")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
     // Hard reload to the login page. This avoids the React 19 + Radix UI
     // ref-composition crash that occurs when the entire component tree
     // (with Tooltip/Dialog/Presence refs) unmounts via client-side navigation.

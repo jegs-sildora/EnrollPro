@@ -171,6 +171,8 @@ const formSchema = z
       "OTHER",
     ]).optional().nullable(),
     ancillaryRoles: z.array(z.string()).default([]),
+    atlasAssignTeachingLoad: z.boolean().default(false),
+    atlasBuildSchedules: z.boolean().default(false),
     roles: z.array(z.string()).min(1, "Please select at least one system role for this personnel."),
 
     contactNumber: z
@@ -998,6 +1000,20 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
                     </div>
 
+                    {/* ATLAS Configuration */}
+                    <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center justify-between uppercase">
+                        <span className="flex items-center gap-2">
+                          <ShieldAlert className="h-4 w-4 text-primary" />
+                          ATLAS Access Options
+                        </span>
+                      </div>
+                      <div className="text-base leading-tight font-bold divide-y divide-border">
+                        <ViewRow label="Assign Teaching Load" value={teacher.designation?.atlasAssignTeachingLoad ? "Yes" : "No"} />
+                        <ViewRow label="Build Schedules" value={teacher.designation?.atlasBuildSchedules ? "Yes" : "No"} />
+                      </div>
+                    </div>
+
                     {/* SF7 Profile */}
                     {showSF7 && (
                       <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
@@ -1734,6 +1750,53 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   />
                                 )}
                               />
+                            </div>
+                            
+                            <div className="col-span-1 sm:col-span-2 space-y-4 border rounded-md p-4 bg-muted/10">
+                              <Label className="text-base font-bold uppercase text-foreground flex items-center gap-2 border-b pb-2">
+                                <ShieldAlert className="w-4 h-4 text-primary" />
+                                ATLAS Access Toggles
+                              </Label>
+                              <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                                <Controller
+                                  name="atlasAssignTeachingLoad"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <label className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 cursor-pointer", !isEditing && "opacity-60 cursor-not-allowed")}>
+                                      <input
+                                        type="checkbox"
+                                        checked={field.value}
+                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        disabled={!isEditing}
+                                        className="mt-1 h-4 w-4 shrink-0 rounded-sm border-primary text-primary shadow focus:ring-primary"
+                                      />
+                                      <div className="space-y-1 leading-none">
+                                        <p className="font-bold text-sm">Assign Teaching Load</p>
+                                        <p className="text-xs text-muted-foreground">Allow this user to manage teaching loads in ATLAS.</p>
+                                      </div>
+                                    </label>
+                                  )}
+                                />
+                                <Controller
+                                  name="atlasBuildSchedules"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <label className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 cursor-pointer", !isEditing && "opacity-60 cursor-not-allowed")}>
+                                      <input
+                                        type="checkbox"
+                                        checked={field.value}
+                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        disabled={!isEditing}
+                                        className="mt-1 h-4 w-4 shrink-0 rounded-sm border-primary text-primary shadow focus:ring-primary"
+                                      />
+                                      <div className="space-y-1 leading-none">
+                                        <p className="font-bold text-sm">Build Schedules</p>
+                                        <p className="text-xs text-muted-foreground">Allow this user to build section schedules in ATLAS.</p>
+                                      </div>
+                                    </label>
+                                  )}
+                                />
+                              </div>
                             </div>
                           </div>
                         )}

@@ -585,7 +585,7 @@ export async function listIntegrationFaculty(
     where.personnelType = personnelType;
   }
 
-  const [total, teachers] = await Promise.all([
+  const [total, teachers, allGradeLevels] = await Promise.all([
     prisma.teacher.count({ where }),
     prisma.teacher.findMany({
       where,
@@ -628,7 +628,24 @@ export async function listIntegrationFaculty(
         },
       },
     }),
+    prisma.gradeLevel.findMany({ select: { id: true, displayOrder: true } }),
   ]);
+
+  const employeeIds = teachers.map((t) => t.employeeId).filter((id): id is string => Boolean(id));
+  const users = employeeIds.length > 0 
+    ? await prisma.user.findMany({
+        where: { employeeId: { in: employeeIds } },
+        select: { id: true, employeeId: true },
+      })
+    : [];
+  const userIdByEmployeeId = new Map(users.map((u) => [u.employeeId, u.id]));
+
+  const gradeCoordinatorRoleToOrder = {
+    "GRADE 7 COORDINATOR": 7,
+    "GRADE 8 COORDINATOR": 8,
+    "GRADE 9 COORDINATOR": 9,
+    "GRADE 10 COORDINATOR": 10,
+  } as const;
 
   const rows = teachers.map((teacher: TeacherForFaculty) => {
     const designation = teacher.teacherDesignations[0] ?? null;
@@ -636,6 +653,7 @@ export async function listIntegrationFaculty(
     // NOTE: designationNotes, updateReason, updatedById, updatedByName, updatedAt
     // are internal HR audit fields — excluded to comply with DPA minimization.
     return {
+      userId: teacher.employeeId ? (userIdByEmployeeId.get(teacher.employeeId) ?? null) : null,
       teacherId: teacher.id,
       employeeId: teacher.employeeId,
       firstName: teacher.firstName,
@@ -673,6 +691,26 @@ export async function listIntegrationFaculty(
         designation?.advisorySection?.gradeLevel?.name ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,
+      companionAccess: (() => {
+        const mergedAncillary = mergeAncillaryRoles(teacher.ancillaryRoles, designation?.ancillaryRoles);
+        const displayOrders = Object.entries(gradeCoordinatorRoleToOrder)
+          .filter(([role]) => mergedAncillary.includes(role))
+          .map(([, displayOrder]) => displayOrder);
+        let gradeLevelIds: number[] | null = null;
+        if (displayOrders.length > 0) {
+          gradeLevelIds = allGradeLevels
+            .filter((g) => displayOrders.includes(g.displayOrder as any))
+            .map((g) => g.id);
+        }
+        return {
+          atlas: {
+            schoolYearId: scope.schoolYearId,
+            assignTeachingLoad: designation?.atlasAssignTeachingLoad ?? false,
+            buildSchedules: designation?.atlasBuildSchedules ?? false,
+            gradeLevelIds,
+          },
+        };
+      })(),
     };
   });
 

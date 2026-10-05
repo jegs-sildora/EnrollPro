@@ -1,7 +1,7 @@
 import type { Request } from "express"
 import { prisma } from "../../lib/prisma.js"
 
-const gradeCoordinatorRoleToOrder = {
+export const gradeCoordinatorRoleToOrder = {
   "GRADE 7 COORDINATOR": 7,
   "GRADE 8 COORDINATOR": 8,
   "GRADE 9 COORDINATOR": 9,

@@ -11,6 +11,8 @@ export interface TeacherDesignation {
     gradeLevelName: string | null;
   } | null;
   ancillaryRoles: string[];
+  atlasAssignTeachingLoad: boolean;
+  atlasBuildSchedules: boolean;
   designationNotes: string | null;
   effectiveFrom: string | null;
   effectiveTo: string | null;
@@ -49,6 +51,8 @@ export interface Teacher {
   personnelType: string | null;
   functionalAssignment: string | null;
   ancillaryRoles: string[];
+  atlasAssignTeachingLoad: boolean;
+  atlasBuildSchedules: boolean;
   sectionCount: number;
   designation: TeacherDesignation | null;
   isActive: boolean;
