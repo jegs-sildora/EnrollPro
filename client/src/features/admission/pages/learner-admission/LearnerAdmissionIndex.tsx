@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import ScpAdmissionForm, { type ScpProgram } from "@/features/admission/pages/scp-admission/ScpAdmissionForm"
 import EnrollmentSuccess from "@/features/admission/pages/online-enrollment/components/EnrollmentSuccess"
 import type { ApplicationSubmitResponse } from "@enrollpro/shared"
@@ -65,6 +66,13 @@ interface Application {
     id: number
     status: string
     isSectioned: boolean
+  } | null
+  previousSchool: {
+    schoolYearLastAttended: string | null
+  } | null
+  eosyResult: {
+    status: string | null
+    genAve: number | null
   } | null
 }
 interface EditState {
@@ -203,7 +211,7 @@ function EnrollmentStatusBadge({ application }: { application: RankedApplication
 export default function LearnerAdmissionIndex() {
   const queryClient = useQueryClient()
   const setTitle = useHeaderStore((state) => state.setTitle)
-  const { steEnabled, spaEnabled, spsEnabled, steCapacity, spaCapacity, spsCapacity, steRosterLocked, spaRosterLocked, spsRosterLocked } = useSettingsStore()
+  const { activeSchoolYearLabel, steEnabled, spaEnabled, spsEnabled, steCapacity, spaCapacity, spsCapacity, steRosterLocked, spaRosterLocked, spsRosterLocked } = useSettingsStore()
   const [selectedTab, setSelectedTab] = useState<ScpProgram | "">("")
   const [searchTerm, setSearchTerm] = useState("")
   const [page, setPage] = useState(1)
@@ -211,6 +219,8 @@ export default function LearnerAdmissionIndex() {
   const [edits, setEdits] = useState<Record<number, EditState>>({})
   const [assessmentFilter, setAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [localAssessmentFilter, setLocalAssessmentFilter] = useState<AssessmentResult | "all">("all")
+  const [previousSchoolYearFilter, setPreviousSchoolYearFilter] = useState<string>("all")
+  const [localPreviousSchoolYearFilter, setLocalPreviousSchoolYearFilter] = useState<string>("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false)
@@ -226,6 +236,17 @@ export default function LearnerAdmissionIndex() {
   const isGlobalAdmin = roles.some((r) =>
     ["SYSTEM_ADMIN", "PRINCIPAL", "SCHOOL_REGISTRAR", "HEAD_REGISTRAR"].includes(r)
   )
+
+  const { data: previousSchoolYears = [] } = useQuery<{ id: string, label: string }[]>({
+    queryKey: ["school-years", "archived"],
+    queryFn: async () => {
+      const { data } = await api.get<{ years: { id: number, yearLabel: string, status: string }[] }>("/school-years")
+      return data.years
+        .filter((y) => y.status === "ARCHIVED")
+        .sort((a, b) => b.yearLabel.localeCompare(a.yearLabel)) // Sort descending (e.g. 2022-2023 > 2021-2022)
+        .map((y) => ({ id: y.id.toString(), label: y.yearLabel }))
+    },
+  })
 
   const activePrograms = useMemo<ProgramTab[]>(() => {
     const programs: ProgramTab[] = []
@@ -246,6 +267,7 @@ export default function LearnerAdmissionIndex() {
     : activePrograms[0]?.id ?? ""
 
   const isRosterLocked =
+    previousSchoolYearFilter !== "all" ||
     (activeTab === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && steRosterLocked) ||
     (activeTab === "SPECIAL_PROGRAM_IN_THE_ARTS" && spaRosterLocked) ||
     (activeTab === "SPECIAL_PROGRAM_IN_SPORTS" && spsRosterLocked) || false
@@ -263,9 +285,13 @@ export default function LearnerAdmissionIndex() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const { data: applicants = [], isLoading: isFetching } = useQuery<Application[]>({
-    queryKey: ["scp-applicants", activeTab],
+    queryKey: ["scp-applicants", activeTab, previousSchoolYearFilter],
     queryFn: async () => {
-      const { data } = await api.get<Application[]>("/enrollment/scp-applicants", { params: { program: activeTab } })
+      const params: Record<string, string> = { program: activeTab }
+      if (previousSchoolYearFilter !== "all") {
+        params.schoolYearId = previousSchoolYearFilter
+      }
+      const { data } = await api.get<Application[]>("/enrollment/scp-applicants", { params })
       return data
     },
     enabled: activeTab !== "",
@@ -410,7 +436,10 @@ export default function LearnerAdmissionIndex() {
         .filter(Boolean).join(" ").toLocaleLowerCase()
       const matchesSearch = !search || fullName.includes(search) || application.learner.lrn?.includes(search) === true
       const res = application.finalResult
-      return matchesSearch && (assessmentFilter === "all" || res === assessmentFilter)
+      
+      const matchesAssessment = assessmentFilter === "all" || res === assessmentFilter
+
+      return matchesSearch && matchesAssessment
     })
 
     const firstDisqualifiedIndex = result.findIndex((app) => {
@@ -484,12 +513,13 @@ export default function LearnerAdmissionIndex() {
   }, [edits, applicants, rankedApplicants])
 
   const canLockRoster = useMemo(() => {
+    if (previousSchoolYearFilter !== "all") return false
     if (applicants.length === 0) return false
     return applicants.every((app) => {
       const result = app.scpProfile?.assessmentResult
       return result === "QUALIFIED" || result === "DISQUALIFIED" || result === "WAITLISTED" || result === "FORFEITED"
     })
-  }, [applicants])
+  }, [applicants, previousSchoolYearFilter])
 
   const updateEdit = (application: Application, patch: Partial<EditState>) => {
     setEdits((current) => {
@@ -543,7 +573,7 @@ export default function LearnerAdmissionIndex() {
               <p className="text-sm">
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
-              <EnrollmentStatusBadge application={application} />
+              {previousSchoolYearFilter === "all" && <EnrollmentStatusBadge application={application} />}
             </div>
           </div>
         )
@@ -702,7 +732,7 @@ export default function LearnerAdmissionIndex() {
         return (
           <div className="flex items-center justify-center gap-2 uppercase relative">
             <ResultBadge result={result} />
-            {result === "QUALIFIED" && (
+            {result === "QUALIFIED" && previousSchoolYearFilter === "all" && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0">
@@ -723,7 +753,7 @@ export default function LearnerAdmissionIndex() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {result === "FORFEITED" && (
+            {result === "FORFEITED" && previousSchoolYearFilter === "all" && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0">
@@ -748,7 +778,104 @@ export default function LearnerAdmissionIndex() {
         )
       },
     },
-  ], [page, limit, setForfeitTarget, setIsForfeitModalOpen, setRestoreTarget, setIsRestoreModalOpen])
+    ...(previousSchoolYearFilter !== "all" ? [{
+      id: "eosyResult",
+      size: 190,
+      minSize: 170,
+      meta: { className: "text-center", headerClassName: "text-center", pin: "right" },
+      header: "EOSY RESULT",
+      cell: ({ row }) => {
+        const application = getApplicationRow(row.original)
+        if (!application) return null
+        const s = application.eosyResult?.status;
+        const genAve = application.eosyResult?.genAve;
+        if (!s) {
+          return <div className="py-3 text-center text-base font-bold text-foreground">—</div>;
+        }
+
+        const formattedGenAve = genAve !== null && genAve !== undefined && !Number.isNaN(genAve) ? genAve.toFixed(2) : null;
+        
+        const isPromoted = s === "PROMOTED" || s === "PROMOTED_TO_BEC";
+        const isRetained = s === "RETAINED";
+        
+        let label = s;
+        if (isPromoted) label = "Promoted";
+        else if (s === "CONDITIONALLY_PROMOTED") label = "Conditionally Promoted";
+        else if (isRetained) label = "Retained";
+        else if (s === "DROPPED_OUT") label = "Dropped Out";
+        else if (s === "TRANSFERRED_OUT") label = "Transferred Out";
+
+        let colorClass = "";
+        let hoverClass = "";
+        let titleColorClass = "";
+        let title = "";
+        let description = "";
+
+        if (s === "PROMOTED" || s === "PROMOTED_TO_BEC") {
+          title = "PROMOTED";
+          description = "Learner met all academic requirements and is eligible for the next grade level.";
+          colorClass = "bg-green-50 border border-green-300 text-green-900";
+          titleColorClass = "text-green-800 border-b border-green-200";
+          hoverClass = "hover:bg-green-100";
+        } else if (s === "RETAINED") {
+          title = "Retention Reason";
+          const isFailingAve = genAve !== null && Number(genAve) < 75;
+          description = isFailingAve 
+            ? `Final average of ${formattedGenAve} is below the passing threshold of 75` 
+            : "Learner passed the general average but failed 3 or more individual learning areas";
+          colorClass = "bg-red-50 border border-red-300 text-red-900";
+          titleColorClass = "text-red-800 border-b border-red-200";
+          hoverClass = "hover:bg-red-100";
+        } else if (s === "CONDITIONALLY_PROMOTED") {
+          title = "CONDITIONALLY PROMOTED";
+          description = "Learner has academic deficiencies that must be addressed.";
+          colorClass = "bg-amber-50 border border-amber-300 text-amber-900";
+          titleColorClass = "text-amber-800 border-b border-amber-200";
+          hoverClass = "hover:bg-amber-100";
+        } else {
+          return (
+            <div className="flex flex-col items-center gap-1 py-3 text-center">
+              <Badge className="rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide">
+                {label}
+              </Badge>
+              {formattedGenAve && (
+                <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${formattedGenAve}`}>
+                  Final Gen Ave: {formattedGenAve}
+                </span>
+              )}
+            </div>
+          )
+        }
+
+        return (
+          <div className="flex flex-col items-center gap-1 py-3 text-center">
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className={cn("rounded-md px-2.5 py-0.5 font-bold uppercase tracking-wide cursor-help transition-colors", colorClass, hoverClass)}>
+                    {label}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent collisionPadding={24} className={cn("shadow-lg rounded-md p-4 w-100 text-left mr-6", colorClass)}>
+                  <h4 className={cn("text-base font-extrabold uppercase tracking-wide pb-2 mb-2", titleColorClass)}>
+                    {title}
+                  </h4>
+                  <div className="text-base leading-snug">
+                    {description}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {formattedGenAve && (
+              <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${formattedGenAve}`}>
+                Final Gen Ave: {formattedGenAve}
+              </span>
+            )}
+          </div>
+        )
+      }
+    } as ColumnDef<ApplicationTableRow>] : []),
+  ], [page, limit, setForfeitTarget, setIsForfeitModalOpen, setRestoreTarget, setIsRestoreModalOpen, previousSchoolYearFilter])
 
   const handleSaveBulk = () => {
     const updatesMap = new Map<number, AssessmentUpdate>();
@@ -861,7 +988,10 @@ export default function LearnerAdmissionIndex() {
               />
               <Popover open={isFilterOpen} onOpenChange={(open) => {
                 setIsFilterOpen(open)
-                if (open) setLocalAssessmentFilter(assessmentFilter)
+                if (open) {
+                  setLocalAssessmentFilter(assessmentFilter)
+                  setLocalPreviousSchoolYearFilter(previousSchoolYearFilter)
+                }
               }}>
                 <PopoverTrigger asChild>
                   <button
@@ -870,8 +1000,10 @@ export default function LearnerAdmissionIndex() {
                     className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
                   >
                     <SlidersHorizontal className="h-5 w-5" />
-                    {assessmentFilter !== "all" && (
-                      <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm">1</span>
+                    {(assessmentFilter !== "all" || previousSchoolYearFilter !== "all") && (
+                      <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm">
+                        {(assessmentFilter !== "all" ? 1 : 0) + (previousSchoolYearFilter !== "all" ? 1 : 0)}
+                      </span>
                     )}
                   </button>
                 </PopoverTrigger>
@@ -880,6 +1012,21 @@ export default function LearnerAdmissionIndex() {
                     <h4 className="text-lg font-bold">Filter Applicants</h4>
                   </div>
                   <div className="flex flex-col space-y-4 p-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm uppercase text-foreground">Previous School Year</Label>
+                      <Select isFilter value={localPreviousSchoolYearFilter} onValueChange={setLocalPreviousSchoolYearFilter}>
+                        <SelectTrigger className="h-10 w-full font-bold leading-tight">
+                          <SelectValue placeholder="All School Years" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="font-bold">All School Years</SelectItem>
+                          {previousSchoolYears.map((year) => (
+                            <SelectItem key={year.id} value={year.id} className="font-bold">{year.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="space-y-1.5">
                       <Label className="text-sm uppercase text-foreground">Final Result</Label>
                       <Select isFilter value={localAssessmentFilter} onValueChange={(value) => setLocalAssessmentFilter(value as AssessmentResult | "all")}>
@@ -898,12 +1045,15 @@ export default function LearnerAdmissionIndex() {
                   <div className="flex items-center justify-between rounded-b-md border-t bg/30 p-4">
                     <Button variant="ghost" size="sm" onClick={() => {
                       setLocalAssessmentFilter("all")
+                      setLocalPreviousSchoolYearFilter("all")
                       setAssessmentFilter("all")
+                      setPreviousSchoolYearFilter("all")
                       setSearchTerm("")
                       setPage(1)
                     }}>Clear All</Button>
                     <Button size="sm" onClick={() => {
                       setAssessmentFilter(localAssessmentFilter)
+                      setPreviousSchoolYearFilter(localPreviousSchoolYearFilter)
                       setPage(1)
                       setIsFilterOpen(false)
                     }}>Apply Filters</Button>
@@ -912,7 +1062,7 @@ export default function LearnerAdmissionIndex() {
               </Popover>
             </div>
 
-            {isRosterLocked ? (
+            {isRosterLocked && previousSchoolYearFilter === "all" ? (
               <div className="flex items-center gap-2 shrink-0">
                 <Button className="h-12 whitespace-nowrap font-bold bg-primary text-primary-foreground" onClick={() => setIsUnlockModalOpen(true)}>
                   Unlock Roster
@@ -920,7 +1070,7 @@ export default function LearnerAdmissionIndex() {
               </div>
             ) : (
               <div className="flex items-center gap-2 shrink-0">
-                {applicants.length > 0 && !canLockRoster && !hasChanges && (
+                {applicants.length > 0 && !canLockRoster && !hasChanges && previousSchoolYearFilter === "all" && (
                   <Button
                     type="button"
                     variant="default"
@@ -962,20 +1112,22 @@ export default function LearnerAdmissionIndex() {
                   <p className="mt-2 max-w-lg text-base text-muted-foreground">
                     There are no applicants currently registered for this program. Wait for online submissions or manually encode a walk-in.
                   </p>
-                  <Button
-                    type="button"
-                    size="lg"
-                    disabled={isRosterLocked}
-                    title={isRosterLocked ? "Cannot encode walk-ins while the roster is finalized." : undefined}
-                    onClick={() => {
-                      setWalkInSuccess(null)
-                      setIsWalkInOpen(true)
-                    }}
-                    className="mt-6 min-w-72 text-base font-bold"
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Encode Walk-in Applicant
-                  </Button>
+                  {previousSchoolYearFilter === "all" && (
+                    <Button
+                      type="button"
+                      size="lg"
+                      disabled={isRosterLocked}
+                      title={isRosterLocked ? "Cannot encode walk-ins while the roster is finalized." : undefined}
+                      onClick={() => {
+                        setWalkInSuccess(null)
+                        setIsWalkInOpen(true)
+                      }}
+                      className="mt-6 min-w-72 text-base font-bold"
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Encode Walk-in Applicant
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <DataTable<ApplicationTableRow, unknown>

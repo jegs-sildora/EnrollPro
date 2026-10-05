@@ -1148,6 +1148,7 @@ export async function getScpApplicants(req: Request, res: Response, next: NextFu
           }
         },
         scpProfile: true,
+        previousSchool: true,
       },
       orderBy: {
         createdAt: "asc",

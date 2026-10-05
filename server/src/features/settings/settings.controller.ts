@@ -127,11 +127,11 @@ export async function getPublicSettings(
       : false;
 
     const isScpAdmissionOpenFlag = contextSy
-      ? isScpAdmissionOpen(contextSy, currentDate)
+      ? isScpAdmissionOpen(contextSy, settings.systemPhase, currentDate)
       : false;
 
     const isEarlyRegistrationOpenFlag = contextSy
-      ? isEarlyRegistrationOpen(contextSy, currentDate)
+      ? isEarlyRegistrationOpen(contextSy, settings.systemPhase, currentDate)
       : false;
 
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;

@@ -44,8 +44,10 @@ export function isPublicEnrollmentOpen(
 
 export function isScpAdmissionOpen(
   year: Pick<SchoolYear, "scpAdmissionOpenDate" | "scpAdmissionCloseDate">,
+  systemPhase?: string,
   currentDate: Date = new Date(),
 ): boolean {
+  if (systemPhase !== "OFFICIAL_ENROLLMENT") return false;
   if (!year.scpAdmissionOpenDate || !year.scpAdmissionCloseDate) return false;
 
   const todayToken = toManilaDateToken(currentDate);
@@ -57,8 +59,10 @@ export function isScpAdmissionOpen(
 
 export function isEarlyRegistrationOpen(
   year: Pick<SchoolYear, "earlyRegOpenDate" | "earlyRegCloseDate">,
+  systemPhase?: string,
   currentDate: Date = new Date(),
 ): boolean {
+  if (systemPhase !== "OFFICIAL_ENROLLMENT") return false;
   if (!year.earlyRegOpenDate || !year.earlyRegCloseDate) return false;
 
   const todayToken = toManilaDateToken(currentDate);

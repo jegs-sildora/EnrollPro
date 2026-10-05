@@ -116,6 +116,11 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
               },
             },
           },
+          enrollmentHistories: {
+            where: { schoolYearId },
+            take: 1,
+            select: { eosyStatus: true, genAve: true }
+          },
         },
       },
     },
@@ -128,7 +133,8 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
   // Map to legacy application structure so frontend LearnerAdmissionIndex works without changes
   const mapped = admissions.map((adm) => {
     const [enrollmentApplication] = adm.learner.enrollmentApplications
-    const { enrollmentApplications: _enrollmentApplications, ...learner } = adm.learner
+    const [learnerRecord] = adm.learner.enrollmentHistories
+    const { enrollmentApplications: _enrollmentApplications, enrollmentHistories: _enrollmentHistories, ...learner } = adm.learner
 
     return {
       id: adm.id,
@@ -151,6 +157,10 @@ export const getScpApplicants = async (req: Request, res: Response): Promise<voi
         assessmentResult: adm.assessmentResult,
         grade5GeneralAverage: adm.grade5GeneralAverage,
       },
+      eosyResult: learnerRecord ? {
+        status: learnerRecord.eosyStatus,
+        genAve: learnerRecord.genAve,
+      } : null,
       createdAt: adm.createdAt,
       finalResult: adm.assessmentResult,
     }

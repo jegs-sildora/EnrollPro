@@ -7,7 +7,10 @@ import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import EarlyRegistrationSuccess from "./components/EarlyRegistrationSuccess";
 
-import { cn } from "@/shared/lib/utils";
+import { Lock } from "lucide-react";
+import { Badge } from "@/shared/ui/badge";
+import { cn, isWithinManilaDateRange } from "@/shared/lib/utils";
+import { useManilaNow } from "@/shared/hooks/useManilaNow";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
@@ -42,8 +45,17 @@ export default function EarlyRegistrationIndex() {
     earlyRegOpenDate,
     earlyRegCloseDate,
   } = useSettingsStore();
+  const systemNow = useManilaNow();
 
-  const isClosed = !isEarlyRegistrationOpen;
+  const isEarlyRegistrationPeriodOpen = earlyRegOpenDate && earlyRegCloseDate
+    ? isEarlyRegistrationOpen && isWithinManilaDateRange(
+        systemNow,
+        earlyRegOpenDate,
+        earlyRegCloseDate,
+      )
+    : isEarlyRegistrationOpen;
+  
+  const isClosed = !isEarlyRegistrationPeriodOpen;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -67,8 +79,7 @@ export default function EarlyRegistrationIndex() {
     <GuestLayout>
       <div
         className={cn(
-          "relative min-h-screen flex flex-col",
-          isClosed && "h-screen overflow-hidden",
+          "relative min-h-screen flex flex-col"
         )}>
         <div
           className="fixed inset-0 -z-10"
@@ -155,7 +166,7 @@ export default function EarlyRegistrationIndex() {
         <main
           className={cn(
             "px-4 sm:px-6 lg:px-8 flex flex-col flex-1",
-            isClosed ? "justify-center items-center" : "py-8",
+            isClosed ? "justify-center items-center py-20" : "py-8",
           )}>
           <div
             className={cn(
@@ -166,61 +177,61 @@ export default function EarlyRegistrationIndex() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-6 py-8 px-6 sm:px-10 bg-muted/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-destructive/50 to-transparent" />
-                <div className="space-y-6 relative z-10">
+                className="w-full shadow-lg shadow-slate-200 rounded-xl relative overflow-hidden bg-card backdrop-blur-md border border-border/50">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+                
+                <div className="flex flex-col items-center justify-center p-6 sm:p-8 border-b border-border/50 bg-muted/30">
                   {logoUrl ? (
                     <img
                       src={`${API_BASE}${logoUrl}`}
-                      className="h-24 w-24 mx-auto object-contain drop-shadow-md"
+                      className="h-30 w-30 mx-auto object-contain drop-shadow-md mb-4"
                       alt={schoolName}
                     />
                   ) : (
-                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-bold text-primary">
+                    <div className="h-20 w-20 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary mb-4">
                       {schoolName?.charAt(0)}
                     </div>
                   )}
+                  <div className="font-extrabold uppercase text-primary text-center text-3xl">
+                    {schoolName}
+                  </div>
+                </div>
+
+                <div className="p-8 sm:p-12 text-center space-y-6">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center text-primary shadow-sm border border-primary">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-bold uppercase text-foreground">
-                      {schoolName}
-                    </h2>
+                    <h3 className="text-3xl font-extrabold text-primary tracking-tight">
+                      Early Registration is Closed
+                    </h3>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary text-xs sm:text-sm px-3 py-0.5 rounded-full uppercase tracking-wide font-bold mt-2 inline-flex">
+                      S.Y. {activeSchoolYearLabel || "Admissions"}
+                    </Badge>
                   </div>
 
-                  <div className="space-y-4 max-w-lg mx-auto">
-                    <h3 className="text-xl sm:text-2xl font-bold text-foreground">
-                      S.Y. {activeSchoolYearLabel || "Admissions"} Early Registration Period is
-                      Currently Closed
-                    </h3>
-                    <p className="text-base sm:text-base text-foreground leading-relaxed">
-                      The online portal for S.Y.{" "}
-                      {activeSchoolYearLabel || "Admissions"} is not currently
-                      accepting Early Registration applications. Registration periods are
-                      scheduled according to the DepEd school calendar.
-                    </p>
-                    <div className="pt-6 border-t border-border/50 space-y-4 flex flex-col">
-                      <p className={cn(
-                        "leading-relaxed text-center",
-                        facebookPageUrl
-                          ? "text-base font-bold text-foreground uppercase"
-                          : "text-base leading-tight text-foreground font-bold"
-                      )}>
-                        {facebookPageUrl
-                          ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."
-                          : "Please stay tuned to our official school social media pages or visit the school campus for announcements regarding the next registration schedule."}
-                      </p>
-                      <a
-                        href={facebookPageUrl || "https://www.facebook.com"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
-                        <svg
-                          className="w-5 h-5 fill-current"
-                          viewBox="0 0 24 24">
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                        </svg>
-                        Visit Official Facebook Page
-                      </a>
-                    </div>
+                  <p className=" leading-relaxed max-w-md mx-auto text-center text-sm sm:text-base">
+                    The online portal is not currently accepting early registration applications. Early registration periods are scheduled according to the DepEd school calendar.
+                    <br/><br/>
+                    {facebookPageUrl
+                        ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."
+                        : "Please stay tuned to our official school social media pages or visit the school for announcements regarding the next registration schedule."}
+                  </p>
+
+                  <div className="pt-6 w-full max-w-sm mx-auto">
+                    <a
+                      href={facebookPageUrl || "https://www.facebook.com"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold uppercase text-sm sm:text-base transition-all shadow-md hover:shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0">
+                      <svg
+                        className="w-5 h-5 fill-current"
+                        viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                      Visit Facebook Page
+                    </a>
                   </div>
                 </div>
               </motion.div>

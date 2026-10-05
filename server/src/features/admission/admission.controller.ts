@@ -14,7 +14,7 @@ import {
   type ScpAdmissionSubmit,
   type TrackingCurrentStep,
 } from "@enrollpro/shared";
-import { isPublicEnrollmentOpen, isScpAdmissionOpen } from "../settings/enrollment-gate.service.js";
+import { isPublicEnrollmentOpen, isScpAdmissionOpen, isEarlyRegistrationOpen } from "../settings/enrollment-gate.service.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import { reserveTrackingNumber } from "./tracking-number.service.js";
 import { getSystemDate } from "../../lib/date-wrapper.js";
@@ -62,7 +62,7 @@ async function getOpenPublicEnrollmentSetting(
   const currentDate = getSystemDate(req);
 
   if (isScp) {
-    if (!isScpAdmissionOpen(setting.activeSchoolYear, currentDate)) {
+    if (!isScpAdmissionOpen(setting.activeSchoolYear, setting.systemPhase, currentDate)) {
       res.status(403).json({
         code: "SCP_ADMISSION_CLOSED",
         message: "SCP Admission is currently closed.",
@@ -986,6 +986,14 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
     if (!schoolSetting) return;
     const activeSchoolYearId = schoolSetting.activeSchoolYearId;
     const currentDate = getSystemDate(req);
+
+    if (!isEarlyRegistrationOpen(schoolSetting.activeSchoolYear, schoolSetting.systemPhase, currentDate)) {
+      res.status(403).json({
+        code: "EARLY_REGISTRATION_CLOSED",
+        message: "Early Registration is currently closed.",
+      });
+      return;
+    }
 
     let learner;
     const lrn = data.hasNoLrn ? null : data.lrn;
