@@ -117,7 +117,7 @@ Verified on 2026-09-22:
 
 Starting in version C01, the EnrollPro SSO identity response and the faculty integration feed include an ATLAS-specific access configuration object. This profile specifies the active school year context and explicitly grants or denies granular administrative capabilities for ATLAS.
 
-`jsonc
+```jsonc
 "companionAccess": {
   "atlas": {
     "schoolYearId": 12,
@@ -126,9 +126,9 @@ Starting in version C01, the EnrollPro SSO identity response and the faculty int
     "gradeLevelIds": null
   }
 }
-`
+```
 
-- **ssignTeachingLoad**: Boolean flag indicating if the personnel is permitted to create and change teaching-load assignments in ATLAS.
-- **uildSchedules**: Boolean flag indicating if the personnel may edit, generate, and review the timetable, and request publication in ATLAS.
+- **assignTeachingLoad**: Boolean flag indicating if the personnel is permitted to create and change teaching-load assignments in ATLAS.
+- **buildSchedules**: Boolean flag indicating if the personnel may edit, generate, and review the timetable, and request publication in ATLAS.
 
 These flags are sourced from the user's TeacherDesignation in the active school year, allowing access permissions to roll over and adapt smoothly per term without ATLAS keeping an out-of-sync duplicate mapping.
