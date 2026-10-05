@@ -108,7 +108,7 @@ export const teacherSchemaBase = z
         z.string().regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits").nullable(),
       )
       .optional(),
-    contactNumber: z.string().regex(/^09\d{2}-\d{3}-\d{4}$/, "Enter an 11-digit mobile number in the format 09XX-XXX-XXXX."),
+    contactNumber: z.string().regex(/^09\d{9}$/, "Enter a valid 11-digit mobile number starting with 09 (e.g., 09123456789)."),
     specialization: z
       .preprocess(
         (value) => {

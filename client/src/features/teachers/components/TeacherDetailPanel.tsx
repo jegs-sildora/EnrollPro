@@ -178,7 +178,7 @@ const formSchema = z
     contactNumber: z
       .string()
       .trim()
-      .regex(/^09\d{2}-\d{3}-\d{4}$/, "Please enter a valid 11-digit mobile number starting with 09 (e.g., 09123456789)."),
+      .regex(/^09\d{9}$/, "Please enter a valid 11-digit mobile number starting with 09 (e.g., 09123456789)."),
 
     serviceStatus: z
       .enum([
@@ -393,6 +393,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       fundingSource: "NATIONAL",
       roles: [],
       ancillaryRoles: [],
+      atlasAssignTeachingLoad: false,
+      atlasBuildSchedules: false,
       contactNumber: "",
       serviceStatus: "ACTIVE",
       serviceEffectiveDate: new Date().toISOString().slice(0, 10),
@@ -481,6 +483,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
         ancillaryRoles: teacher.designation?.ancillaryRoles || teacher.ancillaryRoles || [],
+        atlasAssignTeachingLoad: teacher.designation?.atlasAssignTeachingLoad ?? false,
+        atlasBuildSchedules: teacher.designation?.atlasBuildSchedules ?? false,
         contactNumber: teacher.contactNumber || "",
         serviceStatus: teacher.serviceStatus || "ACTIVE",
         serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
@@ -513,6 +517,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         fundingSource: "NATIONAL",
         roles: [],
         ancillaryRoles: [],
+        atlasAssignTeachingLoad: false,
+        atlasBuildSchedules: false,
         contactNumber: "",
         serviceStatus: "ACTIVE",
         serviceEffectiveDate: new Date().toISOString().slice(0, 10),
@@ -629,6 +635,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         fundingSource: data.fundingSource,
         roles: data.roles,
         ancillaryRoles: data.ancillaryRoles,
+        atlasAssignTeachingLoad: data.atlasAssignTeachingLoad,
+        atlasBuildSchedules: data.atlasBuildSchedules,
         contactNumber: data.contactNumber,
         serviceStatus: data.serviceStatus,
         serviceEffectiveDate: data.serviceEffectiveDate,
@@ -1382,19 +1390,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 <Input autoComplete="off" disabled={!isEditing}
                                   {...field}
                                   value={field.value || ""}
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
-                                    let formatted = raw;
-                                    if (raw.length > 4) {
-                                      formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
-                                    }
-                                    if (raw.length > 7) {
-                                      formatted = `${raw.slice(0, 4)}-${raw.slice(4, 7)}-${raw.slice(7)}`;
-                                    }
-                                    field.onChange(formatted);
-                                  }}
-                                  maxLength={13}
-                                  placeholder="e.g., 0917-123-4567"
+                                  onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                                  maxLength={11}
+                                    placeholder="e.g., 09123456789"
                                   className={cn("font-bold text-base leading-tight", errors.contactNumber && "border-destructive")}
                                 />
                               )}
@@ -1762,38 +1760,38 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   name="atlasAssignTeachingLoad"
                                   control={control}
                                   render={({ field }) => (
-                                    <label className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 cursor-pointer", !isEditing && "opacity-60 cursor-not-allowed")}>
-                                      <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                        disabled={!isEditing}
-                                        className="mt-1 h-4 w-4 shrink-0 rounded-sm border-primary text-primary shadow focus:ring-primary"
-                                      />
-                                      <div className="space-y-1 leading-none">
-                                        <p className="font-bold text-sm">Assign Teaching Load</p>
-                                        <p className="text-xs text-muted-foreground">Allow this user to manage teaching loads in ATLAS.</p>
+                                    <div className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-background", !isEditing && "opacity-60")}>
+                                        <Checkbox
+                                          id="toggle-assign-load"
+                                          checked={field.value}
+                                          onCheckedChange={(checked) => field.onChange(checked === true)}
+                                          disabled={!isEditing}
+                                          className="mt-1"
+                                        />
+                                        <label htmlFor="toggle-assign-load" className={cn("space-y-1 leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                          <p className="font-bold text-sm">Assign Teaching Load</p>
+                                          <p className="text-xs text-muted-foreground font-medium">Allow this user to manage teaching loads in ATLAS.</p>
+                                        </label>
                                       </div>
-                                    </label>
                                   )}
                                 />
                                 <Controller
                                   name="atlasBuildSchedules"
                                   control={control}
                                   render={({ field }) => (
-                                    <label className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 cursor-pointer", !isEditing && "opacity-60 cursor-not-allowed")}>
-                                      <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                        disabled={!isEditing}
-                                        className="mt-1 h-4 w-4 shrink-0 rounded-sm border-primary text-primary shadow focus:ring-primary"
-                                      />
-                                      <div className="space-y-1 leading-none">
-                                        <p className="font-bold text-sm">Build Schedules</p>
-                                        <p className="text-xs text-muted-foreground">Allow this user to build section schedules in ATLAS.</p>
+                                    <div className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-background", !isEditing && "opacity-60")}>
+                                        <Checkbox
+                                          id="toggle-build-schedules"
+                                          checked={field.value}
+                                          onCheckedChange={(checked) => field.onChange(checked === true)}
+                                          disabled={!isEditing}
+                                          className="mt-1"
+                                        />
+                                        <label htmlFor="toggle-build-schedules" className={cn("space-y-1 leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                          <p className="font-bold text-sm">Build Schedules</p>
+                                          <p className="text-xs text-muted-foreground font-medium">Allow this user to build section schedules in ATLAS.</p>
+                                        </label>
                                       </div>
-                                    </label>
                                   )}
                                 />
                               </div>

@@ -383,6 +383,8 @@ export async function index(req: Request, res: Response) {
               }
               : null,
             ancillaryRoles: designation.ancillaryRoles,
+            atlasAssignTeachingLoad: designation.atlasAssignTeachingLoad,
+            atlasBuildSchedules: designation.atlasBuildSchedules,
             effectiveFrom: designation.effectiveFrom,
             effectiveTo: designation.effectiveTo,
           }
@@ -490,6 +492,8 @@ export async function store(req: Request, res: Response) {
       serviceRemarks,
       ancillaryRoles,
       postgraduateDegrees,
+      atlasAssignTeachingLoad,
+      atlasBuildSchedules,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -650,6 +654,8 @@ export async function store(req: Request, res: Response) {
             teacherId: t.id,
             schoolYearId: req.schoolYearId,
             ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+            atlasAssignTeachingLoad,
+            atlasBuildSchedules,
           },
         });
       }
@@ -731,6 +737,8 @@ export async function update(req: Request, res: Response) {
       accessExpirationDate,
       ancillaryRoles,
       postgraduateDegrees,
+      atlasAssignTeachingLoad,
+      atlasBuildSchedules,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -876,11 +884,15 @@ export async function update(req: Request, res: Response) {
           },
           update: {
             ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+            atlasAssignTeachingLoad,
+            atlasBuildSchedules,
           },
           create: {
             teacherId: id,
             schoolYearId: req.schoolYearId,
             ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+            atlasAssignTeachingLoad,
+            atlasBuildSchedules,
           },
         });
       }
@@ -1397,6 +1409,8 @@ export async function upsertDesignation(req: Request, res: Response) {
           isClassAdviser: payload.isClassAdviser,
           advisorySectionId,
           ancillaryRoles: payload.ancillaryRoles || [],
+          atlasAssignTeachingLoad: payload.atlasAssignTeachingLoad,
+          atlasBuildSchedules: payload.atlasBuildSchedules,
           designationNotes: normalizeOptionalText(payload.designationNotes),
           effectiveFrom: parseDateOnly(payload.effectiveFrom),
           effectiveTo: parseDateOnly(payload.effectiveTo),
@@ -1409,6 +1423,8 @@ export async function upsertDesignation(req: Request, res: Response) {
           isClassAdviser: payload.isClassAdviser,
           advisorySectionId,
           ancillaryRoles: payload.ancillaryRoles || [],
+          atlasAssignTeachingLoad: payload.atlasAssignTeachingLoad,
+          atlasBuildSchedules: payload.atlasBuildSchedules,
           designationNotes: normalizeOptionalText(payload.designationNotes),
           effectiveFrom: parseDateOnly(payload.effectiveFrom),
           effectiveTo: parseDateOnly(payload.effectiveTo),
