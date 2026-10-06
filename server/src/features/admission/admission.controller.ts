@@ -1217,7 +1217,15 @@ export async function getEarlyRegistrations(req: Request, res: Response) {
     const applications = await prisma.enrollmentApplication.findMany({
       where: whereClause,
       include: {
-        learner: true,
+        learner: {
+          include: {
+            scpAdmissions: {
+              where: { schoolYearId: schoolSetting.activeSchoolYearId },
+              orderBy: { createdAt: "desc" },
+              take: 1
+            }
+          }
+        },
         gradeLevel: true,
         previousSchool: true,
       },

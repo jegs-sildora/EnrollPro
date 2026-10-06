@@ -26,6 +26,7 @@ type Learner = {
   middleName: string | null;
   lrn: string | null;
   studentPhoto: string | null;
+  scpAdmissions?: { assessmentResult: string; program: string }[];
 };
 
 type GradeLevel = {
@@ -45,6 +46,19 @@ type ApplicationWithRelations = {
   gradeLevel: GradeLevel;
   previousSchool: EnrollmentPreviousSchool | null;
 };
+
+function getProgramAbbreviation(type?: string | null) {
+  switch (type) {
+    case "REGULAR": return "BEC";
+    case "SCIENCE_TECHNOLOGY_AND_ENGINEERING": return "STE";
+    case "SPECIAL_PROGRAM_IN_THE_ARTS": return "SPA";
+    case "SPECIAL_PROGRAM_IN_SPORTS": return "SPS";
+    case "SPECIAL_PROGRAM_IN_JOURNALISM": return "SPJ";
+    case "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE": return "SPFL";
+    case "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION": return "SPTVE";
+    default: return type ?? "";
+  }
+}
 
 export default function EarlyRegistrationMasterlist() {
   const setTitle = useHeaderStore((state: { setTitle: (title: string | null) => void }) => state.setTitle);
@@ -128,15 +142,35 @@ export default function EarlyRegistrationMasterlist() {
                 LRN: {learner.lrn ?? "NO LRN YET"}
               </p>
               <div>
-                {application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION" ? (
-                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200 px-2 py-0">Pending Enrollment</Badge>
-                ) : application.status === "OFFICIALLY_ENROLLED" ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200 px-2 py-0">Officially Enrolled</Badge>
-                ) : application.status === "WITHDRAWN" || application.status === "DROPPED" || application.status === "ARCHIVED_NO_SHOW" ? (
-                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>
-                ) : (
-                  <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 uppercase border border-slate-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>
-                )}
+                {(() => {
+                  const scpAdmissions = application.learner.scpAdmissions;
+                  if (scpAdmissions && scpAdmissions.length > 0) {
+                    const scp = scpAdmissions[0];
+                    const acronym = getProgramAbbreviation(scp.program);
+                    
+                    if (scp.assessmentResult === "PENDING") {
+                      return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 uppercase border border-purple-200 px-2 py-0">PENDING {acronym} RESULT</Badge>;
+                    }
+                    
+                    if (scp.assessmentResult === "QUALIFIED" || scp.assessmentResult === "DISQUALIFIED") {
+                      if (application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION") {
+                        const resultText = scp.assessmentResult === "DISQUALIFIED" ? "UNQUALIFIED" : "QUALIFIED";
+                        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200 px-2 py-0">{acronym} {resultText} — PENDING ENROLLMENT</Badge>;
+                      }
+                    }
+                  }
+
+                  if (application.status === "EARLY_REGISTRATION" || application.status === "PENDING_VERIFICATION") {
+                    return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 uppercase border border-amber-200 px-2 py-0">Pending Enrollment</Badge>;
+                  }
+                  if (application.status === "OFFICIALLY_ENROLLED") {
+                    return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200 px-2 py-0">Officially Enrolled</Badge>;
+                  }
+                  if (application.status === "WITHDRAWN" || application.status === "DROPPED" || application.status === "ARCHIVED_NO_SHOW") {
+                    return <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>;
+                  }
+                  return <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 uppercase border border-slate-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>;
+                })()}
               </div>
             </div>
           </div>
@@ -227,7 +261,7 @@ export default function EarlyRegistrationMasterlist() {
   );
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col px-4 sm:px-6 py-6">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={selectedTab} onValueChange={(val: string) => { setSelectedTab(val as "7" | "8-10"); setPage(1); }} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
@@ -262,7 +296,7 @@ export default function EarlyRegistrationMasterlist() {
           </TabsTrigger>
         </TabsList>
 
-        <div className="flex-1 flex min-h-0 flex-col w-full h-full">
+        <div className="flex-1 flex min-h-0 flex-col w-full max-h-[80vh]">
           <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col flex-1 h-full min-h-0 overflow-hidden">
             {(() => {
               const pendingCount = baseFilteredData.filter((app) => app.status === "EARLY_REGISTRATION" || app.status === "PENDING_VERIFICATION").length;

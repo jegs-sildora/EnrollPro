@@ -594,7 +594,7 @@ export async function commitDraft(req: Request, res: Response) {
           learner: {
             select: { firstName: true, lastName: true, isBalikAral: true },
           },
-          enrollmentRecord: { select: { id: true } },
+          enrollmentRecord: { select: { id: true, isDraft: true } },
         },
       }),
       prisma.schoolSetting.findFirst({ select: { systemPhase: true, sf1FinalizationThreshold: true } }),
@@ -638,7 +638,7 @@ export async function commitDraft(req: Request, res: Response) {
       }
 
       const learnerName = `${application.learner.lastName}, ${application.learner.firstName}`;
-      if (application.enrollmentRecord) {
+      if (application.enrollmentRecord && !application.enrollmentRecord.isDraft) {
         skippedApplications.push({
           applicationId: candidate.applicationId,
           reason: `${learnerName} has already been assigned to a section.`,
@@ -698,35 +698,7 @@ export async function commitDraft(req: Request, res: Response) {
       validCandidates.push(candidate);
     }
 
-        if (setting?.sf1FinalizationThreshold !== undefined && setting.sf1FinalizationThreshold > 0) {
-      const failingSections = [];
-      for (const section of sections) {
-        let existingEnrolled = 0;
-        for (const r of section.enrollmentRecords) {
-          if ((r as any).enrollmentApplication?.status === "OFFICIALLY_ENROLLED") existingEnrolled++;
-        }
-        let newEnrolled = 0;
-        let newTotal = 0;
-        for (const candidate of validCandidates) {
-          if (candidate.sectionId === section.id) {
-            newTotal++;
-            if (applicationsById.get(candidate.applicationId)?.status === "OFFICIALLY_ENROLLED" || applicationsById.get(candidate.applicationId)?.status === "READY_FOR_SECTIONING") newEnrolled++;
-          }
-        }
-        const totalLearners = section.enrollmentRecords.length + newTotal;
-        if (totalLearners > 0) {
-          const enrolledPercentage = ((existingEnrolled + newEnrolled) / totalLearners) * 100;
-          if (enrolledPercentage < setting.sf1FinalizationThreshold) {
-            failingSections.push("$section.name} ($enrolledPercentage.toFixed(1)}% officially enrolled, minimum $setting.sf1FinalizationThreshold}%)");
-          }
-        }
-      }
-      if (failingSections.length > 0) {
-        return res.status(422).json({
-          message: "Cannot finalize sections. The following sections have not met the " + setting.sf1FinalizationThreshold + "% officially enrolled threshold:\n" + failingSections.join("\n"),
-        });
-      }
-    }
+
 
     const committedApplications: CommittedApplication[] = [];
     const commitDate = new Date();
@@ -743,19 +715,20 @@ export async function commitDraft(req: Request, res: Response) {
         const record = await prisma.$transaction(async (tx) => {
           const freshApplication = await tx.enrollmentApplication.findUnique({
             where: { id: candidate.applicationId },
-            include: { enrollmentRecord: { select: { id: true } } },
+            include: { enrollmentRecord: { select: { id: true, isDraft: true } } },
           });
 
           if (
             !freshApplication ||
             !["READY_FOR_SECTIONING", "PENDING_CONFIRMATION", "OFFICIALLY_ENROLLED"].includes(freshApplication.status) ||
-            freshApplication.enrollmentRecord
+            (freshApplication.enrollmentRecord && !freshApplication.enrollmentRecord.isDraft)
           ) {
             throw new DraftCommitConflictError();
           }
 
-          const created = await tx.enrollmentRecord.create({
-            data: {
+          const created = await tx.enrollmentRecord.upsert({
+            where: { enrollmentApplicationId: application.id },
+            create: {
               enrollmentApplicationId: application.id,
               sectionId: candidate.sectionId,
               learnerId: application.learnerId,
@@ -765,6 +738,17 @@ export async function commitDraft(req: Request, res: Response) {
               enrolledAt: commitDate,
               isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
               sectioningMethod,
+              isDraft: false,
+            },
+            update: {
+              sectionId: candidate.sectionId,
+              schoolYearId: application.schoolYearId,
+              enrolledById: userId,
+              dateSectioned: commitDate,
+              enrolledAt: commitDate,
+              isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+              sectioningMethod,
+              isDraft: false,
             },
           });
 

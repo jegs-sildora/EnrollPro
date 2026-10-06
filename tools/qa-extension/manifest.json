@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "EnrollPro QA Autofill",
+  "version": "1.0",
+  "description": "QA Automation tool to autofill complex forms in EnrollPro with realistic Philippine context data.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "EnrollPro Autofill"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

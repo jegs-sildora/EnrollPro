@@ -890,7 +890,7 @@ export default function EnrollmentForm({
                   <Button
                     type="button"
                     className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !watch("isCertifiedTrue")}
                     onClick={async () => {
                       const isValid = await trigger();
                       if (isValid) {

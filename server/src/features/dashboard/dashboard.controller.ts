@@ -189,7 +189,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         enrollmentRecords: {
           select: {
             dropOutDate: true,
-            transferOutDate: true,
+            transferOutDate: true, isDraft: true,
           },
         },
         _count: {
@@ -206,7 +206,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         enrolled: isArchived
           ? s._count.enrollmentHistories
           : s.enrollmentRecords.filter(
-              (record) => !record.dropOutDate && !record.transferOutDate,
+              (record) => !record.isDraft && !record.dropOutDate && !record.transferOutDate,
             ).length,
       }))
       .sort((a, b) => b.enrolled - a.enrolled)
@@ -324,7 +324,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             id: true,
             isLateEnrollee: true,
             dropOutDate: true,
-            transferOutDate: true,
+            transferOutDate: true, isDraft: true,
             eosyStatus: true,
             section: {
               select: { programType: true },
@@ -380,7 +380,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const activeApplications = applications.filter((application) => {
       const record = application.enrollmentRecord;
       const hasActiveRecord = Boolean(
-        record && !record.dropOutDate && !record.transferOutDate,
+        record && !record.isDraft && !record.dropOutDate && !record.transferOutDate,
       );
       return hasActiveRecord || activeStatusSet.has(application.status);
     });
@@ -546,7 +546,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         const enrolled = isArchived
           ? section._count.enrollmentHistories
           : section.enrollmentRecords.filter(
-              (record) => !record.dropOutDate && !record.transferOutDate,
+              (record) => !record.isDraft && !record.dropOutDate && !record.transferOutDate,
             ).length;
         const capacity = section.maxCapacity || 0;
         return {
@@ -573,7 +573,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const activeTally = calculateActiveTally(activeEnrollmentRecords);
 
     const eosyEligibleRecords = activeEnrollmentRecords.filter(
-      (record) => !record.dropOutDate && !record.transferOutDate,
+      (record) => !record.isDraft && !record.dropOutDate && !record.transferOutDate,
     );
     const incompleteLearnerOutcomes = eosyEligibleRecords.filter(
       (record) => !record.eosyStatus,
@@ -725,7 +725,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         isArchived
           ? s._count.enrollmentHistories
           : s.enrollmentRecords.filter(
-              (record) => !record.dropOutDate && !record.transferOutDate,
+              (record) => !record.isDraft && !record.dropOutDate && !record.transferOutDate,
             ).length,
       );
       gradeSectionsMap.set(glId, counts);
@@ -746,7 +746,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { schoolYearId, eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT"] } }
         })
       : await prisma.enrollmentRecord.count({
-          where: { schoolYearId, dropOutDate: null, transferOutDate: null }
+          where: { schoolYearId, dropOutDate: null, transferOutDate: null, isDraft: false }
         });
 
     const cumulativeTransferredCount = isArchived
@@ -754,7 +754,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { schoolYearId, eosyStatus: "TRANSFERRED_OUT" }
         })
       : await prisma.enrollmentRecord.count({
-          where: { schoolYearId, transferOutDate: { not: null } }
+          where: { schoolYearId, transferOutDate: { not: null }, isDraft: false }
         });
 
     const cumulativeDroppedCount = isArchived
@@ -762,7 +762,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { schoolYearId, eosyStatus: "DROPPED_OUT" }
         })
       : await prisma.enrollmentRecord.count({
-          where: { schoolYearId, dropOutDate: { not: null } }
+          where: { schoolYearId, dropOutDate: { not: null }, isDraft: false }
         });
 
     const jhsCompleterRecords = isArchived && gradeTenId
@@ -811,7 +811,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { enrollmentHistories: { some: { schoolYearId, eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT"] } } } }
         })
       : await prisma.learner.count({
-          where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: null, transferOutDate: null } } }
+          where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: null, transferOutDate: null, isDraft: false } } }
         });
 
     const transferredLearnersCount = isArchived
@@ -819,7 +819,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { enrollmentHistories: { some: { schoolYearId, eosyStatus: "TRANSFERRED_OUT" } } }
         })
       : await prisma.learner.count({
-          where: { enrollmentRecords: { some: { schoolYearId, transferOutDate: { not: null } } } }
+          where: { enrollmentRecords: { some: { schoolYearId, transferOutDate: { not: null }, isDraft: false } } }
         });
 
     const droppedLearnersCount = isArchived
@@ -827,7 +827,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { enrollmentHistories: { some: { schoolYearId, eosyStatus: "DROPPED_OUT" } } }
         })
       : await prisma.learner.count({
-          where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: { not: null } } } }
+          where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: { not: null }, isDraft: false } } }
         });
 
 

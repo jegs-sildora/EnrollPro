@@ -244,6 +244,7 @@ export default function ScpAdmissionForm({
   const studentPhoto = useWatch({ control, name: "studentPhoto" });
   const hasNoLrn = useWatch({ control, name: "hasNoLrn" });
   const lrn = useWatch({ control, name: "lrn" });
+  const isPrivacyConsentGiven = useWatch({ control, name: "isPrivacyConsentGiven" });
   const { errors, isSubmitting, isDirty } = form.formState;
   const [isValidatingLrn, setIsValidatingLrn] = useState(false);
   const [duplicateDetected, setDuplicateDetected] = useState(false);
@@ -1355,7 +1356,7 @@ export default function ScpAdmissionForm({
                 </div>
 
                 <div className="flex flex-col items-center gap-4">
-                  <Button type="button" disabled={isSubmitting} onClick={handleAttemptSubmit} className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
+                  <Button type="button" disabled={isSubmitting || !isPrivacyConsentGiven} onClick={handleAttemptSubmit} className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
                     {isStaffWalkIn ? "Submit Walk-in Application" : "Submit Registration"}
                   </Button>
                   <p className="text-base text-foreground flex items-center gap-1.5 italic">

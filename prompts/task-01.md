@@ -1,37 +1,43 @@
-# System Prompt: Refactor 404 Catch-All Routing and Action UX
+# System Prompt: Implement Dynamic Randomization for QA Autofill Extension
 
-**Role:** Senior React UI/UX Engineer & DepEd JHS Domain Expert
+**Role:** Senior Web Extension Developer & QA Automation Expert
 
 ## Context
-We are correcting a critical routing and UX flaw on the global "404 Page Not Found" screen (`image_4aac6c.jpg`)[cite: 30]. Currently, the primary action button is hardcoded to "Return to Dashboard"[cite: 30]. 
+We are refactoring the `content.js` script of our Firefox QA Autofill Extension[cite: 27]. The initial implementation relied on a hardcoded `MOCK_DATA` object, which injects the exact same data (e.g., "Juan Miguel Dela Cruz") every time the user clicks a fill button[cite: 27]. 
 
-**Domain & Architecture Insight:** The "EnrollPro" system caters to two distinct user bases: 
-1. Authenticated school personnel (who have an internal dashboard).
-2. Public users / Learners / Parents (who access public enrollment forms, tracking pages, or distinct learner portals). 
-
-Forcing a public, unauthenticated user to "Return to Dashboard" often triggers a route guard that redirects them to `/personnel/login`. This creates a frustrating dead-end for parents or learners who simply mistyped a public URL.
+For effective QA testing of the "EnrollPro" system, the extension must generate highly realistic, randomized Philippine data on the fly, **every single time a button is clicked**. Additionally, we observed that dropdown menus (e.g., "Mother Tongue" or "Suffix" shown in the UI[cite: 31]) require special handling to ensure the script selects a valid `<option>` rather than failing or selecting a disabled placeholder.
 
 ## Task
-Update the 404 page's call-to-action to be context-aware. The button must change from a hardcoded destination to a universal "Go Back" action that respects the user's current session state and browser history.
+Rewrite the `content.js` file to replace the static `MOCK_DATA` object with a dynamic data factory[cite: 27]. Implement custom randomizer functions using comprehensive Philippine data dictionaries and ensure seamless interaction with React-controlled `<select>` dropdowns.
 
 ## Design & Logic Constraints (CRITICAL)
 
-### 1. UI Copy Update
-*   **Current State:** The maroon primary button reads "Return to Dashboard"[cite: 30].
-*   **Update:** Change the button text to **"Go Back"**. 
-*   **Iconography (Optional but Recommended):** Add a simple left-pointing arrow icon (e.g., `ArrowLeft` from the design system's icon library) to the left of the text to visually reinforce the action.
+### 1. The Dynamic Data Factory
+*   **Remove Static Object:** Delete the `const MOCK_DATA = {...}` object entirely[cite: 27].
+*   **Create Data Dictionaries:** Define robust arrays for Philippine demographics at the top of the script:
+    *   `phFirstNamesMale`: ["Juan Miguel", "Jose", "Pedro", "Carlo", "Mark"]
+    *   `phFirstNamesFemale`: ["Maria", "Ana", "Luz", "Teresa", "Sofia"]
+    *   `phLastNames`: ["Dela Cruz", "Santos", "Reyes", "Aquino", "Garcia", "Mendoza"]
+    *   `phBarangays`: ["Brgy. Taculing", "Brgy. Estefania", "Brgy. Mansilingan", "Brgy. Villamonte", "Brgy. Bata"]
+    *   `phCities`: ["Bacolod City", "Talisay City", "Silay City", "Bago City"]
+*   **Implement `generateMockData()`:** Create a function that constructs and returns a fresh data object on every invocation. 
+    *   *LRN:* Generate a random 12-digit string starting with "1".
+    *   *Contact Number:* Generate a random 11-digit string starting with "09".
+    *   *Grades:* Generate a random float between `80.00` and `98.00`.
+    *   *Demographics:* Randomly select a sex (Male/Female) and pull a corresponding first name and a random last name.
 
-### 2. Primary Routing Logic (Browser History)
-*   Instead of a hardcoded `<Link>` component, bind an `onClick` event to the button that utilizes the router's history API (e.g., `router.back()` in Next.js or `navigate(-1)` in React Router).
-*   This ensures that whether a Teacher was browsing the personnel directory or a Parent was filling out an enrollment form, they are seamlessly returned to their exact previous location.
+### 2. Advanced Dropdown & Select Handling
+React Hook Form and standard HTML `<select>` elements require specific targeting. The current `fillField` function[cite: 27] must be upgraded to handle dynamic dropdown values.
+*   **Targeting Valid Options:** If the target element is a `<select>`, the script should NOT blindly inject a string that might not exist in the DOM.
+*   **Logic:** 
+    1. Query the `<select>` element.
+    2. Extract all its child `<option>` elements.
+    3. Filter out options that are disabled or have empty values (e.g., "SELECT MOTHER TONGUE"[cite: 31]).
+    4. Pick a random valid `<option>.value` from the remaining list.
+    5. Pass that selected value into the existing `setReactInputValue` bypass function[cite: 27].
 
-### 3. Fallback Routing Logic (Empty History Stack)
-If a user opens a broken link in a *new tab*, their browser history stack will be empty. The `Go Back` function will fail. You must implement a conditional fallback routing logic based on authentication state:
-*   **Check Auth State:** Check the global authentication context.
-*   **If Authenticated Personnel:** Fallback route is `/dashboard`.
-*   **If Authenticated Learner:** Fallback route is their specific portal home (e.g., `/learner/home`).
-*   **If Unauthenticated (Public):** Fallback route is the root public landing page (`/`). 
-*   **Strict Prohibition:** Under no circumstances should an unauthenticated user hitting a 404 be automatically redirected to `/personnel/login`. 
+### 3. Action Execution Update
+*   Update the `actions` object (`FILL_EARLY_REGISTRATION`, `FILL_SCP_ADMISSION`, `FILL_ENROLLMENT`)[cite: 27] to execute `generateMockData()` first, and then pass the freshly generated payload to the `fillAllFields(data)` function.
 
 ## Output Requirement
-Output a structured implementation checklist for the development team. Detail the exact conditional routing logic required to handle the history fallback securely. Do not generate raw React code or custom CSS; reference only existing design system tokens and router methods.
+Output the complete, refactored raw code for `content.js`. Do not generate the manifest or popup files, as those remain unchanged. Ensure the data dictionaries contain at least 5-10 realistic items each to ensure visible variety during QA testing, and heavily comment the `<select>` randomization logic so junior developers understand how it integrates with the React Native Setter Bypass.

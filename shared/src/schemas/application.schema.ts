@@ -280,7 +280,8 @@ export const applicationTrackResponseSchema = applicationTrackingStateSchema.par
   )
   .passthrough();
 
-export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
+export const scpAdmissionSubmitSchema = baseApplicationSubmitSchema.extend({
+  learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).default([]),
   lrn: z.string().regex(
     /^\d{12}$/,
     "Learner Reference Number must be exactly 12 numeric digits.",
@@ -345,7 +346,7 @@ export const scpAdmissionSubmitSchema = applicationSubmitSchema.safeExtend({
       message: "Chosen sport is required for SPS applicants.",
     });
   }
-});
+}).superRefine(applicationSuperRefine);
 
 export type ScpAdmissionSubmit = z.infer<typeof scpAdmissionSubmitSchema>;
 

@@ -11,7 +11,7 @@ export const directEncodeWalkInSchema = z.object({
     "MODULAR_PRINT",
     "ONLINE",
     "RADIO_BASED_TELEVISION",
-  ])).min(1, "Please select at least one learning modality preference."),
+  ])).default([]),
   lrn: z.string().optional(),
   firstName: z.string().min(1, "First Name is required"),
   lastName: z.string().min(1, "Last Name is required"),

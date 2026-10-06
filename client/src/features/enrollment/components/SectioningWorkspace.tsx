@@ -228,9 +228,11 @@ function InlineSectionTable({ sectionId, onMoveLearner, onRemoveLearner, onForfe
               <td className="p-2 text-center">
                 <Badge className={cn(
                   "px-2 uppercase",
-                  l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-foreground border-muted hover:bg-muted"
+                  l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" 
+                  : l.status === "PENDING_CONFIRMATION" ? "bg-amber-500 text-white hover:bg-amber-500 border-amber-500" 
+                  : "bg-muted text-foreground border-muted hover:bg-muted"
                 )}>
-                  {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
+                  {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : l.status === "PENDING_CONFIRMATION" ? "Pending Confirmation" : "Pre-Registered"}
                 </Badge>
               </td>
               <td className="p-3 text-center font-bold text-foreground">
@@ -645,9 +647,6 @@ export function SectioningWorkspace() {
   const autoAssignTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const prefersReducedMotion = useReducedMotion();
   const [isRightPaneFullscreen, setIsRightPaneFullscreen] = useState(false);
-  const [draftPlacement, setDraftPlacement] = useState<DraftPlacement | null>(
-    null,
-  );
   const [expandedSectionIds, setExpandedSectionIds] = useState<Set<number>>(
     new Set(),
   );
@@ -706,6 +705,25 @@ export function SectioningWorkspace() {
   const setActiveGradeLevelId = useCallback((id: string) => {
     useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   }, []);
+
+  const [draftPlacements, setDraftPlacements] = useState<Record<string, DraftPlacement>>({});
+  
+  const draftPlacement = useMemo(() => {
+    return draftPlacements[activeGradeLevelId] || null;
+  }, [draftPlacements, activeGradeLevelId]);
+
+  const setDraftPlacement = useCallback((newDraft: DraftPlacement | null | ((prev: DraftPlacement | null) => DraftPlacement | null)) => {
+    setDraftPlacements(prev => {
+      const draft = typeof newDraft === 'function' ? newDraft(prev[activeGradeLevelId] || null) : newDraft;
+      if (draft === null) {
+        const copy = { ...prev };
+        delete copy[activeGradeLevelId];
+        return copy;
+      }
+      return { ...prev, [activeGradeLevelId]: draft };
+    });
+  }, [activeGradeLevelId]);
+
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
     const { spaEnabled, spsEnabled, steEnabled } = useSettingsStore();
   const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
@@ -864,12 +882,9 @@ export function SectioningWorkspace() {
   }, [gradeLevels, activeGradeLevelId, setActiveGradeLevelId]);
 
   useEffect(() => {
-    if (draftPlacement && String(draftPlacement.gradeLevelId) !== activeGradeLevelId) {
-      setDraftPlacement(null);
-      setSelectedAppIds([]);
-      setDraftMoveAction(null);
-    }
-  }, [activeGradeLevelId, draftPlacement]);
+    setSelectedAppIds([]);
+    setDraftMoveAction(null);
+  }, [activeGradeLevelId]);
 
   const isDraftActive = draftPlacement !== null;
   const _isLockedIn = selectedAppIds.length > 0 || isDraftActive;
@@ -902,15 +917,21 @@ export function SectioningWorkspace() {
       draftPlacement?.rosters.some((roster) => roster.isOverCapacity) ?? false,
     [draftPlacement],
   );
-  const selectedProgramTypes = useMemo(
-    () =>
-      new Set(
-        currentGradePool
-          .filter((learner) => selectedAppIds.includes(learner.applicationId))
-          .map((learner) => learner.programType),
-      ),
-    [currentGradePool, selectedAppIds],
-  );
+  const selectedAllowedPrograms = useMemo(() => {
+    const selectedLearners = currentGradePool.filter((learner) => selectedAppIds.includes(learner.applicationId));
+    if (selectedLearners.length === 0) return new Set<ApplicantType>();
+    
+    let commonAllowed: ApplicantType[] | null = null;
+    for (const learner of selectedLearners) {
+      const allowed = getAllowedSectionProgramsForPlacement(learner);
+      if (commonAllowed === null) {
+        commonAllowed = allowed;
+      } else {
+        commonAllowed = commonAllowed.filter(p => allowed.includes(p));
+      }
+    }
+    return new Set(commonAllowed ?? []);
+  }, [currentGradePool, selectedAppIds]);
 
   const filteredPool = useMemo(() => {
     return currentGradePool.filter((l) => {
@@ -993,6 +1014,56 @@ export function SectioningWorkspace() {
     }
   };
 
+  const assignSelectedToDraftSection = (sectionId: number) => {
+    if (!draftPlacement || selectedAppIds.length === 0) return;
+
+    const s = draftPlacement.rosters.find((r) => r.section.id === sectionId)?.section;
+    if (!s) return;
+
+    setDraftPlacement((current) => {
+      if (!current) return current;
+
+      const movingLearners = current.unplacedLearners.filter((l) =>
+        selectedAppIds.includes(l.applicationId)
+      );
+      const remainingUnplaced = current.unplacedLearners.filter(
+        (l) => !selectedAppIds.includes(l.applicationId)
+      );
+
+      const rosters = current.rosters.map((roster) => {
+        if (roster.section.id !== sectionId) return roster;
+
+        const newLearners: DraftLearnerPlacement[] = [
+          ...roster.learners,
+          ...movingLearners.map((l) => ({
+            ...l,
+            sectionId,
+            isOverridden: true,
+          })),
+        ];
+
+        return buildRoster(roster.section, newLearners);
+      });
+
+      return {
+        ...current,
+        unplacedLearners: remainingUnplaced,
+        rosters,
+      };
+    });
+
+    const roster = draftPlacement.rosters.find(r => r.section.id === sectionId);
+    if (roster && roster.totalCount + selectedAppIds.length > s.maxCapacity) {
+      sileo.warning({
+        title: "Capacity Warning",
+        description: `Assigned learners to ${s.name} which now exceeds max capacity.`,
+      });
+    }
+
+    setSelectedAppIds([]);
+    setTargetSectionId(null);
+  };
+
   useEffect(() => {
     if (poolInitialLoading || sectionsInitialLoading || draftPlacement) return;
 
@@ -1015,24 +1086,62 @@ export function SectioningWorkspace() {
   }, [currentGradePool, currentGradeSections, draftPlacement, activeGradeLevelId, poolInitialLoading, sectionsInitialLoading]);
 
   const generateDraftPlacement = () => {
-    if (!activeGradeLevelId || autoAssignPhase !== "idle" || draftPlacement || processing) return;
+    if (!activeGradeLevelId || autoAssignPhase !== "idle" || processing) return;
 
     setAutoAssignPhase("loading");
     const loadingTimer = setTimeout(() => {
       try {
-        const draft = createDraftPlacement(
+        const isRerun = draftPlacement !== null;
+        const poolToAssign = isRerun ? draftPlacement.unplacedLearners : currentGradePool;
+        
+        const sectionsToUse = currentGradeSections.map(s => {
+          if (!isRerun) return s;
+          const roster = draftPlacement.rosters.find(r => r.section.id === s.id);
+          const draftedCount = roster ? roster.learners.length : 0;
+          return {
+            ...s,
+            currentCount: s.currentCount + draftedCount
+          };
+        });
+
+        const newDraft = createDraftPlacement(
           Number(activeGradeLevelId),
-          currentGradePool,
-          currentGradeSections,
+          poolToAssign,
+          sectionsToUse,
           enableHomogeneousSections,
           homogeneousSectionCount,
         );
-        const populatedSectionIds = draft.rosters
-          .filter((roster) => roster.learners.length > 0)
-          .map((roster) => roster.section.id);
 
-        setDraftPlacement(draft);
-        setExpandedSectionIds(new Set(populatedSectionIds));
+        if (isRerun) {
+          const mergedRosters = draftPlacement.rosters.map(oldRoster => {
+            const newRoster = newDraft.rosters.find(r => r.section.id === oldRoster.section.id);
+            if (!newRoster) return oldRoster;
+            
+            return buildRoster(oldRoster.section, [
+              ...oldRoster.learners,
+              ...newRoster.learners
+            ]);
+          });
+
+          const mergedDraft = {
+            ...draftPlacement,
+            rosters: mergedRosters,
+            unplacedLearners: newDraft.unplacedLearners,
+          };
+
+          setDraftPlacement(mergedDraft);
+          const populatedSectionIds = mergedDraft.rosters
+            .filter((roster) => roster.learners.length > 0)
+            .map((roster) => roster.section.id);
+          setExpandedSectionIds(new Set(populatedSectionIds));
+        } else {
+          setDraftPlacement(newDraft);
+          const populatedSectionIds = newDraft.rosters
+            .filter((roster) => roster.learners.length > 0)
+            .map((roster) => roster.section.id);
+          setExpandedSectionIds(new Set(populatedSectionIds));
+        }
+
         setSelectedAppIds([]);
         setTargetSectionId(null);
         setAllowCapacityOverride(false);
@@ -1066,7 +1175,7 @@ export function SectioningWorkspace() {
     setAllowCapacityOverride(false);
     if (sectionsData) setSections(sectionsData);
     if (poolData) setPool(poolData);
-  }, [poolData, sectionsData]);
+  }, [poolData, sectionsData, setDraftPlacement]);
 
 
 
@@ -1438,7 +1547,7 @@ export function SectioningWorkspace() {
             middleName: learner.middleName,
             sex: learner.sex,
             genAve: learner.genAve,
-            status: learner.status,
+            status: learner.status === "PENDING_CONFIRMATION" ? "PENDING_CONFIRMATION" : "OFFICIALLY_ENROLLED",
           }));
 
         queryClient.setQueryData<InlineMasterlistResponse>(
@@ -1808,15 +1917,15 @@ export function SectioningWorkspace() {
                           }
                           disabled={
                             isDraftActive || autoAssignPhase !== "idle" ||
-                            (selectedProgramTypes.size === 0 &&
+                            (selectedAllowedPrograms?.size === 0 &&
                               new Set(filteredPool.map((l) => l.programType)).size > 1)
                           }
                           onCheckedChange={(checked) => {
                             if (isDraftActive) return;
                             if (checked) {
                               const targetProgram =
-                                selectedProgramTypes.size > 0
-                                  ? Array.from(selectedProgramTypes)[0]
+                                selectedAllowedPrograms?.size > 0
+                                  ? Array.from(selectedAllowedPrograms)[0]
                                   : null;
                               setSelectedAppIds(
                                 filteredPool
@@ -1914,9 +2023,9 @@ export function SectioningWorkspace() {
                               l.applicationId,
                             );
                             const isDisabled =
-                              isDraftActive || autoAssignPhase !== "idle" ||
-                              (selectedProgramTypes.size > 0 &&
-                                !selectedProgramTypes.has(l.programType));
+                              autoAssignPhase !== "idle" ||
+                              (selectedAllowedPrograms?.size > 0 &&
+                                !selectedAllowedPrograms?.has(l.programType));
 
                             return (
                               <tr
@@ -1992,9 +2101,11 @@ export function SectioningWorkspace() {
                                         </Badge>
                                         <Badge className={cn(
                                           "px-2 uppercase",
-                                          l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                                          l.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" 
+                                          : l.status === "PENDING_CONFIRMATION" ? "bg-amber-500 text-white hover:bg-amber-500 border-amber-500"
+                                          : "bg-muted text-muted-foreground border-muted hover:bg-muted"
                                         )}>
-                                          {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
+                                          {l.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : l.status === "PENDING_CONFIRMATION" ? "Pending Confirmation" : "Pre-Registered"}
                                         </Badge>
                                         {l.programType === "LATE_ENROLLEE" && (
                                           <Badge
@@ -2118,7 +2229,6 @@ export function SectioningWorkspace() {
                   )}
                 </div>
 
-                {(!draftPlacement || autoAssignPhase !== "idle") && (
                   <div className="flex flex-col items-center gap-1">
                   <Button
                     size="sm"
@@ -2126,7 +2236,6 @@ export function SectioningWorkspace() {
                     disabled={
                       currentGradePool.length === 0 ||
                       processing ||
-                      isDraftActive ||
                       autoAssignPhase !== "idle" ||
                       isHistoricalReadOnly
                     }
@@ -2152,7 +2261,6 @@ export function SectioningWorkspace() {
                     How does the system place learners?
                   </Button>
                   </div>
-                )}
               </CardHeader>
               <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
                 {displayedRosters.length === 0 ? (
@@ -2169,8 +2277,8 @@ export function SectioningWorkspace() {
                       .filter(
                         (r) =>
                           draftPlacement ||
-                          selectedProgramTypes.size === 0 ||
-                          selectedProgramTypes.has(r.section.programType)
+                          selectedAllowedPrograms?.size === 0 ||
+                          selectedAllowedPrograms?.has(r.section.programType)
                       );
                       
                     const scpRostersByProgram = new Map<string, typeof scpRosters>();
@@ -2205,11 +2313,11 @@ export function SectioningWorkspace() {
                           .filter(
                             (r) =>
                             draftPlacement ||
-                            selectedProgramTypes.size === 0 ||
-                            selectedProgramTypes.has(r.section.programType)
+                            selectedAllowedPrograms?.size === 0 ||
+                            selectedAllowedPrograms?.has(r.section.programType)
                         )
                         .sort((a, b) => {
-                          if (selectedProgramTypes.has("REGULAR") || selectedProgramTypes.size === 0) {
+                          if (selectedAllowedPrograms?.has("REGULAR") || selectedAllowedPrograms?.size === 0) {
                             if (a.section.isHomogeneous && !b.section.isHomogeneous) return -1;
                             if (!a.section.isHomogeneous && b.section.isHomogeneous) return 1;
                           }
@@ -2233,10 +2341,9 @@ export function SectioningWorkspace() {
                             !draftPlacement && targetSectionId === s.id;
                           const isExpanded = expandedSectionIds.has(s.id);
                           const isProgramCompatible =
-                            draftPlacement ||
-                            selectedProgramTypes.size === 0 ||
-                            (selectedProgramTypes.size === 1 &&
-                              selectedProgramTypes.has(s.programType));
+                            selectedAllowedPrograms?.size === 0 ||
+                            (selectedAllowedPrograms?.size === 1 &&
+                              selectedAllowedPrograms?.has(s.programType));
 
                           return (
                             <div
@@ -2386,8 +2493,8 @@ export function SectioningWorkspace() {
                                                 <span className="font-bold uppercase text-foreground">
                                                   {learner.lrn ?? "NO LRN"}
                                                   {learner.isOverridden && (
-                                                    <Badge className="ml-2 bg-amber-600 text-white hover:bg-amber-600">
-                                                      Manual Override
+                                                    <Badge className="!text-[11px] ml-2 bg-amber-600 text-white hover:bg-amber-600">
+                                                      Added Manually
                                                     </Badge>
                                                   )}
                                                 </span>
@@ -2407,9 +2514,11 @@ export function SectioningWorkspace() {
                                             <td className="p-2 text-center">
                                               <Badge className={cn(
                                                 "px-2 uppercase",
-                                                learner.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+                                                learner.status === "OFFICIALLY_ENROLLED" ? "bg-green-600 text-white hover:bg-green-600 border-green-600" 
+                                                : learner.status === "PENDING_CONFIRMATION" ? "bg-amber-500 text-white hover:bg-amber-500 border-amber-500"
+                                                : "bg-muted text-muted-foreground border-muted hover:bg-muted"
                                               )}>
-                                                {learner.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : "Pre-Registered"}
+                                                {learner.status === "OFFICIALLY_ENROLLED" ? "Enrolled" : learner.status === "PENDING_CONFIRMATION" ? "Pending Confirmation" : "Pre-Registered"}
                                               </Badge>
                                             </td>
                                             <td className="p-3 font-bold text-center">
@@ -2465,6 +2574,19 @@ export function SectioningWorkspace() {
                                   onForfeitSlot={!isHistoricalReadOnly ? openForfeitDialog : undefined}
                                 />
                               )}
+                              {draftPlacement && selectedAppIds.length > 0 && isProgramCompatible && (
+                                <div className="mt-4">
+                                  <Button 
+                                    className="w-full text-base font-bold uppercase"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      assignSelectedToDraftSection(s.id);
+                                    }}
+                                  >
+                                    Add Selected Here
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           );
                         })
@@ -2483,7 +2605,7 @@ export function SectioningWorkspace() {
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
                     {draftPlacement ? (
-                      <div className="grid grid-cols-1 gap-3 @xl/section-pane:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-3">
                         <Button
                           onClick={() => setCommitDialogOpen(true)}
                           disabled={
@@ -2494,13 +2616,6 @@ export function SectioningWorkspace() {
                           }
                           className="h-12 text-base font-bold uppercase">
                           FINALIZE OFFICIAL SECTIONS
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={discardDraft}
-                          disabled={commitProcessing || autoAssignPhase !== "idle"}
-                          className="h-12 text-base font-bold uppercase">
-                          CANCEL TEMPORARY SECTIONS
                         </Button>
                       </div>
                     ) : (
@@ -2713,7 +2828,7 @@ export function SectioningWorkspace() {
         onCancel={() => setIsAnimationVisible(!isAnimationVisible)}
         onConfirm={() => setAutoAssignConfirmOpen(false)}
         className="transition-all duration-300 !max-w-5xl"
-        confirmClassName={currentGradePool.length === 0 ? "w-full" : undefined}
+        confirmClassName={currentGradePool.length < 10 ? "w-full" : undefined}
         description={
           <div className={cn("grid gap-6 mt-4", isAnimationVisible ? "grid-cols-2" : "grid-cols-1")}>
             {/* Left Column: Text instructions */}
@@ -2776,7 +2891,7 @@ export function SectioningWorkspace() {
             {isAnimationVisible && !prefersReducedMotion && (
               <div className="h-[400px]">
                 {(() => {
-                  const isMock = currentGradePool.length === 0;
+                  const isMock = currentGradePool.length < 10;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
                   const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;
@@ -2839,7 +2954,7 @@ export function SectioningWorkspace() {
                   Reduced Motion Active — Final Distribution State
                 </div>
                 {(() => {
-                  const isMock = currentGradePool.length === 0;
+                  const isMock = currentGradePool.length < 10;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
                   const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;

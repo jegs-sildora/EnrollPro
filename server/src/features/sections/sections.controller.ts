@@ -174,8 +174,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
               where: activeEnrollmentFilter,
             },
           } : {
-            enrollmentRecords: {
-              where: activeEnrollmentFilter,
+            enrollmentRecords: { where: { ...activeEnrollmentFilter, isDraft: false },
             },
           },
         },
@@ -241,8 +240,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
                 where: activeEnrollmentFilter,
               },
             } : {
-              enrollmentRecords: {
-                where: activeEnrollmentFilter,
+              enrollmentRecords: { where: { ...activeEnrollmentFilter, isDraft: false },
               },
             },
           },
@@ -789,8 +787,7 @@ export async function getSectionMasterlist(
         where: { status: SectionAdviserStatus.ACTIVE },
         include: { teacher: true },
       },
-      enrollmentRecords: {
-        where: activeEnrollmentFilter,
+      enrollmentRecords: { where: { ...activeEnrollmentFilter, isDraft: false },
         include: {
           enrollmentApplication: {
             include: {
@@ -1004,8 +1001,7 @@ export async function inlineSlotLearner(
     include: {
       _count: {
         select: {
-          enrollmentRecords: {
-            where: activeEnrollmentFilter,
+          enrollmentRecords: { where: { ...activeEnrollmentFilter, isDraft: false },
           },
         },
       },
@@ -1429,8 +1425,7 @@ export async function exportSectionSf1(
             where: { status: SectionAdviserStatus.ACTIVE },
             include: { teacher: true },
           },
-          enrollmentRecords: {
-            where: activeEnrollmentFilter,
+          enrollmentRecords: { where: { ...activeEnrollmentFilter, isDraft: false },
             include: {
               enrollmentApplication: {
                 include: {
