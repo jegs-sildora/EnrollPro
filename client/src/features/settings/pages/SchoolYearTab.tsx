@@ -185,7 +185,7 @@ function getEnrollmentWindowStatus(
   closeDate: string | null | undefined,
   systemNow: Date,
   isOfficialPhase: boolean = false,
-  type: "ENROLLMENT" | "ADMISSION" | "REGISTRATION" = "ENROLLMENT"
+  type: "ENROLLMENT" | "SCP ADMISSION" | "EARLY REGISTRATION" = "ENROLLMENT"
 ) {
   if (!openDate || !closeDate) {
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
@@ -685,7 +685,7 @@ export default function SchoolYearTab() {
         localCalendarState.scpAdmissionCloseDate ?? null,
         systemNow,
         systemPhase === "OFFICIAL_ENROLLMENT",
-        "ADMISSION"
+        "SCP ADMISSION"
       ),
     [localCalendarState.scpAdmissionCloseDate, localCalendarState.scpAdmissionOpenDate, systemNow, systemPhase],
   );
@@ -697,7 +697,7 @@ export default function SchoolYearTab() {
         localCalendarState.earlyRegCloseDate ?? null,
         systemNow,
         systemPhase === "OFFICIAL_ENROLLMENT",
-        "REGISTRATION"
+        "EARLY REGISTRATION"
       ),
     [localCalendarState.earlyRegCloseDate, localCalendarState.earlyRegOpenDate, systemNow, systemPhase],
   );

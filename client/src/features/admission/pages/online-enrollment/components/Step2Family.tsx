@@ -685,7 +685,7 @@ export default function Step2Family() {
                       <h4 className="text-base leading-tight font-bold uppercase  text-primary">
                         Primary Contact
                       </h4>
-                      <Label className="text-base font-bold uppercase text-foreground  flex items-center gap-2">
+                      <Label className="text-sm font-bold uppercase text-foreground  flex items-center gap-2">
                         {data.primaryContact === "MOTHER" ? (
                           <Venus className="w-3 h-3" />
                         ) : data.primaryContact === "FATHER" ? (
@@ -773,7 +773,7 @@ export default function Step2Family() {
                           <h4 className="text-base leading-tight font-bold uppercase  text-foreground">
                             Secondary Contact (Optional)
                           </h4>
-                          <Label className="text-base font-bold uppercase text-foreground/80  flex items-center gap-2">
+                          <Label className="text-sm font-bold uppercase text-foreground/80  flex items-center gap-2">
                             <secondary.icon className="w-3 h-3" />
                             {secondary.label}'s Contact Information
                           </Label>

@@ -229,7 +229,7 @@ export default function Step4PreviousSchool() {
             </Label>
             <Select
               onValueChange={(val) => setValue("schoolYearLastAttended", val, { shouldValidate: true, shouldDirty: true })}
-              defaultValue={watch("schoolYearLastAttended")}>
+              value={watch("schoolYearLastAttended") || ""}>
               <SelectTrigger
                 id="schoolYearLastAttended"
                 className={cn(

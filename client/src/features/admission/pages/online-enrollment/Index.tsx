@@ -169,7 +169,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title={`S.Y. ${activeSchoolYearLabel} ENROLLMENT FORM`}
+          title={`BASIC EDUCATION ENROLLMENT FORM`}
         />
 
         <main

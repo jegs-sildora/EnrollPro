@@ -97,7 +97,7 @@ export const previousSchoolSchema = z.object({
 });
 
 // ─── Application Submit ────────────────────────────────
-export const applicationSubmitSchema = z
+export const baseApplicationSubmitSchema = z
   .object({
     studentPhoto: z.string({
       message: "Learner photo is required.",
@@ -179,8 +179,9 @@ export const applicationSubmitSchema = z
     learnerType: LearnerTypeEnum,
     learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).min(1, "Please select at least one learning modality preference."),
     bypassDuplicate: z.boolean().optional(),
-  })
-  .superRefine((data, ctx) => {
+  });
+
+export const applicationSuperRefine = (data: any, ctx: z.RefinementCtx) => {
     const lrn = data.lrn?.trim() ?? "";
     const isIncomingGrade7 =
       data.learnerType === "NEW_ENROLLEE" && data.gradeLevel === "7";
@@ -240,7 +241,13 @@ export const applicationSubmitSchema = z
         }
       });
     }
-  });
+  };
+
+export const applicationSubmitSchema = baseApplicationSubmitSchema.superRefine(applicationSuperRefine);
+
+export const earlyRegistrationSubmitSchema = baseApplicationSubmitSchema.extend({
+  learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).default([]),
+}).superRefine(applicationSuperRefine);
 
 export const applicationTrackingStateSchema = z.object({
   programType: TrackingProgramTypeEnum,

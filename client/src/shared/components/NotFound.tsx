@@ -1,17 +1,38 @@
 import { useNavigate } from "react-router";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, ArrowLeft } from "lucide-react";
+import { useAuthStore } from "@/store/auth.slice";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const staffUser = useAuthStore((state) => state.user);
+  const learnerUser = useLearnerAuthStore((state) => state.user);
+
+  const handleGoBack = () => {
+    // Check if there is a previous page in the history stack
+    if (window.history.length > 2 || (window.history.state && window.history.state.idx > 0)) {
+      navigate(-1);
+    } else {
+      // Fallback routing logic for empty history stack
+      if (staffUser) {
+        navigate("/dashboard", { replace: true });
+      } else if (learnerUser) {
+        navigate("/learner/portal", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  };
+
   return (
     <div className="flex h-full flex-1 min-h-[60vh] items-center justify-center p-4">
-      <Card className="max-w-md w-full border-muted-foreground/20 shadow-lg relative overflow-hidden">
+      <Card className="max-w-xl w-full border-muted-foreground/20 shadow-lg relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-muted-foreground/50 to-transparent" />
         
         {/* Subtle watermark */}
-        <div className="absolute -right-4 -top-8 opacity-[0.03] pointer-events-none text-9xl font-black font-mono select-none">
+        <div className="absolute -right-4 -top-8 opacity-[0.05] pointer-events-none text-9xl font-black font-mono select-none text-primary">
           404
         </div>
 
@@ -28,8 +49,8 @@ export default function NotFound() {
           </div>
 
           <div className="w-full pt-2">
-            <Button className="w-full font-bold h-11" onClick={() => navigate("/dashboard")}>
-              Return to Dashboard
+            <Button className="w-full font-bold h-11 flex items-center gap-2" onClick={handleGoBack}>
+              <ArrowLeft className="h-4 w-4" /> Go Back
             </Button>
           </div>
         </CardContent>

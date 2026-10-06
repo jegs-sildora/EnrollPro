@@ -38,7 +38,7 @@ export default function EnrollmentSuccess({
 }: EnrollmentSuccessProps) {
   const [copied, setCopied] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const { enrollOpenDate, enrollCloseDate } = useSettingsStore();
+  const { enrollOpenDate, enrollCloseDate, schoolName } = useSettingsStore();
   const navigate = useNavigate();
   const isStaffWalkIn = presentation === "STAFF_WALK_IN";
 
@@ -102,7 +102,7 @@ export default function EnrollmentSuccess({
             <div className="text-center text-lg text-foreground mb-6">
               Your record is now <span className="font-bold text-primary">Pending Verification</span>.
               <br /><br />
-              Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
+              Please proceed to the <span className="text-primary font-bold capitalize">{schoolName.toLowerCase()}</span> Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
             </div>
           )}
 
@@ -163,29 +163,15 @@ export default function EnrollmentSuccess({
           </div>
 
           {!isStaffWalkIn && (
-          <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(
-                "h-12 px-12 font-bold gap-2 border-primary text-primary-foreground bg-primary shadow-md uppercase hover:bg-primary hover:text-primary-foreground",
-                trackingNumber ? "w-full sm:w-1/2" : "w-full"
-              )}
-              onClick={() => setShowConfirmModal(true)}>
-              Back to Home
-            </Button>
-            {trackingNumber && (
+            <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
               <Button
                 type="button"
-                variant="default"
-                className="w-full sm:w-1/2 h-12 px-12 font-bold gap-2 shadow-md uppercase"
-                onClick={() => {
-                  navigate(`/track-application?trackingNumber=${trackingNumber}`);
-                }}>
-                Track Application
+                variant="outline"
+                className="w-full h-12 px-12 font-bold gap-2 border-primary text-primary-foreground bg-primary shadow-md uppercase hover:bg-primary hover:text-primary-foreground"
+                onClick={() => setShowConfirmModal(true)}>
+                Back to Home
               </Button>
-            )}
-          </div>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -505,8 +505,8 @@ export default function EarlyRegistrationForm({
       );
 
       sileo.success({
-        title: "Enrollment Form Submitted!",
-        description: `Your tracking number is ${response.data.trackingNumber}.`,
+        title: "Early Registration Submitted!",
+        description: "Your application has been successfully recorded.",
       });
 
       if (onSuccess) {
@@ -607,10 +607,10 @@ export default function EarlyRegistrationForm({
           }
         }}
         variant="danger"
-        title="Duplicate Enrollment Detected"
+        title="Duplicate Registration Detected"
         description={
           <>
-            An enrollment application already exists for this learner. To prevent duplicate records in the system, you cannot submit a new application. Do you want to overwrite the existing pending record with the new information you just entered?
+            An early registration application already exists for this learner. To prevent duplicate records in the system, you cannot submit a new application. Do you want to overwrite the existing pending record with the new information you just entered?
           </>
         }
         confirmText="Overwrite Existing Record"
@@ -683,10 +683,10 @@ export default function EarlyRegistrationForm({
               permanentAddress: uppercaseData.isPermanentSameAsCurrent ? mapAddress(uppercaseData.currentAddress) : mapAddress(uppercaseData.permanentAddress),
             };
 
-            const response = await api.put<ApplicationSubmitResponse>("/applications/update-existing", payload);
+            const response = await api.put<ApplicationSubmitResponse>("/applications/update-early-registration", payload);
             sileo.success({
-              title: "Application Updated!",
-              description: `Your tracking number remains ${response.data.trackingNumber}.`,
+              title: "Early Registration Updated!",
+              description: "Your application has been successfully updated.",
             });
             if (onSuccess) {
               onSuccess({

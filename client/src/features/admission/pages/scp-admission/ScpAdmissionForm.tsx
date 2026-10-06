@@ -75,6 +75,7 @@ interface LearnerProfileResponse {
     schoolId?: string | null;
     schoolAddress?: string | null;
     schoolType?: ScpFormData["lastSchoolType"];
+    schoolYearLastAttended?: string | null;
   } | null;
 }
 
@@ -335,7 +336,18 @@ export default function ScpAdmissionForm({
 
     if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
     if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
-    if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+    
+    if (profile.motherTongue) {
+      const match = MOTHER_TONGUE_OPTIONS.find(o => o.value.toLowerCase() === profile.motherTongue?.toLowerCase());
+      if (match && match.value !== "Others") {
+        setIsOtherMotherTongue(false);
+        setValue("motherTongue", match.value, { shouldValidate: true, shouldDirty: true });
+      } else {
+        setIsOtherMotherTongue(true);
+        setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+
     if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
     if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
     if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
@@ -390,6 +402,7 @@ export default function ScpAdmissionForm({
       if (profile.previousSchool.schoolName) setValue("lastSchoolName", profile.previousSchool.schoolName, { shouldValidate: true, shouldDirty: true });
       if (profile.previousSchool.schoolId) setValue("lastSchoolId", profile.previousSchool.schoolId, { shouldValidate: true, shouldDirty: true });
       if (profile.previousSchool.schoolAddress) setValue("lastSchoolAddress", profile.previousSchool.schoolAddress, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolYearLastAttended) setValue("schoolYearLastAttended", profile.previousSchool.schoolYearLastAttended, { shouldValidate: true, shouldDirty: true });
     }
     
     sileo.success({ title: "Learner Found", description: "Profile auto-populated." });

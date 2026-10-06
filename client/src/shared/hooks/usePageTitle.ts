@@ -18,7 +18,6 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
 
   // Exact matches first
   const exact: Record<string, string> = {
-    "/": "Dashboard",
     "/dashboard": "Dashboard",
     "/personnel/login": "Personnel Login",
     "/change-password": "Change Password",

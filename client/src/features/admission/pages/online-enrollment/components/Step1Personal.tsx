@@ -78,6 +78,8 @@ interface LearnerProfileResponse {
   isBalikAral?: boolean;
   lastYearEnrolled?: string | null;
   psaBirthCertNumber?: string | null;
+  intakeHeightCm?: number | null;
+  intakeWeightKg?: number | null;
   addresses?: LearnerProfileAddress[];
   familyMembers?: {
     relationship?: string | null;
@@ -96,6 +98,7 @@ interface LearnerProfileResponse {
     schoolType?: string | null;
     transferCertificateNo?: string | null;
     generalAverage?: number | null;
+    schoolYearLastAttended?: string | null;
   } | null;
   scpProgram?: string | null;
   scpAdmissionStatus?: string | null;
@@ -403,7 +406,21 @@ export default function Step1Personal() {
 
     if (profile.placeOfBirth) setValue("placeOfBirth", profile.placeOfBirth, { shouldValidate: true, shouldDirty: true });
     if (profile.religion) setValue("religion", profile.religion, { shouldValidate: true, shouldDirty: true });
-    if (profile.motherTongue) setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+    
+    if (profile.motherTongue) {
+      const match = MOTHER_TONGUE_OPTIONS.find(o => o.value.toLowerCase() === profile.motherTongue?.toLowerCase());
+      if (match && match.value !== "Others") {
+        setIsOtherMotherTongue(false);
+        setValue("motherTongue", match.value, { shouldValidate: true, shouldDirty: true });
+      } else {
+        setIsOtherMotherTongue(true);
+        setValue("motherTongue", profile.motherTongue, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+
+    if (profile.intakeHeightCm) setValue("intakeHeightCm", profile.intakeHeightCm, { shouldValidate: true, shouldDirty: true });
+    if (profile.intakeWeightKg) setValue("intakeWeightKg", profile.intakeWeightKg, { shouldValidate: true, shouldDirty: true });
+
     if (profile.isIpCommunity !== undefined) setValue("isIpCommunity", profile.isIpCommunity, { shouldValidate: true, shouldDirty: true });
     if (profile.ipGroupName) setValue("ipGroupName", profile.ipGroupName, { shouldValidate: true, shouldDirty: true });
     if (profile.isLearnerWithDisability !== undefined) setValue("isLearnerWithDisability", profile.isLearnerWithDisability, { shouldValidate: true, shouldDirty: true });
@@ -501,6 +518,7 @@ export default function Step1Personal() {
       if (schoolType) setValue("lastSchoolType", schoolType, { shouldValidate: true, shouldDirty: true });
       if (profile.previousSchool.transferCertificateNo) setValue("transferCertificateNo", profile.previousSchool.transferCertificateNo, { shouldValidate: true, shouldDirty: true });
       if (profile.previousSchool.generalAverage) setValue("generalAverage", profile.previousSchool.generalAverage, { shouldValidate: true, shouldDirty: true });
+      if (profile.previousSchool.schoolYearLastAttended) setValue("schoolYearLastAttended", profile.previousSchool.schoolYearLastAttended, { shouldValidate: true, shouldDirty: true });
     }
 
     // 5. SCP Validation

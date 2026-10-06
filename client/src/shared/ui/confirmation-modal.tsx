@@ -219,6 +219,7 @@ export function ConfirmationModal({
             {/* Cancel */}
             {!hideCancel && (
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => onCancel ? onCancel() : onOpenChange(false)}
                 disabled={loading}
@@ -235,6 +236,7 @@ export function ConfirmationModal({
 
             {/* Confirm / primary action */}
             <Button
+              type="button"
               variant="default"
               onClick={() => {
                 onConfirm();

@@ -73,10 +73,6 @@ import {
 
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import ViewMasterlist from "@/features/sections/pages/ViewMasterlist";
-import {
-  useGuardedTabChange,
-  useUnsavedChanges,
-} from "@/shared/hooks/useUnsavedChanges";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
@@ -793,9 +789,7 @@ export function SectioningWorkspace() {
     !isHistoricalReadOnly;
 
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
-  const guardedSetActiveGradeLevelId = useGuardedTabChange(
-    setActiveGradeLevelId,
-  );
+
 
   type SortConfig = { key: "genAve"; direction: "asc" | "desc" } | null;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
@@ -868,6 +862,14 @@ export function SectioningWorkspace() {
       }
     }
   }, [gradeLevels, activeGradeLevelId, setActiveGradeLevelId]);
+
+  useEffect(() => {
+    if (draftPlacement && String(draftPlacement.gradeLevelId) !== activeGradeLevelId) {
+      setDraftPlacement(null);
+      setSelectedAppIds([]);
+      setDraftMoveAction(null);
+    }
+  }, [activeGradeLevelId, draftPlacement]);
 
   const isDraftActive = draftPlacement !== null;
   const _isLockedIn = selectedAppIds.length > 0 || isDraftActive;
@@ -1066,13 +1068,7 @@ export function SectioningWorkspace() {
     if (poolData) setPool(poolData);
   }, [poolData, sectionsData]);
 
-  useUnsavedChanges({
-    id: "sectioning-draft-placement",
-    label: "Draft section placement",
-    isDirty: isDraftActive,
-    isSubmitting: commitProcessing,
-    onDiscard: discardDraft,
-  });
+
 
   const toggleExpandedSection = (sectionId: number) => {
     setExpandedSectionIds((prev) => {
@@ -1611,7 +1607,7 @@ export function SectioningWorkspace() {
         onValueChange={(val) => {
           if (autoAssignPhase !== "idle") return;
           if (isDraftActive) {
-            guardedSetActiveGradeLevelId(val);
+            setActiveGradeLevelId(val);
             return;
           }
 

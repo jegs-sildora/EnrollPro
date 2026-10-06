@@ -402,6 +402,8 @@ export const EarlyRegistrationFormSchema = BaseEnrollmentFormSchema.omit({
   is4PsBeneficiary: true,
   isBalikAral: true,
   isLearnerWithDisability: true,
+}).extend({
+  learningModalities: z.array(z.enum(['BLENDED', 'EDUCATIONAL_TELEVISION', 'HOMESCHOOLING', 'MODULAR_DIGITAL', 'MODULAR_PRINT', 'ONLINE', 'RADIO_BASED_TELEVISION'])).default([]),
 }).superRefine(createSuperRefineLogic(true));
 
 export type EnrollmentFormData = z.infer<typeof EnrollmentFormSchema>;

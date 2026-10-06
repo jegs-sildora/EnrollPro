@@ -14,6 +14,7 @@ import {
 import { registrarApi } from "@/features/smart/lib/api";
 import { Breadcrumb } from "@/features/smart/components/ui/breadcrumb";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
+import { useSettingsStore } from "@/store/settings.slice";
 
 // NOTE: This page is intentionally read-only.
 // EOSY finalization (POST /eosy/sections/:id/finalize) writes to EnrollPro and is STRICTLY FORBIDDEN
@@ -21,6 +22,7 @@ import { useTheme } from "@/features/smart/contexts/ThemeContext";
 
 export default function EOSYFinalization() {
   const { colors } = useTheme();
+  const { schoolName } = useSettingsStore();
 
   const [schoolYearsLoading, setSchoolYearsLoading] = useState(true);
   const [schoolYears, setSchoolYears] = useState<unknown[]>([]);
@@ -156,7 +158,7 @@ export default function EOSYFinalization() {
                   EOSY Section List
                 </CardTitle>
                 <CardDescription className="mt-2  text-slate-500">
-                  Hinigaran National High School — End of School Year Monitoring
+                  <span className="font-bold capitalize">{schoolName.toLowerCase()}</span> — End of School Year Monitoring
                 </CardDescription>
               </div>
 
