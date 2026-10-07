@@ -444,6 +444,7 @@ model EnrollmentApplication {
   reportedGrades             Json?                     @map("reported_grades")
   intakeHeightCm             Float?                    @map("intake_height_cm")
   intakeWeightKg             Float?                    @map("intake_weight_kg")
+  intakeBmi                  Float?                    @map("intake_bmi")
   status                     ApplicationStatus         @default(PENDING_VERIFICATION)
   academicStatus             AcademicStatus            @default(PROMOTED) @map("academic_status")
   isRemedialRequired         Boolean                   @default(false) @map("is_remedial_required")

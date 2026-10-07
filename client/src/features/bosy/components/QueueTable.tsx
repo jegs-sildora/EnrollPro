@@ -82,7 +82,7 @@ interface QueueTableProps {
 }
 
 function buildLearnerDisplayName(item: BOSYQueueItem): string {
-  return `${item.lastName}, ${item.firstName}${item.middleName ? ` ${item.middleName[0]}.` : ""}`;
+  return `${item.lastName}, ${item.firstName}${item.middleName ? ` ${item.middleName}` : ""}`;
 }
 
 function formatDeficiencyText(value: string | null): string | null {

@@ -1349,7 +1349,7 @@ export default function Step1Personal() {
       <LearnerFoundModal
         isOpen={isLearnerModalOpen}
         onOpenChange={setIsLearnerModalOpen}
-        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        learnerName={pendingProfile ? [pendingProfile.firstName, pendingProfile.middleName, pendingProfile.lastName, pendingProfile.extensionName].filter(Boolean).join(" ") : ""}
         lrn={lrn || ""}
         onProceed={() => {
           setIsLearnerModalOpen(false);

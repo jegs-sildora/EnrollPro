@@ -2236,7 +2236,7 @@ export function WalkInEncodePanel() {
       <LearnerFoundModal
         isOpen={isLearnerModalOpen}
         onOpenChange={setIsLearnerModalOpen}
-        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        learnerName={pendingProfile ? [pendingProfile.firstName, pendingProfile.middleName, pendingProfile.lastName, pendingProfile.extensionName].filter(Boolean).join(" ") : ""}
         lrn={form.getValues("lrn") || ""}
         onProceed={() => {
           setIsLearnerModalOpen(false);

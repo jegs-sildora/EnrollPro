@@ -604,7 +604,10 @@ export default function ScpAdmissionForm({
       hasSubmittedRef.current = true;
       if (!isStaffWalkIn) sessionStorage.removeItem(SCP_FORM_STATE_KEY);
       
-      onSuccess(response.data);
+      onSuccess({
+        ...response.data,
+        learnerName: [data.firstName, data.middleName, data.lastName, data.extensionName].filter(Boolean).join(" "),
+      });
     } catch (error) {
       console.error(error);
       const fallbackMessage = "Submission failed. Please check the fields and try again.";
@@ -1408,7 +1411,7 @@ export default function ScpAdmissionForm({
       <LearnerFoundModal
         isOpen={isLearnerModalOpen}
         onOpenChange={setIsLearnerModalOpen}
-        learnerName={pendingProfile ? `${pendingProfile.firstName} ${pendingProfile.lastName}` : ""}
+        learnerName={pendingProfile ? [pendingProfile.firstName, pendingProfile.middleName, pendingProfile.lastName, pendingProfile.extensionName].filter(Boolean).join(" ") : ""}
         lrn={lrn || ""}
         onProceed={() => {
           setIsLearnerModalOpen(false);

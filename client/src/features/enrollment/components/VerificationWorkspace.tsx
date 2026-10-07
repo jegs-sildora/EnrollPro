@@ -1078,8 +1078,8 @@ export function VerificationWorkspace() {
                           alt={`${app.learner.firstName} ${app.learner.lastName}`}
                         />
                         <div className="flex flex-col min-w-0">
-                          <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}`}>
-                            {app.learner.lastName}, {app.learner.firstName}
+                          <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}${app.learner.middleName ? ` ${app.learner.middleName}` : ""}`}>
+                            {app.learner.lastName}, {app.learner.firstName}{app.learner.middleName ? ` ${app.learner.middleName}` : ""}
                           </h4>
                           <span className="text-sm font-semibold uppercase text-foreground mt-0.5 truncate text-foreground">
                             LRN: {app.learner.lrn || "NO LRN"}
@@ -1098,7 +1098,7 @@ export function VerificationWorkspace() {
                         )}
                         <div className="flex items-center text-sm text-foreground font-bold whitespace-nowrap text-foreground">
                           <Clock className="w-3 h-3 mr-1 shrink-0" />
-                          {format(new Date(app.createdAt), "MMM d, h:mm a")}
+                          {format(new Date(app.createdAt), "MMM d, h:mm:ss a")}
                         </div>
                       </div>
                     </div>
@@ -1862,7 +1862,7 @@ export function VerificationWorkspace() {
             <p className="text-foreground">
               Are you sure you want to cancel the application for{" "}
               <strong>
-                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}{selectedApp?.learner.middleName ? ` ${selectedApp?.learner.middleName}` : ""}
               </strong>
               ? This will remove them from the 'For Review' queue.
             </p>
@@ -1897,7 +1897,7 @@ export function VerificationWorkspace() {
             <p className="text-foreground text-center">
               You are about to permanently delete the application for{" "}
               <span className="font-bold">
-                {selectedApp?.learner.firstName} {selectedApp?.learner.lastName}
+                {selectedApp?.learner.firstName} {selectedApp?.learner.middleName ? `${selectedApp?.learner.middleName} ` : ""}{selectedApp?.learner.lastName}
               </span>
               .
             </p>
@@ -1929,7 +1929,7 @@ export function VerificationWorkspace() {
             <p className="text-foreground">
               You are about to restore the application for{" "}
               <strong>
-                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}{selectedApp?.learner.middleName ? ` ${selectedApp?.learner.middleName}` : ""}
               </strong>
               . This will move them back to the 'For Review' queue for active processing.
             </p>
@@ -1955,7 +1955,7 @@ export function VerificationWorkspace() {
             <p className="text-foreground">
               You are about to unenroll{" "}
               <strong>
-                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}{selectedApp?.learner.middleName ? ` ${selectedApp?.learner.middleName}` : ""}
               </strong>
               . This will remove them from the official enrollment list and return their application for review. If they were assigned to a section, they will be removed from it.
             </p>

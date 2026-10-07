@@ -20,6 +20,7 @@ import { isPublicEnrollmentOpen, isScpAdmissionOpen, isEarlyRegistrationOpen } f
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import { reserveTrackingNumber } from "./tracking-number.service.js";
 import { getSystemDate } from "../../lib/date-wrapper.js";
+import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 
 interface ActiveEnrollmentSetting {
   activeSchoolYearId: number
@@ -308,6 +309,60 @@ export async function getLearnerProfile(req: Request, res: Response) {
       scpProgram = application.applicantType;
     }
 
+    const primary = demographicSource === admission ? admission : application;
+    const secondary = demographicSource === admission ? application : admission;
+
+    // 1. Deep merge addresses by addressType
+    const addressMap = new Map<string, any>();
+    if (secondary?.addresses) {
+      for (const addr of secondary.addresses) addressMap.set(addr.addressType, addr);
+    }
+    if (primary?.addresses) {
+      for (const addr of primary.addresses) {
+        const existing = addressMap.get(addr.addressType);
+        if (existing) {
+          addressMap.set(addr.addressType, {
+            ...existing,
+            ...Object.fromEntries(Object.entries(addr).filter(([_, v]) => v !== null && v !== undefined && v !== ""))
+          });
+        } else {
+          addressMap.set(addr.addressType, addr);
+        }
+      }
+    }
+    const mergedAddresses = Array.from(addressMap.values()).map(normalizeAddressForForm);
+
+    // 2. Deep merge family members by relationship
+    const familyMap = new Map<string, any>();
+    if (secondary?.familyMembers) {
+      for (const member of secondary.familyMembers) familyMap.set(member.relationship, member);
+    }
+    if (primary?.familyMembers) {
+      for (const member of primary.familyMembers) {
+        const existing = familyMap.get(member.relationship);
+        if (existing) {
+           familyMap.set(member.relationship, {
+            ...existing,
+            ...Object.fromEntries(Object.entries(member).filter(([_, v]) => v !== null && v !== undefined && v !== ""))
+          });
+        } else {
+          familyMap.set(member.relationship, member);
+        }
+      }
+    }
+    const mergedFamilyMembers = Array.from(familyMap.values());
+
+    // 3. Deep merge previous school
+    let mergedPreviousSchool = secondary?.previousSchool || null;
+    if (primary?.previousSchool) {
+      mergedPreviousSchool = mergedPreviousSchool
+        ? {
+            ...mergedPreviousSchool,
+            ...Object.fromEntries(Object.entries(primary.previousSchool).filter(([_, v]) => v !== null && v !== undefined && v !== ""))
+          }
+        : primary.previousSchool;
+    }
+
     res.json({
       // Core Learner Demographics
       id: learner.id,
@@ -333,13 +388,14 @@ export async function getLearnerProfile(req: Request, res: Response) {
       psaBirthCertNumber: learner.psaBirthCertNumber,
       specialNeedsCategory: learner.specialNeedsCategory,
       studentPhoto: learner.studentPhoto,
-      intakeHeightCm: demographicSource && 'intakeHeightCm' in demographicSource ? demographicSource.intakeHeightCm : null,
-      intakeWeightKg: demographicSource && 'intakeWeightKg' in demographicSource ? demographicSource.intakeWeightKg : null,
+      intakeHeightCm: application?.intakeHeightCm ?? null,
+      intakeWeightKg: application?.intakeWeightKg ?? null,
+      intakeBmi: application?.intakeBmi ?? null,
 
       // Previous Application Data (for auto-filling addresses, family, previous school)
-      addresses: (demographicSource?.addresses ?? []).map(normalizeAddressForForm),
-      familyMembers: demographicSource?.familyMembers || [],
-      previousSchool: demographicSource?.previousSchool || null,
+      addresses: mergedAddresses,
+      familyMembers: mergedFamilyMembers,
+      previousSchool: mergedPreviousSchool,
 
       // SCP Status
       scpAdmissionStatus,
@@ -676,6 +732,7 @@ export async function submitEnrollment(req: Request, res: Response) {
         isPrivacyConsentGiven: data.isPrivacyConsentGiven,
         intakeHeightCm: data.intakeHeightCm || null,
         intakeWeightKg: data.intakeWeightKg || null,
+        intakeBmi: data.intakeHeightCm && data.intakeWeightKg ? Number((data.intakeWeightKg / Math.pow(data.intakeHeightCm / 100, 2)).toFixed(2)) : null,
         trackingNumber,
         status: "PENDING_VERIFICATION" as const,
         duplicateFlag: false,
@@ -919,6 +976,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
         isPrivacyConsentGiven: data.isPrivacyConsentGiven,
         intakeHeightCm: data.intakeHeightCm || null,
         intakeWeightKg: data.intakeWeightKg || null,
+        intakeBmi: data.intakeHeightCm && data.intakeWeightKg ? Number((data.intakeWeightKg / Math.pow(data.intakeHeightCm / 100, 2)).toFixed(2)) : null,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
@@ -1105,6 +1163,9 @@ export async function submitEarlyRegistration(req: Request, res: Response) {
         hasNoFather: !data.father?.firstName,
         isLateEnrollee: false,
         isEarlyRegistrant: true,
+        intakeHeightCm: data.intakeHeightCm || null,
+        intakeWeightKg: data.intakeWeightKg || null,
+        intakeBmi: data.intakeHeightCm && data.intakeWeightKg ? Number((data.intakeWeightKg / Math.pow(data.intakeHeightCm / 100, 2)).toFixed(2)) : null,
         
         addresses: {
           create: [
@@ -1375,6 +1436,9 @@ export async function updateEarlyRegistration(req: Request, res: Response) {
           hasNoFather: !data.father?.firstName,
           isLateEnrollee: false,
           isEarlyRegistrant: true,
+          intakeHeightCm: data.intakeHeightCm || null,
+          intakeWeightKg: data.intakeWeightKg || null,
+          intakeBmi: data.intakeHeightCm && data.intakeWeightKg ? Number((data.intakeWeightKg / Math.pow(data.intakeHeightCm / 100, 2)).toFixed(2)) : null,
           addresses: {
             create: [
               {
@@ -1499,6 +1563,8 @@ export async function markEarlyRegistrationNoShow(req: Request, res: Response) {
       req,
     });
 
+    broadcastEnrollmentInvalidation(application.schoolYearId);
+
     res.json({ success: true, application: updated });
   } catch (error) {
     console.error("Error marking early registration as no show:", error);
@@ -1543,6 +1609,8 @@ export async function restoreEarlyRegistration(req: Request, res: Response) {
       recordId: Number(id),
       req,
     });
+
+    broadcastEnrollmentInvalidation(application.schoolYearId);
 
     res.json({ success: true, application: updated });
   } catch (error) {

@@ -261,6 +261,7 @@ export const applicationSubmitResponseSchema = z
   .object({
     trackingNumber: z.string().nullable().optional(),
     applicantType: ApplicantTypeEnum,
+    learnerName: z.string().optional(),
   })
   .merge(applicationTrackingStateSchema);
 

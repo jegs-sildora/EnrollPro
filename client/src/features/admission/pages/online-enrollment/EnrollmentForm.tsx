@@ -522,7 +522,7 @@ export default function EnrollmentForm({
           programType: responseData.programType,
           status: responseData.status,
           currentStep: responseData.currentStep,
-          learnerName: `${data.firstName} ${data.lastName}`,
+          learnerName: [data.firstName, data.middleName, data.lastName, data.extensionName].filter(Boolean).join(" "),
         });
       }
 
@@ -702,7 +702,7 @@ export default function EnrollmentForm({
                 programType: response.data.programType,
                 status: response.data.status,
                 currentStep: response.data.currentStep,
-                learnerName: `${data.firstName} ${data.lastName}`,
+                learnerName: [data.firstName, data.middleName, data.lastName, data.extensionName].filter(Boolean).join(" "),
               });
             }
             reset({ ...DEFAULT_VALUES });

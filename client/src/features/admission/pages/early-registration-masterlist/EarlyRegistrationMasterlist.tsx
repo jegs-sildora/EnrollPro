@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { EarlyRegistrationReviewModal } from "./EarlyRegistrationReviewModal";
 import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
@@ -118,6 +119,13 @@ export default function EarlyRegistrationMasterlist() {
     return () => setTitle(null);
   }, [setTitle]);
 
+  useRealtimeRefresh({
+    topics: ["enrollment:applications", "students:list", "students:detail"],
+    onRefresh: () => {
+      void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
+    },
+  });
+
   const { data: applications = [], isLoading: isFetching } = useQuery<ApplicationWithRelations[]>({
     queryKey: ["early-registrations", selectedTab],
     queryFn: async () => {
@@ -143,7 +151,7 @@ export default function EarlyRegistrationMasterlist() {
       if (filterTab === "pending") {
          return app.status === "EARLY_REGISTRATION" || app.status === "PENDING_VERIFICATION";
       } else if (filterTab === "enrolled") {
-         return app.status === "OFFICIALLY_ENROLLED";
+         return app.status === "OFFICIALLY_ENROLLED" || app.status === "READY_FOR_SECTIONING";
       } else if (filterTab === "cancelled") {
          return app.status === "WITHDRAWN" || app.status === "DROPPED" || app.status === "ARCHIVED_NO_SHOW";
       }
@@ -205,6 +213,9 @@ export default function EarlyRegistrationMasterlist() {
                   }
                   if (application.status === "OFFICIALLY_ENROLLED") {
                     return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200 px-2 py-0">Officially Enrolled</Badge>;
+                  }
+                  if (application.status === "READY_FOR_SECTIONING") {
+                    return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 uppercase border border-emerald-200 px-2 py-0">Ready for Sectioning</Badge>;
                   }
                   if (application.status === "WITHDRAWN" || application.status === "DROPPED" || application.status === "ARCHIVED_NO_SHOW") {
                     return <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 uppercase border border-rose-200 px-2 py-0">{application.status.replace(/_/g, " ")}</Badge>;
@@ -483,6 +494,9 @@ export default function EarlyRegistrationMasterlist() {
       <StudentDetailModal 
         id={viewingLearnerId}
         onClose={() => setViewingLearnerId(null)}
+        onRefreshData={() => {
+          void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
+        }}
       />
       <ConfirmationModal
         open={!!selectedLearnerForModal}

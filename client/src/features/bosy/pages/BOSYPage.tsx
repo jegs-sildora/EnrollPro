@@ -881,7 +881,7 @@ export default function BOSYPage() {
                                       <p className="font-extrabold uppercase text-foreground">
                                         {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
                                         {confirmSingleTarget.middleName
-                                          ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
+                                          ? ` ${confirmSingleTarget.middleName}`
                                           : ""}
                                       </p>
                                       <p className="text-sm text-foreground">
@@ -944,7 +944,7 @@ export default function BOSYPage() {
                             <p className="text-base leading-tight font-bold uppercase text-foreground">
                               {transferTarget.lastName}, {transferTarget.firstName}
                               {transferTarget.middleName
-                                ? ` ${transferTarget.middleName.charAt(0)}.`
+                                ? ` ${transferTarget.middleName}`
                                 : ""}
                             </p>
                             <p className="text-base text-foreground font-bold break-all">
@@ -992,7 +992,7 @@ export default function BOSYPage() {
                                     <p className="font-extrabold uppercase text-foreground">
                                       {revokeTarget.lastName}, {revokeTarget.firstName}
                                       {revokeTarget.middleName
-                                        ? ` ${revokeTarget.middleName.charAt(0)}.`
+                                        ? ` ${revokeTarget.middleName}`
                                         : ""}
                                     </p>
                                     <p className="text-sm text-foreground">
@@ -1056,7 +1056,7 @@ export default function BOSYPage() {
                                       <td className="p-3 px-4 border-r border-gray-100">
                                         <p className="font-extrabold uppercase text-foreground">
                                           {item.lastName}, {item.firstName}
-                                          {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                          {item.middleName ? ` ${item.middleName}` : ""}
                                         </p>
                                         <p className="text-sm text-foreground">
                                           LRN: {item.lrn || "No LRN"}
@@ -1108,7 +1108,7 @@ export default function BOSYPage() {
                                         <td className="p-3 px-4">
                                           <p className="font-extrabold uppercase text-foreground">
                                             {item.lastName}, {item.firstName}
-                                            {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                            {item.middleName ? ` ${item.middleName}` : ""}
                                           </p>
                                           <p className="text-sm text-foreground">
                                             LRN: {item.lrn || "No LRN"}
