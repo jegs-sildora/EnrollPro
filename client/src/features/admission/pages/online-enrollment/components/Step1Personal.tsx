@@ -102,6 +102,9 @@ interface LearnerProfileResponse {
   } | null;
   scpProgram?: string | null;
   scpAdmissionStatus?: string | null;
+  gradeLevel?: string | null;
+  learnerType?: string | null;
+  learningModalities?: string[];
 }
 
 const MOTHER_TONGUE_OPTIONS = [
@@ -533,6 +536,17 @@ export default function Step1Personal() {
       setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
       setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
       setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+    }
+    
+    // 6. Early Registration / Admission Fields
+    if (profile.gradeLevel) {
+      setValue("gradeLevel", profile.gradeLevel as NonNullable<EnrollmentFormData["gradeLevel"]>, { shouldValidate: true, shouldDirty: true });
+    }
+    if (profile.learnerType) {
+      setValue("learnerType", profile.learnerType as NonNullable<EnrollmentFormData["learnerType"]>, { shouldValidate: true, shouldDirty: true });
+    }
+    if (profile.learningModalities && profile.learningModalities.length > 0) {
+      setValue("learningModalities", profile.learningModalities as NonNullable<EnrollmentFormData["learningModalities"]>, { shouldValidate: true, shouldDirty: true });
     }
   }, [pendingProfile, setValue]);
 

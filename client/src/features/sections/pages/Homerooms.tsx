@@ -58,10 +58,7 @@ import { Badge } from "@/shared/ui/badge";
 import { motion } from "motion/react";
 import { cn, formatScpType } from "@/shared/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import {
-  REALTIME_INVALIDATION_EVENT,
-  type RealtimeInvalidationEvent,
-} from "@/shared/hooks/useRealtimeInvalidations";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
@@ -828,39 +825,18 @@ export default function Homerooms() {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    const handleRealtimeInvalidation = (event: Event) => {
-      const payload = (event as CustomEvent<RealtimeInvalidationEvent>).detail;
-      if (!payload?.topics) return;
-      if (payload.schoolYearId && ayId && payload.schoolYearId !== ayId) return;
-
-      const shouldRefresh = payload.topics.some((topic) =>
-        [
-          "teachers:list",
-          "homerooms:sections",
-          "homerooms:teachers",
-          "homerooms:adviser-candidates",
-          "sectioning:sections",
-        ].includes(topic),
-      );
-
-      if (shouldRefresh) {
-        void fetchData();
-      }
-    };
-
-    window.addEventListener(
-      REALTIME_INVALIDATION_EVENT,
-      handleRealtimeInvalidation,
-    );
-
-    return () => {
-      window.removeEventListener(
-        REALTIME_INVALIDATION_EVENT,
-        handleRealtimeInvalidation,
-      );
-    };
-  }, [ayId, fetchData]);
+  useRealtimeRefresh({
+    topics: [
+      "teachers:list",
+      "homerooms:sections",
+      "homerooms:teachers",
+      "homerooms:adviser-candidates",
+      "sectioning:sections",
+    ],
+    onRefresh: () => {
+      void fetchData();
+    },
+  });
 
   const SCP_SHORT_LABELS: Record<string, string> = useMemo(
     () => ({

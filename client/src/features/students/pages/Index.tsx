@@ -104,7 +104,7 @@ import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { EosyStatus } from "@enrollpro/shared";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
-
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 interface Student {
   id: number;
   learningProgram: string;
@@ -304,6 +304,13 @@ export default function Students() {
   const canEditProfile = !isHistoricalReadOnly || hasOverride;
   const canMutate = canEditProfile && systemPhase !== "EOSY_CLOSING";
   const queryClient = useQueryClient();
+
+  useRealtimeRefresh({
+    topics: ["students:list", "students:detail"],
+    onRefresh: () => {
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
 
   const { panelPercentage, isDesktopViewport, startResizing } =
     useResizablePanel(50, { storageKey: "learner-directory-detail-pane" });

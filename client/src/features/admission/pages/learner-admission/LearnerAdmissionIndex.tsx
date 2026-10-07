@@ -10,6 +10,7 @@ import { sileo } from "sileo"
 import api from "@/shared/api/axiosInstance"
 import { PaginationBar } from "@/shared/components/PaginationBar"
 import { UserPhoto } from "@/shared/components/UserPhoto"
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh"
 import { cn } from "@/shared/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Badge } from "@/shared/ui/badge"
@@ -320,6 +321,13 @@ export default function LearnerAdmissionIndex() {
       setSearchParams(nextParams, { replace: true })
     }
   }, [searchParams, setSearchParams, isFetching])
+
+  useRealtimeRefresh({
+    topics: ["enrollment:applications", "students:list"],
+    onRefresh: () => {
+      void queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
+    }
+  })
 
   const lockMutation = useMutation({
     mutationFn: async () => {

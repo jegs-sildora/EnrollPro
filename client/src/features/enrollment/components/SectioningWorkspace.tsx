@@ -77,6 +77,7 @@ import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import { useAuthStore } from "@/store/auth.slice";
 import { AutoAssignVisualizer } from "./AutoAssignVisualizer";
 
@@ -739,6 +740,14 @@ export function SectioningWorkspace() {
 
   const userRoles = useAuthStore((s) => s.user?.roles) ?? [];
   const isAdminOrRegistrar = userRoles.includes("SYSTEM_ADMIN") || userRoles.includes("HEAD_REGISTRAR") || userRoles.includes("SCHOOL_REGISTRAR");
+
+  useRealtimeRefresh({
+    topics: ["sectioning:pool", "sectioning:sections", "students:list"],
+    onRefresh: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
+    },
+  });
 
   const assignedGradeLevelId = useMemo(() => {
     if (!activeSchoolYear?.gradeLevels) return null;

@@ -16,9 +16,9 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel, getGradeLevelButtonStyles } from "@/shared/lib/utils";
-import { Eye } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
 import { useAuthStore } from "@/store/auth.slice";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 
 import {
   SearchIcon,
@@ -29,6 +29,7 @@ import {
   UploadIcon,
   DownloadIcon,
   SlidersHorizontal,
+  Eye,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Label } from "@/shared/ui/label";
@@ -180,6 +181,13 @@ export default function Teachers() {
 
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  useRealtimeRefresh({
+    topics: ["teachers:list", "teachers:detail"],
+    onRefresh: () => {
+      void queryClient.invalidateQueries({ queryKey: ["teachers"] });
+    },
+  });
 
   const [activeFilter, setActiveFilter] = useState("");
   const [personnelTypeFilter, setPersonnelTypeFilter] = useState<"all" | "TEACHING" | "NON_TEACHING">("all");

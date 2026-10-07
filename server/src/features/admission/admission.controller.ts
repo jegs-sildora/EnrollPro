@@ -261,6 +261,7 @@ export async function getLearnerProfile(req: Request, res: Response) {
             addresses: true,
             familyMembers: true,
             previousSchool: true,
+            gradeLevel: true,
           },
         },
         scpAdmissions: {
@@ -391,6 +392,9 @@ export async function getLearnerProfile(req: Request, res: Response) {
       intakeHeightCm: application?.intakeHeightCm ?? null,
       intakeWeightKg: application?.intakeWeightKg ?? null,
       intakeBmi: application?.intakeBmi ?? null,
+      gradeLevel: application?.gradeLevel?.name?.replace("Grade ", "") ?? null,
+      learnerType: application?.learnerType ?? null,
+      learningModalities: application?.learningModalities ?? [],
 
       // Previous Application Data (for auto-filling addresses, family, previous school)
       addresses: mergedAddresses,

@@ -5,10 +5,7 @@ import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useHeaderStore } from "@/store/header.slice";
 import type { DashboardStats } from "../types";
-import {
-  REALTIME_INVALIDATION_EVENT,
-  type RealtimeInvalidationEvent,
-} from "@/shared/hooks/useRealtimeInvalidations";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 
 import { PhaseOfficial } from "./PhaseOfficial";
 import { PhaseOngoing } from "./PhaseOngoing";
@@ -94,33 +91,13 @@ export default function DashboardIndex() {
     void loadStats();
   }, [loadStats]);
 
-  useEffect(() => {
-    const handleRealtimeInvalidation = (event: Event) => {
-      const payload = (event as CustomEvent<RealtimeInvalidationEvent>).detail;
-      if (!payload?.topics) return;
-      if (payload.schoolYearId && ayId && payload.schoolYearId !== ayId) return;
-
-      const shouldRefresh = payload.topics.some((topic) =>
-        ["dashboard:summary", "settings:public"].includes(topic),
-      );
-
-      if (shouldRefresh) {
-        void loadStats();
-      }
-    };
-
-    window.addEventListener(
-      REALTIME_INVALIDATION_EVENT,
-      handleRealtimeInvalidation,
-    );
-
-    return () => {
-      window.removeEventListener(
-        REALTIME_INVALIDATION_EVENT,
-        handleRealtimeInvalidation,
-      );
-    };
-  }, [ayId, loadStats]);
+  useRealtimeRefresh({
+    topics: ["dashboard:summary", "settings:public"],
+    schoolYearId: ayId,
+    onRefresh: () => {
+      void loadStats();
+    },
+  });
 
   if (loading || !stats) {
     return <PageLoadingSkeleton />;
