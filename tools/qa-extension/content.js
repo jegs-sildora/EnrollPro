@@ -101,7 +101,8 @@ function generateMockData() {
     lastSchoolAddress: randomChoice(phCities),
     transferCertificateNo: "TC-" + randomDigits(5),
     lastSchoolType: "PUBLIC",
-    generalAverage: generalAverage,
+    grade5GeneralAverage: generalAverage,
+    underSpecialScienceCurriculum: true,
 
     isScpApplication: true,
     scpType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", 
@@ -235,6 +236,29 @@ function fillField(name, value) {
   }
 }
 
+async function fillButtonGroupByLabel(labelText, optionText) {
+  const labels = Array.from(document.querySelectorAll('label'));
+  const targetLabel = labels.find(l => {
+    const text = l.textContent.replace('*', '').trim().toUpperCase();
+    return text === labelText.toUpperCase() || text.startsWith(labelText.toUpperCase());
+  });
+
+  if (!targetLabel) return false;
+
+  const container = targetLabel.parentElement;
+  if (!container) return false;
+
+  const buttons = Array.from(container.querySelectorAll('button'));
+  if (buttons.length === 0) return false;
+
+  const targetButton = buttons.find(b => b.textContent.trim().toUpperCase() === String(optionText).toUpperCase());
+  if (targetButton) {
+    targetButton.click();
+    return true;
+  }
+  return false;
+}
+
 async function fillAllFields(data) {
   // 1. Fill standard inputs
   for (const [key, value] of Object.entries(data)) {
@@ -256,6 +280,12 @@ async function fillAllFields(data) {
 
   // Previous School
   await fillRadixComboboxByLabel("School Year Last Attended");
+
+  // 3. Automate Button Groups
+  await fillButtonGroupByLabel("Sex", data.sex);
+  if (data.underSpecialScienceCurriculum !== undefined) {
+    await fillButtonGroupByLabel("Under Special Science Curriculum", data.underSpecialScienceCurriculum ? "YES" : "NO");
+  }
 }
 
 const actions = {

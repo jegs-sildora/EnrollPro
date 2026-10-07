@@ -103,7 +103,7 @@ interface RankedApplication extends Application {
 interface CustomHeaderRow {
   id: number
   isCustomHeaderRow: true
-  headerType: "QUALIFYING" | "WAITLISTED" | "UNQUALIFIED"
+  headerType: "QUALIFYING" | "WAITLISTED" | "UNQUALIFIED" | "FORFEITED"
 }
 
 type ApplicationTableRow = RankedApplication | CustomHeaderRow
@@ -216,7 +216,22 @@ export default function LearnerAdmissionIndex() {
   const [searchTerm, setSearchTerm] = useState("")
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(100)
-  const [edits, setEdits] = useState<Record<number, EditState>>({})
+  const [edits, setEdits] = useState<Record<number, EditState>>(() => {
+    try {
+      const stored = sessionStorage.getItem("scpAssessmentEdits")
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("Failed to parse stored edits:", e)
+    }
+    return {}
+  })
+
+  useEffect(() => {
+    sessionStorage.setItem("scpAssessmentEdits", JSON.stringify(edits))
+  }, [edits])
+
   const [assessmentFilter, setAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [localAssessmentFilter, setLocalAssessmentFilter] = useState<AssessmentResult | "all">("all")
   const [previousSchoolYearFilter, setPreviousSchoolYearFilter] = useState<string>("all")
@@ -343,14 +358,47 @@ export default function LearnerAdmissionIndex() {
       const { data } = await api.post(`/enrollment/scp-applicants/${applicationId}/forfeit`, { program: activeTab })
       return data
     },
-    onSuccess: async () => {
+    onSuccess: async (data, applicationId) => {
+      queryClient.setQueryData<Application[]>(
+        ["scp-applicants", activeTab, previousSchoolYearFilter],
+        (old) => {
+          if (!old) return old;
+          return old.map(app => {
+            if (app.id === applicationId) {
+              return {
+                ...app,
+                scpProfile: app.scpProfile ? { ...app.scpProfile, assessmentResult: "FORFEITED" as const } : null
+              }
+            }
+            if (data.promotedApplicant && app.id === data.promotedApplicant.id) {
+              return {
+                ...app,
+                scpProfile: app.scpProfile ? { ...app.scpProfile, assessmentResult: "QUALIFIED" as const } : null
+              }
+            }
+            return app;
+          });
+        }
+      );
+      
       await queryClient.invalidateQueries({ queryKey: ["scp-applicants"] })
-      sileo.success({ title: "Slot Forfeited", description: "The applicant has been forfeited and the highest ranking waitlisted applicant has been promoted." })
+      
+      if (data.promotedApplicant) {
+        sileo.success({ 
+          title: "Slot Forfeited", 
+          description: `Slot forfeited successfully. ${data.promotedApplicant.name} has been automatically promoted from the waitlist.`
+        })
+      } else {
+        sileo.success({ 
+          title: "Slot Forfeited", 
+          description: "Slot forfeited successfully. No waitlisted applicants remain to fill the slot."
+        })
+      }
       setIsForfeitModalOpen(false)
       setForfeitTarget(null)
     },
     onError: () => {
-      sileo.error({ title: "Forfeiture Failed", description: "Could not forfeit the slot." })
+      sileo.error({ title: "Forfeiture Failed", description: "Failed to forfeit slot. Please try again or contact support." })
     }
   })
 
@@ -450,17 +498,22 @@ export default function LearnerAdmissionIndex() {
       return app.finalResult === "WAITLISTED"
     })
 
+    const firstForfeitedIndex = result.findIndex((app) => {
+      return app.finalResult === "FORFEITED"
+    })
+
     const resultWithHeaders: ApplicationTableRow[] = [...result]
 
     const insertions = []
     if (firstDisqualifiedIndex !== -1) insertions.push({ index: firstDisqualifiedIndex, type: "UNQUALIFIED", id: -2 })
     if (firstWaitlistedIndex !== -1) insertions.push({ index: firstWaitlistedIndex, type: "WAITLISTED", id: -3 })
+    if (firstForfeitedIndex !== -1) insertions.push({ index: firstForfeitedIndex, type: "FORFEITED", id: -4 })
 
     // Insert from highest index first to avoid shifting issues
     insertions.sort((a, b) => b.index - a.index).forEach(insert => {
       resultWithHeaders.splice(insert.index, 0, {
         isCustomHeaderRow: true,
-        headerType: insert.type as "UNQUALIFIED" | "WAITLISTED",
+        headerType: insert.type as "UNQUALIFIED" | "WAITLISTED" | "FORFEITED",
         id: insert.id,
       })
     })
@@ -1160,6 +1213,16 @@ export default function LearnerAdmissionIndex() {
                         <TableRow className="bg-amber-50 hover:bg-amber-50" key={`waitlisted-header-${row.id}`}>
                           <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-amber-800 uppercase border-y border-amber-200">
                             WAITLISTED {programLabel}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    }
+
+                    if (headerType === "FORFEITED") {
+                      return (
+                        <TableRow className="bg-gray-50 hover:bg-gray-50" key={`forfeited-header-${row.id}`}>
+                          <TableCell colSpan={columnsCount} className="py-2 text-center font-bold text-gray-700 uppercase border-y border-gray-500">
+                            FORFEITED {programLabel}
                           </TableCell>
                         </TableRow>
                       )

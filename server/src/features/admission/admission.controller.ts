@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   Prisma,
@@ -1456,6 +1457,96 @@ export async function updateEarlyRegistration(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Failed to update early registration:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function markEarlyRegistrationNoShow(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    if (!id || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid application ID" });
+      return;
+    }
+
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id: Number(id) },
+      include: { learner: true }
+    });
+
+    if (!application) {
+      res.status(404).json({ message: "Application not found." });
+      return;
+    }
+
+    if (application.status !== "EARLY_REGISTRATION") {
+      res.status(400).json({ message: `Cannot mark as No Show. Current status is ${application.status}.` });
+      return;
+    }
+
+    const updated = await prisma.enrollmentApplication.update({
+      where: { id: Number(id) },
+      data: { status: "ARCHIVED_NO_SHOW" },
+    });
+
+    await auditLog({
+      userId: req.user?.userId ?? null,
+      actionType: "EARLY_REGISTRATION_MARKED_NO_SHOW",
+      description: `Marked early registration application for ${application.learner.lastName}, ${application.learner.firstName} as NO SHOW.`,
+      subjectType: "EnrollmentApplication",
+      recordId: Number(id),
+      req,
+    });
+
+    res.json({ success: true, application: updated });
+  } catch (error) {
+    console.error("Error marking early registration as no show:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function restoreEarlyRegistration(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    if (!id || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid application ID" });
+      return;
+    }
+
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id: Number(id) },
+      include: { learner: true }
+    });
+
+    if (!application) {
+      res.status(404).json({ message: "Application not found." });
+      return;
+    }
+
+    if (application.status !== "ARCHIVED_NO_SHOW") {
+      res.status(400).json({ message: `Cannot restore application. Current status is ${application.status}.` });
+      return;
+    }
+
+    const updated = await prisma.enrollmentApplication.update({
+      where: { id: Number(id) },
+      data: { status: "EARLY_REGISTRATION" },
+    });
+
+    await auditLog({
+      userId: req.user?.userId ?? null,
+      actionType: "EARLY_REGISTRATION_RESTORED",
+      description: `Restored early registration application for ${application.learner.lastName}, ${application.learner.firstName} from NO SHOW back to Pending.`,
+      subjectType: "EnrollmentApplication",
+      recordId: Number(id),
+      req,
+    });
+
+    res.json({ success: true, application: updated });
+  } catch (error) {
+    console.error("Error restoring early registration:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

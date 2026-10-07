@@ -350,7 +350,7 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
     throw new AppError(400, "Invalid application ID.")
   }
 
-  await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const scpAdmission = await tx.scpAdmission.findUnique({
       where: { id: applicationId },
     })
@@ -387,16 +387,29 @@ export const forfeitScpSlot = async (req: Request, res: Response): Promise<void>
       ]
     })
 
+    let promotedApplicant = null;
     // 3. Promote if found
     if (nextWaitlisted) {
-      await tx.scpAdmission.update({
+      const updated = await tx.scpAdmission.update({
         where: { id: nextWaitlisted.id },
-        data: { assessmentResult: "QUALIFIED" }
+        data: { assessmentResult: "QUALIFIED" },
+        include: { learner: true }
       })
+      promotedApplicant = updated;
     }
+
+    return { promotedApplicant };
   })
 
-  res.json({ message: "Slot successfully forfeited." })
+  res.json({ 
+    message: "Slot successfully forfeited.", 
+    promotedApplicant: result.promotedApplicant 
+      ? { 
+          id: result.promotedApplicant.id, 
+          name: `${result.promotedApplicant.learner.lastName}, ${result.promotedApplicant.learner.firstName}` 
+        } 
+      : null 
+  })
 }
 
 export const restoreScpApplication = async (req: Request, res: Response): Promise<void> => {

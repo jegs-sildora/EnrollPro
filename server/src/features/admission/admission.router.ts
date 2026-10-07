@@ -1,4 +1,4 @@
-import { Router, type Router as ExpressRouter } from "express";
+﻿import { Router, type Router as ExpressRouter } from "express";
 import {
   submitAdmission,
   submitWalkInAdmission,
@@ -11,6 +11,8 @@ import {
   getEarlyRegistrations,
   getEarlyRegistrationDetail,
   updateEarlyRegistration,
+  markEarlyRegistrationNoShow,
+  restoreEarlyRegistration,
 } from "./admission.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -46,6 +48,8 @@ router.get("/early-registration-masterlist", authenticate, authorize("HEAD_REGIS
 router.get("/early-registration-masterlist/:id", authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "SCHOOL_REGISTRAR", "GRADE_LEVEL_COORDINATOR"), getEarlyRegistrationDetail);
 router.put("/update-existing", updateExistingApplication);
 router.put("/update-early-registration", updateEarlyRegistration);
+router.patch("/early-registration-masterlist/:id/no-show", authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE_LEVEL_COORDINATOR"), markEarlyRegistrationNoShow);
+router.patch("/early-registration-masterlist/:id/restore", authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "GRADE_LEVEL_COORDINATOR"), restoreEarlyRegistration);
 router.get("/track/:trackingNumber", trackApplication);
 router.get("/validate-lrn/:lrn", validateLrn);
 router.get("/learner-profile/:lrn", getLearnerProfile);

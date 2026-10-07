@@ -18,6 +18,13 @@ import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { EarlyRegistrationReviewModal } from "./EarlyRegistrationReviewModal";
 import { StudentDetailModal } from "@/features/students/components/StudentDetailModal";
+import { useMutation } from "@tanstack/react-query";
+import { MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { useAuthStore } from "@/store/auth.slice";
+import { toastApiError } from "@/shared/hooks/useApiToast";
+import { sileo } from "sileo";
 
 type Learner = {
   id: number;
@@ -68,10 +75,43 @@ export default function EarlyRegistrationMasterlist() {
   const [sorting, setSorting] = useState<SortingState>([{ id: "applicant", desc: false }]);
   const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
   const [viewingLearnerId, setViewingLearnerId] = useState<number | null>(null);
+  const [selectedLearnerForModal, setSelectedLearnerForModal] = useState<ApplicationWithRelations | null>(null);
+  const [selectedLearnerForRestoreModal, setSelectedLearnerForRestoreModal] = useState<ApplicationWithRelations | null>(null);
 
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = usePaginationLimit(50);
+  
+  const { user } = useAuthStore();
+  const canMarkNoShow = user?.roles.some(r => r === "SYSTEM_ADMIN" || r === "HEAD_REGISTRAR" || r === "GRADE_LEVEL_COORDINATOR");
+
+  const noShowMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.patch(`/applications/early-registration-masterlist/${id}/no-show`);
+    },
+    onSuccess: () => {
+      sileo.success({ title: "Success", description: "Learner record marked as No Show." });
+      setSelectedLearnerForModal(null);
+      void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
+    },
+    onError: (error: any) => {
+      toastApiError(error);
+    }
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.patch(`/applications/early-registration-masterlist/${id}/restore`);
+    },
+    onSuccess: () => {
+      sileo.success({ title: "Success", description: "Learner application restored to pending review." });
+      setSelectedLearnerForRestoreModal(null);
+      void queryClient.invalidateQueries({ queryKey: ["early-registrations"] });
+    },
+    onError: (error: any) => {
+      toastApiError(error);
+    }
+  });
 
   useEffect(() => {
     setTitle("Early Registration Masterlist");
@@ -207,42 +247,90 @@ export default function EarlyRegistrationMasterlist() {
 
         if (!isPending) {
           return (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer",
+                  application.gradeLevel?.name 
+                    ? getGradeLevelButtonStyles(application.gradeLevel.name)
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewingLearnerId(application.learner.id);
+                }}>
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </Button>
+              {canMarkNoShow && application.status === "ARCHIVED_NO_SHOW" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 data-[state=open]:bg-muted">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      className="text-primary font-bold uppercase cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedLearnerForRestoreModal(application);
+                      }}
+                    >
+                      Restore Application
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          );
+        }
+
+        const isStrictlyPendingEnrollment = isPending && (!application.learner.scpAdmissions || application.learner.scpAdmissions.length === 0);
+
+        return (
+          <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="sm"
               className={cn(
                 "h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer",
-                application.gradeLevel?.name 
+                application.gradeLevel?.name
                   ? getGradeLevelButtonStyles(application.gradeLevel.name)
-                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                  : "bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                setViewingLearnerId(application.learner.id);
+                setSelectedApplicationId(row.original.id);
               }}>
               <Eye className="w-4 h-4 mr-2" />
-              Profile
+              Review Form
             </Button>
-          );
-        }
-
-        return (
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "h-9 items-center justify-center rounded-md px-4 transition-all border-2 font-bold cursor-pointer",
-              application.gradeLevel?.name
-                ? getGradeLevelButtonStyles(application.gradeLevel.name)
-                : "bg-primary/5 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+            {canMarkNoShow && isStrictlyPendingEnrollment && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 data-[state=open]:bg-muted">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    className="text-primary font-bold uppercase cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedLearnerForModal(application);
+                    }}
+                  >
+                    Mark as No Show
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedApplicationId(row.original.id);
-            }}>
-            <Eye className="w-4 h-4 mr-2" />
-            Review Form
-          </Button>
+          </div>
         );
       },
     },
@@ -395,6 +483,33 @@ export default function EarlyRegistrationMasterlist() {
       <StudentDetailModal 
         id={viewingLearnerId}
         onClose={() => setViewingLearnerId(null)}
+      />
+      <ConfirmationModal
+        open={!!selectedLearnerForModal}
+        onOpenChange={(open) => !open && setSelectedLearnerForModal(null)}
+        title="Confirm Learner No-Show"
+        description={
+          selectedLearnerForModal 
+            ? <>Are you sure you want to mark <strong>{selectedLearnerForModal.learner.lastName}, {selectedLearnerForModal.learner.firstName}</strong> (LRN: <strong>{selectedLearnerForModal.learner.lrn ?? "N/A"}</strong>) as No Show? This will move their early registration record to the Cancelled/No Show list. This action will not delete the historical application.</>
+            : ""
+        }
+        onConfirm={() => selectedLearnerForModal && noShowMutation.mutate(selectedLearnerForModal.id)}
+        confirmText="Yes, Mark as No Show"
+        variant="danger"
+        loading={noShowMutation.isPending}
+      />
+      <ConfirmationModal
+        open={!!selectedLearnerForRestoreModal}
+        onOpenChange={(open) => !open && setSelectedLearnerForRestoreModal(null)}
+        title="Restore Application"
+        description={
+          selectedLearnerForRestoreModal 
+            ? <>Are you sure you want to restore the application for <strong>{selectedLearnerForRestoreModal.learner.lastName}, {selectedLearnerForRestoreModal.learner.firstName}</strong> (LRN: <strong>{selectedLearnerForRestoreModal.learner.lrn ?? "N/A"}</strong>)? This will move the application back to the Pending Review queue.</>
+            : ""
+        }
+        onConfirm={() => selectedLearnerForRestoreModal && restoreMutation.mutate(selectedLearnerForRestoreModal.id)}
+        confirmText="Yes, Restore Application"
+        loading={restoreMutation.isPending}
       />
     </div>
   );

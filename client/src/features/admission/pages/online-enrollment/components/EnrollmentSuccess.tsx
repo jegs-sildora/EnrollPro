@@ -163,14 +163,22 @@ export default function EnrollmentSuccess({
           </div>
 
           {!isStaffWalkIn && (
-            <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
+            <div className="pt-10 border-t border-border/60 flex flex-col sm:flex-row gap-4 justify-center print:hidden w-full">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 px-12 font-bold gap-2 border-primary text-primary-foreground bg-primary shadow-md uppercase hover:bg-primary hover:text-primary-foreground"
+                className={cn("w-full h-12 px-12 font-bold gap-2 border-primary text-primary hover:bg-primary/10 hover:text-primary shadow-md uppercase", window.location.pathname.includes('/scp-admission') ? "flex-1" : "")}
                 onClick={() => setShowConfirmModal(true)}>
                 Back to Home
               </Button>
+              {window.location.pathname.includes('/scp-admission') && (
+                <Button
+                  type="button"
+                  className="flex-1 w-full h-12 px-12 font-bold gap-2 border-primary text-primary-foreground bg-primary shadow-md uppercase hover:bg-primary/90"
+                  onClick={() => navigate(`/track-application?trackingNumber=${trackingNumber}`)}>
+                  Track Application
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

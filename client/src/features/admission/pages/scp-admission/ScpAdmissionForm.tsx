@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import { scpAdmissionSubmitSchema } from "@enrollpro/shared/schemas";
@@ -24,6 +24,7 @@ import api from "@/shared/api/axiosInstance";
 import { cn } from "@/shared/lib/utils";
 import type { z } from "zod";
 import { useUnsavedChanges, useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
+import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInYears, format, isAfter, isBefore, isValid as isValidDate, parse } from "date-fns";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
@@ -220,6 +221,21 @@ export default function ScpAdmissionForm({
     reValidateMode: "onChange",
     defaultValues: parsedSavedState ?? getEmptyValues(intakeChoice, initialProgram),
   });
+
+  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
+  const activeScps = useMemo(() => {
+    const scps = [];
+    if (steEnabled) scps.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" });
+    if (spaEnabled) scps.push({ value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" });
+    if (spsEnabled) scps.push({ value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in Sports (SPS)" });
+    return scps;
+  }, [steEnabled, spaEnabled, spsEnabled]);
+
+  useEffect(() => {
+    if (activeScps.length === 1 && !form.getValues("scpType")) {
+      form.setValue("scpType", activeScps[0].value as any, { shouldValidate: true, shouldDirty: false });
+    }
+  }, [activeScps, form]);
 
 
   const hasSubmittedRef = useRef(false);
@@ -730,22 +746,28 @@ export default function ScpAdmissionForm({
                     render={({ field, fieldState }) => (
                       <FormItem>
                         <FormLabel className="text-base leading-tight font-bold text-foreground">Select Special Curricular Program <span className="text-destructive">*</span></FormLabel>
-                        <Select
-                          disabled={isStaffWalkIn}
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger className={cn("h-11 font-bold uppercase", fieldState.error && "border-destructive focus:ring-destructive")}>
-                              <SelectValue placeholder="SELECT SPECIAL CURRICULAR PROGRAM" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING">Science, Technology, and Engineering (STE)</SelectItem>
-                            <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS">Special Program in the Arts (SPA)</SelectItem>
-                            <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS">Special Program in Sports (SPS)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        {activeScps.length === 1 ? (
+                          <div className="h-11 flex items-center px-3 border border-border rounded-md bg-muted text-foreground font-bold uppercase">
+                            {activeScps[0].label}
+                          </div>
+                        ) : (
+                          <Select
+                            disabled={isStaffWalkIn}
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger className={cn("h-11 font-bold uppercase", fieldState.error && "border-destructive focus:ring-destructive")}>
+                                <SelectValue placeholder="SELECT SPECIAL CURRICULAR PROGRAM" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {activeScps.map(scp => (
+                                <SelectItem key={scp.value} value={scp.value}>{scp.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                         <AnimatedError error={fieldState.error?.message} />
                       </FormItem>
                     )}

@@ -1,43 +1,38 @@
-# System Prompt: Implement Dynamic Randomization for QA Autofill Extension
+# System Prompt: Implement Automated Waitlist Promotion on Slot Forfeiture
 
-**Role:** Senior Web Extension Developer & QA Automation Expert
+**Role:** Senior React/Next.js UI Engineer & DepEd JHS Domain Expert
 
 ## Context
-We are refactoring the `content.js` script of our Firefox QA Autofill Extension[cite: 27]. The initial implementation relied on a hardcoded `MOCK_DATA` object, which injects the exact same data (e.g., "Juan Miguel Dela Cruz") every time the user clicks a fill button[cite: 27]. 
+We are implementing the business logic for the "Forfeit Applicant Slot" modal within the SCP (Special Curricular Program) Admission module (`image_e600de.jpg`)[cite: 28]. 
 
-For effective QA testing of the "EnrollPro" system, the extension must generate highly realistic, randomized Philippine data on the fly, **every single time a button is clicked**. Additionally, we observed that dropdown menus (e.g., "Mother Tongue" or "Suffix" shown in the UI[cite: 31]) require special handling to ensure the script selects a valid `<option>` rather than failing or selecting a disabled placeholder.
+**Domain Insight:** Special Curricular Programs (like STE, SPA, SPS) have strict enrollment quotas (e.g., exactly 35 or 40 learners). Applicants are strictly ranked based on their combined screening scores. If a "QUALIFIED" applicant decides not to enroll (forfeits their slot), DepEd policy dictates that the system must strictly and sequentially promote the highest-ranking "WAITLISTED" applicant to maintain the program's quota. 
 
 ## Task
-Rewrite the `content.js` file to replace the static `MOCK_DATA` object with a dynamic data factory[cite: 27]. Implement custom randomizer functions using comprehensive Philippine data dictionaries and ensure seamless interaction with React-controlled `<select>` dropdowns.
+Wire the "CONFIRM FORFEITURE" button to execute a dual-action sequence: it must change the target applicant's status to `FORFEITED` and automatically promote the #1 ranked `WAITLISTED` applicant to `QUALIFIED`.
 
 ## Design & Logic Constraints (CRITICAL)
 
-### 1. The Dynamic Data Factory
-*   **Remove Static Object:** Delete the `const MOCK_DATA = {...}` object entirely[cite: 27].
-*   **Create Data Dictionaries:** Define robust arrays for Philippine demographics at the top of the script:
-    *   `phFirstNamesMale`: ["Juan Miguel", "Jose", "Pedro", "Carlo", "Mark"]
-    *   `phFirstNamesFemale`: ["Maria", "Ana", "Luz", "Teresa", "Sofia"]
-    *   `phLastNames`: ["Dela Cruz", "Santos", "Reyes", "Aquino", "Garcia", "Mendoza"]
-    *   `phBarangays`: ["Brgy. Taculing", "Brgy. Estefania", "Brgy. Mansilingan", "Brgy. Villamonte", "Brgy. Bata"]
-    *   `phCities`: ["Bacolod City", "Talisay City", "Silay City", "Bago City"]
-*   **Implement `generateMockData()`:** Create a function that constructs and returns a fresh data object on every invocation. 
-    *   *LRN:* Generate a random 12-digit string starting with "1".
-    *   *Contact Number:* Generate a random 11-digit string starting with "09".
-    *   *Grades:* Generate a random float between `80.00` and `98.00`.
-    *   *Demographics:* Randomly select a sex (Male/Female) and pull a corresponding first name and a random last name.
+### 1. Dual-Action Backend Mutation (Atomic Transaction)
+*   The backend endpoint handling this forfeiture must act as an atomic database transaction. 
+*   **Action A:** Update the selected applicant's `finalResult` status from `QUALIFIED` to `FORFEITED`.
+*   **Action B:** Query the applicant pool for the same SCP track with a `WAITLISTED` status, ordered by their screening rank (descending score). Automatically update the top record's status to `QUALIFIED`.
+*   If no waitlisted applicants exist, Action A should still succeed, leaving the slot open.
 
-### 2. Advanced Dropdown & Select Handling
-React Hook Form and standard HTML `<select>` elements require specific targeting. The current `fillField` function[cite: 27] must be upgraded to handle dynamic dropdown values.
-*   **Targeting Valid Options:** If the target element is a `<select>`, the script should NOT blindly inject a string that might not exist in the DOM.
-*   **Logic:** 
-    1. Query the `<select>` element.
-    2. Extract all its child `<option>` elements.
-    3. Filter out options that are disabled or have empty values (e.g., "SELECT MOTHER TONGUE"[cite: 31]).
-    4. Pick a random valid `<option>.value` from the remaining list.
-    5. Pass that selected value into the existing `setReactInputValue` bypass function[cite: 27].
+### 2. Frontend State Management & Optimistic UI
+*   Upon clicking "CONFIRM FORFEITURE"[cite: 28], trigger a loading state (e.g., spinner) on the button to prevent double-submissions.
+*   **Cache/State Update:** Once the mutation resolves successfully, optimistically update the local table state without a full page reload:
+    1.  Move the forfeited applicant out of the "QUALIFIED" data bucket and into a "FORFEITED" or "DISQUALIFIED" bucket.
+    2.  Identify the #1 ranked applicant currently in the "WAITLISTED" data bucket and move them into the "QUALIFIED" bucket.
+    3.  Recalculate or visually shift the list numbering to reflect the new hierarchy.
 
-### 3. Action Execution Update
-*   Update the `actions` object (`FILL_EARLY_REGISTRATION`, `FILL_SCP_ADMISSION`, `FILL_ENROLLMENT`)[cite: 27] to execute `generateMockData()` first, and then pass the freshly generated payload to the `fillAllFields(data)` function.
+### 3. Edge Case Handling (Empty Waitlist)
+*   The system must gracefully handle scenarios where the waitlist is completely empty. 
+*   If an applicant forfeits and there is no one to promote, the system should allow the forfeiture and simply decrement the filled capacity counter for that SCP track.
+
+### 4. User Feedback (Toast Notifications)
+*   **Standard Success:** Trigger a detailed success toast providing immediate clarity to the Coordinator: *"Slot forfeited successfully. [Name of Waitlisted Applicant] has been automatically promoted from the waitlist."*
+*   **Empty Waitlist Success:** *"Slot forfeited successfully. No waitlisted applicants remain to fill the slot."*
+*   **Error:** *"Failed to forfeit slot. Please try again or contact support."*
 
 ## Output Requirement
-Output the complete, refactored raw code for `content.js`. Do not generate the manifest or popup files, as those remain unchanged. Ensure the data dictionaries contain at least 5-10 realistic items each to ensure visible variety during QA testing, and heavily comment the `<select>` randomization logic so junior developers understand how it integrates with the React Native Setter Bypass.
+Output the implementation plan for this feature. Detail the required payload structure for the mutation, the specific state hooks/cache updates needed for the optimistic UI transition between the Qualified and Waitlisted tables, and the specific toast notification logic. Do not generate raw React code or custom CSS; use existing design system components.
