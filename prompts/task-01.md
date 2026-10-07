@@ -1,38 +1,25 @@
-# System Prompt: Implement Automated Waitlist Promotion on Slot Forfeiture
+**Task:** Implement server-side draft persistence and unplaced learner queueing for the Section Assignment module.
 
-**Role:** Senior React/Next.js UI Engineer & DepEd JHS Domain Expert
+**Context:** 
+The Grade Level Coordinator (GLC) needs to section learners without losing their progress upon page refresh or navigation. The system must utilize a batch save state architecture stored in the backend, utilizing the existing `is_draft` boolean in the `enrollment_records` table. Do NOT generate custom UI styling code; reuse our existing design system components (sidepanels, drag-and-drop lists, and dropdowns).
 
-## Context
-We are implementing the business logic for the "Forfeit Applicant Slot" modal within the SCP (Special Curricular Program) Admission module (`image_e600de.jpg`)[cite: 28]. 
+**Business Logic Requirements:**
 
-**Domain Insight:** Special Curricular Programs (like STE, SPA, SPS) have strict enrollment quotas (e.g., exactly 35 or 40 learners). Applicants are strictly ranked based on their combined screening scores. If a "QUALIFIED" applicant decides not to enroll (forfeits their slot), DepEd policy dictates that the system must strictly and sequentially promote the highest-ranking "WAITLISTED" applicant to maintain the program's quota. 
+1. **Server-Side Draft Initialization & Persistence:**
+   - When the GLC clicks "Generate Draft" or manually starts moving learners, intercept the action.
+   - Instead of holding assignments in Redux/React Context alone, execute a batch `POST`/`PUT` to the backend inserting records into `enrollment_records` with `is_draft = true`.
+   - Implement an "Autosave" hook or a prominent "Save Draft" button to periodically sync the frontend state with the database.
 
-## Task
-Wire the "CONFIRM FORFEITURE" button to execute a dual-action sequence: it must change the target applicant's status to `FORFEITED` and automatically promote the #1 ranked `WAITLISTED` applicant to `QUALIFIED`.
+2. **Loading the Active Draft:**
+   - On mounting the Section Assignment page, query `enrollment_records` for the active school year/grade level where `is_draft = true`. 
+   - If a draft exists, populate the section lists from the server response rather than requiring the algorithm to re-run.
 
-## Design & Logic Constraints (CRITICAL)
+3. **Handling New Enrollees (The Unplaced Queue):**
+   - After loading the active draft sections, execute a secondary query against `enrollment_applications` to fetch learners with `status = 'READY_FOR_SECTIONING'` who do NOT currently have a draft record in `enrollment_records`.
+   - Append these missing learners into the "Unplaced Learners" sidepanel component.
+   - When the GLC drags an unplaced learner from the sidepanel into a section, immediately sync this addition to the server draft.
 
-### 1. Dual-Action Backend Mutation (Atomic Transaction)
-*   The backend endpoint handling this forfeiture must act as an atomic database transaction. 
-*   **Action A:** Update the selected applicant's `finalResult` status from `QUALIFIED` to `FORFEITED`.
-*   **Action B:** Query the applicant pool for the same SCP track with a `WAITLISTED` status, ordered by their screening rank (descending score). Automatically update the top record's status to `QUALIFIED`.
-*   If no waitlisted applicants exist, Action A should still succeed, leaving the slot open.
-
-### 2. Frontend State Management & Optimistic UI
-*   Upon clicking "CONFIRM FORFEITURE"[cite: 28], trigger a loading state (e.g., spinner) on the button to prevent double-submissions.
-*   **Cache/State Update:** Once the mutation resolves successfully, optimistically update the local table state without a full page reload:
-    1.  Move the forfeited applicant out of the "QUALIFIED" data bucket and into a "FORFEITED" or "DISQUALIFIED" bucket.
-    2.  Identify the #1 ranked applicant currently in the "WAITLISTED" data bucket and move them into the "QUALIFIED" bucket.
-    3.  Recalculate or visually shift the list numbering to reflect the new hierarchy.
-
-### 3. Edge Case Handling (Empty Waitlist)
-*   The system must gracefully handle scenarios where the waitlist is completely empty. 
-*   If an applicant forfeits and there is no one to promote, the system should allow the forfeiture and simply decrement the filled capacity counter for that SCP track.
-
-### 4. User Feedback (Toast Notifications)
-*   **Standard Success:** Trigger a detailed success toast providing immediate clarity to the Coordinator: *"Slot forfeited successfully. [Name of Waitlisted Applicant] has been automatically promoted from the waitlist."*
-*   **Empty Waitlist Success:** *"Slot forfeited successfully. No waitlisted applicants remain to fill the slot."*
-*   **Error:** *"Failed to forfeit slot. Please try again or contact support."*
-
-## Output Requirement
-Output the implementation plan for this feature. Detail the required payload structure for the mutation, the specific state hooks/cache updates needed for the optimistic UI transition between the Qualified and Waitlisted tables, and the specific toast notification logic. Do not generate raw React code or custom CSS; use existing design system components.
+4. **Committing the Draft:**
+   - When the GLC clicks "Finalize & Commit", execute a batch update on `enrollment_records` setting `is_draft = false` and `sectioning_method = 'MANUAL_OVERRIDE'` (or `BATCH_ALGORITHM` depending on their origin).
+   - Simultaneously update `enrollment_applications` setting `status = 'OFFICIALLY_ENROLLED'`.
+   - Write a Placement Audit event to `audit_logs`.

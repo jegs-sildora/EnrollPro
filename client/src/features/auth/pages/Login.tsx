@@ -278,7 +278,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
             },
             {
               icon: Recycle,
-              title: "MRF: Facilities and Waste Management",
+              title: "SORT: Facilities and Waste Management",
               desc: "Monitor daily school maintenance, solid waste collection, and recycling initiatives.",
             },
           ].map((feature) => (

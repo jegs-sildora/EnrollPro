@@ -20,7 +20,7 @@ export function AnimatedError({ error, className }: AnimatedErrorProps) {
         >
           <p
             className={cn(
-              "text-xs text-destructive flex items-start gap-1 leading-tight",
+              "text-destructive flex items-start gap-1 leading-tight font-bold",
               className
             )}
           >

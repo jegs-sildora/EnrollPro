@@ -185,10 +185,11 @@ export async function getSectioningPool(req: Request, res: Response) {
 
     const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
-      status: { in: ["READY_FOR_SECTIONING", "PENDING_CONFIRMATION"] },
+      status: { in: ["READY_FOR_SECTIONING", "PENDING_CONFIRMATION", "OFFICIALLY_ENROLLED"] },
       OR: [
         { enrollmentRecord: null },
-        { enrollmentRecord: { isDraft: true } }
+        { enrollmentRecord: { isDraft: true } },
+        { enrollmentRecord: { isDraft: false } }
       ],
     };
 
@@ -254,7 +255,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       programType: app.assignedProgram || app.applicantType,
       academicStatus: app.academicStatus,
       status: app.status,
-      draftSectionId: app.enrollmentRecord?.isDraft ? app.enrollmentRecord.sectionId : undefined,
+      draftSectionId: app.enrollmentRecord ? app.enrollmentRecord.sectionId : undefined,
     }));
 
     return res.json(pool);
@@ -523,6 +524,104 @@ function isKnownPrismaConflict(error: unknown): boolean {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     ["P2002", "P2025"].includes(error.code)
   );
+}
+
+/**
+ * POST /api/sectioning/save-draft
+ * Saves the active draft placement to the backend.
+ */
+export async function saveDraft(req: Request, res: Response) {
+  try {
+    const { gradeLevelId, assignments } = req.body as {
+      gradeLevelId: number;
+      assignments: CommitDraftAssignmentInput[];
+    };
+
+    if (!gradeLevelId || !assignments) {
+      return res.status(400).json({ message: "gradeLevelId and assignments are required." });
+    }
+
+    const schoolYearId = req.schoolYearId;
+    if (!schoolYearId) {
+      return res.status(400).json({ message: "Active school year required." });
+    }
+
+    const scopedGradeLevelIds = await getSectionManagementGradeScope(req);
+    if (scopedGradeLevelIds?.length === 0 || !isGradeLevelWithinScope(scopedGradeLevelIds, gradeLevelId)) {
+      return res.status(403).json({ message: "You are not authorized to manage Section Assignment for this grade level." });
+    }
+
+    const userId = req.user!.userId;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete existing drafts for this grade level and school year
+      await tx.enrollmentRecord.deleteMany({
+        where: {
+          schoolYearId,
+          isDraft: true,
+          enrollmentApplication: {
+            gradeLevelId,
+          },
+        },
+      });
+
+      const applicationIds = assignments.flatMap(a => a.applicationIds);
+      if (applicationIds.length === 0) return;
+
+      const applications = await tx.enrollmentApplication.findMany({
+        where: { id: { in: applicationIds } },
+        select: { 
+          id: true, 
+          learnerId: true, 
+          status: true,
+          enrollmentRecord: { select: { isDraft: true } }
+        },
+      });
+
+      const validApplications = applications.filter(app => {
+         if (app.status !== "READY_FOR_SECTIONING" && app.status !== "PENDING_CONFIRMATION") return false;
+         if (app.enrollmentRecord && !app.enrollmentRecord.isDraft) return false;
+         return true;
+      });
+
+      const appMap = new Map(validApplications.map(app => [app.id, app.learnerId]));
+      const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
+      const isLateEnrollee = setting?.systemPhase === "CLASSES_ONGOING";
+
+      const commitDate = new Date();
+      const createData = [];
+      for (const assignment of assignments) {
+        for (const applicationId of assignment.applicationIds) {
+          const learnerId = appMap.get(applicationId);
+          if (learnerId) {
+            createData.push({
+              enrollmentApplicationId: applicationId,
+              sectionId: assignment.sectionId,
+              learnerId,
+              schoolYearId,
+              enrolledById: userId,
+              isDraft: true,
+              dateSectioned: commitDate,
+              enrolledAt: commitDate,
+              isLateEnrollee,
+              sectioningMethod: SectioningMethod.BATCH_ALGORITHM,
+            });
+          }
+        }
+      }
+
+      if (createData.length > 0) {
+        await tx.enrollmentRecord.createMany({
+          data: createData,
+        });
+      }
+    });
+
+    return res.json({ success: true, message: "Draft saved successfully." });
+  } catch (error) {
+    console.error("saveDraft failed:", error);
+    return res.status(500).json({ message: "Internal server error while saving draft." });
+  }
 }
 
 /**

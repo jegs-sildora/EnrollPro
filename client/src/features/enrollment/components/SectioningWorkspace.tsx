@@ -727,7 +727,8 @@ export function SectioningWorkspace() {
 
   const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
     const { spaEnabled, spsEnabled, steEnabled } = useSettingsStore();
-  const ancillaryRoles = useAuthStore((s) => s.user?.ancillaryRoles) ?? [];
+  const ancillaryRolesRaw = useAuthStore((s) => s.user?.ancillaryRoles);
+  const ancillaryRoles = useMemo(() => ancillaryRolesRaw ?? [], [ancillaryRolesRaw]);
   
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["school-years", "active", "grade-levels"],
@@ -810,6 +811,85 @@ export function SectioningWorkspace() {
   useEffect(() => {
     if (poolData && !draftPlacement) setPool(poolData);
   }, [poolData, draftPlacement]);
+
+  useEffect(() => {
+    if (!poolData || poolInitialLoading) return;
+
+    setDraftPlacement((currentDraft) => {
+      if (!currentDraft) return currentDraft;
+
+      const poolMap = new Map(poolData.map((l) => [l.applicationId, l]));
+      let hasChanges = false;
+      const existingAppIds = new Set<number>();
+
+      const nextRosters = currentDraft.rosters.map((roster) => {
+        const freshLearners = roster.learners
+          .filter((l) => {
+            if (!poolMap.has(l.applicationId)) {
+              hasChanges = true;
+              return false;
+            }
+            return true;
+          })
+          .map((l) => {
+            existingAppIds.add(l.applicationId);
+            const fresh = poolMap.get(l.applicationId)!;
+            if (
+              fresh.status !== l.status ||
+              fresh.draftSectionId !== l.draftSectionId ||
+              fresh.duplicateFlag !== l.duplicateFlag ||
+              fresh.genAve !== l.genAve ||
+              fresh.applicantType !== l.applicantType
+            ) {
+              hasChanges = true;
+              return { ...l, ...fresh, sectionId: roster.section.id, isOverridden: l.isOverridden };
+            }
+            return l;
+          });
+        return { ...roster, learners: freshLearners };
+      });
+
+      const nextUnplaced = currentDraft.unplacedLearners
+        .filter((l) => {
+          if (!poolMap.has(l.applicationId)) {
+            hasChanges = true;
+            return false;
+          }
+          return true;
+        })
+        .map((l) => {
+          existingAppIds.add(l.applicationId);
+          const fresh = poolMap.get(l.applicationId)!;
+          if (
+            fresh.status !== l.status ||
+            fresh.duplicateFlag !== l.duplicateFlag ||
+            fresh.genAve !== l.genAve ||
+            fresh.applicantType !== l.applicantType
+          ) {
+            hasChanges = true;
+            return { ...l, ...fresh };
+          }
+          return l;
+        });
+
+      const newLearners = poolData.filter(
+        (l) => !existingAppIds.has(l.applicationId)
+      );
+      if (newLearners.length > 0) {
+        hasChanges = true;
+        nextUnplaced.push(...newLearners);
+      }
+
+      if (hasChanges) {
+        return {
+          ...currentDraft,
+          rosters: nextRosters,
+          unplacedLearners: nextUnplaced,
+        };
+      }
+      return currentDraft;
+    });
+  }, [poolData, poolInitialLoading]);
 
   const loading =
     (sectionsInitialLoading || poolInitialLoading || gradeLevelsLoading) &&
@@ -896,6 +976,28 @@ export function SectioningWorkspace() {
   }, [activeGradeLevelId]);
 
   const isDraftActive = draftPlacement !== null;
+
+  useEffect(() => {
+    if (!draftPlacement || isHistoricalReadOnly) return;
+    
+    const handler = setTimeout(async () => {
+      try {
+        const assignments = draftPlacement.rosters.map(r => ({
+          sectionId: r.section.id,
+          applicationIds: r.learners.map(l => l.applicationId)
+        }));
+        
+        await api.post("/sectioning/save-draft", {
+          gradeLevelId: draftPlacement.gradeLevelId,
+          assignments
+        });
+      } catch (err) {
+        console.error("Autosave failed", err);
+      }
+    }, 2000);
+
+    return () => clearTimeout(handler);
+  }, [draftPlacement, isHistoricalReadOnly]);
   const _isLockedIn = selectedAppIds.length > 0 || isDraftActive;
 
   const currentGradeSections = useMemo(() => {
@@ -1092,7 +1194,7 @@ export function SectioningWorkspace() {
       setTargetSectionId(null);
       setAllowCapacityOverride(false);
     }
-  }, [currentGradePool, currentGradeSections, draftPlacement, activeGradeLevelId, poolInitialLoading, sectionsInitialLoading]);
+  }, [currentGradePool, currentGradeSections, draftPlacement, activeGradeLevelId, poolInitialLoading, sectionsInitialLoading, setDraftPlacement]);
 
   const generateDraftPlacement = () => {
     if (!activeGradeLevelId || autoAssignPhase !== "idle" || processing) return;
@@ -1174,17 +1276,6 @@ export function SectioningWorkspace() {
     }, prefersReducedMotion ? 0 : 300);
     autoAssignTimers.current.push(loadingTimer);
   };
-
-  const discardDraft = useCallback(() => {
-    setDraftPlacement(null);
-    setExpandedSectionIds(new Set());
-    setDraftMoveAction(null);
-    setMoveDestinationSectionId("");
-    setSwapApplicationId("");
-    setAllowCapacityOverride(false);
-    if (sectionsData) setSections(sectionsData);
-    if (poolData) setPool(poolData);
-  }, [poolData, sectionsData, setDraftPlacement]);
 
 
 
@@ -3090,7 +3181,7 @@ export function SectioningWorkspace() {
                           const totalLearners = rostersInGroup.reduce((sum, roster) => sum + roster.learners.length, 0);
                           if (totalLearners === 0) return [];
 
-                          const rows: any[] = [];
+                          const rows: React.ReactNode[] = [];
 
                           rows.push(
                             <tr key={`group-${key}`}>
