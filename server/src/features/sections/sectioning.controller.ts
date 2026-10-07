@@ -579,7 +579,7 @@ export async function saveDraft(req: Request, res: Response) {
       });
 
       const validApplications = applications.filter(app => {
-         if (app.status !== "READY_FOR_SECTIONING" && app.status !== "PENDING_CONFIRMATION") return false;
+         if (app.status !== "READY_FOR_SECTIONING" && app.status !== "PENDING_CONFIRMATION" && app.status !== "OFFICIALLY_ENROLLED") return false;
          if (app.enrollmentRecord && !app.enrollmentRecord.isDraft) return false;
          return true;
       });

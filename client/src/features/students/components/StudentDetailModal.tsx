@@ -8,7 +8,7 @@ import type { ComponentProps } from "react";
 type Props = ComponentProps<typeof StudentDetailPanel>;
 
 export function StudentDetailModal(props: Props) {
-  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, {
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(75, {
     centered: true,
     storageKey: "student-detail-modal",
   });

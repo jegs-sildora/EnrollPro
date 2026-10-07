@@ -364,20 +364,24 @@ const _interleaveBySex = (learners: PoolLearner[]) => {
 const calculateGenderCounts = (
   section: SectionSummary,
   learners: DraftLearnerPlacement[],
-): DraftGenderCounts => ({
-  boys:
-    section.boys + learners.filter((learner) => learner.sex === "MALE").length,
-  girls:
-    section.girls +
-    learners.filter((learner) => learner.sex === "FEMALE").length,
-});
+): DraftGenderCounts => {
+  const draftedLearners = learners.filter(l => l.status !== "OFFICIALLY_ENROLLED");
+  return {
+    boys:
+      section.boys + draftedLearners.filter((learner) => learner.sex === "MALE").length,
+    girls:
+      section.girls +
+      draftedLearners.filter((learner) => learner.sex === "FEMALE").length,
+  };
+};
 
 const buildRoster = (
   section: SectionSummary,
   learners: DraftLearnerPlacement[],
 ): DraftSectionRoster => {
   const sortedLearners = [...learners].sort(sortLearnersByAverage);
-  const totalCount = section.currentCount + sortedLearners.length;
+  const draftedLearners = sortedLearners.filter(l => l.status !== "OFFICIALLY_ENROLLED");
+  const totalCount = section.currentCount + draftedLearners.length;
   return {
     section,
     learners: sortedLearners,
@@ -507,12 +511,26 @@ const createDraftPlacement = (
   );
   const unplacedLearners: PoolLearner[] = [];
 
+  const unassignedLearners: PoolLearner[] = [];
+
+  for (const learner of learners) {
+    if (learner.draftSectionId && rostersBySectionId.has(learner.draftSectionId)) {
+      rostersBySectionId.get(learner.draftSectionId)!.push({
+        ...learner,
+        sectionId: learner.draftSectionId,
+        isOverridden: false,
+      });
+    } else {
+      unassignedLearners.push(learner);
+    }
+  }
+
   const programTypes = Array.from(
-    new Set(learners.map((learner) => getAutoDraftProgramType(learner)))
+    new Set(unassignedLearners.map((learner) => getAutoDraftProgramType(learner)))
   );
 
   for (const programType of programTypes) {
-    const rawProgramLearners = learners.filter(
+    const rawProgramLearners = unassignedLearners.filter(
       (learner) => getAutoDraftProgramType(learner) === programType
     );
     const programSections = sections.filter(
@@ -1010,6 +1028,12 @@ export function SectioningWorkspace() {
       return true;
     });
   }, [sections, activeGradeLevelId, spaEnabled, spsEnabled, steEnabled]);
+
+  useEffect(() => {
+    if (currentGradeSections.length > 0) {
+      setExpandedSectionIds(new Set(currentGradeSections.map((s) => s.id)));
+    }
+  }, [activeGradeLevelId, currentGradeSections.length]);
 
   const currentGradePool = useMemo(() => {
     if (!activeGradeLevelId) return [];
@@ -2991,7 +3015,7 @@ export function SectioningWorkspace() {
             {isAnimationVisible && !prefersReducedMotion && (
               <div className="h-[400px]">
                 {(() => {
-                  const isMock = currentGradePool.length < 10;
+                  const isMock = filteredAndSortedPool.length < 10;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
                   const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;
@@ -3054,7 +3078,7 @@ export function SectioningWorkspace() {
                   Reduced Motion Active — Final Distribution State
                 </div>
                 {(() => {
-                  const isMock = currentGradePool.length < 10;
+                  const isMock = filteredAndSortedPool.length < 10;
                   
                   const allRegular = currentGradeSections.filter(s => s.programType === "REGULAR");
                   const topSectionCount = enableHomogeneousSections ? Math.min(allRegular.length, homogeneousSectionCount) : 0;

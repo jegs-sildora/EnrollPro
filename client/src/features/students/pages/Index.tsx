@@ -100,7 +100,6 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
-import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { EosyStatus } from "@enrollpro/shared";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
@@ -313,7 +312,7 @@ export default function Students() {
   });
 
   const { panelPercentage, isDesktopViewport, startResizing } =
-    useResizablePanel(50, { storageKey: "learner-directory-detail-pane" });
+    useResizablePanel(75, { storageKey: "learner-directory-detail-pane" });
 
   const {
     inputValue: search,
@@ -1681,11 +1680,7 @@ export default function Students() {
                 className="border-none rounded-md h-full"
                 tableClassName="min-w-[1200px] table-fixed"
                 containerHeight="100%"
-                prependBodyRow={
-                  isSearching ? (
-                    <TableSearchIndicator colSpan={8} />
-                  ) : null
-                }
+                prependBodyRow={isSearching ? null : null}
                 noResultsMessage="No learners found for the selected filters."
                 sorting={sorting}
                 onSortingChange={onSortingChange}

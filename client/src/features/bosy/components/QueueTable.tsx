@@ -4,7 +4,6 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Checkbox } from "@/shared/ui/checkbox";
 import {
   DropdownMenu,
@@ -819,16 +818,6 @@ export function QueueTable({
         className="space-y-3 md:hidden">
         {loading ? (
           <DataTableSkeleton rows={10} columns={4} className="rounded-md" />
-        ) : isSearching ? (
-              <div className="rounded-2xl border border-border bg-background">
-                <div className="flex h-64 flex-col items-center justify-center space-y-4">
-                  <CheckCircle2 className="h-10 w-10 animate-pulse text-slate-400" />
-                  <div className="flex flex-col items-center space-y-1">
-                    <p className="text-lg font-bold text-slate-600">Searching...</p>
-                    <p className="text-sm text-slate-400">Scanning DepEd records...</p>
-                  </div>
-                </div>
-              </div>
         ) : items.length > 0 ? (
           <AnimatePresence mode="popLayout" initial={false}>
             {items.map((item) => {
@@ -905,10 +894,7 @@ export function QueueTable({
               ? "opacity-0 scale-[0.98] transition-all duration-300 pointer-events-none"
               : "transition-all duration-300 ease-out"
           }
-          prependBodyRow={
-            isSearching ? (
-              <TableSearchIndicator colSpan={4} />
-            ) : null
+          prependBodyRow={null
           }
         />
       </div>

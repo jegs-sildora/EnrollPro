@@ -297,7 +297,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   onOpenChange,
   onSaveSuccess,
 }: TeacherDetailPanelProps) {
-  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(50, {
+  const { panelPercentage, isDesktopViewport, startResizing, startResizingRight } = useResizablePanel(75, {
     centered: true,
     storageKey: "teacher-detail-modal",
   });
@@ -1165,17 +1165,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             )}
                           />
                         </div>
-
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-[120px_minmax(0,1fr)] md:items-start">
-                          <div className="flex flex-col items-center space-y-2">
-                            <Label className="whitespace-nowrap text-base font-bold leading-tight text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:items-start w-full">
+                          <div className="flex flex-col items-center space-y-2 pl-2 md:col-span-1">
+                            <Label className="whitespace-nowrap text-base font-bold leading-tight text-foreground uppercase">
                               Personnel Photo
                             </Label>
-                            <div className="group relative h-[120px] w-[120px]">
+                            <div className="group relative h-[150px] w-[130px]">
                               <UserPhoto
                                 photo={photoPreviewUrl ?? (removeExistingPhoto ? null : teacher?.photoPath)}
                                 containerClassName={cn(
-                                  "h-[120px] w-[120px] rounded-lg border-2 border-dashed transition-all duration-200",
+                                  "h-[150px] w-[130px] rounded-lg border-2 border-dashed transition-all duration-200",
                                   photoPreviewUrl || (!removeExistingPhoto && teacher?.photoPath)
                                     ? "border-primary/50 bg-background"
                                     : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
@@ -1231,8 +1230,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               />
                             </div>
                           </div>
-
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="flex flex-col gap-4 md:col-span-2">
                             <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
                               <Controller
@@ -1253,22 +1251,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
                             </div>
                             <div className="space-y-1.5 min-h-[6rem]">
-                              <Label className="text-base font-bold uppercase text-foreground">Middle Name <span className="text-foreground font-bold ml-1">(optional)</span></Label>
-                              <Controller
-                                name="middleName"
-                                control={control}
-                                render={({ field }) => (
-                                  <Input autoComplete="off" disabled={!isEditing}
-                                    {...field}
-                                    value={field.value || ""}
-                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                    placeholder="e.g. SANTOS"
-                                    className="font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
-                                  />
-                                )}
-                              />
-                            </div>
-                            <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Last Name <span className="text-destructive">*</span></Label>
                               <Controller
                                 name="lastName"
@@ -1286,6 +1268,25 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 )}
                               />
                               <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-4 md:col-span-2">
+                            <div className="space-y-1.5 min-h-[6rem]">
+                              <Label className="text-base font-bold uppercase text-foreground">Middle Name <span className="text-foreground font-bold ml-1">(optional)</span></Label>
+                              <Controller
+                                name="middleName"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input autoComplete="off" disabled={!isEditing}
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    placeholder="e.g. SANTOS"
+                                    className="font-bold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
+                                  />
+                                )}
+                              />
                             </div>
                             <div className="space-y-1.5 min-h-[6rem]">
                               <Label className="text-base font-bold uppercase text-foreground">Suffix <span className="text-foreground font-bold ml-1">(e.g., JR., III)</span></Label>
@@ -1768,9 +1769,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                           disabled={!isEditing}
                                           className="mt-1"
                                         />
-                                        <label htmlFor="toggle-assign-load" className={cn("space-y-1 leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
-                                          <p className="font-bold text-sm">Assign Teaching Load</p>
-                                          <p className="text-xs text-muted-foreground font-medium">Allow this user to manage teaching loads in ATLAS.</p>
+                                        <label htmlFor="toggle-assign-load" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                          <p className="font-bold uppercase">Assign Teaching Load</p>
+                                          <p className="text-sm text-foreground">Allow this user to manage teaching loads in ATLAS.</p>
                                         </label>
                                       </div>
                                   )}
@@ -1787,9 +1788,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                           disabled={!isEditing}
                                           className="mt-1"
                                         />
-                                        <label htmlFor="toggle-build-schedules" className={cn("space-y-1 leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
-                                          <p className="font-bold text-sm">Build Schedules</p>
-                                          <p className="text-xs text-muted-foreground font-medium">Allow this user to build section schedules in ATLAS.</p>
+                                        <label htmlFor="toggle-build-schedules" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                          <p className="font-bold uppercase">Build Schedules</p>
+                                          <p className="text-sm text-foreground">Allow this user to build section schedules in ATLAS.</p>
                                         </label>
                                       </div>
                                   )}

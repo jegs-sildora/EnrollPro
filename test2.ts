@@ -1,0 +1,1 @@
+import { PrismaClient } from './server/src/generated/prisma/index.js'; const prisma = new PrismaClient(); async function run() { console.log(await prisma.enrollmentApplication.findFirst({ where: { learner: { lrn: '202200000012' } }, include: { enrollmentRecord: true } })); } run().catch(console.error).finally(() => prisma.$disconnect());

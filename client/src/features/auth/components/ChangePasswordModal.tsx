@@ -469,23 +469,8 @@ export default function ChangePassword() {
           description: "Your new password has been set. You can now access the system.",
         });
 
-        const roles = res.data.user?.roles ?? [];
-        const isStrictClassAdviser =
-          roles.includes("CLASS_ADVISER") &&
-          !roles.includes("SYSTEM_ADMIN") &&
-          !roles.includes("HEAD_REGISTRAR") &&
-          !roles.includes("GRADE 7 COORDINATOR") &&
-          !roles.includes("GRADE 8 COORDINATOR") &&
-          !roles.includes("GRADE 9 COORDINATOR") &&
-          !roles.includes("GRADE 10 COORDINATOR");
-
-        const finalHome = isStrictClassAdviser
-          ? "/dashboard"
-          : roles.includes("TEACHER")
-            ? "/teacher/advisory"
-            : roles.includes("MRF")
-              ? "/my-activity"
-              : "/dashboard";
+        const { getHomeRoute } = await import("@/features/auth/pages/Login");
+        const finalHome = getHomeRoute(res.data.user);
         navigate(finalHome, { replace: true });
       }
     } catch (err: unknown) {

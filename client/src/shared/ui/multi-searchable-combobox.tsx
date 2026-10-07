@@ -201,7 +201,7 @@ export function MultiSearchableCombobox({
                 <>
                   {Object.entries(groups).map(([group, items]) => (
                     <div key={group}>
-                      <li className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                      <li className="px-3 py-1.5 font-bold text-primary uppercase tracking-wider">
                         {group}
                       </li>
                       {items.map(renderItem)}
@@ -210,7 +210,7 @@ export function MultiSearchableCombobox({
                   {ungrouped.length > 0 && (
                     <div key="ungrouped">
                       {Object.keys(groups).length > 0 && (
-                        <li className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        <li className="px-3 py-1.5 font-bold text-primary uppercase tracking-wider">
                           Other
                         </li>
                       )}
