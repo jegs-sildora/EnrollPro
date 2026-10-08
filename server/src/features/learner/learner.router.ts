@@ -17,6 +17,16 @@ import {
 
 const router: Router = Router();
 
+const enrollmentProcessorRoles = [
+  "HEAD_REGISTRAR",
+  "SYSTEM_ADMIN",
+  "CLASS_ADVISER",
+  "GRADE 7 COORDINATOR",
+  "GRADE 8 COORDINATOR",
+  "GRADE 9 COORDINATOR",
+  "GRADE 10 COORDINATOR",
+] as const;
+
 // Public — learner portal login (no auth required)
 router.post("/auth", validate(learnerLoginSchema), learnerLogin);
 
@@ -47,14 +57,14 @@ router.get(
 router.get(
   "/lookup",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   lookupLearnerByLrn,
 );
 
 router.post(
   "/check-duplicate",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize(...enrollmentProcessorRoles),
   checkDuplicateLearner,
 );
 

@@ -188,8 +188,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       status: { in: ["READY_FOR_SECTIONING", "PENDING_CONFIRMATION", "OFFICIALLY_ENROLLED"] },
       OR: [
         { enrollmentRecord: null },
-        { enrollmentRecord: { isDraft: true } },
-        { enrollmentRecord: { isDraft: false } }
+        { enrollmentRecord: { isDraft: true } }
       ],
     };
 

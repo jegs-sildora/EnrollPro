@@ -5,7 +5,7 @@ import { zodResolver } from "@/shared/lib/zodResolver";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sileo } from "sileo";
-import { isAxiosError } from "axios";
+
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,7 @@ import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrol
 import { useAuthStore } from "@/store/auth.slice";
 import { motion, AnimatePresence } from "motion/react";
 import { Badge } from "@/shared/ui/badge";
+import { differenceInYears } from "date-fns";
 import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2, SPECIAL_HEALTH_SUB_OPTIONS, VISUAL_IMPAIRMENT_SUB_OPTIONS } from "@/features/admission/pages/online-enrollment/types";
 
 const MOTHER_TONGUE_OPTIONS = [
@@ -221,8 +222,9 @@ const DEFAULT_WALKIN_VALUES: Partial<DirectEncodeWalkInPayload> = {
 };
 
 function getWalkInErrorMessage(error: unknown, fallback: string): string {
-  if (isAxiosError<ApiErrorResponse>(error)) {
-    return error.response?.data?.message ?? error.message ?? fallback;
+  const axiosErr = error as any;
+  if (axiosErr?.isAxiosError) {
+    return axiosErr.response?.data?.message ?? axiosErr.message ?? fallback;
   }
 
   if (error instanceof Error) {
@@ -433,7 +435,8 @@ export function WalkInEncodePanel() {
       setPendingProfile(res.data);
       setIsLearnerModalOpen(true);
     } catch (err: unknown) {
-      if (isAxiosError(err) && err.response?.status === 404) {
+      const status = (err as any)?.response?.status;
+      if (status === 404) {
         const currentLearnerType = form.getValues("learnerType");
         form.reset({
           ...DEFAULT_WALKIN_VALUES,
@@ -606,6 +609,8 @@ export function WalkInEncodePanel() {
 
   const hasSf9 = form.watch("hasSf9");
   const hasPsa = form.watch("hasPsa");
+  const birthdate = form.watch("birthdate");
+  const age = birthdate ? differenceInYears(new Date(), new Date(birthdate)) : undefined;
   const isCompleteDocs = hasSf9 && hasPsa;
 
   return (
@@ -979,7 +984,7 @@ export function WalkInEncodePanel() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-[1fr_120px_1fr] gap-4">
                           <FormField
                             control={form.control}
                             name="birthdate"
@@ -993,6 +998,17 @@ export function WalkInEncodePanel() {
                               </FormItem>
                             )}
                           />
+
+                          <div className="space-y-1.5 flex flex-col justify-end">
+                            <Label className="font-bold capitalize pb-1">Age</Label>
+                            <Input
+                              value={age ?? ""}
+                              disabled
+                              className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+                              placeholder="Auto"
+                            />
+                          </div>
+
                           <FormField
                             control={form.control}
                             name="sex"
@@ -1087,8 +1103,8 @@ export function WalkInEncodePanel() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="font-bold capitalize">Incoming Grade Level <span className="text-destructive">*</span></FormLabel>
-                              <div className="grid grid-cols-4 gap-4">
-                                {activeSchoolYear?.gradeLevels?.map((gl) => (
+                              <div className={cn("grid gap-4", learnerType === "NEW_ENROLLEE" ? "grid-cols-1" : "grid-cols-4")}>
+                                {activeSchoolYear?.gradeLevels?.filter(gl => learnerType === "NEW_ENROLLEE" ? gl.name.toUpperCase() === "GRADE 7" : true).map((gl) => (
                                   <button
                                     key={gl.id}
                                     type="button"
@@ -1648,7 +1664,7 @@ export function WalkInEncodePanel() {
                           name="addressSitio"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold capitalize">Sitio / Purok</FormLabel>
+                              <FormLabel className="font-bold uppercase">Sitio / Purok</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g. Sitio Calambuga" className="uppercase font-bold" {...field} value={field.value || ""} />
                               </FormControl>
@@ -1661,7 +1677,7 @@ export function WalkInEncodePanel() {
                           name="addressStreet"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-bold capitalize">House No. / Street</FormLabel>
+                              <FormLabel className="font-bold uppercase">House No. / Street</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g. 123 or Rizal Street" className="uppercase font-bold" {...field} value={field.value || ""} />
                               </FormControl>
