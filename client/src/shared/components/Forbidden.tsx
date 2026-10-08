@@ -2,9 +2,13 @@ import { Link, useNavigate } from "react-router";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Lock } from "lucide-react";
+import { useAuthStore } from "@/store/auth.slice";
+import { getHomeRoute } from "@/features/auth/pages/Login";
 
 export default function Forbidden() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const hasDashboard = user ? getHomeRoute(user as any) === "/dashboard" : false;
 
   return (
     <div className="flex h-full flex-1 min-h-[60vh] items-center justify-center p-4">
@@ -16,16 +20,18 @@ export default function Forbidden() {
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-2xl font-extrabold uppercase text-foreground tracking-tight">Access Restricted</h1>
+            <h1 className="text-2xl font-extrabold uppercase text-foreground tracking-tight">Access Denied/Restricted</h1>
             <p className="text-muted-foreground leading-relaxed text-sm">
               Your current system role does not have permission to view this module. If you believe you need access to this school record or setting, please contact the System Administrator.
             </p>
           </div>
 
           <div className="w-full space-y-3 pt-2">
-            <Button className="w-full font-bold h-11" onClick={() => navigate("/dashboard")}>
-              Return to Dashboard
-            </Button>
+            {hasDashboard && (
+              <Button className="w-full font-bold h-11" onClick={() => navigate("/dashboard")}>
+                Return to Dashboard
+              </Button>
+            )}
             <Button variant="outline" className="w-full font-bold h-11" onClick={() => navigate(-1)}>
               Go Back to Previous Page
             </Button>

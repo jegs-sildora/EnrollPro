@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('tools/qa-extension/content.js', 'utf8'); c = c.replace('\"currentAddress.houseNoStreet\"', '\"currentAddress.houseNo\"').replace('\"currentAddress.sitio\"', '\"currentAddress.street\"'); fs.writeFileSync('tools/qa-extension/content.js', c);

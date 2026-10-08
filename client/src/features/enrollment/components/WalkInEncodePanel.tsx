@@ -174,6 +174,51 @@ interface AtlasSubjectCatalogResponse {
     fetchedAt: string;
   };
 }
+const DRAFT_KEY = "enrollpro_walkin_encode_draft";
+
+const DEFAULT_WALKIN_VALUES: Partial<DirectEncodeWalkInPayload> = {
+  lrn: "",
+  firstName: "",
+  lastName: "",
+  middleName: "",
+  birthdate: "",
+  sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
+  motherTongue: "",
+  studentPhoto: "",
+  extensionName: "",
+  addressStreet: "",
+  addressSitio: "",
+  addressRegion: "",
+  addressProvince: "",
+  addressCity: "",
+  addressBarangay: "",
+  permanentAddressSameAsCurrent: true,
+  gradeLevelId: 0,
+  assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
+  previousSchoolName: "",
+  lastGradeCompleted: "",
+  previousGenAve: undefined,
+  guardianFirstName: "",
+  guardianMiddleName: "",
+  guardianLastName: "",
+  guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
+  guardianContact: "",
+  hasSf9: false,
+  hasPsa: false,
+  originatingSchoolId: "",
+  sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
+  conditionalSubjects: [],
+  sectionId: undefined,
+  isIpCommunity: undefined,
+  ipGroupName: "",
+  is4PsBeneficiary: undefined,
+  householdId4Ps: "",
+  isBalikAral: undefined,
+  isLearnerWithDisability: undefined,
+  specialNeedsCategory: undefined,
+  disabilityTypes: [],
+  hasPwdId: undefined,
+};
 
 function getWalkInErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError<ApiErrorResponse>(error)) {
@@ -267,55 +312,37 @@ export function WalkInEncodePanel() {
     ...(spsEnabled ? [{ val: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" }] : []),
   ];
 
+  const [initialDraft] = useState<Partial<DirectEncodeWalkInPayload> | null>(() => {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft) as Partial<DirectEncodeWalkInPayload>;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const form = useForm<DirectEncodeWalkInPayload>({
     resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
     mode: "onTouched",
-    defaultValues: {
+    defaultValues: initialDraft as DirectEncodeWalkInPayload || {
+      ...DEFAULT_WALKIN_VALUES,
       learnerType: isTransfereeOnlyCoordinator ? "TRANSFEREE" : "NEW_ENROLLEE",
-      lrn: "",
-      firstName: "",
-      lastName: "",
-      middleName: "",
-      birthdate: "",
-      sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
-      motherTongue: "",
-      studentPhoto: "",
-      extensionName: "",
-      addressStreet: "",
-      addressSitio: "",
-      addressRegion: "",
-      addressProvince: "",
-      addressCity: "",
-      addressBarangay: "",
-      permanentAddressSameAsCurrent: true,
-      gradeLevelId: 0,
-      assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
-      previousSchoolName: "",
-      lastGradeCompleted: "",
-      previousGenAve: undefined,
-      guardianFirstName: "",
-      guardianMiddleName: "",
-      guardianLastName: "",
-      guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
-      guardianContact: "",
-      hasSf9: false,
-      hasPsa: false,
-      originatingSchoolId: "",
-      sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-      conditionalSubjects: [],
-      sectionId: undefined,
-      isIpCommunity: undefined,
-      ipGroupName: "",
-      is4PsBeneficiary: undefined,
-      householdId4Ps: "",
-      isBalikAral: undefined,
-      isLearnerWithDisability: undefined,
-      specialNeedsCategory: undefined,
-      disabilityTypes: [],
-      hasPwdId: undefined,
     },
   });
   const { isDirty, isSubmitting, isValid } = form.formState;
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const { fields: conditionalSubjectFields, append: appendConditionalSubject, remove: removeConditionalSubject, replace: replaceConditionalSubjects } = useFieldArray({
     control: form.control,
@@ -409,39 +436,9 @@ export function WalkInEncodePanel() {
       if (isAxiosError(err) && err.response?.status === 404) {
         const currentLearnerType = form.getValues("learnerType");
         form.reset({
+          ...DEFAULT_WALKIN_VALUES,
           learnerType: currentLearnerType,
           lrn: lrn,
-          firstName: "",
-          lastName: "",
-          middleName: "",
-          birthdate: "",
-          sex: "" as unknown as DirectEncodeWalkInPayload["sex"],
-          motherTongue: "",
-          studentPhoto: "",
-          extensionName: "",
-          addressStreet: "",
-          addressSitio: "",
-          addressRegion: "",
-          addressProvince: "",
-          addressCity: "",
-          addressBarangay: "",
-          permanentAddressSameAsCurrent: true,
-          gradeLevelId: 0,
-          assignedProgram: "" as unknown as DirectEncodeWalkInPayload["assignedProgram"],
-          previousSchoolName: "",
-          lastGradeCompleted: "",
-          previousGenAve: undefined,
-          guardianFirstName: "",
-          guardianMiddleName: "",
-          guardianLastName: "",
-          guardianRelationship: "" as unknown as DirectEncodeWalkInPayload["guardianRelationship"],
-          guardianContact: "",
-          hasSf9: false,
-          hasPsa: false,
-          originatingSchoolId: "",
-          sf9EligibilityStatus: "" as unknown as DirectEncodeWalkInPayload["sf9EligibilityStatus"],
-          conditionalSubjects: [],
-          sectionId: undefined,
         });
       } else {
         sileo.error({ title: "Lookup Failed", description: "Could not fetch learner data." });
@@ -452,11 +449,15 @@ export function WalkInEncodePanel() {
   };
 
   const resetPanelState = useCallback(() => {
-    form.reset();
+    form.reset({
+      ...DEFAULT_WALKIN_VALUES,
+      learnerType: form.getValues("learnerType"),
+    });
     setNoLrn(false);
     setIsOtherMotherTongue(false);
     setIsClearModalOpen(false);
     lastLookedUpLrn.current = "";
+    localStorage.removeItem(DRAFT_KEY);
   }, [form]);
 
   const clearForm = useCallback(() => {
@@ -478,7 +479,7 @@ export function WalkInEncodePanel() {
   useUnsavedChanges({
     id: "walk-in-encode-panel",
     label: "Walk-in learner form",
-    isDirty: open && isDirty,
+    isDirty: open && (isDirty || initialDraft !== null),
     isSubmitting,
     onDiscard: resetPanelState,
   });
@@ -2113,14 +2114,14 @@ export function WalkInEncodePanel() {
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
                             <Checkbox
-                              id="sf9-checkbox"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
+                              id="walkin-sf9-checkbox"
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked === true)}
                               className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                             />
                           </FormControl>
                           <div className="flex flex-col gap-0.5">
-                            <label htmlFor="sf9-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                            <label htmlFor="walkin-sf9-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
                               Physical SF9 Verified
                             </label>
                             <span className="text-sm text-foreground leading-snug">
@@ -2138,14 +2139,14 @@ export function WalkInEncodePanel() {
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
                             <Checkbox
-                              id="psa-checkbox"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
+                              id="walkin-psa-checkbox"
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked === true)}
                               className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                             />
                           </FormControl>
                           <div className="flex flex-col gap-0.5">
-                            <label htmlFor="psa-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                            <label htmlFor="walkin-psa-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
                               PSA Birth Certificate Verified
                             </label>
                             <span className="text-sm text-foreground leading-snug">

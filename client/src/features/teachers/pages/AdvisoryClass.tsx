@@ -271,12 +271,9 @@ export default function AdvisoryClass() {
     return (
       <div className="space-y-6">
         <div>
-          <p className="text-muted-foreground">
-            View your currently assigned advisory class and enrolled learners.
-          </p>
         </div>
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground shadow-sm">
-          <p className="text-lg text-foreground">No Active Advisory Section</p>
+          <p className="text-2xl font-extrabold text-primary">No Active Advisory Section</p>
           <p className="mt-1">You are not currently assigned as an adviser to any section for this school year.</p>
         </div>
       </div>

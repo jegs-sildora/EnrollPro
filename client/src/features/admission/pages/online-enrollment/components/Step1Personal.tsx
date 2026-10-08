@@ -739,6 +739,8 @@ export default function Step1Personal() {
               onChange={handlePhotoChange}
               title="Upload learner's photo"
             />
+            {/* Hidden input strictly for QA automation to inject photo URLs */}
+            <input type="hidden" id="studentPhoto" {...register("studentPhoto")} />
           </div>
           <AnimatedError error={errors.studentPhoto?.message as string} />
         </div>

@@ -100,8 +100,6 @@ export default function EnrollmentSuccess({
             </div>
           ) : (
             <div className="text-center text-lg text-foreground mb-6">
-              Your record is now <span className="font-bold text-primary">Pending Verification</span>.
-              <br /><br />
               Please proceed to the <span className="text-primary font-bold capitalize">{schoolName.toLowerCase()}</span> Registrar&apos;s Office between <span className="text-primary font-bold">{formattedDates}</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
             </div>
           )}
@@ -130,7 +128,7 @@ export default function EnrollmentSuccess({
               )}
               <p
                 className={cn(
-                  "text-sm transition-all duration-200 mt-2 print:hidden font-bold",
+                  "text-xs transition-all duration-200 mt-2 print:hidden font-bold",
                   copied ? "text-primary scale-105" : "text-foreground",
                 )}>
                 {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}

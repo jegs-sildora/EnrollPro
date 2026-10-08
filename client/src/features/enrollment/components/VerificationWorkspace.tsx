@@ -97,6 +97,8 @@ interface PendingVerification {
   isMissingPsa: boolean;
   admissionChannel?: string;
   enrollmentRecord?: {
+    id: number;
+    sectionId: number | null;
     section?: {
       name: string;
     } | null;
@@ -466,8 +468,9 @@ export function VerificationWorkspace() {
     if (!selectedApp) return false;
     const initialSf9 = !selectedApp.isMissingSf9;
     const initialPsa = selectedApp.learner?.hasPsaBirthCertificate === true;
-    return sf9Verified !== initialSf9 || psaVerified !== initialPsa;
-  }, [selectedApp, sf9Verified, psaVerified]);
+    const initialSectionId = selectedApp.enrollmentRecord?.sectionId;
+    return sf9Verified !== initialSf9 || psaVerified !== initialPsa || assignedSectionId !== initialSectionId;
+  }, [selectedApp, sf9Verified, psaVerified, assignedSectionId]);
 
   useEffect(() => {
     if (selectedApp) {
@@ -475,6 +478,10 @@ export function VerificationWorkspace() {
       if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "FOR_REVISION" || selectedApp.status === "OFFICIALLY_ENROLLED") {
         setSf9Verified(!selectedApp.isMissingSf9);
         setPsaVerified(selectedApp.learner?.hasPsaBirthCertificate === true);
+        // Pre-populate section for deficient learners
+        if (selectedApp.enrollmentRecord?.sectionId) {
+          setAssignedSectionId(selectedApp.enrollmentRecord.sectionId);
+        }
       } else {
         setSf9Verified(false);
         setPsaVerified(false);
@@ -701,6 +708,7 @@ export function VerificationWorkspace() {
       await api.patch(`/enrollment/${selectedAppId}/complete-requirements`, {
         sf9Verified,
         psaVerified,
+        sectionId: assignedSectionId === undefined ? null : assignedSectionId,
       });
 
       const allVerified = sf9Verified && psaVerified;
@@ -1367,7 +1375,7 @@ export function VerificationWorkspace() {
                       </VerificationRow>
                       
                       <VerificationRow label="Assigned Section">
-                        {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" ? (
+                        {selectedApp.status === "PENDING_VERIFICATION" || selectedApp.status === "FOR_REVISION" || (activeTab === "INCOMPLETE" && (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "OFFICIALLY_ENROLLED")) ? (
                           <div className="flex flex-col w-full py-1">
                             <Select 
                               value={assignedSectionId ? String(assignedSectionId) : "UNASSIGNED"} 

@@ -1,3 +1,4 @@
+import { useSettingsStore } from './settings.slice';
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Role } from "@enrollpro/shared";
@@ -33,7 +34,10 @@ export const useAuthStore = create<AuthState>()(
       sessionExpired: false,
       isHydrated: false,
       setAuth: (user) => set({ user, sessionExpired: false }),
-      clearAuth: () => set({ user: null }),
+      clearAuth: () => {
+        useSettingsStore.getState().resetUiPreferences();
+        set({ user: null });
+      },
       setSessionExpired: (expired) => set({ sessionExpired: expired }),
       setHydrated: () => set({ isHydrated: true }),
     }),

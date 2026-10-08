@@ -518,11 +518,13 @@ export async function getPendingVerifications(req: Request, res: Response) {
         orderBy: { subjectName: "asc" },
       },
       enrollmentRecord: {
-        include: {
+        select: {
+          id: true,
+          sectionId: true,
           section: {
             select: { name: true }
-          }
-        }
+          },
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -1039,7 +1041,8 @@ export async function completeRequirements(req: Request, res: Response) {
   const {
     sf9Verified,
     psaVerified,
-  }: { sf9Verified: boolean; psaVerified: boolean } = req.body;
+    sectionId,
+  }: { sf9Verified: boolean; psaVerified: boolean; sectionId?: number | null } = req.body;
 
   const application = await prisma.enrollmentApplication.findUnique({
     where: { id: applicationId },
@@ -1086,6 +1089,48 @@ export async function completeRequirements(req: Request, res: Response) {
       where: { id: application.learnerId },
       data: { hasPsaBirthCertificate: psaVerified },
     });
+
+    // Update section assignment if sectionId was provided
+    if (sectionId !== undefined) {
+      if (sectionId === null) {
+         await tx.enrollmentApplication.update({
+           where: { id: applicationId },
+           data: { status: "READY_FOR_SECTIONING" }
+         });
+         await tx.enrollmentRecord.deleteMany({
+           where: { learnerId: application.learnerId, schoolYearId: application.schoolYearId }
+         });
+      } else {
+         await tx.enrollmentApplication.update({
+           where: { id: applicationId },
+           data: { status: "OFFICIALLY_ENROLLED" }
+         });
+         
+         const existingRecord = await tx.enrollmentRecord.findFirst({
+           where: { learnerId: application.learnerId, schoolYearId: application.schoolYearId }
+         });
+
+         if (existingRecord) {
+           await tx.enrollmentRecord.update({
+             where: { id: existingRecord.id },
+             data: { sectionId }
+           });
+         } else {
+           const setting = await tx.schoolSetting.findFirst();
+           await tx.enrollmentRecord.create({
+             data: {
+               enrollmentApplicationId: application.id,
+               sectionId,
+               learnerId: application.learnerId,
+               schoolYearId: application.schoolYearId,
+               enrolledById: userId!,
+               dateSectioned: new Date(),
+               isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING"
+             }
+           });
+         }
+      }
+    }
   });
 
   await auditLog({

@@ -47,25 +47,25 @@ function generateMockData() {
     placeOfBirth: randomChoice(phCities),
     religion: "Catholic",
 
-    isIpCommunity: true,
+    isIpCommunity: false,
     ipGroupName: "Ati",
-    is4PsBeneficiary: true,
+    is4PsBeneficiary: false,
     householdId4Ps: "4PS-" + randomDigits(6),
     
     intakeHeightCm: 150 + Math.floor(Math.random() * 20),
     intakeWeightKg: 45 + Math.floor(Math.random() * 15),
 
-    isBalikAral: true,
+    isBalikAral: false,
     lastYearEnrolled: "2021-2022",
     
-    isLearnerWithDisability: true,
+    isLearnerWithDisability: false,
     specialNeedsCategory: "a1",
     hasPwdId: true,
     "disabilityTypes.0": "Visual Impairment",
     disabilityTypes: ["Visual Impairment"],
 
-    "currentAddress.houseNoStreet": randomDigits(3) + " Mabini St.",
-    "currentAddress.sitio": "Purok 1",
+    "currentAddress.houseNo": randomDigits(3) + " " + randomChoice(["Rizal St.", "Mabini St.", "Quezon St.", "Bonifacio St."]),
+    "currentAddress.street": "Purok " + Math.floor(Math.random() * 10 + 1),
     isPermanentSameAsCurrent: true,
 
     "mother.lastName": lastName,
@@ -94,14 +94,15 @@ function generateMockData() {
     contactNumber: contactNumber,
     guardianRelationship: "Mother",
 
-    lastSchoolName: "Estefania Elementary School",
-    lastSchoolId: "123456",
+    lastSchoolName: "HINIGARAN ELEMENTARY SCHOOL-B",
+    lastSchoolId: "117114",
     lastGradeCompleted: "6",
     schoolYearLastAttended: "2023-2024",
-    lastSchoolAddress: randomChoice(phCities),
+    lastSchoolAddress: "7VC2+623, Rizal St, Hinigaran, Negros Occidental",
     transferCertificateNo: "TC-" + randomDigits(5),
     lastSchoolType: "PUBLIC",
     grade5GeneralAverage: generalAverage,
+    generalAverage: generalAverage,
     underSpecialScienceCurriculum: true,
 
     isScpApplication: true,
@@ -196,7 +197,9 @@ async function fillRadixComboboxByLabel(labelText, optionText = null) {
   });
 
   if (valid.length > 0) {
-    if (optionText) {
+    if (optionText === "FIRST") {
+      valid[0].click();
+    } else if (optionText) {
       const match = valid.find(o => o.textContent.toUpperCase().includes(optionText.toUpperCase()));
       if (match) {
         match.click();
@@ -237,18 +240,24 @@ function fillField(name, value) {
 }
 
 async function fillButtonGroupByLabel(labelText, optionText) {
+  const normalizedSearch = String(labelText).replace(/\s+/g, ' ').trim().toUpperCase();
   const labels = Array.from(document.querySelectorAll('label'));
   const targetLabel = labels.find(l => {
-    const text = l.textContent.replace('*', '').trim().toUpperCase();
-    return text === labelText.toUpperCase() || text.startsWith(labelText.toUpperCase());
+    const text = l.textContent.replace(/\s+/g, ' ').replace('*', '').trim().toUpperCase();
+    return text === normalizedSearch || text.includes(normalizedSearch);
   });
 
   if (!targetLabel) return false;
 
-  const container = targetLabel.parentElement;
+  let container = targetLabel.parentElement;
   if (!container) return false;
 
-  const buttons = Array.from(container.querySelectorAll('button'));
+  let buttons = Array.from(container.querySelectorAll('button'));
+  if (buttons.length === 0 && container.parentElement) {
+    container = container.parentElement;
+    buttons = Array.from(container.querySelectorAll('button'));
+  }
+  
   if (buttons.length === 0) return false;
 
   const targetButton = buttons.find(b => b.textContent.trim().toUpperCase() === String(optionText).toUpperCase());
@@ -270,18 +279,32 @@ async function fillAllFields(data) {
   await fillRadixComboboxByLabel("Suffix (Extension)", "None"); // Standardize so we don't pick weird ones
 
   // Address Selector (Ordered: Region -> Province -> City -> Barangay)
-  await fillRadixComboboxByLabel("Region");
+  await fillRadixComboboxByLabel("Region", "NEGROS ISLAND REGION");
   await wait(500); // Give API/React time to fetch provinces
-  await fillRadixComboboxByLabel("Province");
+  await fillRadixComboboxByLabel("Province", "NEGROS OCCIDENTAL");
   await wait(500);
-  await fillRadixComboboxByLabel("City / Municipality");
+  await fillRadixComboboxByLabel("City / Municipality", "HINIGARAN");
   await wait(500);
   await fillRadixComboboxByLabel("Barangay");
 
   // Previous School
-  await fillRadixComboboxByLabel("School Year Last Attended");
+  await fillRadixComboboxByLabel("School Year Last Attended", "FIRST");
 
   // 3. Automate Button Groups
+  
+  await fillButtonGroupByLabel("Is the learner a member of an IP cultural community?", data.isIpCommunity ? "YES" : "NO");
+  await fillButtonGroupByLabel("Does the learner's household currently receive benefits under the Pantawid Pamilyang Pilipino Program (4Ps)?", data.is4PsBeneficiary ? "YES" : "NO");
+  await fillButtonGroupByLabel("Is the learner under the Special Needs Education Program?", data.isLearnerWithDisability ? "YES" : "NO");
+  await fillButtonGroupByLabel("Is this learner returning to school after a gap of 1 year or more? (Balik-Aral)", data.isBalikAral ? "YES" : "NO");
+
+  const modalitiesDiv = document.getElementById("learningModalities");
+  if (modalitiesDiv) {
+    const buttons = modalitiesDiv.querySelectorAll("button[role='checkbox']");
+    if (buttons.length > 0) {
+      buttons[0].click();
+    }
+  }
+
   await fillButtonGroupByLabel("Sex", data.sex);
   if (data.underSpecialScienceCurriculum !== undefined) {
     await fillButtonGroupByLabel("Under Special Science Curriculum", data.underSpecialScienceCurriculum ? "YES" : "NO");

@@ -92,6 +92,7 @@ export interface SettingsState {
     verificationTab: string;
     studentProfileTab: string;
   };
+  resetUiPreferences: () => void;
   updateUiPreference: (key: keyof SettingsState["uiPreferences"], value: string) => void;
   setSettings: (settings: Partial<SettingsState>) => void;
   setViewingSY: (
@@ -197,6 +198,7 @@ export const useSettingsStore = create<SettingsState>()(
             [key]: value
           }
         })),
+      resetUiPreferences: () => set((state) => ({ uiPreferences: { ...state.uiPreferences, bosyTab: 'incoming', studentsTab: 'official', settingsTab: 'general', homeroomsGradeId: '', bosyGradeId: 'ALL', sectioningGradeId: '', eosyTab: 'eosypanel', verificationTab: 'PENDING', studentProfileTab: 'record' } })),
       setSettings: (settings) =>
         set((state) => ({ ...state, ...settings })),
       setViewingSY: (id, status, label) =>

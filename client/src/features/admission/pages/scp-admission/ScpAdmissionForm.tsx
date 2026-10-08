@@ -667,8 +667,12 @@ export default function ScpAdmissionForm({
       || document.getElementById(rootField);
 
     if (target instanceof HTMLElement) {
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.focus({ preventScroll: true });
+      if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'hidden' && target.parentElement) {
+        target.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.focus({ preventScroll: true });
+      }
     }
   };
 

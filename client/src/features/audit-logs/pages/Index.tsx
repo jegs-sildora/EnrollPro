@@ -576,7 +576,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
               <div className="mx-auto h-12 w-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
                 <ShieldAlert className="h-6 w-6" />
               </div>
-              <p className="font-bold">Access Restricted</p>
+              <p className="font-bold">Access Denied/Restricted</p>
               <p className="text-base leading-tight text-foreground font-bold">
                 Your role cannot access full audit logs. Contact a system
                 administrator if this access is required.
