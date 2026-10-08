@@ -514,15 +514,7 @@ const createDraftPlacement = (
   const unassignedLearners: PoolLearner[] = [];
 
   for (const learner of learners) {
-    if (learner.draftSectionId && rostersBySectionId.has(learner.draftSectionId)) {
-      rostersBySectionId.get(learner.draftSectionId)!.push({
-        ...learner,
-        sectionId: learner.draftSectionId,
-        isOverridden: false,
-      });
-    } else {
-      unassignedLearners.push(learner);
-    }
+    unassignedLearners.push(learner);
   }
 
   const programTypes = Array.from(
@@ -1226,56 +1218,19 @@ export function SectioningWorkspace() {
     setAutoAssignPhase("loading");
     const loadingTimer = setTimeout(() => {
       try {
-        const isRerun = draftPlacement !== null;
-        const poolToAssign = isRerun ? draftPlacement.unplacedLearners : currentGradePool;
-        
-        const sectionsToUse = currentGradeSections.map(s => {
-          if (!isRerun) return s;
-          const roster = draftPlacement.rosters.find(r => r.section.id === s.id);
-          const draftedCount = roster ? roster.learners.length : 0;
-          return {
-            ...s,
-            currentCount: s.currentCount + draftedCount
-          };
-        });
-
         const newDraft = createDraftPlacement(
           Number(activeGradeLevelId),
-          poolToAssign,
-          sectionsToUse,
+          currentGradePool,
+          currentGradeSections,
           enableHomogeneousSections,
           homogeneousSectionCount,
         );
 
-        if (isRerun) {
-          const mergedRosters = draftPlacement.rosters.map(oldRoster => {
-            const newRoster = newDraft.rosters.find(r => r.section.id === oldRoster.section.id);
-            if (!newRoster) return oldRoster;
-            
-            return buildRoster(oldRoster.section, [
-              ...oldRoster.learners,
-              ...newRoster.learners
-            ]);
-          });
-
-          const mergedDraft = {
-            ...draftPlacement,
-            rosters: mergedRosters,
-            unplacedLearners: newDraft.unplacedLearners,
-          };
-
-          setDraftPlacement(mergedDraft);
-          const populatedSectionIds = mergedDraft.rosters
-            .filter((roster) => roster.learners.length > 0)
-            .map((roster) => roster.section.id);
-          setExpandedSectionIds(new Set(populatedSectionIds));
-        } else {
-          setDraftPlacement(newDraft);
-          const populatedSectionIds = newDraft.rosters
-            .filter((roster) => roster.learners.length > 0)
-            .map((roster) => roster.section.id);
-          setExpandedSectionIds(new Set(populatedSectionIds));
-        }
+        setDraftPlacement(newDraft);
+        const populatedSectionIds = newDraft.rosters
+          .filter((roster) => roster.learners.length > 0)
+          .map((roster) => roster.section.id);
+        setExpandedSectionIds(new Set(populatedSectionIds));
 
         setSelectedAppIds([]);
         setTargetSectionId(null);
@@ -1370,19 +1325,32 @@ export function SectioningWorkspace() {
       });
 
       if (!movingLearner) return current;
+      const learnerToMove = movingLearner as DraftLearnerPlacement;
 
-      const updatedRosters = rosters.map((roster) => {
-        if (roster.section.id !== destinationSectionId || !movingLearner)
-          return roster;
-        return buildRoster(roster.section, [
-          ...roster.learners,
+      const updatedRosters = [...rosters];
+      const targetIndex = updatedRosters.findIndex((r) => r.section.id === destinationSectionId);
+
+      if (targetIndex >= 0) {
+        updatedRosters[targetIndex] = buildRoster(updatedRosters[targetIndex].section, [
+          ...updatedRosters[targetIndex].learners,
           {
-            ...movingLearner,
+            ...learnerToMove,
             sectionId: destinationSectionId,
             isOverridden: true,
           },
         ]);
-      });
+      } else {
+        const targetSection = currentGradeSections.find(s => s.id === destinationSectionId);
+        if (targetSection) {
+          updatedRosters.push(buildRoster(targetSection, [
+            {
+              ...learnerToMove,
+              sectionId: destinationSectionId,
+              isOverridden: true,
+            }
+          ]));
+        }
+      }
 
       return rebuildDraftPlacement({ ...current, rosters: updatedRosters });
     });
@@ -1778,10 +1746,21 @@ export function SectioningWorkspace() {
       </Card>
     );
   }
+  const displayedRosters = currentGradeSections.map((section) => {
+    if (draftPlacement) {
+      const existingRoster = draftPlacement.rosters.find(
+        (r) => r.section.id === section.id
+      );
+      if (existingRoster) {
+        return {
+          ...existingRoster,
+          section, 
+        };
+      }
+    }
+    return buildRoster(section, []);
+  });
 
-  const displayedRosters =
-    draftPlacement?.rosters ??
-    currentGradeSections.map((section) => buildRoster(section, []));
   const selectedDraftLearner = draftMoveAction
     ? findDraftLearner(draftMoveAction.learnerApplicationId)
     : null;

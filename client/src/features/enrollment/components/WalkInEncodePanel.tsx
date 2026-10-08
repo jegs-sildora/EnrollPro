@@ -771,7 +771,7 @@ export function WalkInEncodePanel() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="flex justify-between font-bold">
-                                  <span>Learner Reference Number (LRN) <span className="text-destructive">*</span></span>
+                                  <span>Learner Reference Numberxxx (LRN) <span className="text-destructive">*</span></span>
                                   {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
                                 </FormLabel>
                                 <FormControl>
@@ -779,7 +779,7 @@ export function WalkInEncodePanel() {
                                     <Input
                                       placeholder="12-digit Learner Reference Number (LRN)"
                                       disabled={false}
-                                      className="uppercase font-bold"
+                                      className="h-14 text-lg pl-12 font-bold text-center border-2 tracking-widest"
                                       value={field.value ?? ""}
                                       onChange={(e) => {
                                         const val = e.target.value.replace(/\D/g, '').slice(0, 12);
