@@ -168,10 +168,19 @@ export default function MyAdvisory() {
 
   // Filter students based on search query
   const filteredStudents = data.students?.filter((student) => {
-    const fullName = `${student.lastName}, ${student.firstName} ${student.middleName || ""}`.toLowerCase();
+    if (!searchQuery) return true;
+    const queryTerms = searchQuery.toLowerCase().replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
     const lrn = student.lrn.toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return fullName.includes(query) || lrn.includes(query);
+    const firstName = student.firstName.toLowerCase();
+    const lastName = student.lastName.toLowerCase();
+    const middleName = (student.middleName || "").toLowerCase();
+    
+    return queryTerms.every(term => 
+      lrn.includes(term) || 
+      firstName.includes(term) || 
+      lastName.includes(term) || 
+      middleName.includes(term)
+    );
   }) || [];
 
   // Separate by gender if enabled

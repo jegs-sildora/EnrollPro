@@ -434,227 +434,130 @@ export const DEPED_TEACHER_SUBJECT_OPTIONS =
   DEPED_TEACHER_SUBJECT_GROUPS.flatMap((g) => g.options);
 
 export const DEPED_TEACHER_SPECIALIZATION_VALUES = [
-  "BSED ENGLISH",
-  "BSED FILIPINO",
-  "BSED MATHEMATICS",
-  "BSED SCIENCE",
-  "BSED SOCIAL STUDIES",
-  "BSED VALUES EDUCATION",
-  "BSED MAPEH",
-  "BSED TLE",
-  "BTVTED / TVL",
-  "BEED GENERAL EDUCATION",
-  "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
-  "MAJOR IN FILIPINO",
-  "MAJOR IN MATHEMATICS",
-  "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
-  "MAJOR IN SOCIAL STUDIES / HISTORY",
-  "MAJOR IN ARALING PANLIPUNAN",
-  "MAJOR IN VALUES EDUCATION",
-  "MAJOR IN EDUKASYON SA PAGPAPAKATAO",
-  "MAJOR IN MAPEH",
-  "MAJOR IN HEALTH EDUCATION",
-  "MAJOR IN HOME ECONOMICS",
-  "MAJOR IN INDUSTRIAL ARTS",
-  "MAJOR IN AGRI-FISHERY ARTS",
-  "MAJOR IN ICT",
-  "MAJOR IN ELECTRICAL INSTALLATION AND MAINTENANCE",
-  "MAJOR IN COOKERY / FOOD AND BEVERAGE SERVICES",
-  "MAJOR IN DRESSMAKING / GARMENTS",
-  "MAJOR IN AUTOMOTIVE",
-  "MAJOR IN DRAFTING TECHNOLOGY",
-  "MAJOR IN COMPUTER SYSTEMS SERVICING",
-  "MAJOR IN PHYSICS",
-  "MAJOR IN CHEMISTRY",
-  "MAJOR IN BIOLOGY",
-  "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
-  "MAJOR IN MUSIC EDUCATION",
-  "FINE ARTS",
-  "THEATER / PERFORMING ARTS",
-  "LITERATURE / CREATIVE WRITING",
-  "DANCE",
-  "MAJOR IN PHYSICAL EDUCATION",
-  "SPORTS SCIENCE",
-  "CERTIFIED SPECIALIST COACH",
+  "ENGLISH",
+  "FILIPINO",
+  "MATHEMATICS",
+  "GENERAL SCIENCE",
+  "BIOLOGY",
+  "CHEMISTRY",
+  "PHYSICS",
+  "PHYSICAL SCIENCES",
+  "ARALING PANLIPUNAN",
+  "ESP",
+  "MAPEH",
+  "MUSIC EDUCATION",
+  "ART EDUCATION",
+  "PHYSICAL EDUCATION",
+  "HEALTH EDUCATION",
+  "TLE",
+  "HOME ECONOMICS",
+  "AGRI-FISHERY ARTS",
+  "INDUSTRIAL ARTS",
+  "ICT",
+  "COMPUTER EDUCATION",
+  "SPED",
+  "EARLY CHILDHOOD EDUCATION",
+  "READING / LITERACY EDUCATION",
+  "PSYCHOLOGY",
+  "HISTORY",
+  "POLITICAL SCIENCE",
+  "ECONOMICS",
+  "PHILOSOPHY",
+  "SOCIOLOGY",
+  "INFORMATION TECHNOLOGY",
+  "ACCOUNTANCY",
   "MASS COMMUNICATION",
-  "JOURNALISM",
-  "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
-  "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
-  "LINGUISTICS",
-  "DELE CERTIFIED (SPANISH)",
-  "JLPT CERTIFIED (JAPANESE)",
-  "DELF CERTIFIED (FRENCH)",
-  "HSK CERTIFIED (MANDARIN)",
-  "TOPIK CERTIFIED (KOREAN)",
+  "EDUCATIONAL MANAGEMENT",
+  "EDUCATIONAL LEADERSHIP",
+  "CURRICULUM AND INSTRUCTION",
+  "ADMINISTRATION AND SUPERVISION",
+  "GUIDANCE AND COUNSELING",
+  "EDUCATIONAL TECHNOLOGY",
+  "MEASUREMENT AND EVALUATION",
+  "OTHER"
 ] as const;
 
 export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
   {
-    group: "Basic Education Curriculum (BEC)",
+    group: "Core Academic Subjects",
     options: [
-      { value: "BSED ENGLISH", label: "BSEd Major in English" },
-      { value: "BSED FILIPINO", label: "BSEd Major in Filipino" },
-      { value: "BSED MATHEMATICS", label: "BSEd Major in Mathematics" },
-      { value: "BSED SCIENCE", label: "BSEd Major in Science" },
-      {
-        value: "BSED SOCIAL STUDIES",
-        label: "BSEd Major in Social Studies",
-      },
-      {
-        value: "BSED VALUES EDUCATION",
-        label: "BSEd Major in Values Education / EsP",
-      },
-      { value: "BSED MAPEH", label: "BSEd Major in MAPEH" },
-      { value: "BSED TLE", label: "BSEd Major in TLE" },
-      { value: "BTVTED / TVL", label: "BTVTEd / TVL" },
-      { value: "BEED GENERAL EDUCATION", label: "BEEd General Education" },
-      {
-        value: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
-        label: "Major in English / Applied Linguistics",
-      },
-      { value: "MAJOR IN FILIPINO", label: "Major in Filipino" },
-      { value: "MAJOR IN MATHEMATICS", label: "Major in Mathematics" },
-      {
-        value: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
-        label: "Major in General Science / Biology / Chemistry / Physics",
-      },
-      {
-        value: "MAJOR IN SOCIAL STUDIES / HISTORY",
-        label: "Major in Social Studies / History",
-      },
-      {
-        value: "MAJOR IN ARALING PANLIPUNAN",
-        label: "Major in Araling Panlipunan",
-      },
-      {
-        value: "MAJOR IN VALUES EDUCATION",
-        label: "Major in Values Education",
-      },
-      {
-        value: "MAJOR IN EDUKASYON SA PAGPAPAKATAO",
-        label: "Major in Edukasyon sa Pagpapakatao",
-      },
-      {
-        value: "MAJOR IN MAPEH",
-        label:
-          "Major in MAPEH (or specific Physical Education / Health degrees)",
-      },
-      {
-        value: "MAJOR IN HEALTH EDUCATION",
-        label: "Major in Health Education",
-      },
-      {
-        value: "MAJOR IN HOME ECONOMICS",
-        label: "Major in Home Economics (HE)",
-      },
-      {
-        value: "MAJOR IN INDUSTRIAL ARTS",
-        label: "Major in Industrial Arts (IA)",
-      },
-      {
-        value: "MAJOR IN AGRI-FISHERY ARTS",
-        label: "Major in Agri-Fishery Arts (AFA)",
-      },
-      {
-        value: "MAJOR IN ICT",
-        label: "Major in Information and Communications Technology (ICT)",
-      },
-      {
-        value: "MAJOR IN ELECTRICAL INSTALLATION AND MAINTENANCE",
-        label: "Major in Electrical Installation and Maintenance",
-      },
-      {
-        value: "MAJOR IN COOKERY / FOOD AND BEVERAGE SERVICES",
-        label: "Major in Cookery / Food and Beverage Services",
-      },
-      {
-        value: "MAJOR IN DRESSMAKING / GARMENTS",
-        label: "Major in Dressmaking / Garments",
-      },
-      { value: "MAJOR IN AUTOMOTIVE", label: "Major in Automotive" },
-      {
-        value: "MAJOR IN DRAFTING TECHNOLOGY",
-        label: "Major in Drafting Technology",
-      },
-      {
-        value: "MAJOR IN COMPUTER SYSTEMS SERVICING",
-        label: "Major in Computer Systems Servicing",
-      },
-    ],
+      { value: "ENGLISH", label: "English" },
+      { value: "FILIPINO", label: "Filipino" },
+      { value: "MATHEMATICS", label: "Mathematics" },
+      { value: "GENERAL SCIENCE", label: "General Science" },
+      { value: "BIOLOGY", label: "Biology" },
+      { value: "CHEMISTRY", label: "Chemistry" },
+      { value: "PHYSICS", label: "Physics" },
+      { value: "PHYSICAL SCIENCES", label: "Physical Sciences" },
+      { value: "ARALING PANLIPUNAN", label: "Araling Panlipunan / Social Studies" },
+      { value: "ESP", label: "Edukasyon sa Pagpapakatao (EsP) / Values Education" }
+    ]
   },
   {
-    group: "Science, Technology, and Engineering (STE)",
+    group: "MAPEH (Music, Arts, Physical Education, and Health)",
     options: [
-      { value: "MAJOR IN PHYSICS", label: "Major in Physics" },
-      { value: "MAJOR IN CHEMISTRY", label: "Major in Chemistry" },
-      { value: "MAJOR IN BIOLOGY", label: "Major in Biology" },
-      {
-        value: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
-        label: "Major in Mathematics (with Statistics background)",
-      },
-    ],
+      { value: "MAPEH", label: "MAPEH (General)" },
+      { value: "MUSIC EDUCATION", label: "Music Education" },
+      { value: "ART EDUCATION", label: "Art Education" },
+      { value: "PHYSICAL EDUCATION", label: "Physical Education" },
+      { value: "HEALTH EDUCATION", label: "Health Education" }
+    ]
   },
   {
-    group: "Special Program in the Arts (SPA)",
+    group: "TLE (Technology and Livelihood Education)",
     options: [
-      { value: "MAJOR IN MUSIC EDUCATION", label: "Major in Music Education" },
-      { value: "FINE ARTS", label: "Fine Arts" },
-      { value: "THEATER / PERFORMING ARTS", label: "Theater/Performing Arts" },
-      {
-        value: "LITERATURE / CREATIVE WRITING",
-        label: "Literature/Creative Writing",
-      },
-      { value: "DANCE", label: "Dance" },
-    ],
+      { value: "TLE", label: "TLE (General)" },
+      { value: "HOME ECONOMICS", label: "Home Economics (HE)" },
+      { value: "AGRI-FISHERY ARTS", label: "Agri-Fishery Arts (AFA)" },
+      { value: "INDUSTRIAL ARTS", label: "Industrial Arts (IA)" },
+      { value: "ICT", label: "Information and Communications Technology (ICT)" },
+      { value: "COMPUTER EDUCATION", label: "Computer Education" }
+    ]
   },
   {
-    group: "Special Program in Sports (SPS)",
+    group: "Specialized & Inclusive Education",
     options: [
-      {
-        value: "MAJOR IN PHYSICAL EDUCATION",
-        label: "Major in Physical Education",
-      },
-      { value: "SPORTS SCIENCE", label: "Sports Science" },
-      {
-        value: "CERTIFIED SPECIALIST COACH",
-        label: "Certified Specialist Coach",
-      },
-    ],
+      { value: "SPED", label: "Special Education (SPED)" },
+      { value: "EARLY CHILDHOOD EDUCATION", label: "Early Childhood Education" },
+      { value: "READING / LITERACY EDUCATION", label: "Reading / Literacy Education" }
+    ]
   },
   {
-    group: "Special Program in Journalism (SPJ)",
+    group: "Common Allied Degrees (For AB/BS Graduates with CPE)",
     options: [
-      { value: "MASS COMMUNICATION", label: "Mass Communication" },
-      { value: "JOURNALISM", label: "Journalism" },
-      {
-        value: "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
-        label: "Major in English (with Campus Journalism background)",
-      },
-      {
-        value: "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
-        label: "Major in Filipino (with Campus Journalism background)",
-      },
-    ],
+      { value: "PSYCHOLOGY", label: "Psychology" },
+      { value: "HISTORY", label: "History" },
+      { value: "POLITICAL SCIENCE", label: "Political Science" },
+      { value: "ECONOMICS", label: "Economics" },
+      { value: "PHILOSOPHY", label: "Philosophy" },
+      { value: "SOCIOLOGY", label: "Sociology" },
+      { value: "INFORMATION TECHNOLOGY", label: "Information Technology / Computer Science" },
+      { value: "ACCOUNTANCY", label: "Accountancy / Financial Management" },
+      { value: "MASS COMMUNICATION", label: "Mass Communication / Journalism" }
+    ]
   },
   {
-    group: "Special Program in Foreign Language (SPFL)",
+    group: "Postgraduate Specializations (For MAEd / EdD / PhD)",
     options: [
-      { value: "LINGUISTICS", label: "Linguistics" },
-      { value: "DELE CERTIFIED (SPANISH)", label: "DELE Certified (Spanish)" },
-      {
-        value: "JLPT CERTIFIED (JAPANESE)",
-        label: "JLPT Certified (Japanese)",
-      },
-      { value: "DELF CERTIFIED (FRENCH)", label: "DELF Certified (French)" },
-      { value: "HSK CERTIFIED (MANDARIN)", label: "HSK Certified (Mandarin)" },
-      { value: "TOPIK CERTIFIED (KOREAN)", label: "TOPIK Certified (Korean)" },
-    ],
+      { value: "EDUCATIONAL MANAGEMENT", label: "Educational Management" },
+      { value: "EDUCATIONAL LEADERSHIP", label: "Educational Leadership" },
+      { value: "CURRICULUM AND INSTRUCTION", label: "Curriculum and Instruction" },
+      { value: "ADMINISTRATION AND SUPERVISION", label: "Administration and Supervision" },
+      { value: "GUIDANCE AND COUNSELING", label: "Guidance and Counseling" },
+      { value: "EDUCATIONAL TECHNOLOGY", label: "Educational Technology" },
+      { value: "MEASUREMENT AND EVALUATION", label: "Measurement and Evaluation" }
+    ]
   },
+  {
+    group: "Other",
+    options: [
+      { value: "OTHER", label: "Other (Please Specify)" }
+    ]
+  }
 ];
 
 export const DEPED_TEACHER_SPECIALIZATION_OPTIONS =
   DEPED_TEACHER_SPECIALIZATION_GROUPS.flatMap((g) => g.options);
-
 export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "TEACHER I",
   "TEACHER II",

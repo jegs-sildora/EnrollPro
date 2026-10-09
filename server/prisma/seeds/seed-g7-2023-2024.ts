@@ -204,6 +204,8 @@ async function seedGrade7() {
           guardianLastName: primaryContact.name.lastName,
           guardianRelationship: primaryContact.relationship,
           isMissingSf9: false,
+          complianceStatus: 'COMPLIED',
+          isPrivacyConsentGiven: true,
           learningModalities: ["MODULAR_PRINT"],
           previousSchool: {
             create: {
@@ -297,3 +299,4 @@ seedGrade7()
     await prisma.$disconnect();
     await pool.end();
   });
+

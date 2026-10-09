@@ -20,11 +20,11 @@ export function AnimatedError({ error, className }: AnimatedErrorProps) {
         >
           <p
             className={cn(
-              "text-destructive flex items-start gap-1 leading-tight font-bold",
+              "text-destructive flex items-start gap-1 leading-tight font-bold text-sm",
               className
             )}
           >
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-[2px]" />
             <span>{error}</span>
           </p>
         </motion.div>

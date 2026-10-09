@@ -639,15 +639,11 @@ export async function findStudents(query: {
     
     // Combine with the learner status filter
     if (where.AND) {
-       (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({ learner: learnerWhere });
        appSearch.forEach(searchCondition => {
          (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push(searchCondition);
        });
     } else {
-       where.AND = [
-         { learner: learnerWhere },
-         ...appSearch
-       ];
+       where.AND = appSearch;
     }
     delete where.learner; // Use AND instead
   }

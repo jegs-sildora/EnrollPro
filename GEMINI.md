@@ -23,7 +23,7 @@ Use this order:
 - Preserve feature boundaries and shared contracts.
 - Validate backend inputs with shared Zod schemas where practical.
 - Keep EnrollPro and SMART ownership boundaries aligned with `ARCHITECTURE_MICROSERVICES.md`.
-- Never use ScratchPad or Browser use.
+- Never use Scratch or Browser use.
 - Run `pnpm --filter client build` and `pnpm --filter server build`
 
 ## Commands

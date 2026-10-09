@@ -1064,9 +1064,21 @@ export function SectioningWorkspace() {
     return currentGradePool.filter((l) => {
       if (filterProgram !== "all" && l.programType !== filterProgram) return false;
       if (activeSearchQuery) {
-        const q = activeSearchQuery.toLowerCase();
-        const fullName = `${l.lastName} ${l.firstName}`.toLowerCase();
-        if (!fullName.includes(q) && !l.lrn?.toLowerCase().includes(q)) {
+        const queryTerms = activeSearchQuery.toLowerCase().replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
+        const lrn = l.lrn?.toLowerCase() || "";
+        const firstName = l.firstName.toLowerCase();
+        const lastName = l.lastName.toLowerCase();
+        const middleName = (l.middleName || "").toLowerCase();
+        
+        // Match all terms against any part of the name or LRN
+        const matchesAll = queryTerms.every(term => 
+          lrn.includes(term) || 
+          firstName.includes(term) || 
+          lastName.includes(term) || 
+          middleName.includes(term)
+        );
+
+        if (!matchesAll) {
           return false;
         }
       }

@@ -65,6 +65,7 @@ import {
   TEACHER_UNDERGRADUATE_DEGREE_OPTIONS,
   TEACHER_UNDERGRADUATE_DEGREE_VALUES,
   DEPED_TEACHER_SPECIALIZATION_VALUES,
+  DEPED_TEACHER_SPECIALIZATION_OPTIONS,
   TEACHER_POSTGRADUATE_DEGREE_OPTIONS,
   TEACHER_POSTGRADUATE_DEGREE_VALUES,
   IP_COMMUNITY_OPTIONS,
@@ -136,11 +137,15 @@ const formSchema = z
     specialization: z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid specialization." }).optional().nullable().or(z.literal("")),
     undergraduateDegree: z.enum(TEACHER_UNDERGRADUATE_DEGREE_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid undergraduate degree." }).optional().nullable().or(z.literal("")),
     bachelorMajor: z.string().optional().nullable(),
+    bachelorMajorCustom: z.string().optional().nullable(),
     bachelorMinor: z.string().optional().nullable(),
+    bachelorMinorCustom: z.string().optional().nullable(),
     postgraduateDegrees: z.array(z.object({
       degree: z.enum(TEACHER_POSTGRADUATE_DEGREE_VALUES as unknown as [string, ...string[]], { message: "Invalid option: expected a valid postgraduate degree." }),
       major: z.string().optional().nullable(),
+      majorCustom: z.string().optional().nullable(),
       minor: z.string().optional().nullable(),
+      minorCustom: z.string().optional().nullable(),
     })).superRefine((data, ctx) => {
       data.forEach((item, index) => {
         if ((item.major?.trim() || item.minor?.trim()) && (!item.degree || item.degree.trim() === "")) {
@@ -224,13 +229,46 @@ const formSchema = z
       });
     }
 
-    if (data.undergraduateDegree && (!data.bachelorMajor || data.bachelorMajor.trim().length === 0)) {
+    if (data.undergraduateDegree) {
+      if (!data.bachelorMajor || data.bachelorMajor.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify the major or specialization.",
+          path: ["bachelorMajor"],
+        });
+      } else if (data.bachelorMajor === "OTHER" && (!data.bachelorMajorCustom || data.bachelorMajorCustom.trim().length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify your custom major.",
+          path: ["bachelorMajorCustom"],
+        });
+      }
+    }
+
+    if (data.bachelorMinor === "OTHER" && (!data.bachelorMinorCustom || data.bachelorMinorCustom.trim().length === 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please specify the major or specialization.",
-        path: ["bachelorMajor"],
+        message: "Please specify your custom minor.",
+        path: ["bachelorMinorCustom"],
       });
     }
+
+    data.postgraduateDegrees?.forEach((pg, index) => {
+      if (pg.major === "OTHER" && (!pg.majorCustom || pg.majorCustom.trim().length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify your custom major.",
+          path: ["postgraduateDegrees", index, "majorCustom"],
+        });
+      }
+      if (pg.minor === "OTHER" && (!pg.minorCustom || pg.minorCustom.trim().length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify your custom minor.",
+          path: ["postgraduateDegrees", index, "minorCustom"],
+        });
+      }
+    });
 
     if (shouldRequireSF7) {
       if (!data.undergraduateDegree || data.undergraduateDegree.trim().length === 0) {
@@ -370,7 +408,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     formState: { isDirty, errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    mode: "onChange",
+    mode: "onTouched",
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -386,8 +424,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       specialization: "",
       undergraduateDegree: "",
       bachelorMajor: "",
+      bachelorMajorCustom: "",
       bachelorMinor: "",
-      postgraduateDegrees: [{ degree: "", major: "", minor: "" }],
+      bachelorMinorCustom: "",
+      postgraduateDegrees: [{ degree: "", major: "", majorCustom: "", minor: "", minorCustom: "" }],
       indigenousCommunity: "NOT APPLICABLE",
       natureOfAppointment: "REGULAR_PERMANENT",
       fundingSource: "NATIONAL",
@@ -465,18 +505,36 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: (teacher.specialization === "NONE" ? "" : teacher.specialization) || "",
         undergraduateDegree: (teacher.undergraduateDegree === "NONE" ? "" : teacher.undergraduateDegree) || "",
-        bachelorMajor: (teacher.bachelorMajor === "NONE" ? "" : teacher.bachelorMajor) || "",
-        bachelorMinor: (teacher.bachelorMinor === "NONE" ? "" : teacher.bachelorMinor) || "",
+        bachelorMajor: (() => {
+          const val = (teacher.bachelorMajor === "NONE" ? "" : teacher.bachelorMajor) || "";
+          return val && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(val as any) ? "OTHER" : val;
+        })(),
+        bachelorMajorCustom: (() => {
+          const val = (teacher.bachelorMajor === "NONE" ? "" : teacher.bachelorMajor) || "";
+          return val && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(val as any) ? val : "";
+        })(),
+        bachelorMinor: (() => {
+          const val = (teacher.bachelorMinor === "NONE" ? "" : teacher.bachelorMinor) || "";
+          return val && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(val as any) ? "OTHER" : val;
+        })(),
+        bachelorMinorCustom: (() => {
+          const val = (teacher.bachelorMinor === "NONE" ? "" : teacher.bachelorMinor) || "";
+          return val && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(val as any) ? val : "";
+        })(),
         postgraduateDegrees: teacher.postgraduateDegrees?.length
           ? teacher.postgraduateDegrees.map((entry) => ({
             degree: entry.degree === "NONE" ? "" : entry.degree,
-            major: entry.major || "",
-            minor: entry.minor || "",
+            major: entry.major && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(entry.major as any) ? "OTHER" : (entry.major || ""),
+            majorCustom: entry.major && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(entry.major as any) ? entry.major : "",
+            minor: entry.minor && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(entry.minor as any) ? "OTHER" : (entry.minor || ""),
+            minorCustom: entry.minor && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(entry.minor as any) ? entry.minor : "",
           }))
           : [{
             degree: (teacher.postgraduateDegree === "NONE" ? "" : teacher.postgraduateDegree) || "",
-            major: teacher.majorSpecialization || "",
-            minor: teacher.minorSpecialization || "",
+            major: teacher.majorSpecialization && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(teacher.majorSpecialization as any) ? "OTHER" : (teacher.majorSpecialization || ""),
+            majorCustom: teacher.majorSpecialization && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(teacher.majorSpecialization as any) ? teacher.majorSpecialization : "",
+            minor: teacher.minorSpecialization && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(teacher.minorSpecialization as any) ? "OTHER" : (teacher.minorSpecialization || ""),
+            minorCustom: teacher.minorSpecialization && !DEPED_TEACHER_SPECIALIZATION_VALUES.includes(teacher.minorSpecialization as any) ? teacher.minorSpecialization : "",
           }],
         indigenousCommunity: (teacher.indigenousCommunity as unknown as FormValues['indigenousCommunity']) || "NOT APPLICABLE",
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
@@ -510,8 +568,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         specialization: "",
         undergraduateDegree: "",
         bachelorMajor: "",
+        bachelorMajorCustom: "",
         bachelorMinor: "",
-        postgraduateDegrees: [{ degree: "", major: "", minor: "" }],
+        bachelorMinorCustom: "",
+        postgraduateDegrees: [{ degree: "", major: "", majorCustom: "", minor: "", minorCustom: "" }],
         indigenousCommunity: "NOT APPLICABLE",
         natureOfAppointment: "REGULAR_PERMANENT",
         fundingSource: "NATIONAL",
@@ -606,8 +666,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         .filter((entry) => entry.degree.trim().length > 0)
         .map((entry) => ({
           degree: entry.degree,
-          major: entry.major?.trim() || null,
-          minor: entry.minor?.trim() || null,
+          major: (entry.major === "OTHER" ? entry.majorCustom?.trim() : entry.major?.trim()) || null,
+          minor: (entry.minor === "OTHER" ? entry.minorCustom?.trim() : entry.minor?.trim()) || null,
         }));
       const primaryPostgraduateDegree = postgraduateDegrees[0];
       const profilePayload = {
@@ -624,8 +684,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
         undergraduateDegree: data.undergraduateDegree || "",
-        bachelorMajor: data.bachelorMajor?.trim() || null,
-        bachelorMinor: data.bachelorMinor?.trim() || null,
+        bachelorMajor: (data.bachelorMajor === "OTHER" ? data.bachelorMajorCustom?.trim() : data.bachelorMajor?.trim()) || null,
+        bachelorMinor: (data.bachelorMinor === "OTHER" ? data.bachelorMinorCustom?.trim() : data.bachelorMinor?.trim()) || null,
         postgraduateDegrees,
         postgraduateDegree: primaryPostgraduateDegree?.degree || "",
         majorSpecialization: primaryPostgraduateDegree?.major || "",
@@ -1231,7 +1291,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             </div>
                           </div>
                           <div className="flex flex-col gap-4 md:col-span-2">
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">First Name <span className="text-destructive">*</span></Label>
                               <Controller
                                 name="firstName"
@@ -1250,7 +1310,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               />
                               <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
                             </div>
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Last Name <span className="text-destructive">*</span></Label>
                               <Controller
                                 name="lastName"
@@ -1272,7 +1332,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
 
                           <div className="flex flex-col gap-4 md:col-span-2">
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Middle Name <span className="text-foreground font-bold ml-1">(optional)</span></Label>
                               <Controller
                                 name="middleName"
@@ -1288,7 +1348,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 )}
                               />
                             </div>
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Suffix <span className="text-foreground font-bold ml-1">(e.g., JR., III)</span></Label>
                               <Controller
                                 name="suffix"
@@ -1319,8 +1379,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-1.5 min-h-[6rem]">
+                        <div className="grid gap-4 sm:grid-cols-3">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">Sex <span className="text-destructive">*</span></Label>
                             <Controller
                               name="sex"
@@ -1360,7 +1420,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.sex?.message as string} />
                           </div>
 
-                          <div className="space-y-1.5 min-h-[6rem]">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">Date of Birth <span className="text-destructive">*</span></Label>
                             <Controller
                               name="birthdate"
@@ -1379,7 +1439,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
                           </div>
 
-                          <div className="space-y-1.5 min-h-[6rem]">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground flex items-center gap-1 h-6">
                               <Smartphone className="size-3" />
                               Mobile Number <span className="text-destructive">*</span>
@@ -1393,7 +1453,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   value={field.value || ""}
                                   onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 11))}
                                   maxLength={11}
-                                    placeholder="e.g., 09123456789"
+                                  placeholder="e.g., 09123456789"
                                   className={cn("font-bold text-base leading-tight", errors.contactNumber && "border-destructive")}
                                 />
                               )}
@@ -1401,7 +1461,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                           </div>
 
-                          <div className="space-y-1.5 min-h-[6rem]">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground flex items-center h-6">IP Community / Ethnic Group</Label>
                             <Controller
                               name="indigenousCommunity"
@@ -1437,7 +1497,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
                       <div className="px-5 pb-5 pt-4 space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-1.5 min-h-[6rem]">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">
                               DepEd Employee ID {!isTemporaryPersonnel && <span className="text-destructive">*</span>}
                             </Label>
@@ -1466,7 +1526,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             )}
                           </div>
 
-                          <div className="space-y-1.5 min-h-[6rem]">
+                          <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">DepEd Position (Plantilla) <span className="text-destructive">*</span></Label>
                             <Controller
                               name="plantillaPosition"
@@ -1489,7 +1549,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         {formPersonnelType === "TEACHING" && (
                           <div className="grid gap-4 mt-4 pt-4 border-t border-border">
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Subject Area / Major</Label>
                               <Controller
                                 name="departments"
@@ -1529,8 +1589,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                             <div className="space-y-4">
                               <div className="mb-6 rounded-lg border border-border bg-muted/10 p-3">
-                                <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr] lg:items-end">
-                                  <div className="space-y-1.5 min-h-[6rem]">
+                                <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr] lg:items-start">
+                                  <div className="space-y-1.5">
                                     <Label className="text-sm font-bold uppercase text-foreground">Bachelor Degree <span className="text-destructive">*</span></Label>
                                     <Controller
                                       name="undergraduateDegree"
@@ -1552,51 +1612,101 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     />
                                     <AnimatedError error={errors.undergraduateDegree?.message as string} />
                                   </div>
-                                  <div className="space-y-1.5 min-h-[6rem]">
+                                  <div className="space-y-1.5">
                                     <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization <span className="text-destructive">*</span></Label>
                                     <Controller
                                       name="bachelorMajor"
                                       control={control}
                                       render={({ field }) => (
-                                        <Input
-                                          {...field}
-                                          value={field.value ?? ""}
+                                        <SearchableCombobox
+                                          items={DEPED_TEACHER_SPECIALIZATION_OPTIONS}
+                                          value={field.value || ""}
+                                          onChange={(value) => field.onChange(value)}
                                           disabled={!isEditing || !watch("undergraduateDegree")}
-                                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-                                          placeholder="E.G. MATHEMATICS"
+                                          placeholder="SELECT MAJOR"
+                                          searchPlaceholder="SEARCH MAJORS..."
                                           className={cn(
-                                            "h-10 bg-background text-base font-bold uppercase",
+                                            "h-10 w-full bg-background text-base font-bold leading-tight uppercase text-foreground border-border",
                                             errors.bachelorMajor && "border-destructive focus-visible:ring-destructive",
                                           )}
                                         />
                                       )}
                                     />
                                     <AnimatedError error={errors.bachelorMajor?.message as string} />
+                                    {watch("bachelorMajor") === "OTHER" && (
+                                      <div className="mt-2">
+                                        <Controller
+                                          name="bachelorMajorCustom"
+                                          control={control}
+                                          render={({ field }) => (
+                                            <Input
+                                              {...field}
+                                              value={field.value ?? ""}
+                                              disabled={!isEditing || !watch("undergraduateDegree")}
+                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                              placeholder="SPECIFY MAJOR"
+                                              className={cn(
+                                                "h-10 bg-background text-base font-bold uppercase",
+                                                errors.bachelorMajorCustom && "border-destructive focus-visible:ring-destructive"
+                                              )}
+                                            />
+                                          )}
+                                        />
+                                        <AnimatedError error={errors.bachelorMajorCustom?.message as string} />
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="space-y-1.5 min-h-[6rem]">
+                                  <div className="space-y-1.5">
                                     <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
                                     <Controller
                                       name="bachelorMinor"
                                       control={control}
                                       render={({ field }) => (
-                                        <Input
-                                          {...field}
-                                          value={field.value ?? ""}
+                                        <SearchableCombobox
+                                          items={DEPED_TEACHER_SPECIALIZATION_OPTIONS}
+                                          value={field.value || ""}
+                                          onChange={(value) => field.onChange(value)}
                                           disabled={!isEditing || !watch("undergraduateDegree")}
-                                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-                                          placeholder="E.G. PHYSICAL EDUCATION"
-                                          className="h-10 bg-background text-base font-bold uppercase"
+                                          placeholder="SELECT MINOR"
+                                          searchPlaceholder="SEARCH MINORS..."
+                                          className={cn(
+                                            "h-10 w-full bg-background text-base font-bold leading-tight uppercase text-foreground border-border",
+                                            errors.bachelorMinor && "border-destructive focus-visible:ring-destructive",
+                                          )}
                                         />
                                       )}
                                     />
+                                    <AnimatedError error={errors.bachelorMinor?.message as string} />
+                                    {watch("bachelorMinor") === "OTHER" && (
+                                      <div className="mt-2">
+                                        <Controller
+                                          name="bachelorMinorCustom"
+                                          control={control}
+                                          render={({ field }) => (
+                                            <Input
+                                              {...field}
+                                              value={field.value ?? ""}
+                                              disabled={!isEditing || !watch("undergraduateDegree")}
+                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                              placeholder="SPECIFY MINOR"
+                                              className={cn(
+                                                "h-10 bg-background text-base font-bold uppercase",
+                                                errors.bachelorMinorCustom && "border-destructive focus-visible:ring-destructive"
+                                              )}
+                                            />
+                                          )}
+                                        />
+                                        <AnimatedError error={errors.bachelorMinorCustom?.message as string} />
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 {postgraduateFields.map((postgraduateField, index) => (
                                   <div key={postgraduateField.id} className="rounded-lg border border-border bg-muted/10 p-3">
-                                    <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                                      <div className="space-y-1.5 min-h-[6rem]">
+                                    <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-start">
+                                      <div className="space-y-1.5">
                                         <Label className="text-sm font-bold uppercase text-foreground">Postgraduate Degree</Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.degree`}
@@ -1615,41 +1725,88 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                         />
                                         <AnimatedError error={errors.postgraduateDegrees?.[index]?.degree?.message as string} />
                                       </div>
-                                      <div className="space-y-1.5 min-h-[6rem]">
+                                      <div className="space-y-1.5">
                                         <Label className="text-sm font-bold uppercase text-foreground">Major / Specialization</Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.major`}
                                           control={control}
                                           render={({ field }) => (
-                                            <Input
-                                              {...field}
-                                              value={field.value ?? ""}
+                                            <SearchableCombobox
+                                              items={DEPED_TEACHER_SPECIALIZATION_OPTIONS}
+                                              value={field.value || ""}
+                                              onChange={(value) => field.onChange(value)}
                                               disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
-                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-                                              placeholder="e.g. EDUCATIONAL MANAGEMENT"
-                                              className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.major && "border-destructive")}
+                                              placeholder="SELECT MAJOR"
+                                              searchPlaceholder="SEARCH MAJORS..."
+                                              className={cn(
+                                                "h-10 w-full bg-background text-base font-bold leading-tight uppercase text-foreground border-border",
+                                                errors.postgraduateDegrees?.[index]?.major && "border-destructive focus-visible:ring-destructive",
+                                              )}
                                             />
                                           )}
                                         />
                                         <AnimatedError error={errors.postgraduateDegrees?.[index]?.major?.message as string} />
+                                        {watch(`postgraduateDegrees.${index}.major`) === "OTHER" && (
+                                          <div className="mt-2">
+                                            <Controller
+                                              name={`postgraduateDegrees.${index}.majorCustom`}
+                                              control={control}
+                                              render={({ field }) => (
+                                                <Input
+                                                  {...field}
+                                                  value={field.value ?? ""}
+                                                  disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
+                                                  onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                                  placeholder="SPECIFY MAJOR"
+                                                  className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.majorCustom && "border-destructive")}
+                                                />
+                                              )}
+                                            />
+                                            <AnimatedError error={errors.postgraduateDegrees?.[index]?.majorCustom?.message as string} />
+                                          </div>
+                                        )}
                                       </div>
-                                      <div className="space-y-1.5 min-h-[6rem]">
+                                      <div className="space-y-1.5">
                                         <Label className="text-sm font-bold uppercase text-foreground">Minor <span className="text-foreground/60">(optional)</span></Label>
                                         <Controller
                                           name={`postgraduateDegrees.${index}.minor`}
                                           control={control}
                                           render={({ field }) => (
-                                            <Input
-                                              {...field}
-                                              value={field.value ?? ""}
+                                            <SearchableCombobox
+                                              items={DEPED_TEACHER_SPECIALIZATION_OPTIONS}
+                                              value={field.value || ""}
+                                              onChange={(value) => field.onChange(value)}
                                               disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
-                                              onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-                                              placeholder="e.g. CURRICULUM STUDIES"
-                                              className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.minor && "border-destructive")}
+                                              placeholder="SELECT MINOR"
+                                              searchPlaceholder="SEARCH MINORS..."
+                                              className={cn(
+                                                "h-10 w-full bg-background text-base font-bold leading-tight uppercase text-foreground border-border",
+                                                errors.postgraduateDegrees?.[index]?.minor && "border-destructive focus-visible:ring-destructive",
+                                              )}
                                             />
                                           )}
                                         />
                                         <AnimatedError error={errors.postgraduateDegrees?.[index]?.minor?.message as string} />
+                                        {watch(`postgraduateDegrees.${index}.minor`) === "OTHER" && (
+                                          <div className="mt-2">
+                                            <Controller
+                                              name={`postgraduateDegrees.${index}.minorCustom`}
+                                              control={control}
+                                              render={({ field }) => (
+                                                <Input
+                                                  {...field}
+                                                  value={field.value ?? ""}
+                                                  disabled={!isEditing || !watch(`postgraduateDegrees.${index}.degree`)}
+                                                  onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                                                  placeholder="SPECIFY MINOR"
+                                                  className={cn("h-10 bg-background text-base font-bold uppercase", errors.postgraduateDegrees?.[index]?.minorCustom && "border-destructive")}
+                                                />
+                                              )}
+                                            />
+                                            <AnimatedError error={errors.postgraduateDegrees?.[index]?.minorCustom?.message as string} />
+                                          </div>
+                                        )}
+
                                       </div>
                                       {index > 0 && isEditing && (
                                         <Button
@@ -1678,8 +1835,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   </Button>
                                 )}
                               </div>
-                              <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-1.5 min-h-[6rem]">
+                              <div className={cn("grid gap-4", isTemporaryPersonnel ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+                                <div className="space-y-1.5">
                                   <Label className="text-base font-bold uppercase text-foreground">Nature of Appointment <span className="text-destructive">*</span></Label>
                                   <Controller
                                     name="natureOfAppointment"
@@ -1704,7 +1861,31 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   />
                                   <AnimatedError error={errors.natureOfAppointment?.message as string} />
                                 </div>
-                                <div className="space-y-1.5 min-h-[6rem]">
+                                {isTemporaryPersonnel && (
+                                  <div className="space-y-1.5">
+                                    <Label className="text-base font-bold uppercase text-foreground">
+                                      Contract End Date <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Controller
+                                      name="accessExpirationDate"
+                                      control={control}
+                                      render={({ field }) => (
+                                        <HybridDatePicker
+                                          disabled={!isEditing}
+                                          value={field.value || ""}
+                                          onChange={field.onChange}
+                                          minDate={new Date()}
+                                          className={cn(
+                                            "h-10 font-bold text-base leading-tight",
+                                            errors.accessExpirationDate && "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                        />
+                                      )}
+                                    />
+                                    <AnimatedError error={errors.accessExpirationDate?.message as string} />
+                                  </div>
+                                )}
+                                <div className="space-y-1.5">
                                   <Label className="text-base font-bold uppercase text-foreground">Fund Source <span className="text-destructive">*</span></Label>
                                   <Controller
                                     name="fundingSource"
@@ -1732,7 +1913,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               </div>
                             </div>
 
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Ancillary Roles</Label>
                               <Controller
                                 name="ancillaryRoles"
@@ -1750,7 +1931,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 )}
                               />
                             </div>
-                            
+
                             <div className="col-span-1 sm:col-span-2 space-y-4 border rounded-md p-4 bg-muted/10">
                               <Label className="text-base font-bold uppercase text-foreground flex items-center gap-2 border-b pb-2">
                                 <ShieldAlert className="w-4 h-4 text-primary" />
@@ -1762,18 +1943,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   control={control}
                                   render={({ field }) => (
                                     <div className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-background", !isEditing && "opacity-60")}>
-                                        <Checkbox
-                                          id="toggle-assign-load"
-                                          checked={field.value}
-                                          onCheckedChange={(checked) => field.onChange(checked === true)}
-                                          disabled={!isEditing}
-                                          className="mt-1"
-                                        />
-                                        <label htmlFor="toggle-assign-load" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
-                                          <p className="font-bold uppercase">Assign Teaching Load</p>
-                                          <p className="text-sm text-foreground">Allow this user to manage teaching loads in ATLAS.</p>
-                                        </label>
-                                      </div>
+                                      <Checkbox
+                                        id="toggle-assign-load"
+                                        checked={field.value}
+                                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                                        disabled={!isEditing}
+                                        className="mt-1"
+                                      />
+                                      <label htmlFor="toggle-assign-load" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                        <p className="font-bold uppercase">Assign Teaching Load</p>
+                                        <p className="text-sm text-foreground">Allow this user to manage teaching loads in ATLAS.</p>
+                                      </label>
+                                    </div>
                                   )}
                                 />
                                 <Controller
@@ -1781,18 +1962,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   control={control}
                                   render={({ field }) => (
                                     <div className={cn("flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-background", !isEditing && "opacity-60")}>
-                                        <Checkbox
-                                          id="toggle-build-schedules"
-                                          checked={field.value}
-                                          onCheckedChange={(checked) => field.onChange(checked === true)}
-                                          disabled={!isEditing}
-                                          className="mt-1"
-                                        />
-                                        <label htmlFor="toggle-build-schedules" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
-                                          <p className="font-bold uppercase">Build Schedules</p>
-                                          <p className="text-sm text-foreground">Allow this user to build section schedules in ATLAS.</p>
-                                        </label>
-                                      </div>
+                                      <Checkbox
+                                        id="toggle-build-schedules"
+                                        checked={field.value}
+                                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                                        disabled={!isEditing}
+                                        className="mt-1"
+                                      />
+                                      <label htmlFor="toggle-build-schedules" className={cn("leading-none", isEditing ? "cursor-pointer" : "cursor-not-allowed")}>
+                                        <p className="font-bold uppercase">Build Schedules</p>
+                                        <p className="text-sm text-foreground">Allow this user to build section schedules in ATLAS.</p>
+                                      </label>
+                                    </div>
                                   )}
                                 />
                               </div>
@@ -1804,7 +1985,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                         <div className="space-y-4 pt-4 border-t border-border mt-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Service Status</Label>
                               <Controller
                                 name="serviceStatus"
@@ -1826,7 +2007,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               />
                             </div>
                             {formServiceStatus !== "ACTIVE" && (
-                              <div className="space-y-1.5 min-h-[6rem]">
+                              <div className="space-y-1.5">
                                 <Label className="text-base font-bold uppercase text-foreground">Date Started</Label>
                                 <Controller
                                   name="serviceEffectiveDate"
@@ -1843,7 +2024,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             )}
                           </div>
                           {formServiceStatus !== "ACTIVE" && (
-                            <div className="space-y-1.5 min-h-[6rem]">
+                            <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Notes for this status <span className="text-foreground font-bold ml-1">(optional)</span></Label>
                               <Controller
                                 name="serviceRemarks"
@@ -1918,34 +2099,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             />
                           </div>
 
-                          {isTemporaryPersonnel && (
+                          {isTemporaryPersonnel && watch("accessExpirationDate") && (
                             <div className="space-y-1.5 pt-2">
-                              <Label className="text-base font-bold uppercase text-foreground">
-                                Contract End Date / Access Expiration <span className="text-destructive">*</span>
-                              </Label>
-                              <Controller
-                                name="accessExpirationDate"
-                                control={control}
-                                render={({ field }) => (
-                                  <HybridDatePicker
-                                    disabled={!isEditing}
-                                    value={field.value || ""}
-                                    onChange={field.onChange}
-                                    minDate={new Date()}
-                                    className={cn(
-                                      "h-11 font-bold text-base leading-tight",
-                                      errors.accessExpirationDate && "border-destructive focus-visible:ring-destructive",
-                                    )}
-                                  />
-                                )}
-                              />
-                              <p className="text-sm text-foreground">
-                                Portal access will automatically be blocked at midnight on this date.
+                              <p className="text-sm font-bold text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 uppercase flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                PORTAL ACCESS WILL AUTOMATICALLY BE DISABLED ON {new Date(watch("accessExpirationDate") as string).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} BASED ON THE CONTRACT END DATE.
                               </p>
-                              <AnimatedError error={errors.accessExpirationDate?.message as string} />
                             </div>
                           )}
-
                           <div className="space-y-2 pt-2">
                             <Label className="text-base font-bold uppercase text-foreground">
                               {isAdding ? "Default Password" : "Password Control"}

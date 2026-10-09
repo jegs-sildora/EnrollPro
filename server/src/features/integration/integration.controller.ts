@@ -29,6 +29,7 @@ import {
 type TeacherForFaculty = Prisma.TeacherGetPayload<{
   include: {
     _count: { select: { advisoryHistory: true } };
+    postgraduateDegrees: true;
     departments: { select: { id: true; code: true; name: true } };
     teacherDesignations: {
       include: {
@@ -594,6 +595,7 @@ export async function listIntegrationFaculty(
       take: limit,
       include: {
         _count: { select: { advisoryHistory: true } },
+        postgraduateDegrees: true,
         departments: {
           select: {
             id: true,
@@ -635,10 +637,10 @@ export async function listIntegrationFaculty(
   const users = employeeIds.length > 0 
     ? await prisma.user.findMany({
         where: { employeeId: { in: employeeIds } },
-        select: { id: true, employeeId: true },
+        select: { id: true, employeeId: true, accessExpirationDate: true, isActive: true, roles: true },
       })
     : [];
-  const userIdByEmployeeId = new Map(users.map((u) => [u.employeeId, u.id]));
+  const userByEmployeeId = new Map(users.map((u) => [u.employeeId, u]));
 
   const gradeCoordinatorRoleToOrder = {
     "GRADE 7 COORDINATOR": 7,
@@ -653,7 +655,23 @@ export async function listIntegrationFaculty(
     // NOTE: designationNotes, updateReason, updatedById, updatedByName, updatedAt
     // are internal HR audit fields — excluded to comply with DPA minimization.
     return {
-      userId: teacher.employeeId ? (userIdByEmployeeId.get(teacher.employeeId) ?? null) : null,
+      userId: teacher.employeeId ? (userByEmployeeId.get(teacher.employeeId)?.id ?? null) : null,
+      suffix: teacher.suffix ?? null,
+      sex: teacher.sex ?? null,
+      birthdate: teacher.birthdate ?? null,
+      personnelType: teacher.personnelType ?? null,
+      functionalAssignment: teacher.functionalAssignment ?? null,
+      bachelorMajor: teacher.bachelorMajor ?? null,
+      bachelorMinor: teacher.bachelorMinor ?? null,
+      indigenousCommunity: teacher.indigenousCommunity ?? null,
+      fundingSource: teacher.fundingSource ?? null,
+      serviceStatus: teacher.serviceStatus ?? null,
+      serviceEffectiveDate: teacher.serviceEffectiveDate ?? null,
+      serviceRemarks: teacher.serviceRemarks ?? null,
+      portalActive: teacher.employeeId ? (userByEmployeeId.get(teacher.employeeId)?.isActive ?? false) : false,
+      accessExpirationDate: teacher.employeeId ? (userByEmployeeId.get(teacher.employeeId)?.accessExpirationDate ?? null) : null,
+      roles: teacher.employeeId ? (userByEmployeeId.get(teacher.employeeId)?.roles ?? []) : [],
+      postgraduateDegrees: teacher.postgraduateDegrees ?? [],
       teacherId: teacher.id,
       employeeId: teacher.employeeId,
       firstName: teacher.firstName,
@@ -667,6 +685,7 @@ export async function listIntegrationFaculty(
       postgraduateDegree: teacher.postgraduateDegree ?? null,
       majorSpecialization: teacher.majorSpecialization ?? null,
       minorSpecialization: teacher.minorSpecialization ?? null,
+      natureOfAppointment: teacher.natureOfAppointment ?? null,
       isActive: teacher.isActive,
       
       departmentCode: teacher.departments?.[0]?.code ?? null,
@@ -691,6 +710,8 @@ export async function listIntegrationFaculty(
         designation?.advisorySection?.gradeLevel?.name ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,
+      atlasAssignTeachingLoad: designation?.atlasAssignTeachingLoad ?? false,
+      atlasBuildSchedules: designation?.atlasBuildSchedules ?? false,
       companionAccess: (() => {
         const mergedAncillary = mergeAncillaryRoles(teacher.ancillaryRoles, designation?.ancillaryRoles);
         const displayOrders = Object.entries(gradeCoordinatorRoleToOrder)

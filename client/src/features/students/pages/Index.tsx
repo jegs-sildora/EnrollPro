@@ -1227,7 +1227,7 @@ export default function Students() {
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder="Search LRN, first name, last name..."
+                placeholder="Search by LRN or name..."
                 className="w-full h-12 pl-10 pr-12 bg-white border-gray-300 shadow-sm transition-shadow focus-visible:ring-primary uppercase font-bold"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

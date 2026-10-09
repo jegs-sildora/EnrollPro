@@ -1,25 +1,92 @@
-**Task:** Implement server-side draft persistence and unplaced learner queueing for the Section Assignment module.
+# DepEd JHS Personnel Majors & Specializations Data Dictionary
+**Target System:** EnrollPro: Academic Institution's Digital Platform
+**Module:** Personnel Directory (School Form 7 Profile)
+**Component:** Searchable Dropdown for Major/Specialization and Minor Fields[cite: 9]
 
-**Context:** 
-The Grade Level Coordinator (GLC) needs to section learners without losing their progress upon page refresh or navigation. The system must utilize a batch save state architecture stored in the backend, utilizing the existing `is_draft` boolean in the `enrollment_records` table. Do NOT generate custom UI styling code; reuse our existing design system components (sidepanels, drag-and-drop lists, and dropdowns).
+---
 
-**Business Logic Requirements:**
+## 1. Context & UX Strategy
+Transitioning the Major and Minor fields from free-text inputs to searchable dropdowns is a crucial UX decision that eliminates dirty data and ensures clean, standardized personnel reporting for DepEd School Form 7 (SF7)[cite: 9]. By mirroring the structured dropdowns already utilized for Bachelor's and Postgraduate degrees[cite: 8, 10], this implementation maintains UI consistency and improves database queryability.
 
-1. **Server-Side Draft Initialization & Persistence:**
-   - When the GLC clicks "Generate Draft" or manually starts moving learners, intercept the action.
-   - Instead of holding assignments in Redux/React Context alone, execute a batch `POST`/`PUT` to the backend inserting records into `enrollment_records` with `is_draft = true`.
-   - Implement an "Autosave" hook or a prominent "Save Draft" button to periodically sync the frontend state with the database.
+---
 
-2. **Loading the Active Draft:**
-   - On mounting the Section Assignment page, query `enrollment_records` for the active school year/grade level where `is_draft = true`. 
-   - If a draft exists, populate the section lists from the server response rather than requiring the algorithm to re-run.
+## 2. LLM / Database Engineer Prompt
+Use the following prompt to generate the exact programmatic structure (JSON/SQL) for the dropdown component:
 
-3. **Handling New Enrollees (The Unplaced Queue):**
-   - After loading the active draft sections, execute a secondary query against `enrollment_applications` to fetch learners with `status = 'READY_FOR_SECTIONING'` who do NOT currently have a draft record in `enrollment_records`.
-   - Append these missing learners into the "Unplaced Learners" sidepanel component.
-   - When the GLC drags an unplaced learner from the sidepanel into a section, immediately sync this addition to the server draft.
+> **Act as a DepEd Human Resources Data Specialist.** 
+> Generate a comprehensive, categorized list of academic Majors, Minors, and Specializations for public school teachers in the Philippines, specifically tailored for Junior High School (Grades 7–10) personnel reporting (SF7).
+>
+> Format the output as a JSON array of objects suitable for a React/Vue searchable select component: 
+> `[{ "label": "Mathematics", "value": "MATHEMATICS", "category": "Core Subjects" }]`
+>
+> Ensure the dataset strictly aligns with the Philippine Professional Standards for Teachers (PPST) and DepEd hiring guidelines. Include the following categories:
+> 1. **Core Education Majors (BSED/BEED):** English, Filipino, Mathematics, Science, Araling Panlipunan, Edukasyon sa Pagpapakatao (EsP).
+> 2. **MAPEH:** General MAPEH, plus individual components (Music, Arts, Physical Education, Health).
+> 3. **TLE / TVL Tracks:** Home Economics (HE), Agri-Fishery Arts (AFA), Industrial Arts (IA), Information and Communications Technology (ICT).
+> 4. **Special Needs:** Special Education (SPED).
+> 5. **Common Non-Education Majors (AB/BS with CPE units):** Psychology, Biology, Chemistry, Physics, History, Political Science, Computer Science, Accountancy.
+> 6. **Postgraduate Specializations (MAEd/MAT/PhD/EdD):** Educational Management, Educational Leadership, Curriculum and Instruction, Administration and Supervision.
 
-4. **Committing the Draft:**
-   - When the GLC clicks "Finalize & Commit", execute a batch update on `enrollment_records` setting `is_draft = false` and `sectioning_method = 'MANUAL_OVERRIDE'` (or `BATCH_ALGORITHM` depending on their origin).
-   - Simultaneously update `enrollment_applications` setting `status = 'OFFICIALLY_ENROLLED'`.
-   - Write a Placement Audit event to `audit_logs`.
+---
+
+## 3. Recommended DepEd JHS Specialization Dataset
+This curated list reflects real-world majors and specializations found in DepEd JHS deployments, ready for database seeding or frontend hardcoding.
+
+### Core Academic Subjects
+* English
+* Filipino
+* Mathematics
+* General Science
+* Biology
+* Chemistry
+* Physics
+* Physical Sciences
+* Araling Panlipunan / Social Studies
+* Edukasyon sa Pagpapakatao (EsP) / Values Education
+
+### MAPEH (Music, Arts, Physical Education, and Health)
+* MAPEH (General)
+* Music Education
+* Art Education
+* Physical Education
+* Health Education
+
+### TLE (Technology and Livelihood Education)
+* TLE (General)
+* Home Economics (HE)
+* Agri-Fishery Arts (AFA)
+* Industrial Arts (IA)
+* Information and Communications Technology (ICT)
+* Computer Education
+
+### Specialized & Inclusive Education
+* Special Education (SPED)
+* Early Childhood Education
+* Reading / Literacy Education
+
+### Common Allied Degrees (For AB/BS Graduates with CPE)
+* Psychology
+* History
+* Political Science
+* Economics
+* Philosophy
+* Sociology
+* Information Technology / Computer Science
+* Accountancy / Financial Management
+* Mass Communication / Journalism
+
+### Postgraduate Specializations (For MAEd / EdD / PhD)
+* Educational Management
+* Educational Leadership
+* Curriculum and Instruction
+* Administration and Supervision
+* Guidance and Counseling
+* Educational Technology
+* Measurement and Evaluation
+
+---
+
+## 4. UX Implementation Notes
+* **Fuzzy Search Configuration:** Configure the searchable dropdown filter to execute a `contains` match rather than a strict `starts with` match. This accommodates various university naming conventions (e.g., allowing a user typing "Social" to instantly find "Araling Panlipunan / Social Studies").
+* **Fallback Option:** Include an `Other (Please Specify)` option that triggers a conditional free-text input field. This acts as a catch-all for rare or highly specific legacy degrees not covered by the standard DepEd taxonomy.
+* **Component Reuse:** Utilize the exact same dataset array for both the "Major/Specialization" and "Minor" dropdowns to maintain data consistency across the SF7 schema[cite: 9].
