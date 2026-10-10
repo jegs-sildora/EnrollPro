@@ -245,9 +245,15 @@ export const seedDatabase = async () => {
       
       const departmentName = DEPARTMENTS[i % DEPARTMENTS.length].name;
       const majorSpecialization = departmentName;
+      
+      const randomPhotoNum = i % 100;
+      const teacherPhoto = prismaSex === Sex.MALE 
+        ? `https://randomuser.me/api/portraits/men/${randomPhotoNum}.jpg` 
+        : `https://randomuser.me/api/portraits/women/${randomPhotoNum}.jpg`;
 
       const teacher = await prisma.teacher.create({
         data: {
+          photoPath: teacherPhoto,
           employeeId,
           firstName,
           lastName,
@@ -266,9 +272,18 @@ export const seedDatabase = async () => {
           postgraduateDegree: "NONE",
           majorSpecialization,
           minorSpecialization: "NONE",
-          indigenousCommunity: "NOT_APPLICABLE",
+          indigenousCommunity: "NOT APPLICABLE",
           natureOfAppointment: "REGULAR_PERMANENT",
-          fundingSource: "NATIONAL"
+          fundingSource: "NATIONAL",
+          postgraduateDegrees: {
+            create: [
+              {
+                degree: "MASTER OF ARTS IN EDUCATION",
+                major: majorSpecialization,
+                minor: "NONE"
+              }
+            ]
+          }
         }
       });
       teachers.push(teacher);

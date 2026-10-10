@@ -69,6 +69,7 @@ import {
 } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Switch } from "@/shared/ui/switch";
 
 import { useAuthStore } from "@/store/auth.slice";
@@ -118,7 +119,7 @@ interface SchoolYearItem {
 }
 
 function UserNav() {
-  const { user, clearAuth } = useAuthStore();
+  const { user, clearAuth, setAuth } = useAuthStore();
   const { showTimeMachineWidget, setShowTimeMachineWidget } = useSettingsStore();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -126,6 +127,18 @@ function UserNav() {
   const canOpenPersonnelProfile =
     user?.roles?.includes("SYSTEM_ADMIN") ||
     user?.roles?.includes("HEAD_REGISTRAR");
+
+  useEffect(() => {
+    if (user && user.photoPath === undefined) {
+      api.get("/auth/me")
+        .then(res => {
+          if (res.data?.user) {
+            setAuth(res.data.user);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user, setAuth]);
 
   const handleLogout = async () => {
     try {
@@ -177,9 +190,18 @@ function UserNav() {
           <SidebarMenuButton
             size="lg"
             className="h-14 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              {initials}
-            </div>
+            {user?.photoPath ? (
+              <UserPhoto
+                photo={user.photoPath}
+                containerClassName="flex size-8 shrink-0 rounded-full border-2 border-primary border-solid overflow-hidden"
+                className="w-full h-full object-cover"
+                alt={displayName}
+              />
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground border-2 border-primary border-solid">
+                {initials}
+              </div>
+            )}
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-extrabold uppercase">{displayName}</span>
               <span className="truncate text-xs font-semibold text-sidebar-foreground">
@@ -197,9 +219,18 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="px-3 py-3 font-normal">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {user?.photoPath ? (
+              <UserPhoto
+                photo={user.photoPath}
+                containerClassName="flex size-8 shrink-0 rounded-full border-2 border-primary border-solid overflow-hidden"
+                className="w-full h-full object-cover"
+                alt={displayName}
+              />
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground border-2 border-primary border-solid">
                 {initials}
               </div>
+            )}
               <div className="grid min-w-0 flex-1 gap-1 text-left">
                 <p className="truncate text-sm font-bold uppercase leading-none">
                   {displayName}

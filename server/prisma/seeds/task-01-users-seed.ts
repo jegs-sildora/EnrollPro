@@ -92,9 +92,12 @@ export const seedUsers = async () => {
         }
       });
 
+      const randomPhotoNum = Math.floor(Math.random() * 100);
+      const teacherPhoto = userData.sex === 'MALE' ? `https://randomuser.me/api/portraits/men/${randomPhotoNum}.jpg` : `https://randomuser.me/api/portraits/women/${randomPhotoNum}.jpg`;
       const teacher = await prisma.teacher.upsert({
         where: { employeeId: userData.employeeId },
         update: {
+          photoPath: teacherPhoto,
           departments: {
             connect: { id: dept.id }
           },
@@ -102,6 +105,7 @@ export const seedUsers = async () => {
           ancillaryRoles: userData.ancillaryRoles
         },
         create: {
+          photoPath: teacherPhoto,
           employeeId: userData.employeeId,
           firstName: userData.firstName,
           lastName: userData.lastName,

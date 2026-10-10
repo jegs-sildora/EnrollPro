@@ -186,11 +186,14 @@ export async function getSectioningPool(req: Request, res: Response) {
     const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
       status: { in: ["READY_FOR_SECTIONING", "PENDING_CONFIRMATION", "OFFICIALLY_ENROLLED"] },
-      OR: [
+    };
+
+    if (req.query.includeAssigned !== "true") {
+      where.OR = [
         { enrollmentRecord: null },
         { enrollmentRecord: { isDraft: true } }
-      ],
-    };
+      ];
+    }
 
     if (requestedGradeLevelId !== undefined) {
       where.gradeLevelId = requestedGradeLevelId;

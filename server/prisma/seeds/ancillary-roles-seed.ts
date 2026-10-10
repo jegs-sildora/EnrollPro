@@ -238,9 +238,12 @@ async function main() {
       }
     });
 
+    const randomPhotoNum = Math.floor(Math.random() * 100);
+    const teacherPhoto = t.sex === 'MALE' ? `https://randomuser.me/api/portraits/men/${randomPhotoNum}.jpg` : `https://randomuser.me/api/portraits/women/${randomPhotoNum}.jpg`;
     await prisma.teacher.upsert({
       where: { employeeId: t.employeeId },
       update: {
+        photoPath: teacherPhoto,
         middleName: t.middleName,
         email: t.email,
         contactNumber: t.contactNumber,
@@ -257,6 +260,7 @@ async function main() {
         userId: user.id,
       },
       create: {
+        photoPath: teacherPhoto,
         employeeId: t.employeeId,
         firstName: t.firstName,
         middleName: t.middleName,

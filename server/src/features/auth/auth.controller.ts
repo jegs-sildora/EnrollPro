@@ -21,6 +21,7 @@ export type AuthUser = {
   accountName: string | null;
   roles: Role[];
   ancillaryRoles: string[];
+  photoPath?: string | null;
   mustChangePassword: boolean;
   isActive: boolean;
   lastLoginAt: Date | null;
@@ -221,6 +222,7 @@ export function toAuthUserResponse(user: AuthUser) {
     accountName: user.accountName,
     roles: normalizeApplicationRoles(user.roles),
     ancillaryRoles: user.ancillaryRoles,
+    photoPath: user.photoPath,
     mustChangePassword: user.mustChangePassword,
   };
 }
@@ -398,11 +400,12 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const ancillaryRoles = await getAncillaryRoles(user.id);
+  const { ancillaryRoles, photoPath } = await getTeacherExtraInfo(user.id);
 
   const authUser: AuthUser = {
     ...user,
-    ancillaryRoles
+    ancillaryRoles,
+    photoPath
   };
 
   const now = new Date();
@@ -442,7 +445,7 @@ export async function logout(_req: Request, res: Response): Promise<void> {
 }
 
 
-export async function getAncillaryRoles(userId: number): Promise<string[]> {
+export async function getTeacherExtraInfo(userId: number): Promise<{ ancillaryRoles: string[], photoPath: string | null }> {
   let ancillaryRoles: string[] = [];
   const teacher = await prisma.teacher.findFirst({
     where: { userId },
@@ -463,7 +466,7 @@ export async function getAncillaryRoles(userId: number): Promise<string[]> {
     }
     ancillaryRoles = Array.from(rolesSet);
   }
-  return ancillaryRoles;
+  return { ancillaryRoles, photoPath: teacher?.photoPath ?? null };
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
@@ -486,8 +489,8 @@ export async function me(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const ancillaryRoles = await getAncillaryRoles(user.id);
-  res.json({ user: { ...user, ancillaryRoles } });
+  const { ancillaryRoles, photoPath } = await getTeacherExtraInfo(user.id);
+  res.json({ user: { ...user, ancillaryRoles, photoPath } });
 }
 
 export async function changePassword(
@@ -553,7 +556,7 @@ export async function changePassword(
     },
   });
 
-  const ancillaryRoles = await getAncillaryRoles(userId);
+  const { ancillaryRoles, photoPath } = await getTeacherExtraInfo(userId);
   const authUser: AuthUser = {
     ...updated,
     ancillaryRoles,
@@ -693,7 +696,7 @@ export async function verifyCredentials(
 
     const usesDefaultPassword = await isConfiguredDefaultPassword(password);
     const requiresPasswordChange = user.mustChangePassword || usesDefaultPassword;
-    const ancillaryRoles = await getAncillaryRoles(user.id);
+    const { ancillaryRoles, photoPath } = await getTeacherExtraInfo(user.id);
     const authUser = { ...user, ancillaryRoles };
 
     if (requiresPasswordChange) {

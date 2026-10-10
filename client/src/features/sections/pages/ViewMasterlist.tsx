@@ -68,6 +68,7 @@ import {
 
 import InsertLateEnrolleeDrawer from "../components/InsertLateEnrolleeDrawer";
 import { PageTransition } from "@/shared/components/PageTransition";
+import { cn, getGradeLevelButtonStyles } from "@/shared/lib/utils";
 
 const MASTERLIST_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "homerooms:sections",
@@ -488,7 +489,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                           <Button
                             variant="outline"
                             size="sm"
-                            className="font-bold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                            className={cn("font-bold uppercase transition-all", getGradeLevelButtonStyles(section?.gradeLevel))}
                             onClick={() => setSelectedStudentId(learner.id || (learner as any).learnerId)}
                           >
                             <Eye className="w-4 h-4 mr-2" />

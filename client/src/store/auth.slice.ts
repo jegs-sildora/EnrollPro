@@ -14,6 +14,7 @@ interface User {
   accountName: string | null;
   roles: AuthRole[];
   ancillaryRoles: string[];
+  photoPath?: string | null;
   mustChangePassword?: boolean;
 }
 

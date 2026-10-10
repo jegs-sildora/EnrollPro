@@ -1224,48 +1224,62 @@ export function SectioningWorkspace() {
     }
   }, [currentGradePool, currentGradeSections, draftPlacement, activeGradeLevelId, poolInitialLoading, sectionsInitialLoading, setDraftPlacement]);
 
-  const generateDraftPlacement = () => {
+  const generateDraftPlacement = async () => {
     if (!activeGradeLevelId || autoAssignPhase !== "idle" || processing) return;
 
     setAutoAssignPhase("loading");
-    const loadingTimer = setTimeout(() => {
-      try {
-        const newDraft = createDraftPlacement(
-          Number(activeGradeLevelId),
-          currentGradePool,
-          currentGradeSections,
-          enableHomogeneousSections,
-          homogeneousSectionCount,
-        );
+    
+    try {
+      const res = await api.get<PoolLearner[]>("/sectioning/pool", {
+        params: { gradeLevelId: activeGradeLevelId, includeAssigned: "true" }
+      });
+      const fullPool = res.data;
 
-        setDraftPlacement(newDraft);
-        const populatedSectionIds = newDraft.rosters
-          .filter((roster) => roster.learners.length > 0)
-          .map((roster) => roster.section.id);
-        setExpandedSectionIds(new Set(populatedSectionIds));
+      const loadingTimer = setTimeout(() => {
+        try {
+          const newDraft = createDraftPlacement(
+            Number(activeGradeLevelId),
+            fullPool,
+            currentGradeSections,
+            enableHomogeneousSections,
+            homogeneousSectionCount,
+          );
 
-        setSelectedAppIds([]);
-        setTargetSectionId(null);
-        setAllowCapacityOverride(false);
-        setAutoAssignPhase("resolving");
+          setDraftPlacement(newDraft);
+          const populatedSectionIds = newDraft.rosters
+            .filter((roster) => roster.learners.length > 0)
+            .map((roster) => roster.section.id);
+          setExpandedSectionIds(new Set(populatedSectionIds));
 
-        const resolutionTimer = setTimeout(() => {
+          setSelectedAppIds([]);
+          setTargetSectionId(null);
+          setAllowCapacityOverride(false);
+          setAutoAssignPhase("resolving");
+
+          const resolutionTimer = setTimeout(() => {
+            setAutoAssignPhase("idle");
+            sileo.success({
+              title: "Draft sections generated successfully.",
+              description: "Please review the temporary rosters.",
+            });
+          }, prefersReducedMotion ? 0 : 600);
+          autoAssignTimers.current.push(resolutionTimer);
+        } catch {
           setAutoAssignPhase("idle");
-          sileo.success({
-            title: "Draft sections generated successfully.",
-            description: "Please review the temporary rosters.",
+          sileo.error({
+            title: "Auto assignment failed",
+            description: "Could not generate temporary sections. Please try again.",
           });
-        }, prefersReducedMotion ? 0 : 600);
-        autoAssignTimers.current.push(resolutionTimer);
-      } catch {
-        setAutoAssignPhase("idle");
-        sileo.error({
-          title: "Auto assignment failed",
-          description: "Could not generate temporary sections. Please try again.",
-        });
-      }
-    }, prefersReducedMotion ? 0 : 300);
-    autoAssignTimers.current.push(loadingTimer);
+        }
+      }, prefersReducedMotion ? 0 : 300);
+      autoAssignTimers.current.push(loadingTimer);
+    } catch {
+      setAutoAssignPhase("idle");
+      sileo.error({
+        title: "Auto assignment failed",
+        description: "Failed to fetch learners for sectioning. Please try again.",
+      });
+    }
   };
 
 

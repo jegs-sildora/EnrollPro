@@ -6,7 +6,7 @@ import { companionSsoReverseCallbackSchema } from "@enrollpro/shared";
 import { AppError } from "../../lib/AppError.js";
 import {
   clearAuthSession,
-  getAncillaryRoles,
+  getTeacherExtraInfo,
   issueAuthSession,
 } from "./auth.controller.js";
 import {
@@ -175,7 +175,7 @@ export async function completeCompanionReverseSsoCallback(
       parsed.data.state,
       reverseCookieOptions(REVERSE_COMPLETION_CACHE_TTL_MS),
     );
-    const ancillaryRoles = await getAncillaryRoles(user.id);
+    const { ancillaryRoles, photoPath } = await getTeacherExtraInfo(user.id);
     const authUser = { ...user, ancillaryRoles };
     
     issueAuthSession(res, authUser);

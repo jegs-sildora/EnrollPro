@@ -1379,8 +1379,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-3">
-                          <div className="space-y-1.5">
+                        <div className="space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
                             <Label className="text-base font-bold uppercase text-foreground">Sex <span className="text-destructive">*</span></Label>
                             <Controller
                               name="sex"
@@ -1438,10 +1439,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             />
                             <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
                           </div>
-
-                          <div className="space-y-1.5">
-                            <Label className="text-base font-bold uppercase text-foreground flex items-center gap-1 h-6">
-                              <Smartphone className="size-3" />
+                          </div>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label className="text-base font-bold uppercase text-foreground flex items-center gap-1 h-6">
+                                <Smartphone className="size-3" />
                               Mobile Number <span className="text-destructive">*</span>
                             </Label>
                             <Controller
@@ -1483,8 +1485,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             />
                             <AnimatedError error={errors.indigenousCommunity?.message as string} />
                           </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
                     </div>
 
                     {/* Card 2: Employment Details */}

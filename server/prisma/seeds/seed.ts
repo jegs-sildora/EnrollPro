@@ -109,6 +109,8 @@ async function main() {
   const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
   for (const u of usersToCreate) {
+    const randomPhotoNum = Math.floor(Math.random() * 100);
+    const teacherPhoto = u.sex === 'MALE' ? `https://randomuser.me/api/portraits/men/${randomPhotoNum}.jpg` : `https://randomuser.me/api/portraits/women/${randomPhotoNum}.jpg`;
     const createdUser = await prisma.user.upsert({
       where: { employeeId: u.employeeId },
       update: {
@@ -135,6 +137,7 @@ async function main() {
     await prisma.teacher.upsert({
       where: { employeeId: u.employeeId },
       update: {
+        photoPath: teacherPhoto,
         firstName: u.firstName,
         lastName: u.lastName,
         contactNumber: u.mobileNumber,
@@ -153,6 +156,7 @@ async function main() {
         fundingSource: "NATIONAL",
       },
       create: {
+        photoPath: teacherPhoto,
         employeeId: u.employeeId,
         firstName: u.firstName,
         lastName: u.lastName,
