@@ -717,8 +717,19 @@ export function SectioningWorkspace() {
     useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
   }, []);
 
-  const [draftPlacements, setDraftPlacements] = useState<Record<string, DraftPlacement>>({});
-  
+  const [draftPlacements, setDraftPlacements] = useState<Record<string, DraftPlacement>>(() => {
+    try {
+      const stored = localStorage.getItem("enrollpro_draft_placements");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("enrollpro_draft_placements", JSON.stringify(draftPlacements));
+  }, [draftPlacements]);
+
   const draftPlacement = useMemo(() => {
     return draftPlacements[activeGradeLevelId] || null;
   }, [draftPlacements, activeGradeLevelId]);
@@ -794,10 +805,13 @@ export function SectioningWorkspace() {
     error: poolError,
     refetch: refetchPool,
   } = useQuery({
-    queryKey: [...queryKeys.sectioningPool(), assignedGradeLevelId],
+    queryKey: [...queryKeys.sectioningPool(), assignedGradeLevelId, Boolean(draftPlacement)],
     queryFn: () =>
       api.get<PoolLearner[]>("/sectioning/pool", {
-        params: assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}
+        params: {
+          ...(assignedGradeLevelId ? { gradeLevelId: assignedGradeLevelId } : {}),
+          ...(draftPlacement ? { includeAssigned: "true" } : {})
+        }
       }).then((r) => r.data),
     enabled: !isHistoricalReadOnly,
     refetchOnWindowFocus: true,
@@ -816,11 +830,19 @@ export function SectioningWorkspace() {
   );
 
   useEffect(() => {
-    if (sectionsData && !draftPlacement) setSections(sectionsData);
-  }, [sectionsData, draftPlacement]);
+    if (sectionsData) {
+      if (!draftPlacement || sections.length === 0) {
+        setSections(sectionsData);
+      }
+    }
+  }, [sectionsData, draftPlacement, sections.length]);
   useEffect(() => {
-    if (poolData && !draftPlacement) setPool(poolData);
-  }, [poolData, draftPlacement]);
+    if (poolData) {
+      if (!draftPlacement || pool.length === 0) {
+        setPool(poolData);
+      }
+    }
+  }, [poolData, draftPlacement, pool.length]);
 
   useEffect(() => {
     if (!poolData || poolInitialLoading) return;
@@ -2358,38 +2380,39 @@ export function SectioningWorkspace() {
                   )}
                 </div>
 
-                  <div className="flex flex-col items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="default"
-                    disabled={
-                      currentGradePool.length === 0 ||
-                      processing ||
-                      autoAssignPhase !== "idle" ||
-                      isHistoricalReadOnly
-                    }
-                    onClick={() => {
-                      if (sections.some(s => s.currentCount > 0)) {
-                        setReRunWarningOpen(true);
-                      } else {
-                        generateDraftPlacement();
-                      }
-                    }}
-                    className="w-full font-bold text-base uppercase tracking-normal gap-2 rounded-md">
-                    {autoAssignPhase !== "idle" && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {autoAssignPhase !== "idle" ? "Running Sectioning Algorithm..." : "RE-RUN SECTIONING ALGORITHM"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={autoAssignPhase !== "idle"}
-                    onClick={() => setAutoAssignConfirmOpen(true)}
-                    className="h-auto px-2 text-sm font-bold text-primary hover:text-primary">
-                    <Info className="h-3.5 w-3.5" />
-                    How does the system place learners?
-                  </Button>
-                  </div>
+                  {currentGradePool.length > 0 && (
+                    <div className="flex flex-col items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={
+                          processing ||
+                          autoAssignPhase !== "idle" ||
+                          isHistoricalReadOnly
+                        }
+                        onClick={() => {
+                          if (sections.some(s => s.currentCount > 0)) {
+                            setReRunWarningOpen(true);
+                          } else {
+                            generateDraftPlacement();
+                          }
+                        }}
+                        className="w-full font-bold text-base uppercase tracking-normal gap-2 rounded-md">
+                        {autoAssignPhase !== "idle" && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {autoAssignPhase !== "idle" ? "Running Sectioning Algorithm..." : "RE-RUN SECTIONING ALGORITHM"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={autoAssignPhase !== "idle"}
+                        onClick={() => setAutoAssignConfirmOpen(true)}
+                        className="h-auto px-2 text-sm font-bold text-primary hover:text-primary">
+                        <Info className="h-3.5 w-3.5" />
+                        How does the system place learners?
+                      </Button>
+                    </div>
+                  )}
               </CardHeader>
               <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
                 {displayedRosters.length === 0 ? (
